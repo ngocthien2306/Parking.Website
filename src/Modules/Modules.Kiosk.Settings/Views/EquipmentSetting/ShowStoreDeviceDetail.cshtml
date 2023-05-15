@@ -1,0 +1,365 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Models
+
+@model KIO_StoreDevice;
+@{
+    Layout = null;
+    string registDate = "registDate" + ViewBag.Thread;
+    string deviceType = "deviceType" + ViewBag.Thread;
+    string deviceName = "deviceName" + ViewBag.Thread;
+    string deviceKeyNo = "deviceKeyNo" + ViewBag.Thread;
+    string devicePublicIp = "devicePublicIp" + ViewBag.Thread;
+    string deviceUsePort = "deviceUsePort" + ViewBag.Thread;
+    string registUserId = "registUserId" + ViewBag.Thread;
+    string deviceStatus = "deviceStatus" + ViewBag.Thread;
+    string rdpPath = "rdpPath" + ViewBag.Thread;
+    string storeDeviceNo = "storeDeviceNo" + ViewBag.Thread;
+
+    string deviceKey = "deviceKey" + ViewBag.Thread;
+
+
+    var approvalEntity = new[] {
+        new { id = true, text = "True" },
+        new { id = false, text = "False" }
+    };
+
+
+}
+<style>
+    .remove_audio {
+        float: right;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #E74C3C;
+        text-shadow: 0 1px 0 #fff;
+        opacity: .5;
+        border: 0;
+        background-color: #fff;
+    }
+</style>
+
+<script>
+    var show = 1;
+    $(document).ready(function () {
+        LoadingPage(1);
+        LoadComboBoxDevice();
+        SetDataElement("#@deviceType", "@Model.deviceType")
+        LoadingPage(0);
+    })
+    // Region: Get, Check data
+    function CheckExistAudioBySoundId() {
+
+    }
+    
+    function LoadComboBoxDevice() {
+        debugger;
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("DVC000", url, '#@deviceType', false);
+    }
+    // End Region: Get, Check data
+    
+    // Region: Btn event
+    $("#btnDelete_@ViewBag.Thread").on("click", function() {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if(dialogResult) {
+                var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+                var url = '@Url.Action("DeleteStoreDevice", "EquipmentSetting")';
+                var obj = {
+                    storeDeviceNo: "@Model.storeDeviceNo"
+                }
+                CRUDData(url, obj, METHOD.DELETE);
+                setTimeout(function() {
+                    LoadStoreDevice(gridStore, null, null, null, null);
+                },1000);
+            }
+        })
+    })
+
+    function changePasswordMode() {
+        debugger;
+        if ("@ViewBag.UserType" == "G000C002" || "@ViewBag.UserType" == "G000C001") {
+            var passwordEditor = $("#@deviceKey").dxTextBox("instance");
+
+            passwordEditor.option("mode", passwordEditor.option("mode") === "text" ? "password" : "text");
+        }
+        else {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Only admin has permission to view device key")", "Error")
+        }
+
+    }
+
+    $("#btnSave_@ViewBag.Thread").on("click", function() {
+        
+        if (ValidateInputSaveDevice()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if(dialogResult) {
+                    debugger;
+                    var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+                    var url = '@Url.Action("SaveDataStoreDevice", "EquipmentSetting")';
+                    var obj = {
+                        storeNo: gridStore,
+                        storeDeviceNo: GetDataElement("#@storeDeviceNo"),
+                        registDate: GetDataElement("#@registDate"),
+                        deviceType: GetDataElement("#@deviceType"),
+                        deviceName: GetDataElement("#@deviceName"),
+                        deviceKeyNo: GetDataElement("#@deviceKeyNo"),
+                        devicePublicIp: GetDataElement("#@devicePublicIp"),
+                        deviceStatus: GetDataElement("#@deviceStatus"),
+                        deviceUsePort: GetDataElement("#@deviceUsePort"),
+                        rdpPath: GetDataElement("#@rdpPath"),
+                        registUserId: GetDataElement("#@registUserId"),
+                        deviceKey: GetDataElement("#@deviceKey")
+                    }
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: obj,
+                        dataType: 'json',
+                        async: false,
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+
+                                DevExpress.ui.notify(
+                                    {
+                                        message: '@_loc.GetLocalizedString("Save data store device successfully")',
+                                        position: {
+                                            my: 'bottom right',
+                                            at: 'bottom right'
+                                        },
+                                        width: '30%'
+                                    },
+                                    'info',
+                                    4000
+                                );
+                                
+                                if (GetDataElement("#@deviceStatus") == false) {
+                                    RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), false);
+                                }
+
+                                $('#modalControl').modal('hide');
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                            LoadingPage(0);
+                        },
+                        error: function () {
+                            LoadingPage(0);
+                        }
+                    });
+                    //CRUDData(url, obj, METHOD.POST);
+                    setTimeout(function() {
+                        LoadStoreDevice(gridStore, null, null, null, null);
+
+                    },500);
+
+                }
+            })
+        }
+    })
+    // End Region: Btn event
+
+    // Region: Validate data
+    
+    function ValidateInputSaveDevice() {
+        let registDate = GetDataElement("#@registDate");
+        if(registDate == null || registDate == "" || typeof registDate === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Registed Date")", "Error")
+            ValidateElement("#@registDate")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@registDate")
+        }
+
+        let deviceType = GetDataElement("#@deviceType");
+        if (deviceType == null || deviceType == "" || typeof deviceType === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Select Device Type")", "Error")
+            ValidateElement("#@deviceType")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@deviceType")
+        }
+
+        let deviceName = GetDataElement("#@deviceName");
+        if (deviceName == null || deviceName == "" || typeof deviceName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Device Name")", "Error")
+            ValidateElement("#@deviceName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@deviceName")
+        }
+
+        let deviceKeyNo = GetDataElement("#@deviceKeyNo");
+        if (deviceKeyNo == null || deviceKeyNo == "" || typeof deviceKeyNo === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Device Key")", "Error")
+            ValidateElement("#@deviceKeyNo")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@deviceKeyNo")
+        }
+
+        let devicePublicIp = GetDataElement("#@devicePublicIp");
+        if (devicePublicIp == null || devicePublicIp == "" || typeof devicePublicIp === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Device IP")", "Error")
+            ValidateElement("#@devicePublicIp")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@devicePublicIp")
+        }
+
+        let deviceUsePort = GetDataElement("#@deviceUsePort");
+        if (deviceUsePort == null || deviceUsePort == "" || typeof deviceUsePort === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Device Port")", "Error")
+            ValidateElement("#@deviceUsePort")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@deviceUsePort")
+        }
+
+
+        return true;
+
+    }
+    // End region: Validate data
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Equipment Information Management"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Registered Date"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().DateBox()
+                        .ID(registDate)
+                        .DisplayFormat("yyyy-MM-dd hh:mm")
+                        .Value(Model.registDate == null ? DateTime.Now : Model.registDate)
+
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Device Type"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().SelectBox()
+                        .ID(deviceType)
+                        .Value(Model.deviceType == null ? null : Model.deviceType)
+
+                        )
+                </div>
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Approve / Reject"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().RadioGroup()
+                        .DataSource(approvalEntity)
+                        .DisplayExpr("text")
+                        .ValueExpr("id")
+                        .Value(Model.deviceStatus)
+                        .Layout(Orientation.Horizontal)
+                        .ID(deviceStatus)
+
+                        )
+                </div>
+
+            </div>
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Device Name"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(deviceName)
+                        .Value(Model.deviceName == null ? "" : Model.deviceName)
+                        )
+
+                    @(Html.DevExtreme().TextBox()
+                        .ID(storeDeviceNo)
+                        .Value(Model.storeDeviceNo == 0 ? "" : Model.storeDeviceNo.ToString())
+                        .Visible(false)
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Key No"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(deviceKeyNo)
+                        .Value(Model.deviceKeyNo == null ? "" : Model.deviceKeyNo)
+
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Public IP"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(devicePublicIp)
+                        .Value(Model.devicePublicIp == null ? "" : Model.devicePublicIp)
+
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Port"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(deviceUsePort)
+                        .Value(Model.deviceUsePort == 0 ? "" : Model.deviceUsePort.ToString())
+
+                        )
+                </div>
+
+            </div>
+            <div class="row pt-2 pb-2">
+
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("RDP Path"))</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(rdpPath)
+                        .Value(Model.rdpPath == null ? "" : Model.rdpPath)
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Device Key"))</label>
+                    @(Html.DevExtreme().TextBox()
+                        .Mode(TextBoxMode.Password)
+                        .ShowClearButton(true)
+                        .ID(deviceKey)
+                        .Value(Model.deviceKey == null ? "" : Model.deviceKey)
+                        .Buttons(buttons =>
+                        {
+                            buttons.Add()
+                            .Name("password")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Type(ButtonType.Default)
+                            .Icon("fas fa-eye")
+                            .OnClick("changePasswordMode"));
+                        })
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Creator"))</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ReadOnly(true)
+                        .ID(registUserId)
+                        .Value(Model.registUserId == null ? ViewBag.UserName : Model.registUserId)
+                        )
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" id="btnDelete_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

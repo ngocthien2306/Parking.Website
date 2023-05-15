@@ -1,0 +1,287 @@
+﻿@using Modules.Admin.Models
+@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.CREATE_YN = true;
+    //pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+}
+<script>
+    $(() => {
+        ResizePageBoardManagement();
+    });
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    var tempBoardID = '@ViewBag.TempID';
+    $("#btnCreate_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        ResetCreateBoardMagtPop();
+        CreateBoardMagtPop();
+        LoadingPage(0);
+    });
+
+    function CreateBoardMagtPop() {
+        CheckSession();
+        $("#CreateBoardMagtPop").modal("show");
+    }
+
+    $("#btnDelete_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        OnDelete();
+    });
+
+    function OnDelete() {
+        LoadingPage(1);
+        var dataGrid = $("#GridBoardManagement").dxDataGrid("instance");
+        var listBoardInfo = dataGrid.getSelectedRowsData();
+        $.ajax({
+            url: '@Url.Action("OnDelete", "BoardManagement")',
+            type: "POST",
+            data: { listBoardInfo: listBoardInfo },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success", function () {
+                        var grid = $("#GridBoardManagement").dxDataGrid("instance");
+                        grid.refresh();
+                    });
+                }
+                else {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function OpenEditBoardPop(boardID) {
+        LoadingPage(1);
+        CheckSession();
+         
+        $.ajax({
+            url: '@Url.Action("GetBoardInfo", "BoardManagement")',
+            type: "POST",
+            data: { BoardID: boardID },
+            dataType: "json",
+            success: function (result) {
+                LoadingPage(0);
+                if (result.Success) {
+                    console.log(result.Data);
+                    $("#BoardID").dxTextBox("instance").option("value", result.Data.BoardID);
+                    var _tInsertDT = GetInsertDT;
+                    $("#CreatorID").dxTextBox("instance").option("value", result.Data.CreatorID);
+                    $("#Creator").dxTextBox("instance").option("value", result.Data.Creator);
+                    $("#BoardName").dxTextBox("instance").option("value", result.Data.BoardName);
+                    $("#BoardTitle").dxTextBox("instance").option("value", result.Data.BoardTitle);
+                    $("#BoardStatus").dxSelectBox("instance").option("value", result.Data.BoardStatus);
+                    $("#InsertDT").dxDateBox("instance").option("value", result.Data.InsertDT);
+                    // var _tBoardType = getBoardType();
+                    $("#BoardDesc").dxTextArea("instance").option("value", result.Data.BoardDesc);
+                    for (var i = 0; i < result.Data.BoardType.length; i++) {
+                        var tempIndex = i + 1;
+                        var temp = result.Data.BoardType.substring(i, tempIndex);
+                        console.log(temp);
+                        if (temp === 'Y') {
+                            $("#boardType" + tempIndex).dxCheckBox("instance").option("value", true);
+                        }
+                        else {
+                            $("#boardType" + tempIndex).dxCheckBox("instance").option("value", false);
+                        }
+                    }
+
+                }
+                else {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });;
+        CreateBoardMagtPop();
+        LoadingPage(0);
+    }
+    function ResetBoardType() {
+        $("#boardType1").dxCheckBox("instance").option("value", false);
+        $("#boardType2").dxCheckBox("instance").option("value", false);
+        $("#boardType3").dxCheckBox("instance").option("value", false);
+        $("#boardType4").dxCheckBox("instance").option("value", false);
+        $("#boardType5").dxCheckBox("instance").option("value", false);
+        $("#boardType6").dxCheckBox("instance").option("value", false);
+        $("#boardType7").dxCheckBox("instance").option("value", false);
+        $("#boardType8").dxCheckBox("instance").option("value", false);
+        //$("#boardType9").dxCheckBox("instance").option("value", false);
+        //$("#boardType10").dxCheckBox("instance").option("value", false);
+    }
+    function ResetCreateBoardMagtPop() {
+        LoadingPage(1);
+        $("#BoardID").dxTextBox("instance").option("value", tempBoardID);
+        $("#CreatorID").dxTextBox("instance").option("@ViewBag.UserName");
+        $("#Creator").dxTextBox("instance").option("@ViewBag.UserName");
+        $("#BoardName").dxTextBox("instance").option("value", "");
+        $("#BoardTitle").dxTextBox("instance").option("value", "");
+        $("#BoardStatus").dxSelectBox("instance").option("value", "");
+        $("#InsertDT").dxDateBox("instance").option("value", new Date());
+        ResetBoardType();
+        $("#BoardDesc").dxTextArea("instance").option("value", "");
+        LoadingPage(0);
+    }
+
+    var GotoCommonBoard = function (e) {
+        CheckSession();
+        let url = '/CB?bid=' + e.row.data.BoardID;
+        PushArrayBack(url);
+            $.ajax({
+                url: '@Url.Action("GetMenuIDByBoadID", "Menu")',
+                type: "POST",
+                data: { strUrl: url },
+                dataType: "json",
+                success: function (result) {
+                     
+                    if (result.MenuPath === '/BoardManagement') {
+                        GenerateTabConmonBoard(result.MenuName, url, result.MenuID, false); // current tab
+                    }
+                    else {
+                        //GenerateTabConmonBoard(result.MenuName, url, result.MenuID, true); // new tab
+                        GenerateTab(result.MenuName, url,result.MenuID, false)
+                    }
+                }
+            });
+        //GenerateTabConmonBoard('BoardCommon', url, e.row.data.BoardID, false)
+      //  GenerateTabConmonBoard(e.row.data.BoardName, url, @ViewBag.MenuId, false)
+    }
+
+    $(window).resize(function () {
+        ResizePageBoardManagement();
+
+    });
+    function ResizePageBoardManagement() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                //ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //ReCalResize("contentbody_@(ViewBag.Thread)", "ID", "bodypage_@(ViewBag.Thread)", "topbody_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12 p-0" style="height:100%;">
+        <div class="card" style="height:100%;">
+            <div class="card-body box-profile p-2" style="height:100%;">
+                <div class="row" style="height:100%;">
+                    <div class="col-md-12" style="height:100%;">
+                        @(Html.DevExtreme().DataGrid<SYBoardInfo>()
+                                .ID("GridBoardManagement")
+                                .DataSource(d => d.Mvc().Controller("BoardManagement").LoadAction("GetListData"))
+                                .KeyExpr("BoardID")
+                                .Height("100%")
+                                .ShowBorders(true)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Multiple)
+                                .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                //.OnInitNewRow("onInitNewRow")
+                                //.OnRowUpdated("onRowUpdated")
+                                //.OnRowInserted("onRowInserted")
+                                //.OnRowRemoved("onRowRemoved")
+                                //.OnEditorPrepared("onEditorPrepared")
+                                //.OnCellPrepared("onCellPrepared")
+                                //.OnEditorPreparing("onEditorPreparing")
+                                //.OnDisposing("onDisposing")
+                                //.Editing(editing =>
+                                //{
+                                //    // editing.Mode(GridEditMode.Cell);
+                                //    // editing.AllowUpdating(true);
+                                //    editing.AllowDeleting(true);
+                                //    editing.UseIcons(true);
+                                //})
+                                .Columns(columns =>
+                                {
+
+                                columns.AddFor(m => m.BoardName).Caption(_loc.GetLocalizedString("BoardName")).Alignment(HorizontalAlignment.Center).Width("30%").CellTemplate(
+                                    @<text>
+                                        <a href="#" onclick="OpenEditBoardPop('<%-data.BoardID%>')" data-pag-id="<%-data.BoardID%>">
+                                            <%-data.BoardName%>
+                                        </a>
+                                    </text>
+                                    @*@<text>
+                                    <div>
+                                        <a onclick="OpenEditBoardPop(this)"><b><%- value %></b></a>
+                                    </div>
+
+                                            </text>*@
+                                            );
+                                            columns.AddFor(m => m.OwnerID).Caption(_loc.GetLocalizedString("OwnerID")).Width("35%").Visible(false);
+                                            columns.AddFor(m => m.Owner).Caption(_loc.GetLocalizedString("OwnerID")).Width("35%");
+                                            columns.AddFor(m => m.InsertDT).Caption(_loc.GetLocalizedString("InsertDT")).Width("35%")
+                                                .DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                            columns.AddFor(m => m.BoardStatus).Caption(_loc.GetLocalizedString("BoardStatus")).Width("35%");
+                                            columns.AddFor(m => m.BoardTitle).Caption(_loc.GetLocalizedString("BoardTitle")).Width("35%");
+                                            columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                            {
+                                                //  b.Add().Name(GridColumnButtonName.Edit);
+                                                //  b.Add().Name(GridColumnButtonName.Delete);
+                                                //b.Add().Icon("trash").Hint("Delete").OnClick("DeleteDataUser").Visible(new JS("VisibleDeleteButton"));
+                                                b.Add().Text("Go").OnClick(@<text>GotoCommonBoard</text>);
+                                            });
+
+                                })
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(50))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowPageSizeSelector(false);
+                                    //pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                    pager.Visible(true);
+                                })
+                            // .OnSelectionChanged("gridCommonCodeMasterSelectionChanged")
+                            )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    
+@await Html.PartialAsync("~/Views/BoardManagement/_Create.cshtml")
+@await Html.PartialAsync("~/Views/BoardManagement/_BoardBranch.cshtml")
+

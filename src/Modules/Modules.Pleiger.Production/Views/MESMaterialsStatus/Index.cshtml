@@ -1,0 +1,264 @@
+﻿@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@using Modules.Pleiger.Production.Model;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string materialStatusGrid = "materialStatusGrid" + ViewBag.Thread;
+    string startDatefrmDateFromTo = "startDatefrmDateFromTo" + ViewBag.Thread;
+    string endDatefrmDateFromTo = "endDatefrmDateFromTo" + ViewBag.Thread;
+    string frmType = "frmType" + ViewBag.Thread;
+    string frmCategory = "frmCategory" + ViewBag.Thread;
+    string frmItemName = "frmItemName" + ViewBag.Thread;
+    string frmItemCode = "frmItemCode" + ViewBag.Thread;
+}
+<script>
+    $(document).ready(function () {
+        SearchMaterialsStatus@(ViewBag.Thread)();
+    });
+
+    function exportExcel@(ViewBag.Thread)() {
+        CheckSession();
+        var dataGrid = $("#@materialStatusGrid");
+        ExportExcelCommon(dataGrid, "Material Status");
+    };
+    function SearchMaterialsStatus@(ViewBag.Thread)() {
+        debugger;
+        LoadingPage(1);
+        const dateStart = ParsingDateyyyyMMdd($("#@startDatefrmDateFromTo").dxDateBox("option", "value"));
+        const dateEnd = ParsingDateyyyyMMdd($("#@endDatefrmDateFromTo").dxDateBox("option", "value"));
+        const type = $("#@frmType").dxRadioGroup("option", "value")
+        const category = $("#@frmCategory").dxSelectBox("option", "value")
+        const itemName = $("#@frmItemName").dxTextBox("option", "value")
+        const itemCode = $("#@frmItemCode").dxTextBox("option", "value")
+
+        if (!ValidateRangeDate(dateStart, dateEnd)) {
+            $("#@materialStatusGrid").dxDataGrid("option", "dataSource", null);
+            LoadingPage(0);
+            return;
+        };
+
+        $.ajax({
+            url: '@Url.Action("SearchMaterialStatus", "MESMaterialsStatus")',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                StartDate: dateStart,
+                EndDate: dateEnd,
+                InOutType: type,
+                Category: category,
+                ItemCode: itemCode,
+                ItemName: itemName,
+            },
+            success: function (result) {
+                $("#@materialStatusGrid").dxDataGrid("option", "dataSource", result);
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                console.log(error);
+                $("#@materialStatusGrid").dxDataGrid("option", "dataSource", null);
+                LoadingPage(0);
+            }
+        });
+        LoadingPage(0);
+    };
+    function negativeToRed_RealQuantity@(ViewBag.Thread)(e) {
+        if (e.rowType === "data" && e.column.dataField === "RealQuantity") {
+            e.cellElement.css("color", e.data.RealQuantity < 0 ? "red" : "auto");
+        }
+    };
+
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        SearchMaterialsStatus@(ViewBag.Thread)();
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        exportExcel@(ViewBag.Thread)();
+        LoadingPage(0);
+    });
+
+</script>
+<div class="row w-100 m-0">
+    <div class="col">
+        <div id="menutoolbar_@(ViewBag.Thread)">
+            @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+        </div>
+    </div>
+</div>
+
+<div class="col">
+    <div class="card">
+        <div class="card-body p-1" style="height: 100%">
+            <form class="row w-100 mx-auto justify-content-between">
+                <div class="form-group col-sm-3 col-12">
+                    <div class="row p-1">
+                        <label class="row w-100 mx-auto">@(_loc.GetLocalizedString("In / Out Date"))</label>
+                        <div class="col-sm-5 col-12 p-1">
+                            @(
+                                Html
+                                .DevExtreme()
+                                .DateBox()
+                                .ID(startDatefrmDateFromTo)
+                                .Value(DateTime.Now.ToString("yyyy-MM-01"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                )
+                        </div>
+                        <div style="align-self: center;">~</div>
+                        <div class="col-sm-5 col-12 p-1">
+                            @(
+                                Html
+                                .DevExtreme()
+                                .DateBox()
+                                .ID(endDatefrmDateFromTo)
+                                .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                )
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-sm-2 col-12">
+                    <label class="row p-1" for="@(frmType)">@(_loc.GetLocalizedString("Type"))</label>
+                    <div class="row p-1">
+                        @(
+                            Html.DevExtreme()
+                            .RadioGroup()
+                            .ID(frmType)
+                            .Layout(Orientation.Horizontal)
+                            .Width("100%")
+                            .ValueExpr("value")
+                            .DisplayExpr("text")
+                            .DataSource(s =>
+                                s.Mvc()
+                                .Controller("MESMaterialsStatus")
+                                .LoadAction("LoadTypeRadio")
+                                .LoadMode(DataSourceLoadMode.Raw)
+                                .Key("value"))
+                            .Value("all")
+                            )
+                    </div>
+                </div>
+                <div class="form-group col-sm-2 col-12">
+                    <label class="row p-1" for="@(frmCategory)">@(_loc.GetLocalizedString("Category"))</label>
+                    <div class="row p-1">
+                        @(
+                            Html.DevExtreme()
+                            .SelectBox()
+                            .ID(frmCategory)
+                            .ValueExpr("ID")
+                            .DisplayExpr("Name")
+                            .DataSource(s =>
+                                s.Mvc()
+                                .Controller("MESMaterialsStatus")
+                                .LoadAction("LoadCategoryCombobox")
+                                .LoadMode(DataSourceLoadMode.Raw)
+                                .Key("ID"))
+                            .Value("all")
+                            .Width("100%")
+                            )
+                    </div>
+                </div>
+                <div class="form-group col-sm-2 col-12">
+                    <label class="row p-1" for="@(frmItemCode)">@(_loc.GetLocalizedString("Item Code"))</label>
+                    <div class="row p-1">
+                        @(
+                            Html.DevExtreme()
+                            .TextBox()
+                            .ID(frmItemCode)
+                            .Width("100%")
+                            )
+                    </div>
+                </div>
+                <div class="form-group col-sm-2 col-12">
+                    <label class="row p-1" for="@(frmItemName)">@(_loc.GetLocalizedString("Item Name"))</label>
+                    <div class="row p-1">
+                        @(
+                            Html.DevExtreme()
+                            .TextBox()
+                            .ID(frmItemName)
+                            .Width("100%")
+                            )
+                    </div>
+                </div>
+            </form>
+            <fieldset class="customFieldset row w-100 mx-auto overflow-auto">
+                <legend class="customLegend">@(_loc.GetLocalizedString("Materials Status"))</legend>
+                <div class="row w-100">
+                    @(
+                        Html.DevExtreme().DataGrid<MESMaterialsStatus>
+                        ()
+                        .ID(materialStatusGrid)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .Height("75vh")
+                        .Width("100%")
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                        .RepaintChangesOnly(true)
+                        .Selection(s => s.Mode(SelectionMode.Single)
+                        .SelectAllMode(SelectAllMode.AllPages))
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.No).Caption("No");
+                            c.AddFor(x => x.InOutTypeNm).Caption(_loc.GetLocalizedString("Type"));
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("User Project Code"));
+                            c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("User PO Number"));
+                            c.AddFor(x => x.CategoryName).Caption(_loc.GetLocalizedString("Category Name"));
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));
+                            c.AddFor(x => x.RealQuantity).Caption(_loc.GetLocalizedString("Real Quantity"))
+                            .Format(Format.FixedPoint);
+                            c.AddFor(x => x.InOutQty).Caption(_loc.GetLocalizedString("Input/Output Quantity"))
+                            .Format(Format.FixedPoint);
+                            c.AddFor(x => x.CostOfItem).Caption(_loc.GetLocalizedString("Cost Of Item"))
+                            .Format(Format.FixedPoint);
+                            c.AddFor(x => x.TotalCost).Caption(_loc.GetLocalizedString("Total Cost"))
+                            .Format(Format.FixedPoint);
+                            c.AddFor(x => x.InOutDate).Caption(_loc.GetLocalizedString("In / Out Date"))
+                            .DataType(GridColumnDataType.Date)
+                            .Format("yyyy-MM-dd");
+                            c.AddFor(x => x.InOutCharge).Caption(_loc.GetLocalizedString("Receipt Manager"));
+                            c.AddFor(x => x.OutTargetLine).Caption(_loc.GetLocalizedString("Production Line Name"));
+                            c.AddFor(x => x.WarehouseName).Caption(_loc.GetLocalizedString("Warehouse"));
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            pager.Visible(true);
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        .OnCellPrepared("negativeToRed_RealQuantity" + ViewBag.Thread)
+                    )
+                </div>
+
+            </fieldset>
+        </div>
+    </div>
+</div>

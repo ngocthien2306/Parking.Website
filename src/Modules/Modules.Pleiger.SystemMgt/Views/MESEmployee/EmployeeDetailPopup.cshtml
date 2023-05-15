@@ -1,0 +1,446 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+
+@model MESEmployees;
+@{
+    Layout = null;
+    string PartnerCode = "PartnerCode" + ViewBag.Thread;
+    string CompanyType = "CompanyType" + ViewBag.Thread;
+    string Countrytype = "Countrytype" + ViewBag.Thread;
+    string Team = "Team" + ViewBag.Thread;
+    string Position = "Position" + ViewBag.Thread;
+
+}
+
+    <script>
+    $(document).ready(function () {
+         
+        var ListCountryType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "CTTP00");
+        $("#@(Countrytype)").dxSelectBox({
+            dataSource: ListCountryType,
+            key: "BASE_CODE",
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        var ListTeam = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "ORG000");  //tuc la list Department
+        $("#@(Team)").dxSelectBox({
+            dataSource: ListTeam,
+            key: "BASE_CODE",
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+
+        $("#@(PartnerCode)").dxSelectBox({
+            disabled: true,
+        });
+         $("#@(Team)").dxSelectBox({
+            disabled: true,
+         });
+         $("#@(Position)").dxSelectBox({
+            disabled: true,
+        });
+        LoadingPage(1);
+
+         
+        if ('@Model.EmployeeNumber' != null && '@Model.EmployeeNumber' != "") {
+            $("#EmployeeNumber@(ViewBag.Thread)").prop("readonly", true);
+                if ('@Model.UseYN' == "Y") {
+                    $('#RadioGroupUseYN@(ViewBag.Thread)').dxRadioGroup('instance').option("value", '@_loc.GetLocalizedString("거래")');
+                }
+                else {
+                    $('#RadioGroupUseYN@(ViewBag.Thread)').dxRadioGroup('instance').option("value", '@_loc.GetLocalizedString("중지")');
+                }
+        }
+        else {
+            $("#EmployeeNumber@(ViewBag.Thread)").prop("readonly", false);
+            $('#RadioGroupUseYN@(ViewBag.Thread)').dxRadioGroup('instance').option("value", '@_loc.GetLocalizedString("거래")');
+        }
+
+        if ('@Model.PartnerCode' != '' && '@Model.PartnerCode' != null) {
+            $("#PartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.PartnerCode');
+        }
+
+        if ('@Model.CompanyType' != '' && '@Model.CompanyType' != null) {
+              $("#CompanyType@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.CompanyType');
+        }
+
+         if ('@Model.CountryType' != '' && '@Model.CountryType' != null) {
+              $("#@Countrytype").dxSelectBox("instance").option("value", '@Model.CountryType');
+        }
+         if ('@Model.OrgNumber' != '' && '@Model.OrgNumber' != null) {
+              $("#@Team").dxSelectBox("instance").option("value", '@Model.OrgNumber');
+        }
+        @*if ('@Model.CompanyType' != '' && '@Model.CompanyType' != null) {
+              $("#CompanyType@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.CompanyType');
+        }*@
+        @*if ('@Model.Birthday' != '' && '@Model.Birthday' != null) {
+            $("#Birthday@(ViewBag.Thread)").dxDateBox("instance").option("value", '@Model.Birthday');
+        }*@
+        LoadingPage(0);
+    });
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        $("#frm-Employee").submit();
+    });
+
+    $("#frm-Employee").submit(function (e) {
+        LoadingPage(1);
+        e.preventDefault();
+        var data = new FormData(this);
+         
+        let EmployeeNumber = $("#EmployeeNumber@(ViewBag.Thread)").val();
+        let EmployeeNameKr = $("#EmployeeNameKr@(ViewBag.Thread)").val();
+        let EmployeeNameEng = $("#EmployeeNameEng@(ViewBag.Thread)").val();
+        let UseYN = $('#RadioGroupUseYN@(ViewBag.Thread)').dxRadioGroup('instance').option("value");
+
+
+        if (UseYN == '@_loc.GetLocalizedString("전체")')
+        {
+            data.append("UseYN", "");
+        }
+        else if (UseYN == '@_loc.GetLocalizedString("거래")')
+        {
+            data.append("UseYN", "Y");
+        }
+        else if (UseYN == '@_loc.GetLocalizedString("중지")')
+        {
+            data.append("UseYN", "N");
+        }
+
+        if (EmployeeNumber == null || EmployeeNumber == "" || EmployeeNumber === undefined)
+        {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Login ID!")", "@_loc.GetLocalizedString("Error")");
+            LoadingPage(0);
+                return;
+        }
+
+        if (EmployeeNumber.length > 20)
+        {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("The allowed character number is 20!")", "@_loc.GetLocalizedString("Error")");
+            LoadingPage(0);
+                return;
+        }
+
+        if (EmployeeNameKr == null || EmployeeNameKr == "" || EmployeeNameKr === undefined)
+        {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input EmployeeNameKr!")", "@_loc.GetLocalizedString("Error")");
+            LoadingPage(0);
+            return;
+        }
+        //data.append("Birthday", Birthday);
+        let PartnerCode = $("#PartnerCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("PartnerCode", PartnerCode);
+
+        let CompanyType = $("#CompanyType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("CompanyType", CompanyType);
+
+        let Countrytype = $("#@(Countrytype)").dxSelectBox("option", "value");
+        data.append("CountryType", Countrytype);
+
+        let OrgNumber = $("#@(Team)").dxSelectBox("option", "value");   //trong db la orgNUmber
+        data.append("OrgNumber", OrgNumber);
+
+        let Position = $("#@(Position)").dxSelectBox("option", "value"); //trong db la level
+        data.append("Level", Position);
+
+         
+        var check = CheckEmployeeDuplicate();
+
+
+        var readonly = $("#EmployeeNumber@(ViewBag.Thread)").prop("readonly");
+        if (check == true || readonly == true) {
+        //     
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("SaveMESEmployee", "MESEmployee")',
+                        type: 'POST',
+                        contentType: false,
+                        cache: false,
+                        processData: false,
+                        data: data,
+                        dataType: 'json',
+                        success: function (result) {
+                             
+                            if (result.Success) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Save successful");
+                                var grid = $("#gridEmployee").dxDataGrid("instance");
+                                grid.refresh();
+                                $('#modalControl').modal('hide');
+                            }
+
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        },
+                        error: function (result) {
+                            LoadingPage(0);
+                        }
+                    });
+                }
+                else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        }
+        LoadingPage(0);
+        return;
+    });
+
+    function CheckEmployeeDuplicate() {
+        CheckSession();
+        let employeeNumber = $("#EmployeeNumber@(ViewBag.Thread)").val();
+        var resultcheck = true;
+        $.ajax({
+            url: '@Url.Action("CheckEmployeeDuplicate", "MESEmployee")',
+            type: 'GET',
+            async: false,
+            data: { EmployeeNumber: employeeNumber },
+            dataType: 'json',
+            success: function (result) {
+                 
+                if (result != null) {
+                    var readonly = $("#EmployeeNumber@(ViewBag.Thread)").prop("readonly");
+                    if (readonly == false) {
+                        DevExpress.ui.dialog.alert("EmployeeNumber is exists!", "Error");
+                    }
+                    resultcheck = false;
+                    return resultcheck;
+                }
+            }
+        });
+        return resultcheck;
+    }
+    function CompanyTypeOnValueChanged(data) {
+         @*$("#@(PartnerCode)").dxSelectBox('instance').reset();*@
+        if (data.value == null)
+        {       $("#@(PartnerCode)").dxSelectBox('instance').reset();
+                $("#@(Team)").dxSelectBox('instance').reset();
+                $("#@(Position)").dxSelectBox('instance').reset();
+                $("#@(PartnerCode)").dxSelectBox({
+                    disabled: true,
+                });
+                $("#@(Team)").dxSelectBox({
+                    disabled: true,
+                });
+                $("#@(Position)").dxSelectBox({
+                    disabled: true,
+                });
+        }
+        else
+        {
+            if (data.value != "G000C005" || data.value != "G000C006" || data.value != "G000C007"){
+                $("#@(Countrytype)").dxSelectBox('instance').reset();
+                $("#@Countrytype").dxSelectBox({
+                        disabled: true
+                });
+                $("#@(Team)").dxSelectBox('instance').reset();
+                $("#@Team").dxSelectBox({
+                        disabled: false
+                });
+                $("#@(Position)").dxSelectBox('instance').reset();
+                $("#@Position").dxSelectBox({
+                        disabled: false
+                });
+            }
+            if (data.value == "G000C005" || data.value == "G000C006" || data.value == "G000C007") {
+                //enable selectbox countrytype len
+                 $("#@Countrytype").dxSelectBox({
+                    disabled: false
+                 });
+                 $("#@Team").dxSelectBox({
+                    disabled: true
+                 });
+                 $("#@Position").dxSelectBox({
+                    disabled: true
+                 });
+
+                var Partnertype;
+                if (data.value == "G000C005") {
+                    Partnertype = "ACCT02";
+                }
+                else if (data.value == "G000C006") {
+                    Partnertype = "ACCT01";
+                }
+                else if (data.value == "G000C007") {
+                    Partnertype = "ACCT03";
+                }
+                $.ajax({
+                        url: '@Url.Action("GetPartnerDetailByPartnerType", "MESPartner")',
+                        type: 'GET',
+                        async: false,
+                        data: { PartnerType: Partnertype},
+                        dataType: 'json',
+                        success: function (result) {
+                             
+                            var ob = result.data;
+                            if (ob.length > 0) {
+                                $('#@PartnerCode').dxSelectBox({
+                                    disabled: false,
+                                    dataSource: new DevExpress.data.DataSource({
+                                        store: ob,
+                                        paginate: true,
+                                        pageSize: 100
+                                    }),
+                                    displayExpr: "PartnerName",
+                                    valueExpr: "PartnerCode"
+                                });
+                            }
+                            else {
+                                $("#@(PartnerCode)").dxSelectBox('instance').reset();
+                            }
+                        },
+                        error: function (result) {
+                            $("#@(PartnerCode)").dxSelectBox('instance').reset();
+                            LoadingPage(0);
+                        }
+                });
+                $("#@(PartnerCode)").dxSelectBox({
+                    disabled: false,
+                });
+            }
+            else
+            {
+                $("#@(PartnerCode)").dxSelectBox('instance').reset();
+                $("#@(PartnerCode)").dxSelectBox({
+                     disabled: true,
+                });
+            }
+        }
+    }
+    </script>
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="EmployeeDetailPopup">@(_loc.GetLocalizedString("Employee Detail"))</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-Employee">
+        <div class="modal-body">
+            <div class="row">
+                <div class="form-group col-md-2">
+                    <label for="ProjectCode">@(_loc.GetLocalizedString("Login ID"))</label>
+                    @Html.TextBoxFor(x => x.EmployeeNumber, new { @class = "form-control", @id = "EmployeeNumber" + ViewBag.Thread, @maxlength = "20", @Value = Model.EmployeeNumber })
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="">@(_loc.GetLocalizedString("EmployeeNameKr"))</label>
+                    @Html.TextBoxFor(x => x.EmployeeNameKr, new { @class = "form-control", @id = "EmployeeNameKr" + ViewBag.Thread, @maxlength = "40", @Value = Model.EmployeeNameKr })
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="ProjectName">@(_loc.GetLocalizedString("EmployeeNameEng"))</label>
+                    @Html.TextBoxFor(x => x.EmployeeNameEng, new { @class = "form-control", @id = "EmployeeNameEng" + ViewBag.Thread, @maxlength = "40", @Value = Model.EmployeeNameEng })
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Status"))</label>
+                        <div class="dx-field" id="radioGroupContainer">
+                            @(Html.DevExtreme().RadioGroup()                          
+                                .Items(new[] { _loc.GetLocalizedString("거래"), _loc.GetLocalizedString("중지") })
+                                .Value(_loc.GetLocalizedString("거래"))
+                                .Layout(Orientation.Horizontal)
+                                .ID("RadioGroupUseYN" + ViewBag.Thread)
+                             )
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4" hidden="hidden">
+                    <label>@(_loc.GetLocalizedString("Birhtday"))</label>
+                    @(Html.DevExtreme().DateBox()
+                        .ID("Birthday" + ViewBag.Thread)
+                        .Type(DateBoxType.Date)
+                        .DisplayFormat("yyyy/MM/dd")
+                        .Name("Birthday")
+                    )
+                </div>
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("MobileNumber"))</label>
+                    @Html.TextBoxFor(x => x.MobileNumber, new { @class = "form-control", @id = "txtMobileNumber" + ViewBag.Thread, @maxlength = "15", @Value = Model.MobileNumber })
+                </div>
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Email"))</label>
+                    @Html.TextBoxFor(x => x.Email, new { @class = "form-control", @id = "txtEmail" + ViewBag.Thread, type = "email", @maxlength = "60", @Value = Model.Email })
+                </div>
+
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("Address"))</label>
+                    @Html.TextBoxFor(x => x.Address, new { @class = "form-control", @id = "txtAddress" + ViewBag.Thread, @maxlength = "150", @Value = Model.Address })
+                </div>
+
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("Company Type"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                            .ID(CompanyType)
+                            .DisplayExpr("COD_NM")
+                            .ValueExpr("DTL_CD")
+                            .DataSource(d => d.Mvc().Controller("User").LoadAction("GetListRole")
+                            .Key("DTL_CD"))
+                            .SearchEnabled(true)
+                            .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            .OnValueChanged("CompanyTypeOnValueChanged")
+                            )
+                </div>
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("CountryType"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                            .ID(Countrytype)
+                           // .DataSource(d => d.Mvc().Controller("MESEmployee").LoadAction("GetListCountryType")
+                           // .LoadParams(new { GroupCD = "CTTP00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                           // .OnValueChanged("CountryTypeChange")
+                            .ShowClearButton(true)
+                            .SearchEnabled(true)
+                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                            .Disabled(true)
+                     )
+                </div>
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Company"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(PartnerCode)
+                        .Value(Model.PartnerCode)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                     )
+                </div>
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("Team"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                       .ID(Team)
+                       .SearchEnabled(true)
+                       .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                     )
+                </div>
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("Position"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                       .ID(Position)
+                       .DisplayExpr("BASE_NAME1")
+                       .ValueExpr("BASE_CODE").Value(Model.Level)
+                       .DataSource(d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                       .LoadParams(new { groupCD = "POTI00" })
+                       .Key("BASE_CODE"))
+                       .SearchEnabled(true)
+                       //.DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                    )
+                </div>
+            </div>
+            <div class="form-group col-md-6" hidden="hidden">
+                <label>@(_loc.GetLocalizedString("Company 1"))</label>
+                @Html.TextBoxFor(x => x.Company, new { @class = "form-control", @id = "txtCompany" + ViewBag.Thread, @maxlength = "50", @Value = Model.Company })
+            </div>
+        </div>        
+    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btnSave_@ViewBag.Thread">@(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

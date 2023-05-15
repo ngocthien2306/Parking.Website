@@ -1,0 +1,394 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using Modules.Pleiger.CommonModels;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = ViewBag.PageSetting;
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+    pageSetting.PRINT_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    info = new ToolbarInfo();
+    info.Name = "Delivery";
+    info.ID = "btnDelivery";
+    info.Icon = "<i class='fas fa-truck'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string frmMasterDeliveryStart = "frmMasterDeliveryStart" + ViewBag.Thread;
+    string frmMasterDeliveryEnd = "frmMasterDeliveryEnd" + ViewBag.Thread;
+    string frmMasterUserPONumber = "frmMasterUserPONumber" + ViewBag.Thread;
+    string gridDeliveryMaster = "gridDeliveryMaster" + ViewBag.Thread;
+    string frmDetailDeliveryDate = "frmDetailDeliveryDate" + ViewBag.Thread;
+    string frmDetailPONumber = "frmDetailPONumber" + ViewBag.Thread;
+    string frmDetailPlanDeliveryDate = "frmDetailPlanDeliveryDate" + ViewBag.Thread;
+    string gridDeliveryItems = "gridDeliveryItems" + ViewBag.Thread;
+}
+
+<script>
+    var frmMasterDeliveryStart;
+    var frmMasterDeliveryEnd;
+    var frmMasterUserPONumber;
+    var gridDeliveryMaster;
+    var frmDetailDeliveryDate;
+    var frmDetailPONumber;
+    var frmDetailPlanDeliveryDate;
+    var gridDeliveryItems;
+
+    $(document).ready(function () {
+        frmMasterDeliveryStart = $("#@frmMasterDeliveryStart").dxDateBox('instance');
+        frmMasterDeliveryEnd = $("#@frmMasterDeliveryEnd").dxDateBox('instance');
+        frmMasterUserPONumber = $("#@frmMasterUserPONumber").dxTextBox('instance');
+        gridDeliveryMaster = $("#@gridDeliveryMaster").dxDataGrid('instance');
+        frmDetailDeliveryDate = $("#@frmDetailDeliveryDate").dxDateBox('instance');
+        frmDetailPONumber = $("#@frmDetailPONumber").dxTextBox('instance');
+        frmDetailPlanDeliveryDate = $("#@frmDetailPlanDeliveryDate").dxDateBox('instance');
+        gridDeliveryItems = $("#@gridDeliveryItems").dxDataGrid('instance');
+
+        loadCombobox@(ViewBag.Thread)();
+        searchDelivery@(ViewBag.Thread)();
+    });
+
+    function loadCombobox@(ViewBag.Thread)() {
+        LoadingPage(1);
+
+        @*var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        category.unshift({
+            BASE_CODE: "All",
+            BASE_NAME: "All"
+        });
+
+        $("#@frmCategory").dxSelectBox({
+            dataSource: category,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: "All"
+        });*@
+
+        LoadingPage(0);
+    };
+    function searchDelivery@(ViewBag.Thread)() {
+        LoadingPage(1);
+
+        var masterDeliveryStart = ParsingDateyyyyMMdd(frmMasterDeliveryStart.option("value"));
+        var masterDeliveryEnd = ParsingDateyyyyMMdd(frmMasterDeliveryEnd.option("value"));
+        var masterUserPONumber = frmMasterUserPONumber.option("value");
+
+        if (!ValidateRangeDate(masterDeliveryStart, masterDeliveryEnd)) {
+            LoadingPage(0);
+            gridDeliveryMaster.clearSelection();
+            gridDeliveryMaster.option("dataSource", null);
+            gridDeliveryItems.clearSelection();
+            gridDeliveryItems.option("dataSource", null);
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("SearchPurchaseOrderDelivery", "MESPurchaseOrderDelivery")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                DeliveryStart: masterDeliveryStart,
+                DeliveryEnd: masterDeliveryEnd,
+                UserPONumber: masterUserPONumber
+            },
+            success: function (result) {
+                gridDeliveryMaster.refresh();
+                gridDeliveryMaster.clearSelection();
+                gridDeliveryMaster.option("dataSource", result);
+                gridDeliveryItems.clearSelection();
+                gridDeliveryItems.option("dataSource", null);
+
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                console.log(error);
+                gridDeliveryMaster.clearSelection();
+                gridDeliveryMaster.option("dataSource", null);
+                gridDeliveryItems.clearSelection();
+                gridDeliveryItems.option("dataSource", null);
+
+                LoadingPage(0);
+            }
+        });
+    };
+    function searchDetailDelivery@(ViewBag.Thread)(pONumber) {
+        $.ajax({
+            url: '@Url.Action("SearchDeliveryDetail", "MESPurchaseOrderDelivery")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                PONumber: pONumber
+            },
+            success: function (result) {
+                gridDeliveryItems.clearSelection();
+                gridDeliveryItems.option("dataSource", result);
+                gridDeliveryItems.refresh();
+
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                console.log(error);
+                gridDeliveryItems.clearSelection();
+                gridDeliveryItems.option("dataSource", null);
+
+                LoadingPage(0);
+            }
+        });
+    };
+    function onMasterDeliverySelectionChange@(ViewBag.Thread)(e) {
+        debugger;
+        frmDetailDeliveryDate.option("value", e.selectedRowsData[0].PartnerDeliveryDate);
+        frmDetailPlanDeliveryDate.option("value", e.selectedRowsData[0].PlanDeliveryDate);
+        frmDetailPONumber.option("value", e.selectedRowsData[0].PONumber);
+
+        var selectedPONumber = e.selectedRowsData[0].PONumber;
+        searchDetailDelivery@(ViewBag.Thread)(selectedPONumber);
+    };
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+
+            };
+        });
+    });
+
+    $("#btnDelete_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+
+            };
+        });
+    });
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        searchDelivery@(ViewBag.Thread)();
+    });
+
+    $("#btnPrint_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+
+    });
+
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+    })
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div class="row m-0">
+    <div class="col-md-6" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header p-2">
+                <div class="row m-0">
+                    <div class="col-6 form-group">
+                        <label class="row mr-0 ml-0">@(_loc.GetLocalizedString("Delivery Date"))</label>
+                        <div class="row m-0">
+                            <div class="col-sm-5 col-xs-5">
+                                @(Html.DevExtreme().DateBox()
+                                .ID(frmMasterDeliveryStart)
+                                .Type(DateBoxType.Date)
+                                .Value(DateTime.Now.ToString("yyyy-MM-01"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                                )
+                            </div>
+                            <div style="align-self: center;">~</div>
+                            <div class="col-sm-5 col-xs-5">
+                                @(Html.DevExtreme().DateBox()
+                                .ID(frmMasterDeliveryEnd)
+                                .Type(DateBoxType.Date) 
+                                .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                                )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label class="row mr-0 ml-0" for="@(frmMasterUserPONumber)">@(_loc.GetLocalizedString("User PO Number"))</label>
+                        <div class="row m-0">
+                            @(
+                            Html.DevExtreme()
+                            .TextBox()
+                            .ID(frmMasterUserPONumber)
+                            .Width("100%")
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-1" style="height:100%">
+                <div class="row m-0" style="height:100%">
+                    <div class="col-sm-12 col-xs-12" style="height:100%">
+                        <fieldset class="customFieldset" style="height:100%">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Delivery Master")</legend>
+                            <div class="row w-100 m-0">
+                                @(Html.DevExtreme().DataGrid<MES_PurchaseDeliveryOrder>()
+                                .ID(gridDeliveryMaster)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .Height("70vh")
+                                .Width("100%")
+                                .ColumnAutoWidth(true)
+                                .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Columns(c => {
+                                    c.AddFor(x => x.NO).Caption(_loc.GetLocalizedString("No"))
+                                        .Alignment(HorizontalAlignment.Center);
+                                    c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("PFE PO Number"));
+                                    c.AddFor(x => x.PlanDeliveryDate).Caption(_loc.GetLocalizedString("Plan Delivery Date"))
+                                        .Format("yyyy-MM-dd");
+                                    c.AddFor(x => x.PartnerDeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date"))
+                                        .Format("yyyy-MM-dd");
+                                    c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner"));
+                                    c.AddFor(x => x.Status).Caption(_loc.GetLocalizedString("PO Status"));
+                                })
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(100))
+                                .Pager(pager =>
+                                {
+                                    pager.Visible(true);
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                .OnSelectionChanged("onMasterDeliverySelectionChange" + ViewBag.Thread)
+                                )
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header p-2">
+                <div class="row m-0">
+                    <div class="col-4">
+                        <div class="row m-0">
+                            <div class="col-12 form-group">
+                                <label class="row mr-0 ml-0" for="@frmDetailDeliveryDate">@(_loc.GetLocalizedString("Delivery Date"))</label>
+                                @(Html.DevExtreme().DateBox()
+                                .ID(frmDetailDeliveryDate)
+                                .Type(DateBoxType.Date)
+                                .Value("")
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                                )
+                            </div>
+                            <div class="col-12 form-group">
+                                <label class="row mr-0 ml-0" for="@frmDetailPlanDeliveryDate">@(_loc.GetLocalizedString("Plan Delivery Date"))</label>
+                                @(Html.DevExtreme().DateBox()
+                                .ID(frmDetailPlanDeliveryDate)
+                                .Type(DateBoxType.Date)
+                                .Value("")
+                                .Disabled(true)
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                                )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label class="row mr-0 ml-0" for="@(frmDetailPONumber)">@(_loc.GetLocalizedString("PO Number"))</label>
+                        <div class="row m-0">
+                            @(
+                            Html.DevExtreme()
+                            .TextBox()
+                            .ID(frmDetailPONumber)
+                            .Disabled(true)
+                            .Width("100%")
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-1" style="height:100%">
+                <div class="row" style="height:100%">
+                    <div class="col-sm-12 col-xs-12" style="height:100%">
+                        <fieldset class="customFieldset" style="height:100%">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Delivery Items")</legend>
+                            <div class="row w-100 m-0">
+                                @(Html.DevExtreme().DataGrid<MES_PurchaseDeliveryOrder>()
+                                .ID(gridDeliveryItems)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .Height("70vh")
+                                .Width("100%")
+                                .ColumnAutoWidth(true)
+                                .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Columns(c => {
+                                    c.AddFor(x => x.NO).Caption(_loc.GetLocalizedString("No"))
+                                        .Alignment(HorizontalAlignment.Center);
+                                    c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                                    c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                                    c.AddFor(x => x.ItemUnit).Caption(_loc.GetLocalizedString("Unit"));
+                                    c.AddFor(x => x.TotalPOQty).Caption(_loc.GetLocalizedString("Total PO Qty"))
+                                        .Format(Format.FixedPoint);
+                                    c.AddFor(x => x.DeliveryQty).Caption(_loc.GetLocalizedString("Deliver Qty"))
+                                        .Format(Format.FixedPoint);
+                                    c.AddFor(x => x.PleigerRemark).Caption(_loc.GetLocalizedString("Pleiger Remark"));
+                                })
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(100))
+                                .Pager(pager =>
+                                {
+                                    pager.Visible(true);
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                )
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,350 @@
+﻿@using InfrastructureCore.Models.Identity;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@{
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = null;
+    var currentUser = (SYLoggedUser)ViewBag.CurrentUser;
+    string superAdmin = "G000C001";
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string DataGridUserGroup = "DataGridUserGroup" + ViewBag.Thread;
+}
+
+<script>
+
+    $(function () {
+        LoadingPage(1);
+         
+        CheckSession();
+        if ('@superAdmin' !== '@currentUser.UserType') {
+            var siteID = '@currentUser.SiteID';
+            var treeView = getDataTreeGroupAccessMenuViewInstance();
+            var dataGrid = getDataGridUserGroupInstanceGroupAccess();
+
+            $.ajax({
+                url: '@Url.Action("GetListMenuData", "GroupAccessMenu")',
+                type: "GET",
+                data: { siteID: siteID },
+                dataType: 'json',
+                success: function (result) {
+                    treeView.option("dataSource", result);
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("GetListUserGroupBySite", "GroupAccessMenu")',
+                type: "GET",
+                data: { siteID: siteID },
+                dataType: 'json',
+                success: function (result) {
+                     
+                    dataGrid.option("dataSource", result);
+                }
+            });
+        }
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        RefreshTab(this);
+    });
+
+    function getDataGridUserGroupInstanceGroupAccess() {
+        return $("#@(DataGridUserGroup)").dxDataGrid("instance");
+    }
+
+    function getDataTreeGroupAccessMenuViewInstance() {
+        return $("#treeViewMenuGroupAccess").dxTreeView("instance");
+    }
+
+     
+    function treeViewItemClick1(e) {
+        CheckSession();
+         
+        var dataRow = e.itemData;
+        $('#menuSelected').html(dataRow.MenuName);
+        $.ajax({
+            url: '@Url.Action("GetListUserGroupSeleted", "GroupAccessMenu")',
+            type: "GET",
+            data: { menuId: dataRow.MenuID },
+            dataType: "json",
+            success: function (rs) {
+                 
+                var dataGrid = getDataGridUserGroupInstanceGroupAccess();
+                var data = dataGrid.getDataSource().store()._array;
+                var arrKey = [];
+                $.each(data, function (index1, item1) {
+                     
+                    item1.SearchYN = false;
+                    item1.CreateYN = false;
+                    item1.SaveYN = false;
+                    item1.DeleteYN = false;
+                    item1.EditYN = false;
+                    item1.ExcelYN = false;
+                    item1.PrintYN = false;
+                    //Quan add del, Upload file
+                    item1.DelFileYN = false;
+                    item1.UploadFileYN = false;
+                    //bao add
+                    item1.INVENTORY_YN = false;
+                    item1.PURCHASE_ORDER_YN = false;
+                    item1.EXPORT_EXCEL_ICUBE_YN = false;                   
+
+                    $.each(rs.data, function (index, item) {
+                         
+                        if (item.GROUP_ID === item1.GROUP_ID) {
+                            arrKey.push(item1.GROUP_ID);
+                            item1.SearchYN = item.SEARCH_YN;
+                            item1.CreateYN = item.CREATE_YN;
+                            item1.SaveYN = item.SAVE_YN;
+                            item1.DeleteYN = item.DELETE_YN;
+                            item1.EditYN = item.EDIT_YN;
+                            item1.ExcelYN = item.EXCEL_YN;
+                            item1.PrintYN = item.PRINT_YN;
+                            //Quan add del, Upload file
+                            item1.DelFileYN = item.DELETE_FILE_YN;
+                            item1.UploadFileYN = item.UPLOAD_FILE_YN;
+                            //bao add
+                            item1.INVENTORY_YN = item.INVENTORY_YN;
+                            item1.PURCHASE_ORDER_YN = item.PURCHASE_ORDER_YN;
+                            item1.EXPORT_EXCEL_ICUBE_YN = item.EXPORT_EXCEL_ICUBE_YN;
+
+                        }
+                    })
+                });
+                 
+                dataGrid.option("dataSource", data);
+                setTimeout(function () {
+                    dataGrid.selectRows(arrKey);
+                }, 300);
+            }
+        });
+    }
+
+    $('#btnSave_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        SetUserGroupAccessMenu();
+    });
+
+    // Set User Group access Menu
+    function SetUserGroupAccessMenu() {
+        CheckSession();
+         
+        var treeMenu = getDataTreeGroupAccessMenuViewInstance();
+        if (treeMenu.getSelectedNodes().length == 0) {
+
+            DevExpress.ui.dialog.alert("Please select Menu!", "Error");
+        }
+        else {
+            var menuId = treeMenu.getSelectedNodes()[0].itemData.MenuID;
+            var dataGrid = getDataGridUserGroupInstanceGroupAccess();
+            var data = dataGrid.getSelectedRowsData();
+
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    $.ajax({
+                        url: '@Url.Action("SetUserGroupAccessMenu", "GroupAccessMenu")',
+                        type: "POST",
+                        data: {
+                            data: data,
+                            menuId: menuId,
+                          //  arrMenuIdChildThisParent: arrMenuIdChildThisParent
+                        },
+                        dataType: "json",
+                        success: function (rs) {
+                            if (rs.Success == true) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert("Save Successs", "Success");
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert("Save Fail", "Error");
+                            }
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        }
+    }
+
+    // Set Site in Group access Menu
+    function onSiteChangeGroup(e) {
+        CheckSession();
+        var siteID = e.value;
+        var treeView = getDataTreeGroupAccessMenuViewInstance();
+        var dataGrid = getDataGridUserGroupInstanceGroupAccess();
+
+        $.ajax({
+            url: '@Url.Action("GetListMenuData", "GroupAccessMenu")',
+            type: "GET",
+            data: { siteID: siteID },
+            dataType: 'json',
+            success: function (result) {
+                treeView.option("dataSource", result);
+            }
+        });
+
+        $.ajax({
+            url: '@Url.Action("GetListUserGroupBySite", "GroupAccessMenu")',
+            type: "GET",
+            data: { siteID: siteID },
+            dataType: 'json',
+            success: function (result) {
+                dataGrid.option("dataSource", result);
+            }
+        });
+    }
+
+</script>
+
+@*@await Component.InvokeAsync("AccessToolbar")*@
+@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+<div class="content">
+    <div class="container-fluid">
+        @if (currentUser.UserType == superAdmin)
+        {
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="dx-field">
+                        <div class="dx-field-label">Site</div>
+                        <div class="dx-field-value">
+                            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlSiteGroupAccessMenu")
+                                .DataSource(d => d.Mvc().Controller("Site").LoadAction("GetListData"))
+                                .DisplayExpr("SiteName")
+                                .ValueExpr("SiteID")
+                                .OnValueChanged("onSiteChangeGroup")
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            )
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                </div>
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-3 pl-0">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>@_loc.GetLocalizedString("List Menu Data")</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @(Html.DevExtreme().TreeView()
+                                    .ID("treeViewMenuGroupAccess")
+                                    .KeyExpr("MenuID")
+                                    .DisplayExpr("MenuName")
+                                    .ParentIdExpr("MenuParentID")
+                                    .SelectedExpr("Selected")
+                                    .SelectionMode(NavSelectionMode.Single)
+                                    .SelectByClick(true)
+                                    .ExpandedExpr("Expanded")
+                    
+                                    .Height("100%")
+                                    .SearchEnabled(true)
+                                    .DataStructure(TreeViewDataStructure.Plain)
+                                    .OnItemClick("treeViewItemClick1")
+                                )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9 pr-0">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>@_loc.GetLocalizedString("User Groups")</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @(Html.DevExtreme().DataGrid<SYUserGroups>()
+                                        .ID(DataGridUserGroup)
+                                        .ShowBorders(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .FilterRow(filterRow => filterRow
+                                            .Visible(true)
+                                            .ApplyFilter(GridApplyFilterMode.Auto)
+                                        )
+                                        .Height(600)
+                                        .KeyExpr("GROUP_ID")
+                                        .RepaintChangesOnly(true)
+                                        .ColumnAutoWidth(true)
+                                        .Selection(s => s.Mode(SelectionMode.Multiple).ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always).SelectAllMode(SelectAllMode.AllPages))
+                                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                        .Editing(editing =>
+                                        {
+                                            editing.Mode(GridEditMode.Cell);
+                                            editing.AllowUpdating(true);
+                                        })
+                                        .Columns(columns =>
+                                        {
+                                            columns.AddFor(m => m.GROUP_NAME).Caption(_loc.GetLocalizedString("GroupName")).AllowEditing(false);
+                                            columns.AddFor(m => m.DESCRIPTION).Caption(_loc.GetLocalizedString("Description")).AllowEditing(false);
+                                            columns.AddFor(m=>m.SearchYN).Caption(_loc.GetLocalizedString("SearchYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.CreateYN).Caption(_loc.GetLocalizedString("CreateYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.SaveYN).Caption(_loc.GetLocalizedString("SaveYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.DeleteYN).Caption(_loc.GetLocalizedString("DeleteYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.EditYN).Caption(_loc.GetLocalizedString("EditYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.ExcelYN).Caption(_loc.GetLocalizedString("ExcelYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.PrintYN).Caption(_loc.GetLocalizedString("PrintYN")).DataType(GridColumnDataType.Boolean);
+                                            // Quan add del, Upload file  2020/08/18
+                                            columns.AddFor(m => m.DelFileYN).Caption(_loc.GetLocalizedString("DelFileYN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.UploadFileYN).Caption(_loc.GetLocalizedString("UploadFileYN")).DataType(GridColumnDataType.Boolean);
+                                            //bao add
+                                            columns.AddFor(m => m.INVENTORY_YN).Caption(_loc.GetLocalizedString("INVENTORY_YN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.PURCHASE_ORDER_YN).Caption(_loc.GetLocalizedString("PURCHASE_ORDER_YN")).DataType(GridColumnDataType.Boolean);
+                                            columns.AddFor(m => m.EXPORT_EXCEL_ICUBE_YN).Caption(_loc.GetLocalizedString("EXPORT_EXCEL_ICUBE_YN")).DataType(GridColumnDataType.Boolean);
+                                            
+                                        })
+                                        .HeaderFilter(f => f.Visible(true))
+                                    //.Paging(paging => paging.PageSize(20))
+                                    //.Pager(pager =>
+                                    //{
+                                    //    pager.ShowPageSizeSelector(false);
+                                    //    pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                                    //    pager.ShowInfo(true);
+                                    //})
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

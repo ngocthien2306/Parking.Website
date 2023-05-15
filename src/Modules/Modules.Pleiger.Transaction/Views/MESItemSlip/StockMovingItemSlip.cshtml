@@ -1,0 +1,1305 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using Modules.Pleiger.CommonModels;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.SEARCH_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string WarehouseFromSearchDDL = "WarehouseFromSearch" + ViewBag.Thread;
+    string WarehouseToSearchDDL = "WarehouseToSearchDDL" + ViewBag.Thread;
+
+}
+
+<script>
+    var SlipNumberSlt = null;
+    var PONumberSlt = null;
+    var poNumberSlt = null;
+    var partnerCodeSlt = null;
+    var flagCRUD = null;
+    var WareHouseFromCode = "";
+    var ItemCodeinRow = "";
+    var editingGrid = "Update";
+
+    // Page start
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        pageStart();
+        ResizeStockMovingItem();
+        LoadingPage(0);
+
+    });
+
+    function getParamsStartDateSearch() {
+        var value = $("#startDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        return ParsingDateyyyyMMdd(value);
+        }
+
+    function getParamsEndDateSearch() {
+        var value = $("#endDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        return ParsingDateyyyyMMdd(value);
+        }
+
+    function getParamsStatusSearch() {
+        return $("#ddlStatus@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    }
+
+    function getParamsFromWHSearch() {
+        return $("#WarehouseFromSearch@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    }
+
+    function getParamsToWHSearch() {
+        return $("#WarehouseToSearchDDL@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    }
+
+    function getParamsSlipNumberSlt() {
+        return SlipNumberSlt;
+    }
+
+    function getParamsPoNumberSlt() {
+        return PONumberSlt;
+    }
+
+    function getParamsPartnerCodeSlt() {
+        return partnerCodeSlt;
+    }
+
+    function ShowDataItemSlipDetailStockMoving(e) {
+        LoadingPage(1);
+        debugger
+        let WarehouseFrom = $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+
+        CheckSession();
+        @*var datadelete = e.data;
+        if (typeof datadelete !== 'undefined') {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        }*@
+
+        editingGrid = "Update";
+        // disabled Button Save
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+
+        //let data = e.data;
+        //var slipNumberSelect = e.data.SlipNumber;
+        //SlipNumberSlt = slipNumberSelect;
+        //PONumberSlt = e.data.RelNumber;
+        //partnerCodeSlt = e.data.PartnerCode;
+
+
+        var slipNumberSelect = $(e).attr("data-SlipNumber").trim();
+        SlipNumberSlt = slipNumberSelect;
+        PONumberSlt = $(e).attr("data-RelNumber").trim();
+        partnerCodeSlt = $(e).attr("data-PartnerCode").trim();
+
+        $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid({
+            //disabled: true,
+            editing: {
+                mode: "batch",
+                allowUpdating: false,
+                allowAdding: false,
+                allowDeleting: false,
+            },
+            onToolbarPreparing: function (e) {
+                debugger;
+                let toolbarItems = e.toolbarOptions.items;
+
+                toolbarItems.forEach(function (item, index) {
+                    if (item.name == "saveButton") {
+                        toolbarItems.splice(index, 1);
+                    }
+
+                    if (item.name == "addRowButton") {
+                        //item.options.disabled = true;
+                        item.options.visible = false;
+
+                    }
+                })
+                toolbarItems.unshift(
+                    {
+                        //visible: true,
+                        disabled: true,
+                        widget: "dxButton",
+                        options: {
+                            text: "@_loc.GetLocalizedString("Add item")",
+                            onClick: function () {
+                                $.ajax({
+                                    url: '@Url.Action("StockMovingItemSlipGetItem", "MESItemSlip")',
+                                    type: "GET",
+                                    data: {
+                                        WareHouseCode: WareHouseFromCode,
+                                        vbThread: '@ViewBag.Thread',
+                                    },
+                                    dataType: "html",
+                                    success: function (result) {
+                                        // parent popup
+                                        $("#modalContent").html(result);
+                                        $("#modalContent").addClass("modal-xl");
+                                        $('#modalControl').modal('show');
+                                    }
+                                });
+                            },
+                            icon: "fa fa-plus"
+                        },
+                        location: "after"
+                    }
+                );
+            }
+
+        });
+
+        flagCRUD = "Edit";
+        //Show form detail
+        SetDataFormDetail(e);
+
+        $.ajax({
+            url: '@Url.Action("GetListMovingStockItemDetail", "MESItemSlip")',
+            type: "GET",
+            data:
+            {
+                slipNumber: slipNumberSelect
+            },
+            dataType: 'json',
+            success: function (result)
+            {
+                LoadingPage(0);
+                debugger;
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#Remark@(ViewBag.Thread)").prop("disabled", true);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        LoadingPage(0);
+    }
+
+    function SetDataFormDetail(e) {
+        debugger;
+        let SlipNumber = $(e).attr("data-SlipNumber").trim();
+        //let RelNumber = $(e).attr("data-RelNumber").trim();
+        //let PartnerCode = $(e).attr("data-PartnerCode").trim();
+        let WHFromCode = $(e).attr("data-WHFromCode").trim();
+        let WHToCode = $(e).attr("data-WHToCode").trim();
+        //let PartnerName = $(e).attr("data-PartnerName").trim();
+        let Remark = $(e).attr("data-Remark").trim();
+        let SlipYMD = $(e).attr("data-SlipYMD").trim();
+        //let UserPONumber = $(e).attr("data-UserPONumber").trim();
+        //let UserProjectCode = $(e).attr("data-UserProjectCode").trim();
+
+        $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value", WHFromCode);
+        $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("value", WHToCode);
+        $("#SlipNumber@(ViewBag.Thread)").dxTextBox("instance").option("value", SlipNumber);
+        $("#Remark@(ViewBag.Thread)").val(Remark != null ? Remark : "");
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(SlipYMD));
+    }
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+            CheckSession();
+            RefreshTab(this);
+        });
+
+    // search
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+            CheckSession();
+            pageStart();
+            clearGridItemSlipDtl();
+            if (ValidateRangeDate(getParamsStartDateSearch(), getParamsEndDateSearch())) {
+                SearchAllData();
+            }
+        });
+
+    // create
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+            CheckSession();
+            //set mask button
+            clearInputForm();
+            clearGridItemSlipDtl();
+            GetItemSlipMasterKey();
+            SearchAllDataDetail();
+            flagCRUD = "Insert";
+            editingGrid = "Create";
+
+
+    });
+
+    function FunctionCheckQty(value) {
+            CheckSession();
+            debugger;
+            var CheckQTy = true;
+            if (ItemCodeinRow != "") {
+                $.ajax({
+                    url: '@Url.Action("GetItemInWareHousebyItemCode", "MESItem")',
+                    type: "GET",
+                    async: false,
+                    data: {
+                        WareHouseCode: WareHouseFromCode,
+                        ItemCode: ItemCodeinRow
+                    },
+                    dataType: 'json',
+
+                    success: function (result) {
+                        if (result != null && result.data.length > 0) {
+                            if (value > result.data[0].RealQty) {
+                                debugger
+                                DevExpress.ui.dialog.alert("Qty input cannot higher than Stock Qty.", "Error");
+                                CheckQTy = false;
+
+                            }
+                            else {
+                                CheckQTy = true
+                            }
+                        }
+                        else {
+                            CheckQTy = false;
+                            DevExpress.ui.dialog.alert("Item in From stock must be larger than zero.", "Error");
+
+                        }
+                    }
+                });
+
+            }
+            return CheckQTy
+        }
+
+     function FunctionCheckQtySaveData(listItemSlipDetail) {
+            $.ajax({
+                url: '@Url.Action("CheckQtyInputItemSlipDetail", "MESItemSlip")',
+                type: "GET",
+                async: false,
+                data:
+                {
+                    itemSlipDetail: JSON.stringify(listItemSlipDetail)
+
+                },
+                dataType: 'json',
+                success: function (result) {
+                    LoadingPage(0);
+                    if (result != null) {
+                        DevExpress.ui.dialog.alert("Qty input cannot higher than Stock Qty.", "Error");
+                        CheckQTy = false;
+                    }
+
+
+                    else
+                    {
+                        CheckQTy = true;
+
+                    }
+                }
+            });
+            return CheckQTy;
+        }
+
+     // save
+     $('#btnSave_@ViewBag.Thread').on("click", function () {
+            LoadingPage(1);
+            CheckSession();
+            if (ValidateInputForm()) {
+                // Form Master
+                let itemSlipMaster = {
+                    SlipNumber: $("#SlipNumber@(ViewBag.Thread)").dxTextBox("instance").option("value"),
+                    SlipYMD: $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value"),
+                    SlipType: '11',
+                    WHFromCode: $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                    WHToCode: $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                    Remark: $("#Remark@(ViewBag.Thread)").val(),
+                };
+                debugger;
+                var gridItemSlipDetailData = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance').getVisibleRows();
+
+                //Get data listItemRequest
+                let listItemSlipDetail = [];
+                // Remove row if ItemCode = null
+                $.each(gridItemSlipDetailData, function (index, item) {
+                    if (gridItemSlipDetailData[index].removed == undefined && gridItemSlipDetailData[index].data.ItemCode != null && gridItemSlipDetailData[index].data.ItemCode != "" && gridItemSlipDetailData[index].data.ItemCode != undefined) {
+                        listItemSlipDetail.push(item.data)
+                    }
+                });
+                debugger;
+
+
+                if (listItemSlipDetail.length == 0) {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert('Please Input data Item Slip Detail', "Error");
+                    return;
+                }
+
+                //Quan Add check Qty input Item Slip Detail
+                if (FunctionCheckQtySaveData(listItemSlipDetail) == true) {
+
+                    var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+                    result.done(function (dialogResult) {
+                        if (dialogResult) {
+                            $.blockUI();
+
+                            $.ajax({
+                                url: '@Url.Action("SaveMovingStockItem", "MESItemSlip")',
+                                type: 'POST',
+                                async: false,
+                                data: {
+                                    flag: flagCRUD,
+                                    itemSlipMaster: JSON.stringify(itemSlipMaster),
+                                    itemSlipDetail: JSON.stringify(listItemSlipDetail)
+                                },
+                                dataType: 'json',
+                                success: function (result) {
+                                    if (result.Success) {
+                                        LoadingPage(0);
+                                        DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                            pageStart();
+                                            clearGridItemSlipDtl();
+                                            SearchAllData();
+                                            $.unblockUI();
+                                        });
+                                    }
+                                    else {
+                                        LoadingPage(0);
+                                        $.unblockUI();
+                                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                                    }
+                                }, error: function (result) {
+                                    LoadingPage(0);
+                                    return;
+                                }
+                            });
+                        }
+                        else
+                        {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                }
+            }
+            LoadingPage(0);
+        });
+
+    // delete
+     $('#btnDelete_@ViewBag.Thread').on("click", function () {
+            LoadingPage(1);
+            CheckSession();
+            debugger;
+            var dataGridMst = $('#gridItemSlipMst@(ViewBag.Thread)').dxDataGrid('instance');
+            var dataGridDtl = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance');
+            var dataMst = dataGridMst.getSelectedRowsData();
+            var dataDtl = dataGridDtl.getSelectedRowsData();
+            if ((typeof dataMst !== 'undefined' && dataMst.length >= 0) || (typeof dataDtl !== 'undefined' && dataDtl.length >= 0))
+            {
+                var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+                result.done(function (dialogResult) {
+                    if (dialogResult) {
+                        $.ajax({
+                            url: '@Url.Action("DeleteMovingStockItem", "MESItemSlip")',
+                            type: "POST",
+                            data: { dataMst: dataMst, dataDtl: dataDtl },
+                            dataType: "json",
+                            success: function (rs) {
+                                if (rs.Success == true) {
+                                    LoadingPage(0);
+                                    DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                        pageStart();
+                                        clearGridItemSlipDtl();
+                                        SearchAllData();
+                                        $.unblockUI();
+                                    });
+                                }
+                                else {
+                                    LoadingPage(0);
+                                    $.unblockUI();
+                                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                                }
+                            }, error: function (result) {
+                                LoadingPage(0);
+                                return;
+                            }
+                        });
+                    } else {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+                LoadingPage(0);
+            }
+            else {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Please make sure data are changed.", "Warning");
+
+            }
+        });
+
+    function GridItemSlipMstSelectionChanged(selectedItems) {
+        debugger;
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        }
+    }
+
+    function GridItemSlipDtlSelectionChanged(selectedItems) {
+        debugger;
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        }
+    }
+
+    function ValidateInputForm() {
+        debugger;
+
+    // WarehouseFrom
+    let WarehouseFrom = $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    if (WarehouseFrom == null || WarehouseFrom == undefined || WarehouseFrom == "") {
+        DevExpress.ui.dialog.alert("Please select warehouse from!", "Error");
+        return false;
+    }
+
+    // WarehouseTo
+    let WarehouseTo = $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    if (WarehouseTo == null || WarehouseTo == undefined || WarehouseTo == "") {
+        DevExpress.ui.dialog.alert("Please select warehouse to!", "Error");
+        return false;
+    }
+    // WarehouseFrom = WarehouseFrom
+    if (WarehouseFrom == WarehouseTo) {
+        DevExpress.ui.dialog.alert("WarehouseFrom must not be the same WarehouseTo !", "Error");
+        DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("WarehouseFrom must not be the same WarehouseTo!")", "Error");
+
+        return false;
+    }
+
+    return true;
+}
+
+    function clearInputForm() {
+    WareHouseFromCode = "";
+    $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+    $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+    $("#Remark@(ViewBag.Thread)").prop("disabled", false);
+    $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+
+    $("#SlipNumber@(ViewBag.Thread)").dxTextBox("instance").option("value", null);
+    $("#Remark@(ViewBag.Thread)").val(null);
+    $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", new Date());
+    $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+    $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+}
+
+    function pageStart() {
+        debugger;
+        $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#Remark@(ViewBag.Thread)").prop("disabled", true);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+
+        $("#Remark@(ViewBag.Thread)").val(null);
+        $("#SlipNumber@(ViewBag.Thread)").dxTextBox("instance").option("value", null);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '');
+        $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+        $("#WarehouseTo@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+
+        //set mask button
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+
+    }
+
+    function clearGridItemSlipDtl() {
+
+        debugger;
+        var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+        grid.option("dataSource", null);
+        grid.refresh();
+    }
+
+    function createGridItemSlipDtlByPONumber() {
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("CreateGridItemSlipDtlByPONumber", "MESItemSlip")',
+                type: "GET",
+                data: {
+                    poNumber: poNumberSlt
+                },
+                dataType: 'json',
+                success: function (result) {
+                    var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                }
+            });
+        }
+
+    function isNotEmpty(value) {
+        return value !== undefined && value !== null && value !== "";
+    }
+
+    function SearchAllData() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListMovingStockItem", "MESItemSlip")',
+            type: "GET",
+            data: {
+                startDate: getParamsStartDateSearch(),
+                endDate: getParamsEndDateSearch(),
+                status: getParamsStatusSearch(),
+                fromWH: getParamsFromWHSearch(),
+                toWH: getParamsToWHSearch()
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipMst@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    function SearchAllDataDetail() {
+        CheckSession();
+        //let WarehouseFrom = $("#WarehouseFrom@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+
+        $.ajax({
+            url: '@Url.Action("GetListMovingStockItemDetail", "MESItemSlip")',
+            type: "GET",
+            data: {
+                slipNumber: null
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+                $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid({
+                    editing: {
+                        mode: "batch",
+                        allowUpdating: true,
+                        allowAdding: true,
+                        //allowDeleting: true,
+                    },
+                    onToolbarPreparing: function (e) {
+                        let toolbarItems = e.toolbarOptions.items;
+                        toolbarItems.forEach(function (item, index) {
+                            if (item.name == "saveButton") {
+                                toolbarItems.splice(index, 1);
+                            }
+
+                            if (item.name == "addRowButton") {
+                                //item.options.disabled = true;
+                                item.options.visible = false;
+                            }
+                        })
+                        toolbarItems.unshift(
+                            {
+                                //visible: true,
+                                disabled: true,
+                                widget: "dxButton",
+                                options: {
+                                    text: "@_loc.GetLocalizedString("Add item")",
+                                    onClick: function () {
+                                        $.ajax({
+                                            url: '@Url.Action("StockMovingItemSlipGetItem", "MESItemSlip")',
+                                            type: "GET",
+                                            data: {
+                                                WareHouseCode: WareHouseFromCode,
+                                                vbThread: '@ViewBag.Thread',
+                                            },
+                                            dataType: "html",
+                                            success: function (result) {
+                                                // parent popup
+                                                $("#modalContent").html(result);
+                                                $("#modalContent").addClass("modal-xl");
+                                                $('#modalControl').modal('show');
+                                            }
+                                        });
+                                    },
+                                    icon: "fa fa-plus"
+                                },
+                                location: "after"
+                            }
+                        );
+                    }
+                }).dxDataGrid("instance");
+            }
+        });
+    }
+
+    function GetItemSlipMasterKey() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetItemSlipMasterKey", "MESItemSlip")',
+            type: "GET",
+            data: {},
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                $("#SlipNumber@(ViewBag.Thread)").dxTextBox("instance").option("value", result);
+            }
+        });
+    }
+
+    function gridItemSlipDtlOnCellPrepared(e) {
+        if (e.rowType == 'data' && e.column.dataField == 'POQty') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+        }
+    }
+
+    function gridItemSlipDtlOnRowRemoved(e) {
+        debugger;
+        //flagCRUD = "Delete";
+        var listDel = [];
+        listDel.push(e.data);
+        console.log(listDel);
+    }
+
+    function setItemCodeRefer@(ViewBag.Thread)(newData, value, currentRowData) {
+        return GetDataReferByItemCode@(ViewBag.Thread)(value).done(function (data) {
+            debugger;
+            // set value to current column
+            newData.ItemCode = value; // column with combobox
+            newData.ItemName = data.NameKor; // column with combobox
+            //list columns refer
+            newData.Unit = data.Unit;
+        });
+    }
+
+    function GetDataReferByItemCode@(ViewBag.Thread)(value) {
+        var promise = $.ajax({
+            // URL return data addon combobox
+            url: '@Url.Action("GetDataReferByItemCode", "MESItem")',
+            dataType: "json",
+            data: {
+                itemCode: value
+            }
+        });
+        return promise;
+    }
+
+    function OnValueChangedWarehouseFrom(data) {
+            debugger;
+            CheckSession();
+            if (data.value != "") {
+                clearGridItemSlipDtl();
+                //GetItemSlipMasterKey();
+                $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+                $.ajax({
+                    url: '@Url.Action("GetListMovingStockItemDetail", "MESItemSlip")',
+                    type: "GET",
+                    data: {
+                        slipNumber: null
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                        grid.option("dataSource", result.data);
+                        grid.refresh();
+                        if (editingGrid == "Create") {
+                            $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid({
+                                disabled: false,
+                                editing: {
+                                    mode: "batch",
+                                    allowUpdating: true,
+                                    allowAdding: true,
+                                    //allowDeleting: true,
+                                },
+                                onToolbarPreparing: function (e) {
+                                    let toolbarItems = e.toolbarOptions.items;
+
+                                    toolbarItems.forEach(function (item, index) {
+                                        if (item.name == "saveButton") {
+                                            toolbarItems.splice(index, 1);
+                                        }
+
+                                        if (item.name == "addRowButton") {
+                                            //item.options.disabled = true;
+                                            item.options.visible = false;
+
+                                        }
+                                    })
+                                    toolbarItems.unshift(
+                                        {
+                                            //visible: false,
+                                            disabled: false,
+                                            widget: "dxButton",
+                                            options: {
+                                                text: "@_loc.GetLocalizedString("Add item")",
+                                                onClick: function () {
+                                                    $.ajax({
+                                                        url: '@Url.Action("StockMovingItemSlipGetItem", "MESItemSlip")',
+                                                        type: "GET",
+                                                        data: {
+                                                            WareHouseCode: WareHouseFromCode,
+                                                            vbThread: '@ViewBag.Thread',
+                                                        },
+                                                        dataType: "html",
+                                                        success: function (result) {
+                                                            // parent popup
+                                                            $("#modalContent").html(result);
+                                                            $("#modalContent").addClass("modal-xl");
+                                                            $('#modalControl').modal('show');
+                                                        }
+                                                    });
+                                                },
+                                                icon: "fa fa-plus"
+                                            },
+                                            location: "after"
+                                        }
+                                    );
+                                }
+                            }).dxDataGrid("instance");
+                        }
+
+                    }
+                });
+
+                flagCRUD = "Insert";
+                debugger;
+                var WareHouseFrom = data.value;
+                WareHouseFromCode = data.value;
+                $.ajax({
+                    url: '@Url.Action("GetItemInWareHouse", "MESItem")',
+                    type: "GET",
+                    data: { WareHouseCode: WareHouseFromCode },
+                    dataType: 'json',
+                    success: function (result) {
+                    }
+                });
+            }
+            @*else {
+                $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid({
+                    disabled: false,
+                    editing: {
+                        mode: "Cell",
+                        allowUpdating: true,
+                        allowAdding: true,
+                        //allowDeleting: true,
+                    },
+                    onToolbarPreparing: function (e) {
+                        let toolbarItems = e.toolbarOptions.items;
+
+                        toolbarItems.forEach(function (item, index) {
+                            if (item.name == "saveButton") {
+                                toolbarItems.splice(index, 1);
+                            }
+
+                            if (item.name == "addRowButton") {
+                                //item.options.disabled = true;
+                                item.options.visible = false;
+
+                            }
+                        })
+                        toolbarItems.unshift(
+                            {
+                                disabled: true,
+                                widget: "dxButton",
+                                options: {
+                                    text: "@_loc.GetLocalizedString("Add item")",
+                                    icon: "fa fa-plus"
+                                },
+                                location: "after"
+                            }
+                        );
+                    }
+
+                })
+            }*@
+    }
+
+    function validateQtyInputNumber(Index, value) {
+        debugger;
+        if (value != null && value != undefined)
+        {
+            if (value > 0)
+            {
+                var CheckQTy = FunctionCheckQty(value);
+                if (CheckQTy) {
+                    Index.Qty = value;
+                        $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+
+                }
+                else
+                {
+                    Index.Qty = 1;
+                        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+
+                }
+            }
+            else
+            {
+                DevExpress.ui.dialog.alert("Request quantity must not be less than 1", "Error");
+                $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+                        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+
+
+            }
+
+        }
+
+    }
+
+    function FunctionCheckQty(value) {
+            CheckSession();
+            debugger;
+            var CheckQTy = true;
+            if (ItemCodeinRow != "") {
+                $.ajax({
+                    url: '@Url.Action("GetItemInWareHousebyItemCode", "MESItem")',
+                    type: "GET",
+                    async: false,
+                    data: {
+                        WareHouseCode: WareHouseFromCode,
+                        ItemCode: ItemCodeinRow
+                    },
+                    dataType: 'json',
+
+                    success: function (result) {
+                        if (result != null && result.data.length > 0) {
+                            if (value > result.data[0].RealQty) {
+                                debugger
+                                DevExpress.ui.dialog.alert("Qty input cannot higher than Stock Qty.", "Error");
+                                CheckQTy = false;
+
+                            }
+                            else {
+                                CheckQTy = true
+                            }
+                        }
+                        else {
+                            CheckQTy = false;
+                            DevExpress.ui.dialog.alert("Item in From stock must be larger than zero.", "Error");
+
+                        }
+                    }
+                });
+
+            }
+            return CheckQTy
+        }
+
+    function getParamsWHFromCode() {
+        return WareHouseFromCode;
+    }
+
+    function SetCellValueItemSlipDetail(index, data) {
+        debugger;
+        index.ItemCode = data;
+        ItemCodeinRow = data;
+    }
+
+    function NewRowItemSlipDetail() {
+
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+    }
+
+    $(window).resize(function () {
+        ResizeStockMovingItem();
+    });
+
+    var setintervalStockMovingItem = setInterval(IntervalStockMovingItem, 25);
+    var demmStockMovingItem = 0;
+
+    function IntervalStockMovingItem() {
+        ++demmStockMovingItem;
+        //console.log(demmStockMovingItem);
+
+
+
+        if (demmStockMovingItem == 100) {
+            clearInterval(setintervalStockMovingItem);
+        }
+        else {
+            ResizeStockMovingItem();
+        }
+    }
+    //setInterval(function () {
+    //    //console.log("setInterval production request change");
+    //    ResizeStockMovingItem();
+
+    //}, 25);
+    function ResizeStockMovingItem() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                ReCalResize("bdpage_@(ViewBag.Thread)", "ID", "rowright_@(ViewBag.Thread)", "hdpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+
+    function toolbar_preparing(e) {
+
+
+        let toolbarItems = e.toolbarOptions.items;
+
+        toolbarItems.forEach(function (item, index)
+        {
+            if (item.name == "saveButton") {
+                toolbarItems.splice(index, 1);
+            }
+            if (item.name == "addRowButton")
+            {
+                item.options.visible = false;
+            }
+        })
+        toolbarItems.unshift(
+            {
+                disabled: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Add item")",
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+            );
+    }
+
+    function SetColorRowIsReturn(e) {
+        debugger;
+        if (e.rowType === "data" && e.column.dataField == 'Qty') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+        }
+    }
+</script>
+
+@{
+    string idStatusDDL = "ddlStatus" + ViewBag.Thread;
+    string gridItemSlipMst = "gridItemSlipMst" + ViewBag.Thread;
+    string gridItemSlipDtl = "gridItemSlipDtl" + ViewBag.Thread;
+    string PONumberDDL = "PONumber" + ViewBag.Thread;
+    string WarehouseFromDDL = "WarehouseFrom" + ViewBag.Thread;
+    string WarehouseToDDL = "WarehouseTo" + ViewBag.Thread;
+}
+
+<div>
+    <div id="menutoolbar_@(ViewBag.Thread)">
+        @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+    </div>
+
+
+    <div class="row" id="divindex_@(ViewBag.Thread)">
+        <div class="col-md-6" style="height:100%">
+            <div class="card" id="headerpage_@(ViewBag.Thread)">
+                <div class="card-body p-2">
+                    <div class="row">
+                        <div class="col-xs-12 col-md-6">
+                            <label>@(_loc.GetLocalizedString("Slip Date"))</label>
+                            <div class="form-group row">
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID("startDate"+ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1))
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                        )
+                                </div>
+                                <div style="align-self: center;">~</div>
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID("endDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value(DateTime.Now)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                        )
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-md-2" hidden="hidden">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Status"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                                    .ID(idStatusDDL)
+                                    //.DataSource(d=>d.Mvc().Controller("MESProductionRequest").LoadAction("GetListCommonCode").LoadParams(new { groupCode="RQTP00"}))
+                                    .DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE")
+                                )
+                            </div>
+                        </div>
+                        <div class="col-xs-12  col-md-3">
+                            <div class="form-group">
+                                <label for="FromWHSearch">@(_loc.GetLocalizedString("WarehouseFrom"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                                        .ID(WarehouseFromSearchDDL)
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                        .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                            .LoadAction("GetAllPleigerWH")
+                                            .Key("ID")
+                                        )
+                                        .SearchEnabled(true)
+                                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                        .OnValueChanged("OnValueChangedWarehouseFrom")
+                                                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group">
+                                <label for="ToWHSearch">@(_loc.GetLocalizedString("WarehouseTo"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                                        .ID(WarehouseToSearchDDL)
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                        .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                            .LoadAction("GetAllPleigerWH")
+                                            .Key("ID")
+                                        )
+                                        .SearchEnabled(true)
+                                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="bodypage_@(ViewBag.Thread)">
+                <div class="card-body p-1" style="height:100%">
+                    <div class="row" style="height:100%">
+                        <div class="col-sm-12 col-xs-12" style="height:100%">
+                            <fieldset class="customFieldset" style="height:100%">
+                                <legend class="customLegend">@_loc.GetLocalizedString("ItemSlipMaster")</legend>
+                                @(Html.DevExtreme().DataGrid<MES_ItemSlipMaster>()
+                                .ID(gridItemSlipMst)
+                                .DataSource(
+                                    x=>x.Mvc().Controller("MESItemSlip")
+                                    .LoadAction("GetListMovingStockItem").LoadParams(new
+                                    {
+                                        startDate = new JS("getParamsStartDateSearch"),
+                                        endDate = new JS("getParamsEndDateSearch"), status = new JS("getParamsStatusSearch"),
+                                        fromWH = new JS("getParamsFromWHSearch"), toWH = new JS("getParamsToWHSearch")
+                                    })
+                                    .Key("SlipNumber")
+                                )
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .ColumnAutoWidth(true).Height("100%")
+                                //.HeaderFilter(f => f.Visible(true))
+                                .Selection(s => s.Mode(SelectionMode.Multiple)
+                                        .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                        .SelectAllMode(SelectAllMode.AllPages))
+                                .Columns(c=> {
+                                    c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                                    c.AddFor(x => x.SlipNumber).Caption(_loc.GetLocalizedString("SlipNumber"))
+                                     .CellTemplate
+                                     (
+                                        @<text>
+                                                <a href="#" onclick="ShowDataItemSlipDetailStockMoving(this)"
+                                                   data-SlipNumber ="<%-data.SlipNumber%>"
+                                                   data-RelNumber ="<%-data.RelNumber%>"
+                                                   data-PartnerCode ="<%-data.PartnerCode%>"
+                                                   data-WHFromCode ="<%-data.WHFromCode%>"
+                                                   data-WHToCode ="<%-data.WHToCode%>"
+                                                   data-PartnerName ="<%-data.PartnerName%>"
+                                                   data-Remark ="<%-data.Remark%>"
+                                                   data-SlipYMD ="<%-data.SlipYMD%>"                                               
+                                                   data-CheckedGoodsReturn ="<%-data.CheckedGoodsReturn%>"
+                                                >
+                                                    <%-data.SlipNumber%>
+                                                </a>
+                                        </text>
+                                     );
+                                    c.AddFor(x => x.SlipYMD).Caption(_loc.GetLocalizedString("Slip Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                    c.AddFor(x => x.RelNumber).Caption(_loc.GetLocalizedString("PO Number")).Visible(false);
+                                    c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code")).Visible(false);
+                                    c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name")).Visible(false);
+                                    c.AddFor(x => x.WHFromName).Caption(_loc.GetLocalizedString("WarehouseFrom")).Visible(true);// Pleiger
+                                    c.AddFor(x => x.WHToName).Caption(_loc.GetLocalizedString("WarehouseTo")).Visible(true);// Pleiger
+                                    c.AddFor(x => x.WHToCode).Caption(_loc.GetLocalizedString("WarehouseTo")).Visible(false);
+                                    c.AddFor(x => x.WHFromCode).Caption(_loc.GetLocalizedString("Warehouse Partner")).Visible(false);
+                                    c.AddFor(x => x.UserCreated).Caption(_loc.GetLocalizedString("User Moving Stock")).Visible(true);
+                                })
+                                .RemoteOperations(true)
+                                .Scrolling(s => s
+                                    .Mode(GridScrollingMode.Standard)
+                                )
+                                .Paging(p => p.PageSize(100))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                //.OnRowClick("ShowDataItemSlipDetailStockMoving")
+                                .OnSelectionChanged("GridItemSlipMstSelectionChanged")
+                            )
+                            </fieldset>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6" style="height:100%">
+            <div class="card" id="ReadOnlyDiv" style="height:100%">
+                <div class="card-body p-1" style="height:100%">
+                    <div class="row" style="height:100%">
+                        <div class="col-sm-12 col-xs-12" style="height:100%">
+                            <div class="row" style="height:100%" id="rowright_@(ViewBag.Thread)">
+                                <div class="col-12" id="hdpage_@(ViewBag.Thread)">
+                                    <fieldset class="customFieldset" style="height:100%">
+                                        <legend class="customLegend">@_loc.GetLocalizedString("ItemSlipMaster")</legend>
+                                        <div class="form-group row">
+                                            <div class="form-group col-md-3">
+                                                <label for="SlipNumber">@(_loc.GetLocalizedString("SlipNumber"))</label>
+                                                @(Html.DevExtreme().TextBox().Disabled(true).ID("SlipNumber" + ViewBag.Thread)
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="SlipDate">@(_loc.GetLocalizedString("Slip Date"))</label>
+                                                @(Html.DevExtreme().DateBox().ID("SlipDate" + ViewBag.Thread)
+                                                    .Type(DateBoxType.Date).DisplayFormat("yyyy-MM-dd")
+                                                    .MaxLength(10)
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="WHPleigerName">@(_loc.GetLocalizedString("WarehouseFrom"))</label>
+                                                @(Html.DevExtreme().SelectBox()
+                                                            .ID(WarehouseFromDDL)
+                                                            .DisplayExpr("Name")
+                                                            .ValueExpr("ID")
+                                                            .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                                                //.LoadAction("GetAllPleigerMaterialWarehouse")
+                                                                .LoadAction("GetAllPleigerWH")
+                                                                .Key("ID")
+                                                            )
+                                                            .OnValueChanged("OnValueChangedWarehouseFrom")
+                                                            .SearchEnabled(true)
+                                                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="WHPleigerName">@(_loc.GetLocalizedString("WarehouseTo"))</label>
+                                                @(Html.DevExtreme().SelectBox()
+                                                            .ID(WarehouseToDDL)
+                                                            .DisplayExpr("Name")
+                                                            .ValueExpr("ID")
+                                                            .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                                                //.LoadAction("GetAllPleigerMaterialWarehouse")
+                                                                .LoadAction("GetAllPleigerWH")
+                                                                .Key("ID")
+                                                            )
+                                                            .SearchEnabled(true)
+                                                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                                )
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="form-group col-md-12">
+                                                <label for="Remark">@(_loc.GetLocalizedString("Remark"))</label>
+                                                <input type="text" class="form-control" id="Remark@(ViewBag.Thread)">
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                                <div class="col-12" id="bdpage_@(ViewBag.Thread)">
+                                    <fieldset class="customFieldset" style="height:100%">
+                                        <legend class="customLegend">@(_loc.GetLocalizedString("ItemSlipDetail"))</legend>
+                                        @(Html.DevExtreme().DataGrid<MES_ItemSlipDetail>()
+                                            .ID(gridItemSlipDtl)
+                                            .ShowBorders(true)
+                                            .ShowColumnLines(true)
+                                            .ShowRowLines(true)
+                                            .AllowColumnResizing(true)
+                                            .AllowColumnReordering(true)
+                                            .RepaintChangesOnly(true)
+                                            .ColumnAutoWidth(true)
+                                            .OnCellPrepared("gridItemSlipDtlOnCellPrepared")
+                                            .OnRowRemoved("gridItemSlipDtlOnRowRemoved")
+                                            .Editing(editing =>
+                                            {
+                                                editing.Mode(GridEditMode.Cell);
+                                                editing.AllowAdding(true);
+                                                editing.AllowDeleting(true);
+                                                editing.AllowUpdating(true);
+                                                editing.UseIcons(true);
+
+                                            })
+                                            .Selection(s => s.Mode(SelectionMode.Single)
+                                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                            .SelectAllMode(SelectAllMode.AllPages))
+                                            .Columns(c=> {
+
+                                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+
+                                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+
+                                                c.AddFor(x => x.Unit).Caption(_loc.GetLocalizedString("Unit")).AllowEditing(false);
+
+                                                c.AddFor(x => x.Qty).Caption(_loc.GetLocalizedString("Qty")).DataType(GridColumnDataType.Number).Format("#,##0").SetCellValue("validateQtyInputNumber");
+
+                                                c.AddFor(x => x.RealQty).Caption((@_loc.GetLocalizedString("Warehouse From In Stock"))).Format("#,##0").Width("20%").AllowEditing(false);
+                                                //                  c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Warehouse From In Stock"))).AllowEditing(false).Format("#,##0").Width("20%")
+                                                //.Lookup(lookup => lookup
+                                                //.DataSource(d => d.Mvc().Controller("MESItem")
+                                                //.LoadAction("GetItemInWareHouse")
+                                                //.LoadParams(new { WareHouseCode = new JS("getParamsWHFromCode") })
+                                                //.Key("ItemCode")).DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                                                //.DisplayExpr("RealQty")
+                                                //.ValueExpr("ItemCode"));
+                                                c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark"));
+
+                                            })
+                                            //.RemoteOperations(true)
+                                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                            //.Editing(e => e
+                                            //.Mode(GridEditMode.Batch).UseIcons(true))
+                                            .Paging(p => p.PageSize(100))
+                                            .Pager(pager =>
+                                            {
+                                                pager.ShowInfo(true);
+                                                pager.ShowNavigationButtons(true);
+                                            })
+                                            .OnInitNewRow("NewRowItemSlipDetail")
+                                            .OnToolbarPreparing("toolbar_preparing")
+                                            .OnCellPrepared("SetColorRowIsReturn")
+                                            )
+                                    </fieldset>
+                                </div>                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,180 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <AssemblyName>HLCoreFramework.Web</AssemblyName>
+    <PackageId>HLFXFramework.WebHost</PackageId>
+    <UserSecretsId>aspnet-Modular.WebHost-dca604fa-ee10-4a6c-8e7d-8cc79dca8c8f</UserSecretsId>
+    <RuntimeFrameworkVersion>3.1.0</RuntimeFrameworkVersion>
+    <PackageTargetFallback>$(PackageTargetFallback);dotnet5.6;portable-net45+win8</PackageTargetFallback>
+    <RootNamespace>HLCoreFramework.Web</RootNamespace>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="wwwroot\**\*;modules.json;appsettings.json;Modules\**\*;Themes\**\*;Views\**\*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Controllers\**" />
+    <Compile Remove="Extensions\**" />
+    <Compile Remove="Mappers\**" />
+    <Compile Remove="Modules\**" />
+    <Compile Remove="RenderExcel\**" />
+    <Compile Remove="TagHelper\**" />
+    <Compile Remove="ViewComponents\**" />
+    <Content Remove="Modules\**" />
+    <EmbeddedResource Remove="Controllers\**" />
+    <EmbeddedResource Remove="Extensions\**" />
+    <EmbeddedResource Remove="Mappers\**" />
+    <EmbeddedResource Remove="Modules\**" />
+    <EmbeddedResource Remove="RenderExcel\**" />
+    <EmbeddedResource Remove="TagHelper\**" />
+    <EmbeddedResource Remove="ViewComponents\**" />
+    <None Remove="Controllers\**" />
+    <None Remove="Extensions\**" />
+    <None Remove="Mappers\**" />
+    <None Remove="Modules\**" />
+    <None Remove="RenderExcel\**" />
+    <None Remove="TagHelper\**" />
+    <None Remove="ViewComponents\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="assets\font\arial.ttf" />
+    <None Remove="assets\font\malgun.ttf" />
+    <None Remove="assets\font\msgothic.ttc" />
+    <None Remove="assets\font\msmincho.ttc" />
+    <None Remove="EmailTemplate\EmailTemplate.cshtml" />
+    <None Remove="resources\resources_ko.txt" />
+    <None Remove="resources\resources_en.txt" />
+    <None Remove="Startup.csbak" />
+    <None Remove="StaticFiles\ViewJS\WarehouseDynamic.js" />
+    <None Remove="Views\Shared\_FileUploadExcel.cshtml" />
+    <None Remove="Views\Shared\_PopupFileUpload.cshtml" />
+    <None Remove="wwwroot\assets\font\arial.ttf" />
+    <None Remove="wwwroot\assets\font\malgun.ttf" />
+    <None Remove="wwwroot\assets\font\msgothic.ttc" />
+    <None Remove="wwwroot\assets\font\msmincho.ttc" />
+    <None Remove="wwwroot\BackgroundImage\search-background.PNG" />
+    <None Remove="wwwroot\css\custom-style.css" />
+    <None Remove="wwwroot\css\dx.darkmoon-compact-dark.css" />
+    <None Remove="wwwroot\css\dx.generic-orange.css" />
+    <None Remove="wwwroot\css\dx.softblue-compact-light.css" />
+    <None Remove="wwwroot\css\ionicons\ionicons.min.css" />
+    <None Remove="wwwroot\images\loading_1.gif" />
+    <None Remove="wwwroot\js\boardmanagement\board-management.js" />
+    <None Remove="wwwroot\js\commonFunction.js" />   
+	<None Remove="wwwroot\js\commonjs\acton\actionjs.js" />
+    <None Remove="wwwroot\js\commonjs\common\common.js" />
+    <None Remove="wwwroot\js\commonjs\menu\menujs.js" />
+    <None Remove="wwwroot\js\commonjs\popup\popupjs.js" />
+    <None Remove="wwwroot\js\commonjs\tabpaneljs.js" />
+    <None Remove="wwwroot\lib\QRPrintDll\TSCLIB.dll" />
+    <None Remove="wwwroot\test.html" />
+    <None Remove="wwwroot\ViewJS\WarehouseDynamic.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="assets\font\arial.ttf">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="assets\font\malgun.ttf">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="assets\font\msgothic.ttc">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="assets\font\msmincho.ttc">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="resources\resources_ko.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\resources_en.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="StaticFiles\ViewJS\WarehouseDynamic.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="EmailTemplate\EmailTemplate.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.IISIntegration" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.2.0">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.2.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8" />
+  </ItemGroup>
+  <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
+  </Target>
+  <ItemGroup>
+    <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.2.301" />
+    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="1.0.0" />
+    <DotNetCliToolReference Include="Microsoft.Extensions.SecretManager.Tools" Version="1.0.0" />
+    <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="downloads\202008\RenderExcel\" />
+    <Folder Include="logs\" />
+    <Folder Include="resources\images\" />
+    <Folder Include="Resources\remote\" />
+    <Folder Include="uploads\202008\" />
+    <Folder Include="uploads\202009\" />
+    <Folder Include="uploads\202112\" />
+    <Folder Include="uploads\202201\" />
+    <Folder Include="uploads\advertistment\temp\" />
+    <Folder Include="uploads\audios\" />
+    <Folder Include="Views\Shared\Components\" />
+    <Folder Include="wwwroot\dist\" />
+    <Folder Include="wwwroot\IconPage\" />
+    <Folder Include="wwwroot\LogoImage\" />
+    <Folder Include="wwwroot\plugins\babel-polyfill\7.4.0\" />
+    <Folder Include="wwwroot\plugins\exceljs\3.3.1\" />
+    <PackageReference Include="DevExtreme.AspNet.Core" Version="20.1.4" />
+    <PackageReference Include="DevExtreme.AspNet.Data" Version="2.5.1" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\InfrastructureCore.Web\InfrastructureCore.Web.csproj" />
+    <ProjectReference Include="..\Infrastructure\InfrastructureCore.csproj" />
+    <ProjectReference Include="..\LazZiya.ExpressLocalization\LazZiya.ExpressLocalization.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Admin\Modules.Admin.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Common\Modules.Common.csproj" />
+    <ProjectReference Include="..\Modules\Modules.FileUpload\Modules.FileUpload.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Kiosk.Management\Modules.Kiosk.Management.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Kiosk.Member\Modules.Kiosk.Member.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Kiosk.Monitoring\Modules.Kiosk.Monitoring.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Pleiger.CommonModels\Modules.Pleiger.CommonModels.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Pleiger.MasterData\Modules.Pleiger.MasterData.csproj" />
+    <ProjectReference Include="..\Modules\Modules.Pleiger.SystemMgt\Modules.Pleiger.SystemMgt.csproj" />
+	<ProjectReference Include="..\Modules\Modules.Kiosk.Settings\Modules.Kiosk.Settings.csproj" />
+	<ProjectReference Include="..\Modules\Modules.Parking\Modules.Parking.csproj" />
+
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="wwwroot\ViewJS\WarehouseDynamic.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="wwwroot\lib\QRPrintDll\TSCLIB.dll">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="https://json.schemastore.org/apibuilder.json" DismissedDevExtremeVersion="20.1.9" /></VisualStudio></ProjectExtensions>
+</Project>

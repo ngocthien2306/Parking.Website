@@ -1,0 +1,107 @@
+﻿@model Modules.Pleiger.Models.SYCompanyInformation;
+@{
+    Layout = null;
+}
+@await Component.InvokeAsync("AccessToolbar")
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary card-outline">
+                    <div class="card-body box-profile p-2">
+                        <div class="dx-field">
+                            <div class="dx-field-label">사업자번호:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().TextBox()
+                                .ID("BusinessNumber"))
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">상호명:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().TextBox()
+                                .ID("CompanyName"))
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">주소:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().TextBox()
+                                .ID("Address") )
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">사업자등록증:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().FileUploader()
+                                    .ID("Certificate")
+                                    .Name("myFile")
+                                    .Multiple(true)
+                                    .ChunkSize(200000)
+                                    .MaxFileSize(20000000)
+                                    .Accept("*")
+                                    .UploadMode(FileUploadMode.Instantly)
+                                 //   .UploadUrl(Url.Action("UploadChunk", "Files", new { idFile = "" }))
+                                  //  .OnUploaded("onUploaded")
+                                  //  .OnUploadAborted("OnUploadAborted")
+                                    .AllowCanceling(true)
+                                    .ShowFileList(true)
+
+                                    //.OnValueChanged("fileUploader_valueChanged")
+                                    )
+                                @*@(Html.DevExtreme().TextBox()
+                                    .ID("Certificate") )*@
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">라이선스 키:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().TextBox()
+                                .ID("SystemLicense") )
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">사용시작일:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox().ID("StartDate")
+                                .Type(DateBoxType.Date)
+                                .Value(DateTime.Now)
+                                .DisplayFormat("yyyy-MM-dd") )
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">회사로고:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().FileUploader()
+                                    .ID("CompnayLogo")
+                                    .Name("myFile")
+                                    .Multiple(true)
+                                    .ChunkSize(200000)
+                                    .MaxFileSize(20000000)
+                                    .Accept("*")
+                                    .UploadMode(FileUploadMode.Instantly)
+                                 //   .UploadUrl(Url.Action("UploadChunk", "Files", new { idFile = "" }))
+                                  //  .OnUploaded("onUploaded")
+                                  //  .OnUploadAborted("OnUploadAborted")
+                                    .AllowCanceling(true)
+                                    .ShowFileList(true)
+
+                                    //.OnValueChanged("fileUploader_valueChanged")
+                                    )
+                                @*@(Html.DevExtreme().TextBox()
+                                    .ID("CompnayLogo") )*@
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">시스템 제공회사 정보:</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().TextBox()
+                                .ID("SystemProvider") )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

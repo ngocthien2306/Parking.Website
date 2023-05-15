@@ -1,0 +1,214 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Http.Extensions;
+@using InfrastructureCore.Models.Site;
+@using InfrastructureCore.Extensions;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    info.Name = "Reload";
+    lstNewToolbar.Add(info);
+
+    string gridStatusProduct = "gridStatusProduct" + ViewBag.Thread;
+    string frmUserProjectCode = "frmUserProjectCode" + ViewBag.Thread;
+    string frmItemCode = "frmItemCode" + ViewBag.Thread;
+    string frmItemName = "frmItemName" + ViewBag.Thread;
+    string frmProductLineCode = "frmProductLineCode" + ViewBag.Thread;
+    string frmProjectOrderType = "frmProjectOrderType" + ViewBag.Thread;
+    string frmSalesOrderProjectCode = "frmSalesOrderProjectCode" + ViewBag.Thread;
+}
+<script>
+
+    $(document).ready(function () {
+        loadCombobox@(ViewBag.Thread)();
+        loadDataStatusProduct@(ViewBag.Thread)();
+    });
+
+    function loadCombobox@(ViewBag.Thread)() {
+        var orderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        orderType.unshift({
+            BASE_CODE: "All",
+            BASE_NAME: "All"
+        });
+
+        $('#@frmProjectOrderType').dxSelectBox({
+            dataSource: orderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: orderType[0].BASE_CODE
+        });
+    }
+    function loadDataStatusProduct@(ViewBag.Thread)() {
+        LoadingPage(1);
+
+        var itemCode = $('#@frmItemCode').dxTextBox('instance').option('value');
+        var userProjectCode = $('#@frmUserProjectCode').dxTextBox('instance').option('value');
+        var itemName = $('#@frmItemName').dxTextBox('instance').option('value');
+        var productLineCode = $('#@frmProductLineCode').dxTextBox('instance').option('value');
+        var projectOrderType = $('#@frmProjectOrderType').dxSelectBox('instance').option('value');
+        var salesOrderProjectCode = $('#@frmSalesOrderProjectCode').dxTextBox('instance').option('value');
+
+        $.ajax({
+            url: '@Url.Action("LoadProductStatus", "MESProductStatus")',
+            type: "GET",
+            data: {
+                ItemCode: itemCode,
+                UserProjectCode: userProjectCode,
+                NameKor: itemName,
+                ProdcnLineCode: productLineCode,
+                ProjectOrderType: projectOrderType,
+                SalesOrderProjectCode: salesOrderProjectCode
+            },
+            dataType: "json",
+            success: function (resp) {
+                $("#@gridStatusProduct").dxDataGrid({
+                    dataSource: resp.data,
+                });
+                LoadingPage(0);
+            },
+            error: function (error) {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                console.log(error);
+            }
+        });
+    }
+
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        loadDataStatusProduct@(ViewBag.Thread)();
+    });
+
+    $('#btnReload_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        var dataGrid = $("#@(gridStatusProduct)");
+        ExportExcelCommon(dataGrid, "SaleProject");
+        LoadingPage(0);
+    });
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row pr-1" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row">
+                   <div class="form-group col-md-2">
+                        <label for="@frmProjectOrderType">@(_loc.GetLocalizedString("Order Type"))</label>
+                        @(Html.DevExtreme()
+                        .SelectBox()
+                        .ID(frmProjectOrderType)
+                        .ShowClearButton(true)
+                        )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="@frmSalesOrderProjectCode">@(_loc.GetLocalizedString("Sales Order Project Code"))</label>
+                        @(Html.DevExtreme()
+                        .TextBox()
+                        .ID(frmSalesOrderProjectCode)
+                        .ShowClearButton(true)
+                        )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label  for="@frmUserProjectCode">@(_loc.GetLocalizedString("User Project"))</label>
+                        @(Html.DevExtreme().TextBox()
+                        .ID(frmUserProjectCode)
+                        .ShowClearButton(true)
+                        )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="@frmItemCode">@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme()
+                        .TextBox()
+                        .ID(frmItemCode)
+                        .ShowClearButton(true)
+                        )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label  for="@frmItemName">@(_loc.GetLocalizedString("Item Name" ))</label>
+                        @(Html.DevExtreme()
+                        .TextBox()
+                        .ID(frmItemName)
+                        .ShowClearButton(true)
+                        )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="@frmProductLineCode">@(_loc.GetLocalizedString("Product Line Code"))</label>
+                        @(Html.DevExtreme()
+                        .TextBox()
+                        .ID(frmProductLineCode)
+                        .ShowClearButton(true)
+                        )
+                    </div>
+
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="pr-1 col-md-12"> 
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@(_loc.GetLocalizedString("Production Status"))</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ProductStatus>()
+                    .ID(gridStatusProduct)
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .Height("75vh")
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .ColumnAutoWidth(true)
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.No).Caption("No");
+                        c.AddFor(x => x.ProjectOrderType).Caption((_loc.GetLocalizedString("Order Type")));
+                        c.AddFor(x => x.SalesOrderProjectCode).Caption((_loc.GetLocalizedString("Sales Order Project Code")));
+                        c.AddFor(x => x.UserProjectCode).Caption((_loc.GetLocalizedString("User Project Code")));
+                        c.AddFor(x => x.ProductLineName).Caption((_loc.GetLocalizedString("Product Line Name")));
+                        c.AddFor(x => x.ProdcnLineCode).Caption((_loc.GetLocalizedString("Product Line Code")));
+                        c.AddFor(x => x.ItemCode).Caption((_loc.GetLocalizedString("Item Code")));
+                        c.AddFor(x => x.NameKor).Caption((_loc.GetLocalizedString("Item Name")));
+                        c.AddFor(x => x.AssignedQty).Caption((_loc.GetLocalizedString("Assigned Quantity"))).Format("#,##0");
+                        c.AddFor(x => x.ProdDoneQty).Caption((_loc.GetLocalizedString("Product Completed Quantity"))).Format("#,##0");
+                        c.AddFor(x => x.Internal).Caption((_loc.GetLocalizedString("Internal"))).DataType(GridColumnDataType.Boolean);
+                        c.AddFor(x => x.External).Caption((_loc.GetLocalizedString("External"))).DataType(GridColumnDataType.Boolean);
+                        c.AddFor(x => x.OrderQuantity).Caption((_loc.GetLocalizedString("Order Quantity"))).Format("#,##0");
+                        c.AddFor(x => x.DeliveryTotalQty).Caption((_loc.GetLocalizedString("Delivery Total Qty"))).Format("#,##0");
+                        c.AddFor(x => x.ProdLineStartDate).Caption((_loc.GetLocalizedString("Product Line Start Date")))
+                            .Format("yyyy-MM-dd HH:mm:sss");
+                        c.AddFor(x => x.ProdLineDoneDate).Caption((_loc.GetLocalizedString("Product Line End Date")))
+                            .Format("yyyy-MM-dd HH:mm:sss");
+                    })
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    .HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(100))
+                    .Pager(pager =>
+                    {
+                        pager.ShowInfo(true);
+                        pager.ShowNavigationButtons(true);
+                    })
+                    )
+                </fieldset>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+

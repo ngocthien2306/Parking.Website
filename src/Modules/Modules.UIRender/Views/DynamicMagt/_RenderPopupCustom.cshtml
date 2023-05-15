@@ -1,0 +1,9 @@
+﻿
+@model string
+@{
+    Layout = null;
+}
+
+@*render view custom base on setting DB*@
+@await Html.PartialAsync(@Model)
+@*@await Html.PartialAsync("~/Views/MESPartner/PartnerDetail.cshtml", null)*@

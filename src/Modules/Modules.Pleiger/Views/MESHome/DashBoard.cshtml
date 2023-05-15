@@ -1,0 +1,447 @@
+﻿@model Modules.Admin.Models.SYBoardInfo
+@using Modules.Admin.Models
+@using InfrastructureCore.Models.Menu
+
+@{
+    Layout = null;
+    Random random = new Random();
+    // Quan add
+    //BoardType dataBoardType = new BoardType(Model.BoardType);
+    //BoardType dataBoardType = new BoardType(Model.BoardType);
+
+    List<SYBoardBranchNames> lstBranch = (List<SYBoardBranchNames>)ViewBag.lstBranch;
+
+
+}
+
+<script>
+    $(document).ready(function () {
+        $("#chartDash1").dxChart("render");
+        $("#chartDash2").dxChart("render");
+        $("#chartDash3").dxChart("render");
+        $("#chartDash4").dxChart("render");
+     
+    });
+
+    var boardIDofCB@(ViewBag.Thread) = '6123ab4c7f494a8690596b78330cba05';
+
+    function getBoardIDOfCB@(ViewBag.Thread)() {
+        return boardIDofCB@(ViewBag.Thread);
+        }
+
+    function ReadCountCB@(ViewBag.Thread)(boadID, boardDocID) {
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("OnReadCount", "CB")',
+                type: "POST",
+                data: {
+                    BoardID: boadID,
+                    BoardDocID: boardDocID,
+                },
+                dataType: "json",
+                success: function (result) {
+                    if (result.Success) {
+                        var grid = $("#GridCommonBoardManagement@(ViewBag.Thread)").dxTreeList("instance");
+                        if (grid !== undefined) {
+                            grid.refresh();
+                        }
+
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });
+    }
+    function OpenEditCommonBoardPop@(ViewBag.Thread)(boardDocID) {
+        debugger;
+        CheckSession();
+        let url = '/CB/Detail?bid=' + getBoardIDOfCB@(ViewBag.Thread)() + '&bdid=' + boardDocID + '&ViewBagIndex=' + '@ViewBag.Thread';
+        PushArrayBack(url);
+        GenerateTabConmonBoard('CBDetail', url, menuIDoTabActive, false)
+        ReadCountCB@(ViewBag.Thread)(getBoardIDOfCB@(ViewBag.Thread)(), boardDocID);
+    }
+  
+</script>
+
+<style>
+    .panel {
+        margin-bottom: 20px;
+        background-color: #fff;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+        box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    }
+
+    .panel-heading {
+        padding: 10px 15px;
+        border-bottom: 1px solid transparent;
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
+    }
+
+    .panel-body {
+        padding: 15px;
+    }
+
+    .panel-info {
+        border-color: #bce8f1;
+    }
+
+        .panel-info > .panel-heading {
+            color: #31708f;
+            background-color: #d9edf7;
+            border-color: #bce8f1;
+        }
+
+    #chartDash1 {
+        width: 100%;
+    }
+</style>
+@{
+    string IdGrid = "GridNoticeBoard" + ViewBag.Thread;
+}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="far fa-newspaper"></i> @_loc.GetLocalizedString("News")
+                </h5>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel-heading p-0">
+                            <div class="content">
+                                <div class="container-fluid">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="card card-primary">
+                                                <div class="card-body box-profile">
+                                                    <div class="row">
+                                                        <div class="col-md-12">
+                                                            @(Html.DevExtreme().DataGrid<SYBoardContent>()
+                                                                .ID(IdGrid).Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                                                .DataSource(d => d.Mvc()
+                                                                .Controller("CB")
+                                                                .LoadAction("GetListNoticeInBoard")
+                                                                .LoadParams(new
+                                                                {
+                                                                    BoardID = "6123ab4c7f494a8690596b78330cba05",
+                                                                    RowNumberDisplay = 5,
+                                                                    BranchName = "",
+                                                                }
+                                                                ))
+                                                                .KeyExpr("BoardDocID")
+                                                                //.ShowBorders(true)
+                                                                //.ShowColumnLines(true)
+                                                                .Selection(s => s.Mode(SelectionMode.Single))
+                                                                .Height("100%")
+                                                                //.ShowRowLines(true)
+                                                                .AllowColumnResizing(true)
+                                                                .AllowColumnReordering(true)
+                                                                .ColumnAutoWidth(true)
+                                                                //.FilterRow(filterRow => filterRow
+                                                                //    .Visible(true)
+                                                                //    .ApplyFilter(GridApplyFilterMode.Auto)
+                                                                //)
+                                                                .Columns(columns =>
+                                                                {
+                                                            //if (dataBoardType.SubjectURLYN != true)
+                                                            if (true != true)
+                                                            {
+                                                                //if (dataBoardType.AdminYN ==true)
+                                                                if (true ==true)
+                                                                {
+                                                                    if (ViewBag.UserType =="G000C002"|| ViewBag.UserType == "G000C001")
+                                                                    {
+                                                                        columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Subject")).Alignment(HorizontalAlignment.Left).Width("75%").CellTemplate(
+                                                                    @<text>
+                                                                    <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>')" data-pag-id="<%-data.BoardDocID%>">
+                                                                        <%-data.Subject%>
+                                                                    </a>
+                                                                    </text>
+                                                                    );
+                                                                }
+                                                                else
+                                                                {
+                                                                    columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Subject")).Alignment(HorizontalAlignment.Left).Width("75%").CellTemplate(
+                                                                    @<text>
+                                                                    <%-data.Subject%>
+                                                                    </text>
+                                                                    );
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Subject")).Alignment(HorizontalAlignment.Left).Width("75%").CellTemplate(
+                                                                @<text>
+                                                                <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>')" data-pag-id="<%-data.BoardDocID%>">
+                                                                    <%-data.Subject%>
+                                                                </a>
+                                                                </text>
+                                                            );
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Subject")).Alignment(HorizontalAlignment.Left).Width("75%").CellTemplate(
+                                                                @<text>
+                                                                <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>')" data-pag-id="<%-data.BoardDocID%>">
+
+                                                                        @*<a href="<%-data.Subject%>" target="_blank" data-pag-id="<%-data.BoardDocID%>">*@
+                                                                            <%-data.Subject%>
+                                                                        </a>
+                                                                        </text>
+                                                                    );
+                                                                    }
+                                                                    //if(dataBoardType.BranchUseYN==true)
+                                                                    //if(true==true)
+                                                                    //{
+                                                                    //    columns.AddFor(m => m.BranchName).Caption(_loc.GetLocalizedString("BranchName")).Alignment(HorizontalAlignment.Center).Width("15%").Lookup(lookup => lookup
+                                                                    //                                            .DataSource(lstBranch)
+                                                                    //                                            .DisplayExpr("BranchNameDesc")
+                                                                    //                                            .ValueExpr("BranchNameID"));
+                                                                    //}
+                                                                    columns.AddFor(m => m.OwnerName).Caption(_loc.GetLocalizedString("Creator")).Width("10%").Alignment(HorizontalAlignment.Center)
+                                                                        .DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                                                    columns.AddFor(m => m.DocDT).Caption(_loc.GetLocalizedString("InsertDT")).Width("10%").Alignment(HorizontalAlignment.Center)
+                                                                        .DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                                                    columns.AddFor(m => m.ReadCount).Caption(_loc.GetLocalizedString("ViewsCount")).Width("5%");
+                                                                    //columns.AddFor(m => m.FileID).Caption(_loc.GetLocalizedString("파일 ID")).Width("10%").Visible(false);
+                                                                    //columns.AddFor(m => m.SortOrder).Caption(_loc.GetLocalizedString("Sort")).Width("15%").SortOrder(SortOrder.Asc).Visible(false);
+                                                                })
+
+                                                                //.HeaderFilter(f => f.Visible(true))
+                                                                //.Paging(paging => paging.PageSize(100))
+                                                                //.Pager(pager =>
+                                                                //{
+                                                                //    pager.ShowInfo(true);
+                                                                //    pager.ShowNavigationButtons(true);
+                                                                //})
+
+                                                                )
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body p-0">
+
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="col-md-6">
+                            <div class="panel panel-info">
+                                <div class="panel-heading">
+                                    <a class="pull-left">@_loc.GetLocalizedString("커뮤니티")</a>
+                                </div>
+                                <div class="panel-body">
+
+                                </div>
+                            </div>
+                        </div>*@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*<div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fa ion-stats-bars"></i> @_loc.GetLocalizedString("Common statistics")
+                    </h5>
+
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>150</h3>
+
+                                    <p>@_loc.GetLocalizedString("New Orders")</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="ion ion-bag"></i>
+                                </div>
+                                <a href="#" class="small-box-footer">@_loc.GetLocalizedString("More info") <i class="fas fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>53<sup style="font-size: 20px">%</sup></h3>
+
+                                    <p>@_loc.GetLocalizedString("Bounce Rate")</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="ion ion-stats-bars"></i>
+                                </div>
+                                <a href="#" class="small-box-footer">@_loc.GetLocalizedString("More info") <i class="fas fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>44</h3>
+
+                                    <p>@_loc.GetLocalizedString("User Registrations")</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="ion ion-person-add"></i>
+                                </div>
+                                <a href="#" class="small-box-footer">@_loc.GetLocalizedString("More info") <i class="fas fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>65</h3>
+
+                                    <p>@_loc.GetLocalizedString("Unique Visitors")</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="ion ion-pie-graph"></i>
+                                </div>
+                                <a href="#" class="small-box-footer">@_loc.GetLocalizedString("More info") <i class="fas fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>*@
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-pie mr-1"></i> @_loc.GetLocalizedString("Chart")
+                </h5>
+
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        @(Html.DevExtreme().Chart()
+                        .ID("chartDash1")
+                        .DataSource(d =>
+                              d.Mvc().LoadAction("GetDataChart12MonthsInThisYear").Controller("MESHome")
+                        )
+                        .Size(s=>s.Height(440))
+                        .Legend(l => l.VerticalAlignment(VerticalEdge.Bottom).HorizontalAlignment(HorizontalAlignment.Center))
+                        .Title(t => t.Text(_loc.GetLocalizedString("Production status this year")).Font(f=>f.Size(12)))
+                        .Tooltip(t => t.Enabled(true))
+                        .ArgumentAxis(a =>
+                              a.ArgumentType(ChartDataType.String)
+                        )
+                        .Series(s => {
+                            s.Add().ArgumentField("MonthOfYear").ValueField("ProductedQty").Name(_loc.GetLocalizedString("Produced Qty")).Type(SeriesType.Bar).Color("#2688b7eb");
+                            s.Add().ArgumentField("MonthOfYear").ValueField("PlannedQty").Name(_loc.GetLocalizedString("Planned Qty")).Type(SeriesType.Bar).Color("#e68534eb");
+                        })
+                     )
+                    </div>
+                    <div class="col-md-6">
+                        @(Html.DevExtreme().Chart()
+                        .ID("chartDash2")
+                        .DataSource(d =>
+                              d.Mvc().LoadAction("GetDataChartByMonth").Controller("MESHome")
+                        )
+                        .Size(s=>s.Height(440))
+                        .Legend(l => l.VerticalAlignment(VerticalEdge.Bottom).HorizontalAlignment(HorizontalAlignment.Center))
+                        .Title(t => t.Text(_loc.GetLocalizedString("Production status of the month")).Font(f=>f.Size(12)))
+                        .Tooltip(t => t.Enabled(true))
+                        .Series(s => {
+                            s.Add().ArgumentField("DayOfMonth").ValueField("ProductedQty").Name(_loc.GetLocalizedString("Produced Qty")).Type(SeriesType.Bar).Color("#2688b7eb");
+                            s.Add().ArgumentField("DayOfMonth").ValueField("PlannedQty").Name(_loc.GetLocalizedString("Planned Qty")).Type(SeriesType.Bar).Color("#e68534eb");
+                        })
+                        .ArgumentAxis(a =>
+                              a.ArgumentType(ChartDataType.String)
+                        )
+                        .LoadingIndicator(l => l.Enabled(true))
+                        )
+                    </div>
+                </div>
+               @*  -====================- *@
+                <div class="row">
+                        <div class="col-md-6">
+                            @(Html.DevExtreme().Chart()
+                                        .ID("chartDash3")
+                                        .DataSource(d =>
+                                                d.Mvc().LoadAction("GetDataChart4WeeksCurrentMonth").Controller("MESHome")
+                                        )
+                                        .Size(s=>s.Height(440))
+                                        .Legend(l => l.VerticalAlignment(VerticalEdge.Bottom).HorizontalAlignment(HorizontalAlignment.Center))
+                                        .Title(t => t.Text(_loc.GetLocalizedString("Production status of the this week")).Font(f=>f.Size(12)))
+                                        .Tooltip(t => t.Enabled(true))
+                                         //.ArgumentAxis(a => a
+                                         //        .Grid(g => g.Visible(true))
+                                         //        .Label(l => l
+                                         //            .RotationAngle(180)
+                                         //            .OverlappingBehavior(OverlappingBehavior.Rotate)
+                                         //        )
+                                         //)
+                                         .ArgumentAxis(a =>
+                                              a.ArgumentType(ChartDataType.String)
+                                         )
+                                        .Series(s => {
+                                            s.Add().ArgumentField("Week").ValueField("DonedQtyWeek").Name(_loc.GetLocalizedString("Produced Qty")).Type(SeriesType.Bar).Color("#2688b7eb");
+                                            s.Add().ArgumentField("Week").ValueField("PlannedQty").Name(_loc.GetLocalizedString("Planned Qty")).Type(SeriesType.Bar).Color("#e68534eb");
+                                        })
+                              )
+                        </div>
+                        <div class="col-md-6">
+                            @(Html.DevExtreme().Chart()
+                                        .ID("chartDash4")
+                                        .DataSource(d =>
+                                           d.Mvc().LoadAction("GetDataChartProdcnLineCode").Controller("MESHome")
+                                        )
+                                        .Size(s=>s.Height(440))
+                                        .Legend(l => l.VerticalAlignment(VerticalEdge.Bottom).HorizontalAlignment(HorizontalAlignment.Center))
+                                        .Title(t => t.Text(_loc.GetLocalizedString("Production status of today")).Font(f=>f.Size(10)))
+                                        .Tooltip(t => t.Enabled(true))
+                                        .ArgumentAxis(a => a
+                                                .ValueMarginsEnabled(true)
+                                                .Label(l => l
+                                                    .RotationAngle(-45)
+                                                    .DisplayMode(ChartLabelDisplayMode.Rotate)
+                                                )
+                                            )
+                                        .Series(s => {
+                                            s.Add().ArgumentField("ProductLineName").ValueField("ProducedQty").Name(_loc.GetLocalizedString("Produced Qty")).Type(SeriesType.Bar).Color("#2688b7eb");
+                                            s.Add().ArgumentField("ProductLineName").ValueField("PlannedQty").Name(_loc.GetLocalizedString("Planned Qty")).Type(SeriesType.Bar).Color("#e68534eb");
+                                        })
+                                        
+                            )
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+

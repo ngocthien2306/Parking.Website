@@ -1,0 +1,569 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = false;
+    pageSetting.SAVE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var certifCriteriaEntities = new[] {
+        new {id = false, name = _loc.GetLocalizedString("Adults Only")},
+        new {id = true, name = _loc.GetLocalizedString("All Certified Customers")}
+    };
+
+    var authEntities = new[] {
+        new {id = false, name = _loc.GetLocalizedString("Unregistered")},
+        new {id = true, name = _loc.GetLocalizedString("Registered")}
+    };
+
+    string radioCer = "radioCer" + ViewBag.Thread;
+    string radioAuth = "radioAuth" + ViewBag.Thread;
+    string switchPhoneInput = "switchPhoneInput" + ViewBag.Thread;
+    string switchAuthCard = "switchAuthCard" + ViewBag.Thread;
+    string switchAlarmRegister = "switchAlarmRegister" + ViewBag.Thread;
+    string switchAlarmOpen = "switchAlarmOpen" + ViewBag.Thread;
+    string switchECard = "switchECard" + ViewBag.Thread;
+    string switchUseScanner = "switchUseScanner" + ViewBag.Thread;
+    string switchUseCamera = "switchUseCamera" + ViewBag.Thread;
+
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string telegramId = "telegramId" + ViewBag.Thread;
+    string registerAlarmMessage = "registerAlarmMessage" + ViewBag.Thread;
+    string openAlarmMessage = "openAlarmMessage" + ViewBag.Thread;
+    string gridAlarm = "gridAlarm" + ViewBag.Thread;
+    string gridEnvSettings = "gridEnvSettings" + ViewBag.Thread;
+    string gridStore = "gridStore" + ViewBag.Thread;
+    string telegramToken = "telegramToken" + ViewBag.Thread;
+    string apprUserFaceOkAlarm = "apprUserFaceOkAlarm" + ViewBag.Thread;
+    string userFaceMessage = "userFaceMessage" + ViewBag.Thread;
+    string sendToMessage = "sendToMessage" + ViewBag.Thread;
+}
+
+<script>
+    var storeNoSelected = 0;
+    $(document).ready(function () {
+        LoadingPage(1);
+        LoadStoreMaster(null, null, null, "#@gridStore");
+        LoadingPage(0);
+    })
+    // Region: btn click event
+    //$('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+    //    LoadingPage(1);
+
+    //    LoadingPage(0);
+    //});
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        SaveDataPreferences();
+        LoadingPage(0);
+    })
+    function ShowPreferenceDetail(e) {
+        LoadingPage(1);
+        storeNoSelected = e.data.storeNo;
+        LoadPrederenceToGrid(e.data.storeNo, null);
+        LoadAlarmStoreMessage(e.data.storeNo, null);
+        LoadingPage(0);
+    }
+
+    // End Region: btn click event
+
+
+    // Region: Get Data
+    function LoadPrederenceToGrid(storeNo, envNo) {
+        var obj = {
+            storeNo: storeNo,
+            envNo: envNo
+        }
+        var url = '@Url.Action("GetStoreEnvSettings", "Preferences")';
+        LoadGridData(url, obj, "#@gridEnvSettings", METHOD.GET);
+    }
+    function LoadAlarmStoreMessage(storeNo, alarmNo) {
+        var obj = {
+            storeNo: storeNo,
+            alarmNo: alarmNo
+        }
+        var url = '@Url.Action("GetAlarmToStoreMessage", "Preferences")';
+        LoadGridData(url, obj, "#@gridAlarm", METHOD.GET);
+    }
+    // End Region: Get Data
+
+    // Region: Create - Update - Delete
+    function EnvsData() {
+        var envs = GetGridIntance("#@gridEnvSettings").getDataSource()._items[0];
+        return {
+            storeNo: envs.storeNo,
+            authAfterCardId: GetDataElement("#@switchAuthCard"),
+            authAfterCompleted: GetDataElement("#@radioAuth"),
+            certifCriteria: GetDataElement("#@radioCer"),
+            phoneInput: GetDataElement("#@switchPhoneInput"),
+            environmentSettingNo: envs.environmentSettingNo,
+            eId: GetDataElement("#@switchECard"),
+            useScanner: GetDataElement("#@switchUseScanner"),
+            useCamera: GetDataElement("#@switchUseCamera"),
+        }
+    }
+
+    function AlarmData() {
+        var alarms = GetGridIntance("#@gridAlarm").getDataSource()._items[0];
+        debugger;
+        return {
+            alarmAdminNo: alarms.alarmAdminNo,
+            //apprOpenDoorAlarm: GetDataElement("#@switchAlarmOpen"),
+            apprUserRegistAlarm: GetDataElement("#@switchAlarmRegister"),
+            //openDoorAlarmMgt: GetDataElement("#@openAlarmMessage"),
+            telegramId: GetDataElement("#@telegramId"),
+            userRegAlarmMsg: GetDataElement("#@registerAlarmMessage"),
+            workerPhoneNumber: GetDataElement("#@phoneNumber"),
+            storeNo: alarms.storeNo,
+            telegramToken: GetDataElement("#@telegramToken"),
+            apprUserFaceOkAlarm: GetDataElement("#@apprUserFaceOkAlarm"),
+            userFaceMessage: GetDataElement("#@userFaceMessage"),
+            sendToMessage: GetDataElement("#@sendToMessage")
+        }
+    }
+
+    function RequestSettings(storeNo) {
+
+        $.ajax({
+            url: '@Url.Action("RequestSettings", "Preferences")',
+            type: "GET",
+            data: {
+                storeNo: storeNo
+            },
+            dataType: 'json',
+            async: false,
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices successfully!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'success',
+                            6000
+                        );
+                    }, 5000);
+                }
+                else {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices fairly!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'error',
+                            6000
+                        );
+                    }, 5000);
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+
+    function SaveDataPreferences() {
+        if (ValidateInputAlarm()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var listStoreMaster = GetGridIntance("#@gridStore").getSelectedRowsData()[0];
+                    var obj = {
+                        env: JSON.stringify(EnvsData()),
+                        alarm: JSON.stringify(AlarmData())
+                    }
+                    var url = '@Url.Action("SaveDataPreferences", "Preferences")';
+                    //CRUDData(url, obj, METHOD.POST);
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: obj,
+                        dataType: "json",
+                        async: false,
+                        success: function(result) {
+                            debugger;
+                            if(result.Success) {
+                                DevExpress.ui.notify(
+                                    {
+                                        message: '@_loc.GetLocalizedString("Save the data of Settings successfully!")',
+                                        position: {
+                                            my: 'bottom right',
+                                            at: 'bottom right'
+                                        },
+                                        width: '30%'
+                                    },
+                                    'info',
+                                    6000
+                                );
+                                RequestSettings(listStoreMaster.storeNo);
+
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        },
+                        error: function() {
+                            LoadingPage(0);
+                        }
+                    });
+
+                    setTimeout(function () {
+                        LoadPrederenceToGrid(storeNoSelected, null);
+                        LoadAlarmStoreMessage(storeNoSelected, null);
+                    }, 500);
+                }
+            })
+        }
+    }
+    // End Region: Create - Update - Delete
+
+    // Region: Validate
+    function ValidateInputAlarm() {
+        debugger;
+        let phoneNumber = GetDataElement("#@phoneNumber");
+        if (phoneNumber == null || phoneNumber.trim() == "" || typeof phoneNumber === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Phone Number")", "Error")
+            ValidateElement("#@phoneNumber")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@phoneNumber")
+        }
+        return true;
+    }
+
+    // End Region: Validate
+
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-4">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                            .ID(gridStore)
+                            .Height("70vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .HeaderFilter(f => f.Visible(true))
+                            .FilterRow(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("ShowPreferenceDetail")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+                    <div class="col-md-8">
+                        <label>@(_loc.GetLocalizedString("Settings"))</label>
+                        <div class="row mt-1">
+                            @(
+                                Html.DevExtreme().DataGrid<KIO_StoreEnvSettings>()
+                                .ID(gridEnvSettings)
+                                .Height("30vh")
+                                .Width("99%")
+                               
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .ShowRowLines(false)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .RemoteOperations(true)
+                                .ColumnAutoWidth(true)
+                                .ColumnFixing(c => c.Enabled(true))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.None))
+                                .Columns(c =>
+                                {
+                                    c.Add().Caption(_loc.GetLocalizedString("Certificate Criteria")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().RadioGroup()
+                                            .DataSource(certifCriteriaEntities)
+                                            .ValueExpr("id")
+                                            .DisplayExpr("name")
+                                            .ID(radioCer)
+                                            .Value(new JS("data.certifCriteria"))
+                                            .Layout(Orientation.Vertical)
+                                            )
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Authentication Completed")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().RadioGroup()
+                                            .DataSource(authEntities)
+                                            .ValueExpr("id")
+                                            .DisplayExpr("name")
+                                            .ID(radioAuth)
+                                            .Value(new JS("data.authAfterCompleted"))
+                                            .Disabled(true)
+                                            .Layout(Orientation.Vertical)
+                                            )
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Phone Input")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(switchPhoneInput)
+                                                .Value(new JS("data.phoneInput"))
+                                                )
+                                            </div>
+                                        </text>).Alignment(0);
+
+                                    c.Add().Caption(_loc.GetLocalizedString("Card ID Method")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(switchAuthCard)
+                                                .Value(new JS("data.authAfterCardId"))
+                                                )
+                                            </div>
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("e-Card")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                                .ID(switchECard)
+                                                .Value(new JS("data.eId"))
+                                                )
+                                            </div>
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Use Scanner")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(switchUseScanner)
+                                                .Value(new JS("data.useScanner"))
+                                                )
+                                            </div>
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Use Camera")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(switchUseCamera)
+                                                .Value(new JS("data.useCamera"))
+                                                )
+                                        </div>
+                                        </text>).Alignment(0);
+
+                                    c.Add().Caption(_loc.GetLocalizedString("Similarity Rate")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            <span> <%- data.similarityRateApproval %> </span>
+                                        </div>
+                                    </text>).Alignment(0);
+                                    //c.AddFor(x => x.similarityRateApproval).Caption(_loc.GetLocalizedString("Similarity Rate")).Alignment(0);
+                                })
+
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                //.OnSelectionChanged("onItemGridSelectionChanged")
+                                //.OnRowClick("ShowAudioFileDetail")
+                                //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                                //.Paging(paging => paging.PageSize(100))
+                                )
+                        </div>
+                        <hr />
+                        <label>@(_loc.GetLocalizedString("Admin Settings"))</label>
+                        <div class="row mt-1">
+                            @(
+                                Html.DevExtreme().DataGrid<KIO_AlarmToStoreMessage>()
+                                .ID(gridAlarm)
+                                .Height("30vh")
+                                .Width("99%")
+                                .ShowBorders(true)
+                                .ShowColumnLines(false)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                               
+                                .RemoteOperations(true)
+                                .ColumnAutoWidth(true)
+                                .ColumnFixing(c => c.Enabled(true))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.None))
+                                .Columns(c =>
+                                {
+                                    c.Add().Caption(_loc.GetLocalizedString("Alarm Register")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(switchAlarmRegister)
+                                                .Value(new JS("data.apprUserRegistAlarm"))
+                                                
+                                                )
+                                        </div>
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Alarm Open")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(switchAlarmOpen)
+                                                .Value(new JS("data.apprOpenDoorAlarm"))
+                                                )
+                                        </div>
+                                        </text>).Alignment(0).Visible(false);
+
+                                    c.Add().Caption(_loc.GetLocalizedString("Alarm FaceOK")).CellTemplate(@<text>
+                                        <div class="mt-3">
+                                            @(
+                                                Html.DevExtreme().Switch()
+                                                .ID(apprUserFaceOkAlarm)
+                                                .Value(new JS("data.apprUserFaceOkAlarm"))
+
+                                             )
+                                            </div>
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Phone Number")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().TextArea()
+                                            .ID(phoneNumber)
+                                            .MaxLength(20)
+                                            .Height(100)
+                                            .Value(new JS("data.workerPhoneNumber"))
+                                            
+                                            )
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Telegram ID")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().TextArea()
+                                            .ID(telegramId)
+                                            .Height(100)
+                                            .MaxLength(20)
+                                            .Value(new JS("data.telegramId"))
+                                            )
+                                        </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Telegram Token")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().TextArea()
+                                            .ID(telegramToken)
+                                            .Height(100)
+                                            .Value(new JS("data.telegramToken"))
+                                            .MaxLength(500)
+                                         )
+                                    </text>).Alignment(0);
+                                    c.Add().Caption(_loc.GetLocalizedString("Register Message")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().TextArea()
+                                            .ID(registerAlarmMessage)
+                                            .Value(new JS("data.userRegAlarmMsg"))
+                                            .Height(100)
+                                            .MaxLength(200)
+                                            
+                                            
+                                            )
+                                        </text>).Alignment(0); 
+                                    c.Add().Caption(_loc.GetLocalizedString("Open Alarm Message")).CellTemplate(@<text>
+                                        @(
+                                           Html.DevExtreme().TextArea()
+                                           .ID(openAlarmMessage)
+                                           .Value(new JS("data.openDoorAlarmMgt"))
+                                           .Height(100)
+                                           .MaxLength(200)
+                                        )
+                                    </text>).Alignment(0).Visible(false);
+
+
+                                    c.Add().Caption(_loc.GetLocalizedString("FaceOK Message")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().TextArea()
+                                            .Height(100)
+                                            .ID(userFaceMessage)
+                                            .Value(new JS("data.userFaceMessage"))
+                                            .MaxLength(500)
+                                        )
+                                    </text>).Alignment(0);
+                                    
+                                    c.Add().Caption(_loc.GetLocalizedString("Send To Message")).CellTemplate(@<text>
+                                        @(
+                                            Html.DevExtreme().TextArea()
+                                            .Height(100)
+                                            .ID(sendToMessage)
+                                            .Value(new JS("data.sendToMessage"))
+                                            .MaxLength(2000)
+                                        )
+                                    </text>).Alignment(0);
+
+                                })
+
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                    //.OnSelectionChanged("onItemGridSelectionChanged")
+                                //.OnRowClick("ShowAudioFileDetail")
+                                //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                                //.Paging(paging => paging.PageSize(100))
+                                )
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

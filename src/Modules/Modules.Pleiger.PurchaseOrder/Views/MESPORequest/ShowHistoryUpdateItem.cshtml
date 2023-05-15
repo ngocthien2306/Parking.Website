@@ -1,0 +1,132 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Identity
+@model List<MES_HistoryDeliveryItem>;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+
+
+    string gridHistoryDateItem = "gridHistoryDateItem" + ViewBag.Thread;
+    string btnSave = "btnSave" + ViewBag.Thread;
+
+
+    string UserPoNumber = "UserPoNumber" + ViewBag.Thread;
+    string PartnerRemark = "PartnerRemark" + ViewBag.Thread;
+    List<MES_HistoryDeliveryItem> ListItem = null;
+}
+
+
+
+<script>
+    var ItemCode = '@ViewBag.ItemCode';
+    var PONumber = '@ViewBag.PONumber';
+    $(document).ready(function () {
+        
+        ShowHistoryDeliveryDateItem();
+    });
+
+    function ShowHistoryDeliveryDateItem() {
+        CheckSession();
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GetListHistoryDeliveryDateItem", "MESPORequest")',
+            type: 'GET',
+            async: false,
+            data:
+            {
+                ItemCode: ItemCode,
+                PONumber: PONumber
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+                debugger;
+                console.log(result.Data)
+                $('#@gridHistoryDateItem').dxDataGrid({
+                    dataSource: result
+                })
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+        debugger;
+
+        LoadingPage(0);
+    }
+
+    function gridOrderItemOnToolbarPreparing@(ViewBag.Thread)(e) {
+        let toolbarItems = e.toolbarOptions.items;
+         toolbarItems.forEach(function (item, index) {
+             if (item.name == "saveButton" || item.name == "revertButton" || item.name == "addRowButton") { //|| item.name == "addRowButton"
+                 item.options.visible = false;
+             }
+         });
+    };
+
+
+
+
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:70vh; width:70%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Delivery Plan Revision History"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row" id="bodypage_@(ViewBag.Thread)">
+                <div class="col-xs-12 col-md-12" style="height:100%;width:100%">
+                    <div class="card-body  p-0 pl-2 pr-2 pb-2" style="height:100%;width:100%">
+                        @(Html.DevExtreme().DataGrid<MES_HistoryDeliveryItem>()
+                        .ID(gridHistoryDateItem)
+                        //.DataSource(x=>x.Mvc().Controller("MESProductionRequestChange").LoadAction("GetListData"))
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .Height("35vh")
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .RepaintChangesOnly(true)
+                        .Selection(s => s.Mode(SelectionMode.Single)
+                        .SelectAllMode(SelectAllMode.AllPages))
+                        .Columns(c => {
+                              c.AddFor(z => z.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false).Width("14%");
+                              c.AddFor(z => z.UserEdit).Caption(_loc.GetLocalizedString("Username Update")).AllowEditing(false).Width("40%");
+                              c.AddFor(z => z.PartnerEditDate).Caption(_loc.GetLocalizedString("Plan Delivery Date")).AllowEditing(false).AllowExporting(false).Width("45%").Format("yyyy-MM-dd");
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(20))
+                        .Pager(pager =>
+                        {
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        .OnToolbarPreparing("gridOrderItemOnToolbarPreparing" + ViewBag.Thread)
+                        )
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnClose_Notife_Remark" data-dismiss="modal" class="btn btn-sm btn-secondary"><i class='fa fa-times'></i>&nbsp;@(_loc.GetLocalizedString("Close"))</button>
+
+    </div>
+</div>
+
+
+

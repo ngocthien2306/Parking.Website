@@ -1,0 +1,1261 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+
+@model MES_SaleProject;
+
+@{
+    Layout = null;
+
+    string ProdReq_RequestType = "ProdReq_RequestType" + ViewBag.thread;
+    string ProdReq_ItemRequest = "ProdReq_ItemRequest" + ViewBag.Thread;
+    string ProductTypeName = "ProductTypeName" + ViewBag.Thread;
+    string ProductType = "ProductType" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemCodeName = "ItemCodeName" + ViewBag.Thread;
+
+    var AllowDeleting = true;
+    if (ViewBag.ProjectStatus == "PJST01")
+    {
+        AllowDeleting = true;
+    }
+    else
+    {
+        AllowDeleting = false;
+
+    }
+    var InitialCode = new[] { "Yes", "No" };
+    string InitialCheck = "InitialCheck" + ViewBag.Thread;
+    string code = ViewBag.code;
+    string[] AllowedFileExtensions = new String[] { ".pdf", ".PDF" };
+    string[] listFile = new String[] { };
+    string GridFileURL = "GridFileURL" + ViewBag.Thread;
+}
+<style>
+    .fileuploader-container {
+        border: 1px solid #d3d3d3;
+        margin: 15px 15px 10px 10px;
+    }
+
+    .btn-dowloadfile {
+        justify-content: flex-end;
+        padding-left: 980px;
+    }
+</style>
+<script>
+    var UpdateArr = [];
+    var RequestCode = null;
+    var Category = null;
+    var ItemClassCode = null;
+    var StockQty = null;
+    var Pag_ID = '@Model.Pag_ID';
+    var Pag_Name = '@Model.Pag_Name';
+    var FileMasterID='@Model.FileMasterID'
+    var fileID_@(Model.ID) = '';
+    var FileID = '@Model.FileID'
+    var arrTemp = [];
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        $('#ProdReq_ItemRequest@(ViewBag.Thread)').dxTextBox('instance').option("value", '@ViewBag.ItemName');
+        RequestCode = '@ViewBag.requestCode';
+
+        $('#@ProdReq_ItemRequest').find('.dx-texteditor-input').prop('readonly', true);
+
+        if('@(ViewBag.ProjectStatus)'=='PJST03')
+        {
+            $("#btnRecall_@(ViewBag.thread)").show();
+        }
+        else
+        {
+            $("#btnRecall_@(ViewBag.thread)").hide();
+        }
+        if ('@(ViewBag.ProjectStatus)' == "PJST01" || '@(ViewBag.ProjectStatus)' == "PJST02")
+        {
+            $("#btnRequestProduction_@(ViewBag.thread)").show();
+        }
+        else
+        {
+            $("#btnRequestProduction_@(ViewBag.thread)").hide();
+        }
+
+        if ('@(ViewBag.ProjectStatus)' != "PJST01")
+        {
+            $('#@ProdReq_ItemRequest').dxTextBox({
+                disabled: true,
+            });
+            $('#@InitialCheck').dxRadioGroup({
+                disabled: true,
+            });
+        }
+
+        var productType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "RQTP00");
+        $("#ProdReq_RequestType@(ViewBag.thread)").dxSelectBox({
+            dataSource: productType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        GetListFileProjectOverPeriod();
+        GetLinkUrlSaleProject();
+        checkStockQty();
+        if ('@code' === 'Yes') {
+            $("#btnRequestProduction_@(ViewBag.thread)").attr('disabled', 'disabled');
+
+        }
+        else
+        {
+            $("#btnRequestProduction_@(ViewBag.thread)").removeAttr('disabled');
+            @*$('#@ProdReq_ItemRequest').dxTextBox({
+                disabled: true,
+            });*@
+        }
+        LoadingPage(0);
+    });
+
+    function ResetDataPostSavePlaning() {
+        UpdateArr = [];
+    }
+
+    function SetDataPostSavePlaning() {
+
+        let dataGridLocation = $("#@(GridFileURL)").dxDataGrid("instance");
+        let listData = dataGridLocation.getVisibleRows();
+
+        $.each(listData, function (index, item) {
+             UpdateArr.push(item.data);
+        });
+    }
+
+
+    function UploadListFileData() {
+        ResetDataPostSavePlaning();
+        SetDataPostSavePlaning();
+        $.ajax({
+            url: '@Url.Action("SaveListFile", "MESProductionRequestChange")',
+            type: 'POST',
+            async: false,
+            data:
+            {
+                updateData: JSON.stringify(UpdateArr),
+                projectCode: Pag_ID
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function checkStockQty() {
+        $.ajax({
+            url: '@Url.Action("CheckStkQtyIsEnough","MESProductionRequestChange")',
+            type: 'GET',
+            async: false,
+            data:
+            {
+                projectCode: '@ViewBag.ProjectCode',
+                orderQuantity: '@ViewBag.OrderQuantity'
+            },
+            dataType: 'json',
+            success: function (result) {
+                if (result == null) {
+                    $("#btnRequestProduction_@(ViewBag.thread)").removeAttr('disabled');
+                }
+                else {
+                    $("#btnRequestProduction_@(ViewBag.thread)").attr('disabled', 'disabled');
+                }
+            }
+        });
+    };
+
+    // Thien add 2022-01-13 (load file)
+    @*function GetListFileByIdProjectCode() {
+        $.ajax({
+            url: '@Url.Action("GetSYFileByIdProject", "MESProductionRequest")',
+            type: "GET",
+            data: { projectCode: '@ViewBag.ProjectCode', },
+            success: function (result) {
+
+                $('#gridListFileDrawing').dxDataGrid('option', 'dataSource', result);
+
+                LoadingPage(0);
+            }
+        });
+    }*@
+
+    // Refresh Production Request
+    $("#btnReLoad_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+         // Refresh Mst
+        let projectCode = $("#ProdReq_ProjectCode").dxTextBox('instance').option('value');
+        $.ajax({
+            url: '@Url.Action("ReloadRequestMst", "MESProductionRequestChange")',
+            type: "GET",
+            data: {
+                projectCode: projectCode,
+                menuID : '@ViewBag.menuID'
+            },
+            dataType: "json",
+            success: function (result) {
+                $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("instance").option("value", result.RequestType);
+                $('#ProdReq_ProjectName').dxTextBox('instance').option("value", result.ProjectName);
+                $('#ProdReq_ProjectCode').dxTextBox('instance').option("value", result.ProjectCode);
+                $('#ProdReq_UserProjectCode').dxTextBox('instance').option("value", result.UserProjectCode);
+                $('#ProdReq_CustomerName').dxTextBox('instance').option("value", result.PartnerName);
+                $('#ProdReq_ProjectStatus').dxTextBox('instance').option("value", result.ProjectStatusName);
+                $('#ProdReq_UserRequest').dxTextBox('instance').option("value", result.UserNameRequest);
+                $('#ProdReq_ItemRequest@(ViewBag.Thread)').dxTextBox('instance').option("value", result.ItemName);
+                $('#ProdReq_ItemQtyRequest@(ViewBag.Thread)').dxNumberBox('instance').option("value", result.OrderQuantity);
+                $('#ProdReq_RequestMessage@(ViewBag.Thread)').dxTextBox('instance').option("value", result.RequestMessage);
+                if (result.RequestDate != "") {
+                    $('#ProdReq_RequestDate').dxDateBox('instance').option("value", result.RequestDate);
+                }
+                RequestCode = result.RequestCode;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    function ReLoadProductionMst(){
+            CheckSession();
+            LoadingPage(1);
+            // Refresh Mst
+            let projectCode = $("#ProdReq_ProjectCode").dxTextBox('instance').option('value');
+            $.ajax({
+                url: '@Url.Action("ReloadRequestMst", "MESProductionRequestChange")',
+                type: "GET",
+                data: {
+                    projectCode: projectCode,
+                    menuID: '@ViewBag.menuID'
+                },
+                dataType: "json",
+                success: function (result) {
+                    LoadingPage(0);
+                    $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("instance").option("value", result.RequestType);
+                    $('#ProdReq_ProjectName').dxTextBox('instance').option("value", result.ProjectName);
+                    $('#ProdReq_ProjectCode').dxTextBox('instance').option("value", result.ProjectCode);
+                    $('#ProdReq_UserProjectCode').dxTextBox('instance').option("value", result.UserProjectCode);
+                    $('#ProdReq_CustomerName').dxTextBox('instance').option("value", result.PartnerName);
+                    $('#ProdReq_ProjectStatus').dxTextBox('instance').option("value", result.ProjectStatusName);
+                    $('#ProdReq_UserRequest').dxTextBox('instance').option("value", result.UserNameRequest);
+                    $('#ProdReq_ItemRequest@(ViewBag.Thread)').dxTextBox('instance').option("value", result.ItemName);
+                    $('#ProdReq_ItemQtyRequest@(ViewBag.Thread)').dxNumberBox('instance').option("value", result.OrderQuantity);
+                    $('#ProdReq_RequestMessage@(ViewBag.Thread)').dxTextBox('instance').option("value", result.RequestMessage);
+                    $('#ProdReq_RequestDate').dxDateBox('instance').option("value", result.RequestDate);
+                    RequestCode = result.RequestCode;
+
+                }
+            });
+        LoadingPage(0);
+    }
+
+    function RefreshProductionRequest() {
+        LoadingPage(1);
+        $.blockUI();
+        $.ajax({
+            url: '@Url.Action("ShowDetailProductionRequest", "MESProductionRequestChange")',
+            type: "GET",
+            data: { projectCode: '@ViewBag.ProjectCode' },
+            dataType: "html",
+            success: function (result) {
+                $("#divDetailProductionRequestChange").html(null);
+                $("#divDetailProductionRequestChange").html(result);
+                $.unblockUI();
+            }
+        })
+        LoadingPage(0);
+    }
+
+    // Back to main Production Request
+    $("#btnBack_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        $("#divMainProductionRequestChange").prop("hidden", false);
+        $("#divDetailProductionRequestChange").prop("hidden", true);
+        $("#divDetailProductionRequestChange").html(null);
+    });
+
+    $("#btnRecall_@(ViewBag.Thread)").on("click", function () {
+        var checkSave = true;
+        $.ajax({
+            url: '@Url.Action("GetProjectStatus", "MESProductionRequestChange")',
+            type: "GET",
+            data: {
+                projectCode: '@ViewBag.ProjectCode',
+                menuID: '@ViewBag.menuID',
+                vbParent: '@ViewBag.Thread',
+            },
+            dataType: "json",
+            success: function (result)
+            {
+                if (result == "PJST04" || result == "PJST05" || result == "PJST06" || result == "PJST07" || result == "PJST08") {
+                    checkSave = false;
+                }
+                else {
+                    checkSave = true;
+                }
+                if (checkSave == true) {
+                    LoadingPage(1);
+                    CheckSession();
+                    var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+                    result.done(function (dialogResult) {
+                        if (dialogResult) {
+                            $.blockUI();
+                            $.ajax({
+                                url: '@Url.Action("RecallProductionRequest", "MESProductionRequestChange")',
+                                type: 'POST',
+                                async: false,
+                                data: {
+                                    projectCode: "@(ViewBag.ProjectCode)"
+                                },
+                                dataType: 'json',
+                                success: function (result) {
+                                    if (result.Success) {
+                                        LoadingPage(0);
+                                        DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                            $("#btnRecall_@(ViewBag.thread)").hide();
+                                            ReloadProductionRequestDetail();
+                                            $.unblockUI();
+                                        });
+                                    }
+                                    else {
+                                        LoadingPage(0);
+                                        $.unblockUI();
+                                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                                    }
+                                }
+                            });
+                        } else {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                    LoadingPage(0);
+                }
+                else {
+                    DevExpress.ui.dialog.alert("Project have start work you can't Recall", "Recall fail");
+                    LoadingPage(0);
+                    $("#btnBack_@(ViewBag.Thread)").trigger("click");
+                    ReloadTabProductionRequest();
+                }
+            }
+        })
+    });
+
+    $("#btnSave_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+        let ProdReq_RequestMessage = $('#ProdReq_RequestMessage@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        let ProdReq_RequestType = $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        let InitialCode = true;
+        if ($('#@InitialCheck').dxRadioGroup('instance').option("value") == "No") {
+            InitialCode = false;
+        }
+
+
+        if (ProdReq_RequestType == "" || ProdReq_RequestType == null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please Input Production Classification!", "Error");
+            $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox('instance')._$element[0].style.borderColor = "red";
+            setTimeout(function () { $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("focus"); }, 2000);
+            return;
+        }
+        else
+        {
+            $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox('instance')._$element[0].style.borderColor = "";
+        }
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("UpdateDataProductionRequestChange", "MESProductionRequestChange")',
+                        type: 'POST',
+                        async: false,
+                        data:
+                        {
+                            projectCode: '@ViewBag.ProjectCode',
+                            requestCode: '@ViewBag.requestCode',
+                            requestType: ProdReq_RequestType,
+                            requestMessage: ProdReq_RequestMessage,
+                            ProductType: $('#@ProductType').dxTextBox('instance').option('value'),
+                            ItemCode: $('#@ItemCode').dxTextBox('instance').option('value'),
+                            RequestDate: $("#ProdReq_RequestDate").dxDateBox("option", "value"),
+                            InitialCode: InitialCode
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $("#btnReFresh_@ViewBag.Thread").trigger("click");
+                                checkStockQty();
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                LoadingPage(0);
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        ReloadProductionRequestDetail();
+                        LoadingPage(0);
+                    }
+                } else {
+                    return;
+                }
+            });
+
+        LoadingPage(0);
+    });
+
+    // Check RequestProduction And Update Status
+    $("#btnRequestProduction_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        let ProdReq_RequestType = $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (ProdReq_RequestType == "" || ProdReq_RequestType == null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please Input Production Classification!", "Error");
+            $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox('instance')._$element[0].style.borderColor = "red";
+            setTimeout(function () { $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("focus"); }, 2000);
+            return;
+        }
+        else
+        {
+            $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox('instance')._$element[0].style.borderColor = "";
+        }
+
+        let RequestDate = $("#ProdReq_RequestDate").dxDateBox("option", "value");
+
+        let isSuccess = false;
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD00011</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+                $.ajax({
+                    url: '@Url.Action("RequestProduction", "MESProductionRequestChange")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@ViewBag.ProjectCode',
+                        requestDate: ParsingDateyyyyMMdd(RequestDate),
+                        RequestType: ProdReq_RequestType
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD00012', "Success", function () {
+                                $.unblockUI();
+                                isSuccess = true;
+                                $("#btnRecall_@(ViewBag.thread)").show();
+                                $("#btnRequestProduction_@(ViewBag.thread)").hide();
+                                $("#btnsave_@(ViewBag.thread)").hide();
+                            });
+                        }
+                        else {
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+                if (isSuccess)
+                {
+                    $.unblockUI();
+                    ReloadProductionRequestDetail();
+
+                }
+            }
+            else
+            {
+                return;
+            }
+        });
+
+    });
+
+    function ReloadProductionRequestDetail() {
+        $.ajax({
+            url: '@Url.Action("ShowDetailtemRequest", "MESProductionRequestChange")',
+            type: "GET",
+            data: {
+                projectCode: '@ViewBag.ProjectCode',
+                menuID: '@ViewBag.menuID',
+                vbParent: '@ViewBag.Thread',
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#divDetailProductionRequestChange").html(null);
+                $("#divDetailProductionRequestChange").html(result);
+
+            }
+        })
+    }
+
+    //ShowPopup List Item
+    function ProductionRequestPopup() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("ProductionRequestPopup", "MESProductionRequestChange")',
+            type: "GET",
+            data: {
+                projectCode: null
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+    }
+
+    //SetColor cell RealQty
+    function SetColorRealQty(e) {
+
+        if (e.Cell != undefined) {
+            if (e.cells[3].rowType === "data" && e.cells[3].value !== null && e.cells[3].value !== "") {
+                var ReqestQty = new string(e.cells[3].value);
+                var RealQty = new string(e.cells[4].value);
+            }
+            if (ReqestQty !== "" && RealQty !== "") {
+                if (RealQty < ReqestQty) {
+                    e.cells[4].cellElement.css("color", "red");
+                    e.cells[4].cellElement.css("backgroundColor", "yellow");
+                }
+            }
+        }
+
+    }
+
+    function ReloadTabProductionRequest() {
+        $.ajax({
+            url: '@Url.Action("SearchListProductionRequest", "MESProductionRequestChange")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                projectCode: "",
+                requestType: "",
+                customerName: "",
+                itemCode: "",
+                userProjectCode: "",
+                requestStartDate: "",
+                requestEndDate: "",
+                projectStatus: ""
+            },
+            success: function (result) {
+                $("#GridProductionRequestIndex").dxDataGrid("option", "dataSource", result);
+                $("#GridProductionRequestIndex").dxDataGrid("instance").refresh();
+            }
+        });
+    }
+
+    function SetCellValueCategory(rowData, value) {
+        Category = value;
+        rowData.Category = value;
+        rowData.ItemClassCode = null;
+        rowData.ItemCode = null;
+        rowData.ReqQty = 0;
+        rowData.RealQty = 0
+    }
+
+    function SetCellValueItemClassCode(rowData, value) {
+        ItemClassCode = value;
+        rowData.ItemClassCode = value;
+        rowData.ItemCode = null;
+        rowData.ReqQty = 0;
+        rowData.RealQty = 0
+    }
+
+    function SetCellValueItemCode(rowData, value) {
+
+        rowData.RealQty = value;
+        rowData.ItemCode = value;
+        rowData.ReqQty = 0;
+        rowData.RealQty = 0
+    }
+
+    function getParamsCategory() {
+        return Category;
+    }
+
+    function getParamsItemClassCode() {
+        return ItemClassCode;
+    }
+
+    function GridItemMaterialOnEditorPreparing(e) {
+        if (e.row != undefined) {
+            if (e.parentType === "dataRow" && e.dataField === "ItemClassCode") {
+                e.editorOptions.disabled = (typeof e.row.data.Category !== "string");
+            }
+            if (e.parentType === "dataRow" && e.dataField === "ItemCode") {
+                e.editorOptions.disabled = (typeof e.row.data.ItemClassCode !== "string");
+            }
+            StockQty = e.row.data.RealQty;
+        }
+
+    }
+
+    function onUploadTaskDrawingRequest(e) {
+        LoadingPage(1);
+        var result = JSON.parse(e.request.response);
+        e.file.fileGuid = result.data.FileGuid;
+        fileID_@(Model.ID) = result.fileID;
+        updateIdFile(result.fileID);
+        GetListFileProjectOverPeriod();
+
+        setTimeout(function () {
+            var buttonHtml = '<div class="dx-fileuploader-button-container btn-custom-file">' +
+                '<div class="dx-fileuploader-button dx-widget dx-button-has-icon">' +
+                '<div class="dx-button-content">' +
+                '<a href="#" onClick="deleteFilePopup(this,\'' + result.data.FileGuid + '\')">' +
+                '<i class="dx-icon dx-icon-remove"></i>' +
+                '</a>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            var container = $(".dx-fileuploader-files-container");
+            var child = $(".dx-fileuploader-file-container");
+            var temp = $(".dx-fileuploader-files-container").find(child);
+            $.each(temp, function (i, item) {
+
+                var link = $("<a href='" + getLanguages() + "/FilesUpload/DownloadFile?fileguid=" + result.data.FileGuid + "'></a>");
+                var temp1 = item.children[1].children[0];
+
+                var temp2 = temp1.children[0];
+                link.append(temp2);
+                $(temp1).prepend(link);
+                var temp3 = $(temp1).find(".btn-custom-file");
+                if (temp3.length === 0) {
+                    $(temp1).append(buttonHtml)
+                }
+            });
+        }, 3000000);
+        e.component.__uploadedFilesCount++;
+        if (e.component.option("value").length === e.component.__uploadedFilesCount) {
+            e.component.reset();
+            e.component.__uploadedFilesCount = null;
+        }
+        LoadingPage(0);
+    }
+
+    function OnValueChangedFileRequest(e) {
+
+        var files = e.value;
+        if (files.length > 0) {
+            listFile = files;
+        }
+    }
+
+    function OnUploadAbortedPopupRequest(e) {
+        console.log(e);
+    }
+
+    function updateQueryStringParameterPopupRequest(uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        if (uri.match(re))
+        {
+            GetListFileProjectOverPeriod();
+            return uri.replace(re, '$1' + key + "=" + value + '$2');
+        }
+        else
+        {
+            return uri + separator + key + "=" + value;
+        }
+    }
+
+    function updateIdFile(value) {
+        var uploader = $("#@Model.ID").dxFileUploader("instance");
+        var url = uploader.option("uploadUrl");
+        url = updateQueryStringParameterPopupRequest(url, "idFile", value);
+        uploader.option("uploadUrl", url);
+    }
+
+    function setValue_@(Model.ID)(fileId) {
+        fileID_@(Model.ID) = fileId;
+        if ('@Model.Upload_File' == true) {
+            updateIdFile(fileId);
+            GetListFileProjectOverPeriod();
+            $("#gridListFileDrawing").dxDataGrid("instance").refresh();
+            LoadingPage(0);
+        }
+        else {
+            GetListFileProjectOverPeriod();
+            $("#gridListFileDrawing").dxDataGrid("instance").refresh();
+            LoadingPage(0);
+        }
+
+    }
+
+    function setValueGrid_@(Model.ID)(fileId) {
+        fileID_@(Model.ID) = fileId;
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result) {
+                arrTemp = [];
+                $.each(result.data, function (index, item) {
+                    arrTemp.push(item.FileDetail);
+                });
+                arrTemp.reverse();
+                $('#gridListFileDrawing').dxDataGrid('option', 'dataSource', arrTemp);
+                if (arrTemp.length == 0) {
+                    $('#ButtonDownloadAllFile').attr('disabled', 'disabled');
+                }
+                else
+                {
+                    $('#ButtonDownloadAllFile').removeAttr('disabled');
+                }
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function ReloadListFile() {
+        $.ajax({
+            url: '@Url.Action("GetDetailByProjectCode", "MESDrawing")',
+            type: 'GET',
+            data: { projectCode: Pag_ID },
+            dataType: 'json',
+            success: function (result) {
+                updateIdFile(result.FileID);
+                FileMasterID = result.FileID;
+                fileID_@(Model.ID) = result.FileID;
+                setValueGrid_@(Model.ID)(result.FileID);
+                setValue_@(Model.ID)(result.FileID);
+            }
+        });
+    }
+
+    function DeletegridListFilePopupRequest(e) {
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $(e).parent().parent().parent().parent().parent().parent().remove();
+                $.ajax({
+                    url: '@Url.Action("DeleteFile", "FilesUpload")',
+                    type: "POST",
+                    data: { fileguid: data.FileGuid },
+                    success: function (result) {
+                        if (result.result == false) {
+
+                            DevExpress.ui.dialog.alert("Delete fail", "Error");
+                        }
+                        else {
+
+                            GetListFileProjectOverPeriod();
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                            $("#gridListFileDrawing").dxDataGrid("instance").refresh();
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+
+    function GetLinkUrlSaleProject() {
+        $.ajax({
+            url: '@Url.Action("GetListFileUrlSaleProject", "MESProductionRequestChange")',
+            type: 'GET',
+            data: { projectCode: Pag_ID },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#@GridFileURL").dxDataGrid("instance");
+                grid.option("dataSource", result);
+                grid.refresh();
+            }
+        });
+    }
+
+    function GetListFileProjectOverPeriod() {
+        $.ajax({
+            url: '@Url.Action("GetListFile", "MESProductionRequestChange")',
+            type: 'GET',
+            data: { fileID: FileID },
+            dataType: 'json',
+            success: function (result) {
+                $('#gridListFileDrawing').dxDataGrid('option', 'dataSource', result);
+            }
+        });
+    }
+
+    function SetRoleUserToDisplay(e) {
+        return e.row.data.No === 1 ? true : false;
+    }
+
+    function SaveUrlFile@(ViewBag.Thread)(e) {
+        LoadingPage(1);
+        if (e.row.isNewRow == true) {
+             var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                $.ajax({
+                url: '@Url.Action("SaveUrlFile", "MESProductionRequestChange")',
+                type: 'Post',
+                    data: {
+
+                        fileUrl: e.row.data.FileUrl,
+                        saleProjectID: '@ViewBag.ProjectCode'
+                },
+                dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                GetLinkUrlSaleProject();
+                                DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                            }
+                            else {
+                                LoadingPage(0);
+                                GetLinkUrlSaleProject();
+                                DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0005', "Error");
+                            }
+                        }
+                });
+            });
+        }
+        else {
+            if (e.row.isEditing == true) {
+                    var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0003</i>", "Confirm changes");
+                    result.done(function (dialogResult) {
+                    $.ajax({
+                    url: '@Url.Action("SaveUrlFile", "MESProductionRequestChange")',
+                    type: 'Post',
+                        data: {
+                            Id: e.row.data.Id,
+                            fileUrl: e.row.data.FileUrl
+                    },
+                    dataType: 'json',
+                            success: function (result) {
+                                if (result.Success) {
+                                    LoadingPage(0);
+                                    GetLinkUrlSaleProject();
+                                    DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                                }
+                                else {
+                                    LoadingPage(0);
+                                    GetLinkUrlSaleProject();
+                                    DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0005', "Error");
+                                }
+                            }
+                    });
+                });
+            }
+        }
+        LoadingPage(0);
+    }
+
+    function DeleteUrlFile@(ViewBag.Thread)(e) {
+           LoadingPage(1);
+            var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                $.ajax({
+                url: '@Url.Action("SaveUrlFile", "MESProductionRequestChange")',
+                type: 'Post',
+                data: {
+                    flag: 1,
+                    Id: e.row.data.Id
+                },
+                dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                GetLinkUrlSaleProject();
+                                DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                            }
+                            else {
+                                LoadingPage(0);
+                                GetLinkUrlSaleProject();
+                                DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0015', "Error");
+                            }
+                        }
+                });
+            });
+        LoadingPage(0);
+    }
+
+     function showPopupGetItem@(ViewBag.Thread)() {
+        $.ajax({
+            url: '@Url.Action("showPopupGetItem", "MESProductionRequestChange")',
+            type: "GET",
+            data:
+            {
+                idParent: '@ViewBag.thread'
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContentChild").removeClass("modal-dialog");
+                $("#modalContentChild").removeClass("modal-md");
+                $("#modalContentChild").removeClass("modal-lg");
+                $("#modalContentChild").removeClass("modal-xl");
+                $("#modalContentChild").html(result);
+                $("#modalContentChild").addClass("modal-dialog modal-lg");
+                $('#modalControlChild').modal('show');
+
+            }
+        });
+    }
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-sm btn-secondary btn-action" title="Back" id="btnBack_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-reply"></i> @_loc.GetLocalizedString("Back")</button>
+                        <button class="btn btn-sm btn-secondary btn-action" title="Reload" id="btnReLoad_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-sync"></i> @_loc.GetLocalizedString("Reload")</button>
+                        @if (ViewBag.ProjectStatus == "PJST01" || ViewBag.ProjectStatus == "PJST02")
+                        {
+                            if (Model.Btn_Save == true)// check permission User
+                            {
+                                <button class="btn btn-sm btn-secondary btn-action" title="Save" id="btnSave_@(ViewBag.thread)" style="margin-right:5px"><i class="fa fa-save"></i> @_loc.GetLocalizedString("Save")</button>
+                            }
+
+                        }
+                        @if (Model.Btn_Save == true)// check permission User
+                        {
+                            <button class="btn btn-sm btn-secondary btn-action" title="Request Production" id="btnRequestProduction_@(ViewBag.thread)" style="margin-right:5px">
+                                <i class="fas fa-industry"></i> @_loc.GetLocalizedString("Request Production")
+                            </button>
+                            <button class="btn btn-sm btn-warning btn-warning-action" title="Recall" id="btnRecall_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-undo"></i> @_loc.GetLocalizedString("Recall")</button>
+                            }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Production Project Name")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ProjectName").Value(ViewBag.ProjectName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group" hidden="hidden">
+                            <label>@_loc.GetLocalizedString("Project Code")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ProjectCode").Value(ViewBag.ProjectCode).Disabled(true))
+                        </div>
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("UserProjectCode")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_UserProjectCode").Value(ViewBag.UserProjectCode).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Customer Name")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_CustomerName").Value(ViewBag.PartnerName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Project Status")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ProjectStatus").Value(ViewBag.ProjectStatusName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("User Request")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_UserRequest").Value(ViewBag.UserRequest).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Scheduled production completion date")</label>
+                            @(Html.DevExtreme().DateBox()
+                                            .ID("ProdReq_RequestDate")
+                                            .DisplayFormat("yyyy-MM-dd")
+                                            .Value(ViewBag.RequestDate != "" ? ViewBag.RequestDate : DateTime.Now.ToString("yyyy-MM-dd"))
+                                            .Min(DateTime.Now)
+                            )
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Production classification")<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().SelectBox()
+                                            .ID(ProdReq_RequestType)
+                                            .DisplayExpr("BASE_NAME")
+                                            .ValueExpr("BASE_CODE")
+                                            .Value(ViewBag.RequestType)
+                           )
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-4">
+                        <div class="form-group">
+                            <div hidden="hidden">
+                                @(Html.DevExtreme().TextBox()
+                                      .ID(ProductType)
+                                      .Value(ViewBag.ProductType)
+                                 )
+                                @(Html.DevExtreme().TextBox()
+                                    .ID(ItemCode)
+                                    .Value(ViewBag.ItemCode)
+                                 )
+                            </div>
+                            <label>@(_loc.GetLocalizedString("Item Name"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(ProdReq_ItemRequest)
+                                .Mode(TextBoxMode.Text)
+                                .StylingMode(EditorStylingMode.Outlined)
+                                 .Buttons(buttons =>
+                                 {
+                                     buttons.Add()
+                                         .Name("PopupGetItem")
+                                         .Location(TextEditorButtonLocation.After)
+                                         .Widget(w => w.Button()
+                                         .ID("PopupGetItem" + ViewBag.Thread)
+                                         .Type(ButtonType.Default)
+                                         .Icon("find")
+                                         .OnClick("showPopupGetItem" + ViewBag.Thread));
+                                 })
+                             )
+
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-1">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Quantity Requested")</label>
+                            @(Html.DevExtreme().NumberBox().ID("ProdReq_ItemQtyRequest" + ViewBag.Thread).Format("#,##0").Disabled(true)//Fortmat decimal(3,1)#,###.###0
+                            .Value(ViewBag.OrderQuantity)
+                            .ShowSpinButtons(true)
+                            .Min(0)
+                            .Max(999999)
+
+                        )
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-3">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Request Message")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_RequestMessage" + ViewBag.Thread).Value(ViewBag.RequestMessage))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Initial Code")</label>
+                            @(Html.DevExtreme().RadioGroup()
+                                .ID(InitialCheck)
+                                .Items(InitialCode)
+                                //.Disabled(true)
+                                .Value(ViewBag.code)
+                                .Layout(Orientation.Horizontal)
+                            )
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" style=" margin-top: 2%;">
+                    <div class="col-xs-12 col-md-12 form-group">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Upload File")</legend>
+                            <div class="row">
+                               <div style="margin-left:10px"> 
+                                <label>Please upload only PDF files.</label>
+                               </div> 
+                                <div class="col-xs-12 col-md-12 form-group">
+                                    @if (Model.Upload_File)
+                                    {
+                                        <div class="fileuploader-container1" style="border: 1px solid #ABB2B9">
+                                            @(Html.DevExtreme().FileUploader()
+                                                .ID(Model.ID)
+                                                .Name("myFile")
+                                                .ShowFileList(true)
+                                                .ChunkSize(10000000)
+                                                .MaxFileSize(50000000000)
+                                                .Accept("*")
+                                                .UploadMode(FileUploadMode.UseButtons).UploadButtonText(@_loc.GetLocalizedString("Upload"))
+                                                .SelectButtonText(@_loc.GetLocalizedString("Select file"))
+                                                .UploadUrl(Url.Action("UploadChunk_Popup", "FilesUpload", new { idFile = "", pagID = Model.Pag_ID, spName = Model.Sp_Name, idFileMaster = Model.FileMasterID , listFile = listFile, siteID = ViewBag.SiteID }))
+                                                .OnUploaded("onUploadTaskDrawingRequest")
+                                                .OnUploadStarted(@<text>
+                                                    //PVN Add
+                                                    function (e) {
+                                                    if (!e.component.__uploadedFilesCount) {   //this is just a custom option that is not used by dxFileUploader
+                                                        e.component.__uploadedFilesCount = 0;
+                                                    }
+                                                }
+                                                </text>)
+                                                .OnValueChanged("OnValueChangedFileRequest")
+                                                .OnUploadAborted("OnUploadAbortedPopupRequest")
+                                                .AllowCanceling(true)
+                                                .Multiple(true)
+                                                .AllowedFileExtensions(AllowedFileExtensions)
+
+
+                                            )
+                                        </div>
+                                    }
+                                    <div class="modal-footer" style="display: none;">
+                                        <button type="button" id="ButtonDownloadAllFile" onclick="DownloadAllFile()" class="btn btn-sm btn-secondary">@(_loc.GetLocalizedString("DownloadAllFile"))</button>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-12 col-md-12 form-group">
+                                    <div class="fileuploader-container1">
+                                        @(Html.DevExtreme().DataGrid<Modules.Common.Models.SYFileUpload>()
+                                                .ID("gridListFileDrawing")
+                                                .KeyExpr("FileGuid")
+                                                .ShowBorders(true)
+                                                .ShowColumnLines(true)
+                                                .ShowRowLines(true)
+                                                .AllowColumnResizing(true)
+                                                .AllowColumnReordering(true)
+                                                .ColumnAutoWidth(true)
+                                                .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                                                .Editing(editing =>
+                                                {
+                                                    editing.AllowDeleting(new JS("SetRoleUserToDisplay"));
+                                                    editing.UseIcons(true);
+                                                })
+                                                .Columns(c =>
+                                                {
+                                                c.AddFor(x => x.FilePathShowBrowser).Caption("FilePathShowBrowser").Alignment(HorizontalAlignment.Left).Visible(false);
+                                                c.AddFor(x => x.FileName).Caption(_loc.GetLocalizedString("FileName")).Alignment(HorizontalAlignment.Left).CellTemplate
+                                                (
+                                                        @<text>
+                                                                <% if (data.No == 0) { %>
+                                                                   <span><%-data.FileName%></span>
+                                                                <% }
+
+                                                                 else if (data.No == 1) { %>
+                                                                                   <a href="#" onclick="OpenFileInBrowser(this)" data-pag-id="<%-data.FilePathShowBrowser%>" data-file-guid="<%-data.FileGuid%>"><%-data.FileName%></a>
+                                                                 <% }
+                                                                 else { %>
+                                                                 <span><%-data.FileName%></span>
+                                                                  <%  }
+                                                                   %>
+
+
+                                                                <script>
+                                                                    function OpenFileInBrowser(obj) {
+                                                                        let fileguid = $(obj).attr("data-file-guid").trim();
+                                                                        var dataFileGuid = (fileguid);
+                                                                        var dataFileID = '@Model.FileMasterID';
+                                                                        var link = $("<a href='" + getLanguages() + "/FilesUpload/OpenFileInBrowser?fileguid=" + dataFileGuid + "'></a>");
+                                                                        window.open(link[0].href);
+                                                                    }
+                                                                </script>
+                                                            </text>
+                                                        );
+
+                                                c.AddFor(x => x.FileSize).Caption(_loc.GetLocalizedString("FileSize")).Alignment(HorizontalAlignment.Center).Format("#,##0");
+                                                c.AddFor(x => x.FileType).Caption(_loc.GetLocalizedString("FileType")).Alignment(HorizontalAlignment.Left);
+                                                c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                                {
+                                                    if ((Model.ProjectStatus != "PJST05" && Model.ProjectStatus != "PJST06" && Model.Delele_File==true))
+                                                    {
+                                                        foreach (var item in Model.FileDetail)
+                                                        {
+                                                            if (item.No == 1)
+                                                            {
+                                                                b.Add().Name(GridColumnButtonName.Delete).OnClick("DeletegridListFilePopupRequest");
+                                                            }
+                                                            else
+                                                            {
+                                                                b.Add().Name("");
+                                                            }
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        b.Add().Name("");
+                                                    }
+                                                });
+                                                })
+                                                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                                    .HeaderFilter(f => f.Visible(true))
+                                                    .Paging(paging => paging.PageSize(20))
+                                                    .Pager(pager =>
+                                                    {
+                                                        pager.ShowPageSizeSelector(false);
+                                                        pager.AllowedPageSizes(new[] { 20,20,60});
+                                                        pager.ShowInfo(true);
+                                                    })
+
+                                                )
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+
+                <div class="row" style=" margin-top: 2%;">
+                    <div class="col-xs-12 col-md-12" style="height:100%;width:100%">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("URL File")</legend>
+                            @(Html.DevExtreme().DataGrid<MES_UrlByUser>()
+                                .ID(GridFileURL)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .ColumnAutoWidth(true)
+                                .Height("100%")
+                                .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Editing(editing =>
+                                {
+                                    editing.Mode(GridEditMode.Row);
+                                    editing.UseIcons(true);
+                                    editing.AllowUpdating(true);
+                                    editing.AllowDeleting(true);
+                                    editing.AllowAdding(true);
+                                })
+                                .Columns(c=> {
+                                    c.AddFor(x => x.Id).Caption(_loc.GetLocalizedString("Id")).AllowEditing(false).Visible(false);
+                                    c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).Width("10%").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                                    c.AddFor(x => x.FileUrl).Caption(_loc.GetLocalizedString("URL")).Width("70%").Alignment(HorizontalAlignment.Center).AllowEditing(true)
+                                    .CellTemplate(
+                                        @<text>
+                                                <a href="<%-data.FileUrl%>" target="_blank" data-pag-id="<%-data.FileUrl%>" data-file-guid="<%-data.FileGuid%>"><%-data.FileUrl%></a>
+                                        </text>
+                                    ).Alignment(HorizontalAlignment.Left);
+                                    c.Add().Type(GridCommandColumnType.Buttons).Buttons(b => {
+
+                                        b.Add().Name(GridColumnButtonName.Edit);
+                                        b.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteUrlFile" + ViewBag.Thread);
+                                        b.Add().Name(GridColumnButtonName.Save).OnClick("SaveUrlFile" + ViewBag.Thread);
+
+                                    })
+                                    .Width("20%").Caption(_loc.GetLocalizedString("Management")).AllowEditing(false); ;
+
+                                })
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(50))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                            )
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

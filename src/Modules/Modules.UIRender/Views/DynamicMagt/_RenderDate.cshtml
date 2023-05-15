@@ -1,0 +1,74 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+
+<script>
+    function getValue_@(Model.PEL_ID)() {
+        var flagRequired = false;// Init flag required field
+        var value = $("#@(Model.PEL_ID)").dxDateBox("instance").option("value");
+        // Check required field
+        if ("@(Model.PEL_IS_REQUIRED)" === "True") {
+            if (typeof value !== 'undefined' && value != "" && value != null) {
+                flagRequired = false;
+                var dateFormat = new Date(value);
+                var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return dateString;
+            }
+            else
+            {
+                flagRequired = true;
+                $("#@(Model.PEL_ID)").dxValidator({
+                    validationRules: [{ type: "required" }]
+                });
+                DevExpress.validationEngine.validateGroup();
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return null;
+            }
+        }
+        else
+        {
+            if (typeof value !== 'undefined' && value != "") {
+                //var dateFormat = new Date(value).toISOString().slice(0, 10);
+                var dateFormat = new Date(value);
+                var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
+                return dateString;
+            }
+            return null;
+        }
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(Model.PEL_ID)").dxDateBox("instance").option("value",value);
+    }
+    //$(document).ready(function () {
+    //    console.log(Date.parse(getValue_F1_TEXT2()).toString("yyyy-MM-dd"));
+    //});
+    //function dateBox_valueChanged(data) {
+    //    var temp = new Date(data.value)
+    //    console.log(temp.toString("yyyy-mm-dd"));
+    //    var trmp = new Date(data.value);
+    //    console.log(trmp);
+    //}
+</script>
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS==true?"display:block":"display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+    @(Html.DevExtreme().DateBox().ID(Model.PEL_ID)
+                .Type(DateBoxType.Date)
+                .Value(DateTime.Now)
+                .DisplayFormat("yyyy-MM-dd")
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .MaxLength(@Model.PEL_LEN) // Data length can input
+            )
+    @*<div class="dx-field">
+        <div class="dx-field-label">@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().DateBox().ID(Model.PEL_ID)
+                .Type(DateBoxType.Date)
+                .Value(DateTime.Now)
+                .DisplayFormat("yyyy-MM-dd")
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .MaxLength(@Model.PEL_LEN) // Data length can input
+            )
+        </div>
+    </div>*@
+</div>

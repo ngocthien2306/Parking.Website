@@ -1,0 +1,436 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@using Modules.Pleiger.Production.Model;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = ViewBag.PageSetting;
+    pageSetting.SEARCH_YN = true;
+    pageSetting.CREATE_YN = true;
+    pageSetting.EXCEL_YN = true;
+    pageSetting.CREATE_YN = true;
+    pageSetting.EDIT_YN = true;
+    pageSetting.DELETE_YN = true;
+    pageSetting.PRINT_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string frmWareHouseName = "frmWareHouseName" + ViewBag.Thread;
+    string frmProductionProjectCode = "frmProductionProjectCode" + ViewBag.Thread;
+    string frmSalesOrderProjectCode = "frmSalesOrderProjectCode" + ViewBag.Thread;
+    string frmCategory = "frmCategory" + ViewBag.Thread;
+    string gridProjectWarehouseInventory = "gridProjectWarehouseInventory" + ViewBag.Thread;
+}
+<script>
+    var dataList = []
+    $(document).ready(function () {
+        LoadingPage(1);
+        loadCombobox@(ViewBag.Thread)()
+        loadComboboxWareHouse@(ViewBag.Thread)()
+        loadDataProjectWarehouseInventory();
+    });
+
+    function loadCombobox@(ViewBag.Thread)() {
+        var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        category.unshift({
+            BASE_CODE: "All",
+            BASE_NAME: "All"
+        });
+
+        $("#@frmCategory").dxSelectBox({
+            dataSource: category,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: "IMTP01"
+        });
+
+    };
+
+    function loadComboboxWareHouse@(ViewBag.Thread)() {
+        $.ajax({
+            url: '@Url.Action("GetComBoBoxWareHouseInventory", "MESProjectWarehouseInventory")',
+            type: 'GET',
+            async:true,
+            dataType: 'json',
+            success: function (result)
+            {
+                 var warehouse = result;
+                 warehouse.unshift({
+                        WarehouseCode: "All",
+                        WarehouseType: "All",
+                        WarehouseName:"All"
+                 });
+                        $("#@frmWareHouseName").dxSelectBox({
+                        dataSource: warehouse,
+                        displayExpr: "WarehouseName",
+                        valueExpr: "WarehouseCode",
+                        value: "All"
+                        });
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                LoadingPage(0);
+            },
+        });
+    };
+
+    function ExportDatagridCommon(dataGrid, worksheetname) {
+        debugger;
+        LoadingPage(1)
+        var masterDetails = [];
+        var dateFormat = new Date();
+        var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+        let fileName = menuObject.MenuName + "_" + dateString;
+        //Note: count page which have grid and choose grid which need export
+        var workbook = new ExcelJS.Workbook();
+        var worksheet = workbook.addWorksheet(worksheetname);
+        //worksheet.columns = [
+        //    { width: 5 }, { width: 30 }, { width: 25 }, { width: 15 }, { width: 25 }, { width: 40 }
+        //];
+
+        $(dataGrid).dxDataGrid({
+
+            export: {
+                enabled: true,
+                //allowExportSelectedData: true
+            },
+            onExporting: function(e) {
+                var workbook = new ExcelJS.Workbook();
+                var worksheet = workbook.addWorksheet(worksheetname, {
+                    headerFooter: { firstHeader: "", firstFooter: "Copyright by Pleiger" }
+                });
+                const topLeftCell = { row: 1, column: 1 };
+                masterDetails = [];
+                let masterRows = [];
+                DevExpress.excelExporter.exportDataGrid({
+                    component: e.component,
+                    worksheet: worksheet,
+                    topLeftCell: topLeftCell,
+                    customizeCell: function({ gridCell, excelCell }) {
+                        if (gridCell.column.dataField === 'CategoryName' && gridCell.rowType === 'data') {
+                            masterRows.push({ rowIndex: excelCell.fullAddress.row, data: gridCell.data });
+                        }
+                        if (gridCell.rowType === "header") {
+                            excelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "3498DB" } };
+                        }
+                    }
+                    }).then((cellRange) => {
+                        debugger;
+                        var listWarehouseInventory = [];
+                        masterRows.forEach((masterRow) => {
+                            listWarehouseInventory.push({ ProjectCode: masterRow.data.ProjectCode, WarehouseCode: masterRow.data.WarehouseCode});
+                        });
+
+                        $.ajax({
+                            url: '@Url.Action("GetProjectWarehouseInventoryListDetail", "MESProjectWarehouseInventory")',
+                            type: "POST",
+                            async: false,
+                            data: {
+                                listWarehouseInventory: JSON.stringify(listWarehouseInventory)
+                            },
+                            dataType: 'json',
+                            success: function (result) {
+                                AddDataExcel@(ViewBag.Thread)(result, worksheet, masterRows)
+                                //LoadingPage(0);
+                            }, error: function (err) {
+                                //LoadingPage(0);
+                                return;
+                            }
+                        });
+                    })
+
+                    .then(function () {
+                        workbook.xlsx.writeBuffer().then(function(buffer) {
+                            saveAs(new Blob([buffer], { type: 'application/octet-stream' }), `${fileName}.xlsx`);
+                        });
+                    });
+                e.cancel = true;
+            },
+
+        });
+        if (dataGrid[0].id != undefined) {
+            $('#' + dataGrid[0].id + ' .dx-datagrid-export-button').trigger("click");
+            $('#' + dataGrid[0].id + ' .dx-datagrid-header-panel').attr('style', 'display:none');
+        }
+        else {
+            $(dataGrid + ' .dx-datagrid-export-button').trigger("click");
+            $(dataGrid + ' .dx-datagrid-header-panel').attr('style', 'display:none');
+        }
+
+    }
+
+    function AddDataExcel@(ViewBag.Thread)(data, worksheet, masterRows) {
+        debugger;
+        var list = [];
+        var currentIndex = 2;
+        const borderStyle = { style: "thin", color: { argb: "FF7E7E7E" } };
+
+
+        const columns = [
+            "",
+            "@_loc.GetLocalizedString("No")",
+            "@_loc.GetLocalizedString("Warehouse From")",
+            "@_loc.GetLocalizedString("Customer WareHouse")",
+            "@_loc.GetLocalizedString("Qty")",
+            "@_loc.GetLocalizedString("ItemCode")",
+            "@_loc.GetLocalizedString("ItemName")"
+        ];
+
+        // param data must be data of only one row
+        let insertRow = (index, data) => {
+            worksheet.spliceRows(index, 0, data);
+            worksheet.getColumn(index).outlineLevel = 1;
+            currentIndex++;
+        }
+
+        for(var i = 0; i < masterRows.length; i ++) {
+            let newrow;
+            var detailData = data.filter(f => f.ProjectCode == masterRows[i].data.ProjectCode && f.WarehouseCode == masterRows[i].data.WarehouseCode);
+            if(detailData.length > 0) {
+                insertRow(currentIndex + 1, columns);
+                newRow = worksheet.getRow(currentIndex);
+                columns.forEach((columnName, currentColumnIndex) => {
+                    if (currentColumnIndex != 0) {
+                        Object.assign(newRow.getCell(currentColumnIndex + 1), {
+                            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'BEDFE6' } },
+                            font: { bold: true },
+                            border: { bottom: borderStyle, left: borderStyle, right: borderStyle, top: borderStyle }
+                        });
+                    }
+                });
+                worksheet.getColumn(currentIndex + 1).outlineLevel = 0;
+
+
+                var lineNum = 1;
+                detailData.forEach((data) => {
+                    var insertData = [""];
+                    insertData.push(lineNum);
+                    insertData.push(data.WHFromCodeName);
+                    insertData.push(data.WHToCodeName);
+                    insertData.push(data.Qty);
+                    insertData.push(data.ItemCode);
+                    insertData.push(data.ItemName);
+
+                    insertRow(currentIndex + 1, insertData);
+                    worksheet.mergeCells(currentIndex, 7, currentIndex, 15);
+                    worksheet.outlineLevel = 2;
+                    lineNum++;
+                })
+            }
+            currentIndex++;
+        }
+
+    }
+
+    function exportExcel@(ViewBag.Thread)() {
+        debugger;
+        CheckSession();
+        LoadingPage(1);
+        var dataGrid = $("#@gridProjectWarehouseInventory");
+        ExportDatagridCommon(dataGrid, "Project Warehouse Inventory");
+        LoadingPage(0);
+    };
+
+    function loadDataProjectWarehouseInventory() {
+        const wareHouseName = $('#@frmWareHouseName').dxSelectBox('instance').option('value');
+        const productionProjectCode = $('#@frmProductionProjectCode').dxTextBox('instance').option('value');
+        const salesOrderProjectCode = $('#@frmSalesOrderProjectCode').dxTextBox('instance').option('value');
+        const category = $('#@frmCategory').dxSelectBox('instance').option('value');
+        LoadingPage(1);
+        $.ajax({
+            async: true,
+            url: '@Url.Action("SearchProjectWarehouseInventory", "MESProjectWarehouseInventory")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                WareHouseName: wareHouseName,
+                ProductionProjectCode: productionProjectCode.trim(),
+                Category: category,
+                SalesOrderProjectCode: salesOrderProjectCode.trim()
+
+            },
+            success: function (result) {
+                dataList = result;
+                 $("#@gridProjectWarehouseInventory").dxDataGrid({
+                     dataSource: result,
+                });
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                LoadingPage(0);
+            },
+        });
+    }
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        loadDataProjectWarehouseInventory();
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+        $("#btnSearch_@ViewBag.Thread").trigger("click");
+    });
+
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1)
+        exportExcel@(ViewBag.Thread)();
+        LoadingPage(0)
+
+    });
+
+</script>
+<div class="row w-100 m-0">
+    <div class="col">
+        <div id="menutoolbar_@(ViewBag.Thread)">
+            @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+        </div>
+    </div>
+</div>
+<div class="row w-100 m-0">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div class="card-header">
+                <div class="row">
+                    <div class="form-group col-sm-2 col-12">
+                        <label class="row p-1" for="@(frmWareHouseName)">@(_loc.GetLocalizedString("Warehouse Name"))</label>
+                        <div class="row p-1">
+                            @(
+                            Html.DevExtreme()
+                            .SelectBox()
+                            .AcceptCustomValue(true)
+                            .ID(frmWareHouseName)
+                            .Width("100%")
+                            .ShowClearButton(true)
+                            )
+                        </div>
+                    </div>
+                    <div class="form-group col-sm-2 col-12" style="display: none">
+                        <label class="row p-1" for="@(frmSalesOrderProjectCode)">@(_loc.GetLocalizedString("Sales Order Project Code"))</label>
+                        <div class="row p-1">
+                            @(
+                            Html.DevExtreme()
+                            .TextBox()
+                            .ID(frmSalesOrderProjectCode)
+                            .ShowClearButton(true)
+                            .Width("100%")
+                            )
+                        </div>
+                    </div>
+                    <div class="form-group col-sm-2 col-12">
+                        <label class="row p-1" for="@(frmProductionProjectCode)">@(_loc.GetLocalizedString("Production Code"))</label>
+                        <div class="row p-1">
+                            @(
+                            Html.DevExtreme()
+                            .TextBox()
+                            .ID(frmProductionProjectCode)
+                            .ShowClearButton(true)
+                            .Width("100%")
+                            )
+                        </div>
+                    </div>
+                    <div class="form-group col-sm-2 col-12">
+                        <label class="row p-1" for="@(frmCategory)">@(_loc.GetLocalizedString("Category"))</label>
+                        <div class="row p-1">
+                            @(
+                            Html.DevExtreme()
+                            .SelectBox()
+                            .AcceptCustomValue(true)
+                            .ID(frmCategory)
+                            .Width("100%")
+                            .ShowClearButton(true)
+                            )
+                        </div>
+                    </div>
+                </div>
+                <fieldset class="customFieldset row w-100 mx-auto overflow-auto">
+                    <legend class="customLegend">@(_loc.GetLocalizedString("Production Warehouse Inventory"))</legend>
+                    <div class="row w-100 m-0">
+                        @(
+                            Html.DevExtreme().DataGrid<MESProjectWarehouseInventory>()
+                            .ID(gridProjectWarehouseInventory)
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .Height("70vh")
+                            .Width("100%")
+                            .ColumnAutoWidth(true)
+                            .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single)
+                            .SelectAllMode(SelectAllMode.AllPages))
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(100))
+                            .Pager(pager =>
+                            {
+                                pager.Visible(true);
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            .Columns(c => {
+                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).Alignment(HorizontalAlignment.Center);
+                                c.AddFor(x => x.CategoryName).Caption(_loc.GetLocalizedString("CategoryName"));
+                                c.AddFor(x => x.WarehouseCode).Caption(_loc.GetLocalizedString("Warehouse Code")).Visible(true);
+                                c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("ProjectCode")).Visible(false);
+                                c.AddFor(x => x.WarehouseName).Caption(_loc.GetLocalizedString("Warehouse Name"));
+                                c.AddFor(x => x.UserSalesOrderProjectCode).Caption((@_loc.GetLocalizedString("Sales Order Project Code"))).Visible(false);
+                                c.AddFor(x => x.SalesOrderProjectName).Caption(_loc.GetLocalizedString("Sale Order Project Name")).Visible(false);
+                                c.AddFor(x => x.ProjectOrderType).Caption(_loc.GetLocalizedString("Order Type"));
+                                c.AddFor(x => x.ProductionProject).Caption(_loc.GetLocalizedString("Production Code"));
+                                c.AddFor(x => x.ProductionProjectName).Caption(_loc.GetLocalizedString("Production Name"));
+                                c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));
+                                c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                                c.AddFor(x => x.ProjectStatusName).Caption(_loc.GetLocalizedString("Production Status"));
+                                c.AddFor(x => x.OrderQuantity).Caption(_loc.GetLocalizedString("Order Qty"))
+                                    .Format(Format.FixedPoint);
+                                c.AddFor(x => x.ProdcnDoneQty).Caption(_loc.GetLocalizedString("Total Production Qty"))
+                                    .Format(Format.FixedPoint);
+                                c.AddFor(x => x.DeliveryQty).Caption(_loc.GetLocalizedString("Total Delivered Qty"))
+                                    .Format(Format.FixedPoint);
+                                c.AddFor(x => x.StockQty).Caption(_loc.GetLocalizedString("Current Inventory Total Qty"))
+                                    .Format(Format.FixedPoint);
+                            })
+                               .MasterDetail(md => {
+                               md.Enabled(true);
+                               md.Template(@<text>
+                                                    @(Html.DevExtreme().DataGrid<MESProjectWarehouseInventory>()
+                                                    .ColumnAutoWidth(true).Height("100%")
+                                                    .ShowBorders(true)
+                                                    .Columns(columns => {
+                                                        columns.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).Width("5%");
+                                                        columns.AddFor(x => x.WHFromCodeName).Caption((@_loc.GetLocalizedString("WarehouseFrom"))).Width("10%");
+                                                        columns.AddFor(x => x.WHToCodeName).Caption((@_loc.GetLocalizedString("Customer WareHouse"))).Width("10%");
+                                                        columns.AddFor(x => x.Qty).Caption((@_loc.GetLocalizedString("Qty"))).Width("10%");
+                                                        columns.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code"))).Width("30%");
+                                                        columns.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name"))).Width("30%");
+                                                    })
+                                                    .DataSource(d => d.Mvc()
+                                                        .Controller("MESProjectWarehouseInventory")
+                                                        .LoadAction("GetProjectWarehouseInventoryDetail")
+                                                        .LoadParams(new { ProjectCode = new JS("data.ProjectCode"), WarehouseCode = new JS("data.WarehouseCode") })
+                                                    )
+                                                    )
+                                                </text>);
+                                            })
+
+                            )
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+</div>
+

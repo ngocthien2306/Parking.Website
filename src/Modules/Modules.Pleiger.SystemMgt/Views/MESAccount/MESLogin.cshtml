@@ -1,0 +1,329 @@
+﻿@using InfrastructureCore.Models.Site;
+@using InfrastructureCore.Models.Identity;
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = null;
+    var siteSetting = (SYSite)ViewBag.SiteSetting;
+}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="">
+    @if (siteSetting != null)
+    {
+        if (siteSetting.IconPath != null)
+        {
+            <link rel="shortcut icon" href="@("../IconPage/"+siteSetting.IconPath)" />
+        }
+    }
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+    @*<link rel="stylesheet" href="https:/ /code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">*@
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="~/dist/css/adminlte.min.css">
+    <!-- jQuery -->
+    <script src="~/plugins/jquery/jquery.min.js"></script>
+    <script src="~/js/jquery.blockUI.js"></script>
+    <!-- Google Font: Source Sans Pro -->
+    @*<link href="https:// fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">*@
+
+    @if (siteSetting != null)
+    {
+        if (siteSetting.LoginBackgroundImage != null)
+        {
+            <style>
+                html, body {
+                    background-image: url('../BackgroundImage/@siteSetting.LoginBackgroundImage');
+                    height: 100%;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: cover;
+                    height: 100%;
+                    font-family: 'Numans', sans-serif;
+                }
+            </style>
+        }
+        else
+        {
+            <style>
+                html, body {
+                    background-image: url('../BackgroundImage/544750.jpg');
+                    background-size: cover;
+                    background-repeat: no-repeat;
+                    height: 100%;
+                    font-family: 'Numans', sans-serif;
+                }
+            </style>
+        }
+
+        if (siteSetting.LoginTextColor != null)
+        {
+            <style>
+                .card-header h4 {
+                    color: @siteSetting.LoginTextColor;
+                }
+
+                .remember {
+                    color: @siteSetting.LoginTextColor;
+                }
+
+                #btnLogin{
+                    color: @siteSetting.LoginTextColor;
+                }
+            </style>
+        }
+        else
+        {
+            <style>
+                .card-header h4 {
+                    color: white;
+                }
+
+                .remember {
+                    color: white;
+                }
+
+                #btnLogin {
+                    color: white;
+                }
+            </style>
+        }
+    }
+    else
+    {
+        <style>
+            html, body {
+                background-image: url('../backgroundimage/544750.jpg');
+                background-size: cover;
+                background-repeat: no-repeat;
+                height: 100%;
+                font-family: 'Numans', sans-serif;
+            }
+        </style>
+    }
+
+    <style>
+        .container {
+            height: 100%;
+            align-content: center;
+        }
+
+        .card-header h4 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            height: 370px;
+            margin-top: auto;
+            margin-bottom: auto;
+            width: 400px;
+            background-color: rgba(0,0,0,0.5) !important;
+        }
+
+        .input-group-prepend span {
+            width: 50px;
+            background-color: #FFC312;
+            color: black;
+            border: 0 !important;
+        }
+
+        input:focus {
+            outline: 0 0 0 0 !important;
+            box-shadow: 0 0 0 0 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-center h-100">
+
+            <!-- /.login-logo -->
+            <div class="card">
+                <div class="card-header text-center">
+                    <div class="col-md-12" style="background-color: white; box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)">
+                        <img src="/images/logo_parkingai.png" />
+                    </div>
+                    <h4>@(siteSetting!=null? siteSetting.LoginTitle:null)</h4>
+                </div>
+                <div class="card-body">
+                    <form id="frm-login" action="@Url.Action("OnMESLogin", "MESAccount")" method="post">
+                        <div class="input-group form-group">
+                            <input type="text" id="txtUserName" class="form-control" placeholder="Employee Number">
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-user"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group form-group">
+                            <input type="password" id="txtPassword" name="password" class="form-control" placeholder="Password">
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-lock"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-8">
+                                <div class="icheck-primary remember">
+                                    <input type="checkbox" id="remember">
+                                    <label for="remember">
+                                        @_loc.GetLocalizedString("Remember Me")
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="submit" id="btnLogin" class="btn btn-primary btn-block">@_loc.GetLocalizedString("Sign In")</button>
+                            </div>
+                        </div>
+                    </form>
+                    <p class="mb-1">
+                        <a href="#" onclick="EmailAdmin()">@_loc.GetLocalizedString("I forgot my password")</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 4 -->
+    <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="~/dist/js/adminlte.min.js"></script>
+
+    <script>
+        
+        function EmailAdmin() {
+            alert('@(_loc.GetLocalizedString("System Administrator Email:"))' + " admin@gmail.com");
+            //DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("System Administrator Email:"))' + " admin@gmail.com", "Confirm changes");
+        }
+
+        $('#frm-login').submit(function (e) {
+            $.blockUI();
+            e.preventDefault();
+            localStorage.clear();
+            //let siteCode = $("#txtSiteCode").val();
+            let userName = $("#txtUserName").val();
+            let password = $("#txtPassword").val();
+            let check = document.getElementById("remember").checked;
+            if (check == true) {
+                setCookie("accountid", userName, 7);
+                setCookie("accountpassw", password, 7);
+            }
+            else {
+                deleteCookie("accountid");
+                deleteCookie("accountpassw");
+            }
+            //alert(check);
+            //if (siteCode == "") {
+            //    alert("Please input site code!")
+            //    return;
+            //}
+             
+            if (userName == "") {
+                $.unblockUI();
+                alert("@_loc.GetLocalizedHtmlString("Please input user name")");
+                return;
+            }
+
+            if (password == "") {
+                $.unblockUI();
+                alert("@_loc.GetLocalizedHtmlString("Please input pass word")");
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("OnMESLogin", "MESAccount")',
+                type: 'POST',
+                data: {
+                    UserName: userName,
+                    Password: password
+                },
+                dataType: 'json',
+                success: function (result) {
+                    if (result.Success === true) {
+                        $.unblockUI();
+                        if (result.Error != '@((int)ValidateResultError.NoError)') {
+                            if (result.Error == '@((int)ValidateResultError.PasswordMostExpired)') {
+                                alert("@_loc.GetLocalizedHtmlString("Password is nearly expired")");
+                            }
+                        }
+                         
+                        location.href = result.ReturnURL;
+                    }
+                    else {
+                        $.unblockUI();
+                         
+                        if (result.Error == '@((int)ValidateResultError.IsBlocked)') {
+                            alert("@_loc.GetLocalizedHtmlString("User is Block 15 Minute")");
+                        }
+                        if (result.Error == '@((int)ValidateResultError.PasswordNotValid)') {
+                             alert("@_loc.GetLocalizedHtmlString("Password is NotValid")");
+                        }
+                        if (result.Error == '@((int)ValidateResultError.PasswordExpired)') {
+                            alert("@_loc.GetLocalizedHtmlString("Password is expired")");
+                        }
+                        else if (result.Error == '@((int)ValidateResultError.CredentialNotFound)')
+                        {                       
+                            alert("@_loc.GetLocalizedHtmlString("User not found")");
+                        }
+                    }
+                }
+            });
+        });
+
+        function setCookie(cname, cvalue, exdays) {
+             
+            var d = new Date();
+            d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+            var expires = "expires=" + d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+
+        function deleteCookie(name) {
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        }
+
+        function checkCookie() {
+             
+            var userid = getCookie("accountid");
+            //alert("userid " + userid);
+            var userp = getCookie("accountpassw");
+            //alert("userp " + userp);
+            if (userid !== '' && userp !== '') {
+                $("#txtUserName").val(userid);
+                $("#txtPassword").val(userp);
+                document.getElementById("remember").checked = true;
+                $("#cksaveaccount").prop('checked', true);
+                $("#cksaveaccount").attr('checked', true);
+            }
+        }
+
+        $(function () {
+            checkCookie();
+        });
+    </script>
+</body>

@@ -1,0 +1,533 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    pageSetting.CREATE_YN = true;
+    //pageSetting.DELETE_YN = true;
+    string gridVirtualWarehouse = "gridVirtualWarehouse";
+    string OrderTeamCode = "OrderTeamCode" + ViewBag.Thread;
+    string txtItemCode = "txtItemCode" + ViewBag.Thread;
+    string Status = "Status" + ViewBag.Thread;
+
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+}
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        ReziePageVirtualWarehouse();
+        $("#btnDelete_@ViewBag.Thread").prop("disabled", true);
+        debugger;
+        var productType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "RQTP00");
+        var projectStatus = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "PJST00");
+        var ListItem = MES_Item.filter(grCate => grCate.Category == "IMTP04" || grCate.Category == "IMTP03");
+
+        $("#ProductReqItemCode@(ViewBag.thread)").dxSelectBox({
+            dataSource: new DevExpress.data.DataSource({
+                store: ListItem,
+                paginate: true,
+                pageSize: 100
+            }),
+            //dataSource: ListItem,
+            displayExpr: "ItemName",
+            valueExpr: "ItemCode"
+        });
+
+        $("#ProductReqRequestType@(ViewBag.thread)").dxSelectBox({
+            dataSource: productType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        $("#ProjectStatusPro@(ViewBag.thread)").dxSelectBox({
+            dataSource: projectStatus,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        LoadingPage(0);
+        //setTimeout(function () { LoadingPage(0); }, 1500);
+    })
+    $(window).resize(function () {
+    });
+     //Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        ShowCreateSalesProjectPopupCreate();
+    });
+
+    // start delete Region
+    var ArrProjectIds = [];
+    var ArrProjectIds_Done = [];
+
+    function onSelectChanged(event) {
+        debugger;
+        // Quan add 2020/10/06
+        // Get data delete
+        //let getVisibleRows = $("#gridVirtualWarehouse").dxDataGrid("instance");
+        //var arrData = event.selectedRowKeys;
+
+        //$.each(arrData, function (idx, item) {
+
+        //        if (item.Status !="Done")
+        //        {
+        //            ArrProjectIds.push(item.VirtualWareHouseId);
+        //        }
+        //        else {
+        //            // remove
+        //            ArrProjectIds.pop(item.VirtualWareHouseId);
+        //            //var keys = gridSaleProject.getSelectedRowKeys();
+        //            getVisibleRows.deselectRows(item);
+        //            ///DevExpress.ui.dialog.alert("Cannot delete this project have status different Planned!", "Error");
+        //            return;
+        //    }
+        //})
+
+        ArrProjectIds = [];
+        var arrData = event.selectedRowsData;
+        // console.log(arrData);
+        $.each(arrData, function (idx, item) {
+            if (item.VirtualWareHouseId !== null && item.VirtualWareHouseId != "" && item.Status != 'Done') {
+                ArrProjectIds.push(item.VirtualWareHouseId);
+            }
+            else {
+                debugger;
+                if (!ArrProjectIds_Done.includes(item.VirtualWareHouseName)) {
+                    ArrProjectIds_Done.push(item.VirtualWareHouseName)
+                }
+            }
+        })
+
+        @*if (ArrProjectIds.length > 0)
+        {
+            $("#btnDelete_@ViewBag.Thread").prop("disabled", false);
+        }
+        else
+        {
+            $("#btnDelete_@ViewBag.Thread").prop("disabled", true);
+        }*@
+        return ArrProjectIds;
+    }
+
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+        let dataGridDelete = $("#gridVirtualWarehouse").dxDataGrid("instance");
+        let listData = dataGridDelete.getVisibleRows();
+
+
+        if (ArrProjectIds.length > 0) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (resultdialog) {
+                if (resultdialog) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteVirtualWareHouses", "MESVirtualWarehouse")',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: { VirtualWareHouseId: ArrProjectIds },
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert("<i>@MessageCode.MD0008</i>", "Success");
+                                $("#gridVirtualWarehouse").dxDataGrid("instance").refresh();
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+            debugger
+        }
+        else {
+            DevExpress.ui.dialog.alert("Please select row to delete!", "Error");
+            return;
+        }
+        //if (ArrProjectIds_Done.length > 0) {
+        //    debugger;
+        //    var alertMessage = "Cannot delete virtual warehouse with status 'Done'";
+        //    $.each(ArrProjectIds_Done, function (idx, item) {
+        //        alertMessage += item + ",";
+        //    })
+
+        //    DevExpress.ui.dialog.alert(alertMessage, "Warnning");
+        //    return;
+        //}
+    });
+
+    function getParamsSearch() {
+        debugger;
+        //var txtVirtualWareHouseId = $('#VirtualWareHouseId@(ViewBag.Thread)').dxNumberBox("instance").option('value');
+        var txtVirtualWareHouseId = $('#VirtualWareHouseId@(ViewBag.Thread)').dxTextBox("instance").option('value');
+        var txtVirtualWareHouseName = $('#VirtualWareHouseName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        //var txtItemCode = $('#txtItemCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var txtItemCode = $('#txtItemCode@(ViewBag.Thread)').dxSelectBox('instance').option('value');
+        var CreateDate = $('#CreateDate@(ViewBag.Thread)').dxDateBox("option", "value");
+        var UserProjectCode = $("#UserProjectCode@(ViewBag.Thread)").dxTextBox('instance').option('value');
+        var Status = $('#Status@(ViewBag.Thread)').dxSelectBox('instance').option('value');
+
+    }
+
+    // start search region
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        //var txtVirtualWareHouseId = $('#VirtualWareHouseId@(ViewBag.Thread)').dxNumberBox("instance").option('value');
+        var txtVirtualWareHouseId = $('#VirtualWareHouseId@(ViewBag.Thread)').dxTextBox("instance").option('value');
+        var txtVirtualWareHouseName = $('#VirtualWareHouseName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        //var txtItemCode = $('#txtItemCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var txtItemCode = $('#txtItemCode@(ViewBag.Thread)').dxSelectBox('instance').option('value');
+        var CreateDate = $('#CreateDate@(ViewBag.Thread)').dxDateBox("option", "value");
+        var UserProjectCode = $("#UserProjectCode@(ViewBag.Thread)").dxTextBox('instance').option('value');
+        var Status = $('#Status@(ViewBag.Thread)').dxSelectBox('instance').option('value');
+
+            $.ajax({
+            url: '@Url.Action("SearchVirtualWarehouse", "MESVirtualWarehouse")',
+            type: "GET",
+            data: {
+                VirtualWareHouseId: txtVirtualWareHouseId,
+                VirtualWareHouseName: txtVirtualWareHouseName,
+                ItemCode: txtItemCode,
+                CreateDate: CreateDate,
+                Creater: UserProjectCode,
+                Status: Status
+            },
+            dataType: "json",
+            }).done(function (resp) {
+                $("#gridVirtualWarehouse").dxDataGrid({
+                    dataSource: resp,
+                })
+            });
+        LoadingPage(0);
+    });
+    // end search region
+
+    function ShowCreateSalesProjectPopupCreate() {
+        CheckSession();
+        debugger;
+        $.ajax({
+            url: '@Url.Action("VirtualWareHouseCreatePopup", "MESVirtualWarehouse")',
+            type: "GET",
+            data: {
+                projectCode: null,
+                Status: ""
+            },
+            dataType: "html",
+            success: function (result) {
+                debugger;
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+    }
+
+    function ShowPopupDetailVirtualWarehouse(e) {
+        CheckSession();
+        var VirtualWareHouseIdSelected = e.data.VirtualWareHouseId;
+        var status = e.data.Status;
+        debugger;
+        @*if (status != 'Done') {
+            $.ajax({
+                url: '@Url.Action("VirtualWareHouseCreatePopup", "MESVirtualWarehouse")',
+                type: "GET",
+                data: {
+                    VirtualWareHouseId: VirtualWareHouseIdSelected
+                },
+                dataType: "html",
+                success: function (result) {
+
+                    $("#modalContent").html(result);
+                    $("#modalContent").addClass("modal-xl");
+                    $('#modalControl').modal('show');
+                }
+            });
+        }
+        else {
+            DevExpress.ui.dialog.alert("Cannot edit or delete virtual warehouse has status 'Done'", "Warnning");
+            return;
+        }*@
+
+        $.ajax({
+            url: '@Url.Action("VirtualWareHouseCreatePopup", "MESVirtualWarehouse")',
+            type: "GET",
+            data: {
+                VirtualWareHouseId: VirtualWareHouseIdSelected,
+                Status: status
+            },
+            dataType: "html",
+            success: function (result) {
+
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+
+    }
+
+    function productTypeOnValueChanged(data) {
+        CheckSession();
+        debugger;
+        var itemClassCode = data.value;
+        var arrJson;
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("GetItemCodeNameByItemClassCode", "MESSaleProject")',
+            data: { itemClassCode: itemClassCode },
+            dataType: "json",
+            async: true
+        }).done(function (resp) {
+             debugger;
+            arrJson = resp.data;
+            console.log(arrJson);
+            $("#txtItemCode").dxSelectBox({
+                disabled: false,
+                dataSource: arrJson,
+                displayExpr: "Name",
+                valueExpr: "ID"
+            });
+        });
+    }
+
+    function ShowCreateSalesProjectPopup(e) {
+        CheckSession();
+        let data = e.data;
+        debugger;
+        $.ajax({
+            url: '@Url.Action("SalesProjectUpdatePopup", "MESSaleProject")',
+            type: "GET",
+            data: { projectCode: data.ProjectCode  },
+            dataType: "html",
+            success: function (result) {
+
+                $("#modalContent").html(result);
+                $("#modalContent").find("#btnGeneCode").hide();
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+    }
+
+    // Select row SalesProject
+    function SelectRowSalesProject(e) {
+        selectItemClassRow = true;
+        itemRowData = e.data;
+        ProjectCode = itemRowData.ProjectCode;
+    }
+
+    // Quan add 2020/08/19
+    // Export excel
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+        var dataGrid = $("#@(gridVirtualWarehouse)");
+        ExportExcelCommon(dataGrid, "VirtualWarehouse")
+    });
+
+    function VirtualWHGridRowClickEvent(selectedRow) {
+        CheckSession();
+        debugger;
+        //selectedRow = JSON.stringify(selectedRow);
+        //var pagID = selectedRow.VirtualWareHouseId;
+        var pagID = selectedRow.row.data.VirtualWareHouseId;
+        var fileID = selectedRow.row.data.FileID;
+        var status = selectedRow.row.data.Status;
+        var pagName = selectedRow.row.data.Creater;
+
+            $.ajax({
+                url: '@Url.Action("ShowVirtualWareHousePopupFileUpload", "MESVirtualWarehouse")',
+                type: "GET",
+                data: { pagID: pagID, fileID: fileID, pagName: pagName },
+                dataType: "html",
+                success: function (result) {
+                    debugger;
+                    // parent popup
+                    $("#modalContent").html(result);
+                    $("#modalContent").addClass("modal-xl");
+                    $('#modalControl').modal('show');
+                }
+            });
+    }
+    //function test() {
+    //    LoadingPage(0);
+    //}
+    $(window).resize(function () {
+        ReziePageVirtualWarehouse();
+    });
+    function ReziePageVirtualWarehouse() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="height:100%;">
+        <div class="card" style="height:100%;">
+            <div class="card-header" id="headerpage_@(ViewBag.Thread)">
+                <div class="row">
+                    <div class="form-group col-xs-12 col-md-2" hidden>
+                        <label>@(_loc.GetLocalizedString("Virtual Warehouse ID"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID("VirtualWareHouseId" + ViewBag.Thread)
+                                    .Value("")
+                              )
+
+                    </div>
+                    <div class="form-group col-xs-12 col-md-2">
+                        <label>@(_loc.GetLocalizedString("Virtual Warehouse Name"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID("VirtualWareHouseName" + ViewBag.Thread)
+                                    .Value("")
+                              )
+                    </div>
+
+
+                    <div class="form-group col-xs-12 col-md-2">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                                    .ID(txtItemCode)
+                                    .DisplayExpr("NameKor").ValueExpr("ItemCode")
+                                    .DataSource(d => d.Mvc().Controller("MESVirtualWarehouse")
+                                        .LoadAction("GetItemClassCodeByCategory")
+                                        .Key("ItemCode")
+                                    )
+                                    .ShowClearButton(true)
+                                    .OnValueChanged("productTypeOnValueChanged")
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                              )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Create Date"))</label>
+                        @(Html.DevExtreme().DateBox()
+                        .ID("CreateDate" + ViewBag.Thread)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                        .Name("CreateDate")
+                        .MaxLength(10)
+                    )
+                    </div>
+
+                    <div class="form-group col-md-2" hidden="hidden">
+                        <div class="dx-field">
+                            <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                    .ID("UserProjectCode"+ViewBag.Thread)
+                                    .Value("")
+                            )
+                        </div>
+                    </div>
+                    @{
+                        var priorities = new List<SelectListItem>(); //new[] { _loc.GetLocalizedString("Done"), _loc.GetLocalizedString("Use"), _loc.GetLocalizedString("Not Use") };
+                        priorities.Add(new SelectListItem(_loc.GetLocalizedString("Done"), "Done"));
+                        priorities.Add(new SelectListItem(_loc.GetLocalizedString("Use"), "Use"));
+                        priorities.Add(new SelectListItem(_loc.GetLocalizedString("Not Use"), "Not Use"));
+                    }
+                    <div class="form-group col-md-2">
+                        <div class="dx-field">
+                            <label>@(_loc.GetLocalizedString("Use/Not Use"))</label>
+
+                            @(Html.DevExtreme().SelectBox()
+                                .ID(Status)
+                                .DataSource(priorities)
+                                .DisplayExpr("Text")
+                                .ValueExpr("Value")
+                            )
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-2" id="bodypage_@(ViewBag.Thread)">
+                @(Html.DevExtreme().DataGrid<MES_VirtualWarehouse>
+                    ()
+                    .ID("gridVirtualWarehouse")
+                    .DataSource(x => x.Mvc().Controller("MESVirtualWarehouse").LoadAction("SearchVirtualWarehouse")
+                    .LoadParams(new { model = new JS("getParamsSearch") })
+                    )
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .Selection(s => s.Mode(SelectionMode.Single))
+                    .Height("98%")
+                    .OnSelectionChanged("onSelectChanged")
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .ColumnAutoWidth(true)
+                    .FilterRow(filterRow => filterRow
+                    .Visible(true)
+                    .ApplyFilter(GridApplyFilterMode.Auto)
+                    )
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.No).Caption("No");
+                        c.AddFor(x => x.VirtualWareHouseId).Caption((_loc.GetLocalizedString("Virtual Warehouse ID"))).Visible(false);
+                        c.AddFor(x => x.VirtualWareHouseName).Caption((_loc.GetLocalizedString("Virtual Warehouse Name")));
+                        c.AddFor(x => x.ItemCode).Caption((_loc.GetLocalizedString("Item Code")));
+                        c.AddFor(x => x.ItemName).Caption((_loc.GetLocalizedString("Item Name")));
+                        c.AddFor(x => x.ItemQty).Caption((_loc.GetLocalizedString("Item Quantity"))).Format("#,##0");
+                        c.AddFor(x => x.CreateDate).Caption((_loc.GetLocalizedString("Create Date"))).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                        c.AddFor(x => x.Creater).Caption((_loc.GetLocalizedString("Creater")));
+                        c.AddFor(x => x.CloseDate).Caption((_loc.GetLocalizedString("Close Date"))).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                        c.AddFor(x => x.FileID).Caption((_loc.GetLocalizedString("FileID"))).Visible(false);
+                        c.AddFor(x => x.Status).Caption((_loc.GetLocalizedString("Status")));
+                        c.Add().Type(GridCommandColumnType.Buttons).Caption((_loc.GetLocalizedString("Files"))).Buttons(b =>
+                        {
+                            b.Add().Icon("upload").Hint("Upload file").OnClick("VirtualWHGridRowClickEvent");
+                        }).Fixed(true);
+
+                    })
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    .HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(100))
+                    //.OnContentReady("test")
+                    .Pager(pager =>
+                    {
+                        pager.ShowInfo(true);
+                        pager.ShowNavigationButtons(true);
+                    })
+                    .OnRowDblClick("ShowPopupDetailVirtualWarehouse")
+                    )
+
+            </div>
+        </div>
+    </div>
+</div>

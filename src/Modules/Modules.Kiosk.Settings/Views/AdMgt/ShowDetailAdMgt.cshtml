@@ -1,0 +1,637 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Models
+
+@model KIO_AdMgt;
+@{
+    Layout = null;
+    var statusAdEntities = new[] {
+        new {id = false, name ="False" },
+        new {id = true, name = "True"}
+    };
+    var statusAdLocationEntities = new[] {
+        new {id = false, name = "Middle"},
+        new {id = true, name = "Top"}
+    };
+    string registDate = "registDate" + ViewBag.Thread;
+    string registUserId = "registUserId" + ViewBag.Thread;
+    string periodStartDate = "periodStartDate" + ViewBag.Thread;
+    string periodEndDate = "periodEndDate" + ViewBag.Thread;
+    string dayStartTime = "dayStartTime" + ViewBag.Thread;
+    string dayEndTime = "dayEndTime" + ViewBag.Thread;
+    string adType = "adType" + ViewBag.Thread;
+    string adNo = "adNo" + ViewBag.Thread;
+    string adName = "adName" + ViewBag.Thread;
+    string adStatus = "adStatus" + ViewBag.Thread;
+    string adLocation = "adLocation" + ViewBag.Thread;
+    string attachFilePath = "attachFilePath" + ViewBag.Thread;
+    string attachImagePath = "attachImagePath" + ViewBag.Thread;
+    string imagePathUploaded = "imagePathUploaded" + ViewBag.Thread;
+
+    string gridStore = "gridStore" + ViewBag.Thread;
+}
+<style>
+    .remove_audio {
+        float: right;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #E74C3C;
+        text-shadow: 0 1px 0 #fff;
+        opacity: .5;
+        border: 0;
+        background-color: #fff;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        LoadCommboAdStatus("#@adType", false);
+        if("@Model.adNo" != 0) {
+            LoadImageAd();
+            //SetDataElement("#@adType", "@Model.adType");
+        }
+    
+        LoadStoreMasters(null, null, null, "#@gridStore");
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+
+
+
+        setTimeout(function () {
+            LoadAdStoreMgt("@Model.adNo");
+        }, 300);
+        LoadingPage(0);
+    })
+
+    // Region: Get Data
+    function LoadImageAd() {
+        if("@Model.adType" == "AD0001") {
+            $.ajax({
+                url: '@Url.Action("LoadImageAd", "AdMgt")',
+                type: METHOD.GET,
+                data: {
+                    adNo: "@Model.adNo"
+                },
+                dataType: 'json',
+                success: function (result) {
+                    debugger;
+                    if(result.success) {
+                        var img = document.getElementById("image-advertistment");
+                        img.src = result.data;
+                        img.style.display = '';
+                    }
+                    else {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Not found photo on the server! please upload file")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '20%'
+                            },
+                            'warning'
+                        ), 3000;
+                    }
+                    LoadingPage(0);
+                },
+                error: function () {
+                    LoadingPage(0);
+                }
+            });
+        }
+        else {
+            //SetDataElement("#@attachFilePath", "@Model.attachFilePath");
+        }
+    }
+    function LoadImageAdAfterUpload(e) {
+        debugger;
+        //$("#@attachImagePath .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("image-advertistment");
+        img.style.display = '';
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@imagePathUploaded", res.path);
+    }
+
+    function LoadAdStoreMgt(adNo) {
+        $.ajax({
+            url: '@Url.Action("GetAdMgtStore", "AdMgt")',
+            type: METHOD.GET,
+            data: {
+                adNo: adNo
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                GetGridIntance("#@gridStore").selectRows(result, false);
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+    // End Region: Get Data
+
+    // Region: Btn event
+    function ChangeUploadMethod(e) {
+        debugger;
+        var adType1 = document.getElementById("ad_image_type");
+        var adType2 = document.getElementById("ad_video_type");
+        if (e.selectedItem.commonSubCode == "AD0001") {
+            // image
+            adType1.style.display = "";
+            adType2.style.display = 'none';
+            //SetDataElement("#@attachFilePath", "")
+        }
+        else {
+            // video
+            adType1.style.display = 'none';
+            adType2.style.display = "";
+        }
+    }
+    // End Region: Btn event
+
+    // Region: Create - Update - Delete
+
+    function RequestAdvertistment(adNo, adType, adName, adTemp) {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("RequestAdvertistment", "AdMgt")',
+            type: "GET",
+            data: {
+                adNo: adNo,
+                adType: adType,
+                adName: adName,
+                adTemp: adTemp
+            },
+            dataType: 'json',
+            async: false,
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices successfully!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'success',
+                            6000
+                        );
+                    }, 5000);
+                }
+                else {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices fairly!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'error',
+                            6000
+                        );
+                    }, 5000);
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    $("#btnDelete_@ViewBag.Thread").on("click", function () {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString("정말 삭제하시겠습니까?"))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                var url = '@Url.Action("DeleteAdMgt", "AdMgt")';
+                var listStoreMaster = GetGridIntance("#@gridStore").getSelectedRowsData();
+                var checkDeleteAd = listStoreMaster.length > 0 ? true : false;
+                var obj = {
+                    adNo: "@Model.adNo",
+                    checkDeleteAd: checkDeleteAd
+                }
+                CRUDData(url, obj, METHOD.GET);
+                setTimeout(function () {
+                    GetDataAdMgt();
+                }, 1000);
+            }
+        })
+    })
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        if (ValidateInputAdtistsement()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var listStoreMaster = GetGridIntance("#@gridStore").getSelectedRowsData();
+                    var listStoreNo = []
+                    listStoreMaster.forEach(store => {
+                        listStoreNo.push({"storeNo": store.storeNo});
+                    });
+                    var url = '@Url.Action("SaveAdMgt", "AdMgt")';
+                    var adType = GetDataElement("#@adType");
+                    var attachFilePath = adType == "AD0001" ? GetDataElement("#@imagePathUploaded") : GetDataElement("#@attachFilePath");
+
+                    var adNo = GetDataElement("#@adNo");
+                    var adName = GetDataElement("#@adName")
+                    var obj = {
+                        adNo: adNo,
+                        adType: adType,
+                        adName: adName,
+                        periodStartDate: formatDate("#@periodStartDate"),
+                        periodEndDate: formatDate("#@periodEndDate"),
+                        adStatus: GetDataElement("#@adStatus"),
+                        dayStartTime: formatDate("#@dayStartTime"),
+                        dayEndTime: formatDate("#@dayEndTime"),
+                        resitUser: GetDataElement("#@registUserId"),
+                        adLocation: GetDataElement("#@adLocation"),
+                        attachFilePath: attachFilePath,
+                        listStoreNo: JSON.stringify(listStoreNo)
+                    }
+
+                    $.ajax({
+                        url: '@Url.Action("SaveAdMgt", "AdMgt")',
+                        type: "POST",
+                        data: obj,
+                        dataType: 'json',
+                        async: false,
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+
+                                var fileImg;
+                                //if ("@Model.adNo" != 0) {
+                                //    fileImg = "@Model.attachFilePath.Split("/")[@Model.attachFilePath.Split("/").Length - 1]";
+                                //}
+                                //// nếu upload lại file -> gửi thông tin đồng bộ và ngược lại
+                                //if (attachFilePath.split("/")[attachFilePath.split("/").length - 1] == fileImg) {
+                                //    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Save advertistment successfully!")", "Notice");
+                                //}
+                                //else {
+                                   
+                                //}
+                                DevExpress.ui.notify(
+                                    {
+                                        message: '@_loc.GetLocalizedString("Save advertistment successfully! Sending information to syschonous on Kiosk device, please wait a second.")',
+                                        position: {
+                                            my: 'bottom right',
+                                            at: 'bottom right'
+                                        },
+                                        width: '30%'
+                                    },
+                                    'info',
+                                    5000
+                                );
+                                RequestAdvertistment(result.Data, adType, adName, adNo);
+                                $('#modalControl').modal('hide');
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                            LoadingPage(0);
+                        },
+                        error: function () {
+                            LoadingPage(0);
+                        }
+                    });
+
+                    //CRUDData(url, obj, METHOD.POST);
+                    setTimeout(function () {
+                        GetDataAdMgt();
+                    }, 1000);
+                }
+            })
+        }
+    })
+    // End Region: Create - Update - Delete
+
+    // Region: Validate data
+    function ValidateInputAdtistsement() {
+
+        let adType = GetDataElement("#@adType");
+        if (adType == null || adType == "" || typeof adType === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Select Advertisement Type")", "Error")
+            ValidateElement("#@adType")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@adType")
+        }
+
+        let adName = GetDataElement("#@adName");
+        if (adName == null || adName == "" || typeof adName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Advertisement Name")", "Error")
+            ValidateElement("#@adName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@adName")
+        }
+
+        let periodStartDate = GetDataElement("#@periodStartDate");
+        if (periodStartDate == null || periodStartDate == "" || typeof periodStartDate === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Period Start Date")", "Error")
+            ValidateElement("#@periodStartDate")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@periodStartDate")
+        }
+
+        let periodEndDate = GetDataElement("#@periodEndDate");
+        if (periodEndDate == null || periodEndDate == "" || typeof periodEndDate === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Period End Date")", "Error")
+            ValidateElement("#@periodEndDate")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@periodEndDate")
+        }
+
+        let dayStartTime = GetDataElement("#@dayStartTime");
+        if (dayStartTime == null || dayStartTime == "" || typeof dayStartTime === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Day Start Time")", "Error")
+            ValidateElement("#@dayStartTime")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@dayStartTime")
+        }
+
+        let dayEndTime = GetDataElement("#@dayEndTime");
+        if (dayEndTime == null || dayEndTime == "" || typeof dayEndTime === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Day End Time")", "Error")
+            ValidateElement("#@dayEndTime")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@dayEndTime")
+        }
+
+        let adStatus = GetDataElement("#@adStatus");
+        if (adStatus == null || typeof adStatus === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Advertisement Status")", "Error")
+            ValidateElement("#@adStatus")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@adStatus")
+        }
+
+        if (adType == "AD0002") {
+            let attachFilePath = GetDataElement("#@attachFilePath");
+            if (attachFilePath == null || attachFilePath == "" || typeof attachFilePath === undefined) {
+                DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Attach File Path")", "Error")
+                ValidateElement("#@attachFilePath")
+                return false;
+            }
+            else {
+                RemoveColorElement("#@attachFilePath")
+            }
+        }
+        else {
+            let imagePathUploaded = GetDataElement("#@imagePathUploaded");
+            if (imagePathUploaded == null || imagePathUploaded == "" || typeof imagePathUploaded === undefined) {
+                DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Upload Image")", "Error")
+                ValidateElement("#@imagePathUploaded")
+                return false;
+            }
+            else {
+                RemoveColorElement("#@imagePathUploaded")
+            }
+        }
+        return true;
+    }
+    // End Region: Validate data
+
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Advertising Management"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2">
+                <div class="col-md-4">
+                    @(
+                        Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                        .ID(gridStore)
+                        .Height("100%")
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .FilterRow(f => f.Visible(true))
+                        .HeaderFilter(f => f.Visible(true))
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .RemoteOperations(true)
+                        .ColumnAutoWidth(true)
+                        .ColumnFixing(c => c.Enabled(true))
+                        .RepaintChangesOnly(true)
+                        .Selection(s => s.Mode(SelectionMode.Multiple))
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                            c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                        })
+                        .Pager(pager =>
+                        {
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        //.OnSelectionChanged("onItemGridSelectionChanged")
+                        //.OnRowClick("GetDataStoreMaster")
+                        //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                        //.Paging(paging => paging.PageSize(100))
+                        )
+                </div>
+                <div class="col-md-8">
+                    <div class="row pt-2 pb-2">
+                        <div class="col-md-6">
+                            <label>@(_loc.GetLocalizedString("Ad No"))<span class="required-input"> *</span></label>
+                            @(
+                                Html.DevExtreme().TextBox()
+                                .ID(adNo)
+                                .Value(Model.adNo == null ? "" : Model.adNo.ToString())
+                                .ReadOnly(true)
+                                )
+                        </div>
+                        <div class="col-md-6">
+                            <label>@(_loc.GetLocalizedString("Ad Type"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().SelectBox()
+                                .ID(adType)
+                                .Value(Model.adType == null ? "AD0001" : Model.adType)
+                                .OnSelectionChanged("ChangeUploadMethod")
+                                )
+                        </div>
+                    </div>
+
+                    <div class="row pt-2 pb-2">
+                        <div class="col-md-4">
+                            <label>@(_loc.GetLocalizedString("Ad Location"))<span class="required-input"> *</span></label>
+                            @(
+                                Html.DevExtreme().RadioGroup()
+                                .DataSource(statusAdLocationEntities)
+                                .ID(adLocation)
+                                .ValueExpr("id")
+                                .DisplayExpr("name")
+                                .Value(Model.adLocation)
+                                .Layout(Orientation.Horizontal)
+
+                                )
+                        </div>
+                        <div class="col-md-8">
+                            <label>@(_loc.GetLocalizedString("Ad Name"))<span class="required-input"> *</span></label>
+                            @(
+                                Html.DevExtreme().TextBox()
+                                .ID(adName)
+                                .Value(Model.adName == null ? "" : Model.adName)
+                                )
+                        </div>
+                    </div>
+                    <div class="row pt-2 pb-2">
+                        <div class="col-md-4">
+                            <label>@(_loc.GetLocalizedString("Ad Status"))<span class="required-input"> *</span></label>
+                            @(
+                                Html.DevExtreme().RadioGroup()
+                                .DataSource(statusAdEntities)
+                                .ID(adStatus)
+                                .ValueExpr("id")
+                                .DisplayExpr("name")
+                                .Value(Model.adStatus == null ? false : Model.adStatus)
+                                .Layout(Orientation.Horizontal)
+
+                                )
+                        </div>
+                        <div class="col-md-8">
+                            <label>@(_loc.GetLocalizedString("Period Date"))<span class="required-input"> *</span></label>
+                            <div class="row">
+                                <div class="col-md-5">
+                                    @(Html.DevExtreme().DateBox()
+                                        .ID(periodStartDate)
+                                        .Value(Model.periodStartDate == null ? DateTime.Today : Model.periodStartDate)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        )
+                                </div>
+                                <span class="mt-2">~</span>
+                                <div class="col-md-5">
+                                    @(Html.DevExtreme().DateBox()
+                                        .ID(periodEndDate)
+                                        .Value(Model.periodEndDate == null ? DateTime.Now : Model.periodEndDate)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        )
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row pt-2 pb-2">
+                        <div class="col-md-4">
+                            <label>@(_loc.GetLocalizedString("Registered Date"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().DateBox()
+                                .ID(registDate)
+                                .DisplayFormat("yyyy-MM-dd")
+                                .ReadOnly(true)
+                                .Value(Model.registDate == null ? DateTime.Today : Model.registDate)
+                                )
+                        </div>
+                        <div class="col-md-8">
+                            <label>@(_loc.GetLocalizedString("Day Time"))<span class="required-input"> *</span></label>
+
+                            <div class="row">
+                                <div class="col-md-5">
+                                    @(Html.DevExtreme().DateBox()
+                                        .ID(dayStartTime)
+                                        .Type(DateBoxType.Time)
+                                        .Value(Model.dayStartTime == null ? DateTime.Today : Model.dayStartTime)
+                                        .DisplayFormat("HH:mm")
+                                        )
+                                </div>
+                                <span class="mt-2">~</span>
+                                <div class="col-md-5">
+                                    @(Html.DevExtreme().DateBox()
+                                        .ID(dayEndTime)
+                                        .Type(DateBoxType.Time)
+                                        .Value(Model.dayEndTime == null ? DateTime.Now : Model.dayEndTime)
+                                        .DisplayFormat("HH:mm")
+                                        )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row pt-2 pb-2">
+                        <div class="col-md-8">
+                            <label>@(_loc.GetLocalizedString("File"))<span class="required-input"> *</span></label>
+                            <div id="ad_video_type" style="display: none">
+                                @(Html.DevExtreme().TextBox()
+                                    .ID(attachFilePath)
+                                    .Value(Model.attachFilePath == null ? "" : Model.attachFilePath == "test/test" ? "" : Model.attachFilePath)
+                                    .Width("100%")
+                                    )
+                            </div>
+                            <div id="ad_image_type" class="row">
+                                <div class="col-md-7">
+                                    @(Html.DevExtreme().FileUploader()
+                                        .ID(attachImagePath)
+                                        .Width("100%")
+                                        .AllowCanceling(true)
+                                        .SelectButtonText(_loc.GetLocalizedString("Select"))
+                                        .UploadUrl(Url.Action("UploadImageAd", "AdMgt"))
+                                        .Name("image_ad")
+                                        .Accept("image/*")
+                                        .MaxFileSize(4000000)
+                                        .OnUploaded("LoadImageAdAfterUpload")
+                                        .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                        //.Value("http://localhost:57966/en/CheckInHistory/GetImageTaken?userId=20221207112111")
+                                        )
+
+                                    @(Html.DevExtreme().TextBox()
+                                        .ID(imagePathUploaded)
+                                        .Visible(false)
+                                        .Width("100%")
+                                        .Value(Model.attachFilePath == null ? "" : Model.attachFilePath == "test/test" ? "" : Model.attachFilePath)
+                                        )
+                                </div>
+                                <div class="col-md-5">
+                                    <img style ="width: 120px; height: 150px; object-fit: cover; display:none" id="image-advertistment" src="" alt="" />
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label>@(_loc.GetLocalizedString("Creator"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(registUserId)
+                                .Value(Model.resitUser == null ? ViewBag.UserName : Model.resitUser)
+                                .ReadOnly(true)
+                                )
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" id="btnDelete_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

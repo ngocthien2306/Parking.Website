@@ -1,0 +1,1154 @@
+﻿@using Modules.Common.Models;
+@model Modules.Admin.Models.SYPageLayElements
+@{
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = null;
+}
+
+<script type="text/javascript">
+    var MAP_ID_SEND_DATA = "";
+    var PAGE_ID_SEND_DATA = "";
+    var ACT_ID_SEND_DATA = "";
+    var dataSource = [];
+    var pageIDTemp, actIDTemp;
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        $("#txtPageID_@ViewBag.Id").dxTextBox("option", "value", '@ViewBag.pagID');
+        $("#txtPageElementID_@ViewBag.Id").dxTextBox("option", "value", '@ViewBag.pelID');
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // trace log event
+    function LogPageEvent(eventName) {
+        gridPageEvent = eventName;
+    }
+
+    // Save/Edit item in List Element Controls Layout
+    function SaveDataElementControls_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        data.PAG_ID = '@ViewBag.pagID';
+        data.PEL_PRN = '@ViewBag.pelID';
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataElementControls","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageListElementControls_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in List Element Controls Layout
+    function DeleteDataElementControls_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteDataGridPageElement","Admin")',
+                    type: "POST",
+                    data: { data: data },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageListElementControls_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in Mapping Store Procedure tab
+    function SaveDataGridMappingSPLayout_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        data.MAP_PAG_ID = '@ViewBag.pagID';
+        data.MAP_PEL_ID = '@ViewBag.pelID';
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataMappingSPLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataMappingSPLayout_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in Mapping Store Procedure tab
+    function DeleteDataGridMappingSPLayout_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var dialogResult = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        if (dialogResult) {
+            $.ajax({
+                url: '@Url.Action("DeleteDataMappingSPLayout","Admin")',
+                type: "POST",
+                data: { data: data },
+                dataType: "json",
+                success: function (result) {
+                    if (result.Success) {
+                        DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                            var grid = $("#GridDataMappingSPLayout_@ViewBag.Id").dxDataGrid("instance");
+                            grid.refresh();
+                        });
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });
+            LoadingPage(0);
+        } else {
+            LoadingPage(0);
+            return;
+        }
+    }
+
+    // Save/Edit item in Mapping Data Detail popup
+    function SaveDataMappingDetailLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        data.MAP_ID = MAP_ID_SEND_DATA
+        data.PAG_ID = '@ViewBag.pagID';
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataMappingDetailLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GetDataGridDataMappingDetails").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+                LoadingPage(0);
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in Mapping Data Detail popup
+    function DeleteDataMappingDetailLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteDataMappingDetailLayout", "Admin")',
+                    type: "POST",
+                    data: { data: data },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GetDataGridDataMappingDetails").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in grid page action
+    function SavedDataPageActionsLayout_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        data.PAG_ID = '@ViewBag.pagID';
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SavedDataPageActionsLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataPageActionsLayout_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in grid page action
+    function DeletedDataPageActionsLayout_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletedDataPageActionsLayout","Admin")',
+                    type: "POST",
+                    data: { data: data },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataPageActionsLayout_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in grid page action details
+    function SavedDataPageActionDetailsLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        data.PAG_ID = '@ViewBag.pagID';
+        data.ACT_ID = ACT_ID_SEND_DATA;
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SavedDataPageActionDetailsLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#DataGridPageActionDetails").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in grid page action details
+    function DeletedDataPageActionDetailsLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletedDataPageActionDetailsLayout","Admin")',
+                    type: "POST",
+                    data: { data: data },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#DataGridPageActionDetails").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in grid setting reference
+    function SavedDataDataPageLayElementReference_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        data.PAG_ID = '@ViewBag.pagID';
+        data.PEL_ID = '@ViewBag.pelID';;
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SavedDataDataPageLayElementReference","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataPageLayElementReference_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in grid setting reference
+    function DeletedDataPageLayElementReference_@(ViewBag.Id)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletedDataPageLayElementReference","Admin")',
+                    type: "POST",
+                    data: { data: data },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataPageLayElementReference_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+    }
+
+    // Save/Edit item in grid SavedDataPageLayElementDatasourceForCBRC
+    function SavedDataPageLayElementDatasourceForCBRC(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        data.PAG_ID = '@ViewBag.pagID';
+        data.PEL_ID = '@ViewBag.pelID';;
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SavedDataDataPageLayElementReference","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataPageLayElementReference_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+    }
+
+    // Delete item in grid setting DeletedDataPageLayElementDatasourceForCBRC
+    function DeletedDataPageLayElementDatasourceForCBRC(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletedDataPageLayElementReference","Admin")',
+                    type: "POST",
+                    data: { data: data },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridDataPageLayElementReference_@ViewBag.Id").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+    }
+
+    // Show Popup Data Mapping Details
+    function showPopupPageDataMappingDetails_@(ViewBag.Id)(obj, type) {
+        LoadingPage(1);
+        CheckSession();
+        let PAG_ID = $(obj).attr("data-map-pag-id").trim();
+        let PEL_ID = $(obj).attr("data-map-pel-id").trim();
+        let MAP_ID = $(obj).attr("data-map-id").trim();
+        let datasourceType = $(obj).attr("data-map-datasource-type").trim();
+        let datasourceName = $(obj).attr("data-map-datasource-name").trim();
+        MAP_ID_SEND_DATA = MAP_ID;
+        PAGE_ID_SEND_DATA = PAG_ID;
+
+        $.ajax({
+            url: '@Url.Action("ShowPopupDataMappingDetails","Admin")',
+            type: "GET",
+            data: { "MAP_ID": MAP_ID, "PAG_ID": PAG_ID, "PEL_ID": PEL_ID, "datasourceType": datasourceType, "datasourceName": datasourceName },
+            dataType: "html",
+            success: function (result) {
+                LoadingPage(0);
+                $("#modalContent").html(result);
+                $("#modalContent").addClass(type);
+                $('#modalControl').modal('show');
+                var gridData = $('#GetDataGridDataMappingDetails').dxDataGrid('instance');
+                gridData.refresh();
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Show Popup Data Action Details
+    function showPopupPageDataActionsDetails_@(ViewBag.Id)(obj, type) {
+        LoadingPage(1);
+        CheckSession();
+        let PAG_ID = $(obj).attr("data-map-pag-id").trim();
+        let ACT_ID = $(obj).attr("data-map-act-id").trim();
+        pageIDTemp = $(obj).attr("data-map-pag-id").trim();
+        actIDTemp = $(obj).attr("data-map-act-id").trim();
+        ACT_ID_SEND_DATA = ACT_ID;
+        $.ajax({
+            url: '@Url.Action("ShowPopupDataPageActionsDetails","Admin")',
+            type: "GET",
+            data: { "PAG_ID": PAG_ID, "ACT_ID": ACT_ID },
+            dataType: "html",
+            success: function (result) {
+                LoadingPage(0);
+                $("#modalContent").html(result);
+                $("#modalContent").addClass(type);
+                $('#modalControl').modal('show');
+                $('#btn-save-clear').css('display', 'none');
+                var gridData = $('#DataGridPageActionDetails').dxDataGrid('instance');
+                gridData.refresh();
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function OnEditorPreparedGrid(options) {
+        LoadingPage(1);
+        if (options.parentType == 'dataRow' && options.dataField == 'PEL_VIS') {
+            options.editorElement.dxSelectBox('instance').option('value', 'true');
+        }
+        if (options.parentType == 'dataRow' && options.dataField == 'IS_EDIT') {
+            options.editorElement.dxSelectBox('instance').option('value', 'true');
+        }
+        if (options.parentType == 'dataRow' && options.dataField == 'IS_KEY') {
+            options.editorElement.dxSelectBox('instance').option('value', 'false');
+        }
+        if (options.parentType == 'dataRow' && options.dataField == 'PEL_IS_REQUIRED') {
+            options.editorElement.dxSelectBox('instance').option('value', 'false');
+        }
+        LoadingPage(0);
+    }
+
+    // Back to main screen
+    $('#btn-backTolist').on('click', function () {
+        LoadingPage(1);
+        CheckSession();
+        window.location.href = "@Url.Action("PageElement", "Admin")";
+        LoadingPage(0);
+    });
+
+    function GridClearElementsInitialized() {
+        LoadingPage(1);
+        CheckSession();
+        setTimeout(function () {
+            $.ajax({
+                url: '@Url.Action("GetDataSelectedGridClearElements","Admin")',
+                type: "GET",
+                data: { pageID: pageIDTemp, actionID: actIDTemp },
+                dataType: "json",
+                success: function (rs) {
+                    LoadingPage(0);
+                    var dataGrid1 = getDataGridInstance();
+                    var arrKey = [];
+                    $.each(rs, function (index, item) {
+                        //var rowSelected = $.map(dataGrid1.getDataSource().items(), function (element) {
+                        //    if (item.PEL_ID === element.PEL_ID) {
+                        //        return element.PEL_ID;
+                        //    }
+                        //})
+                        $.each(dataGrid1.getDataSource().items(), function (index1, item1) {
+                            if (item.PEL_ID === item1.PEL_ID) {
+                                arrKey.push(item1.PEL_ID);
+                            }
+                        });
+                        // arrKey.push(rowSelected);
+
+                    })
+                    dataGrid1.selectRows(arrKey);
+                    // dataGrid1.selectAll();
+                }
+            });
+        }, 300);
+        LoadingPage(0);
+    }
+</script>
+
+<div class="row">
+    <div class="form-group col-md-3">
+        <div class="dx-field">
+            <div class="dx-field-label">Page Layout Id: </div>
+            <div class="dx-field-value">
+                @(Html.DevExtreme().TextBox().ID("txtPageID_"+ViewBag.Id).Disabled(true))
+            </div>
+        </div>
+    </div>
+    <div class="form-group col-md-3">
+        <div class="dx-field">
+            <div class="dx-field-label">Page Element Id: </div>
+            <div class="dx-field-value">
+                @(Html.DevExtreme().TextBox().ID("txtPageElementID_"+ViewBag.Id).Disabled(true))
+            </div>
+        </div>
+    </div>
+    <div class="form-group col-md-6">
+        @*<div class="dx-field">
+                <div class="dx-field-value">
+                    <button id="btn-backTolist" data-toggle="tab" style="float: right;  margin-left: 5px" class="btn btn-sm btn-danger"><i class="fa fa-navicon"></i> Back To List</button>
+                </div>
+            </div>*@
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-sm-12 col-lg-12">
+        <div class="card card-primary card-outline card-tabs">
+            <div class="card-header p-0 pt-1 border-bottom-0">
+                <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="custom-tabs-two-home-tab" data-toggle="pill" href="#custom-tabs-two-home-@ViewBag.Id" role="tab" aria-controls="custom-tabs-two-home" aria-selected="false">Layout</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="custom-tabs-two-profile-tab" data-toggle="pill" href="#custom-tabs-two-profile-@ViewBag.Id" role="tab" aria-controls="custom-tabs-two-profile" aria-selected="false">Data source</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="custom-tabs-two-messages-tab" data-toggle="pill" href="#custom-tabs-two-messages-@ViewBag.Id" role="tab" aria-controls="custom-tabs-two-messages" aria-selected="false">Page Action</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="custom-tabs-element-setting-reference-tab" data-toggle="pill" href="#custom-tabs-element-setting-reference-@ViewBag.Id" role="tab" aria-controls="custom-tabs-element-setting-reference" aria-selected="false">Element Reference</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="custom-tabs-two-tabContent">
+                    <div class="tab-pane fade active show" id="custom-tabs-two-home-@ViewBag.Id" role="tabpanel" aria-labelledby="custom-tabs-two-home-tab">
+                        @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageLayElements>()
+                            .ID(new string ("GridPageListElementControls_" + ViewBag.Id))
+                            .DataSource(d => d.Mvc()
+                                .Controller("Admin")
+                                .LoadAction("GetDataGridPageElement")
+                                .LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID })
+                                .Key("PAG_ID").Key("PEL_ID")
+                            )
+                            .Height("600")
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .RepaintChangesOnly(true)
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Row);
+                                editing.AllowAdding(true);
+                                editing.AllowDeleting(true);
+                                editing.AllowUpdating(true);
+                            })
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .OnRowInserted("function(e) { e.component.navigateToRow(e.key); }")
+                            .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                            .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                            .OnRowUpdating(@<text> function(e) { LogPageEvent("RowUpdating"); } </text>)
+                            .OnRowUpdated(@<text> function(e) { LogPageEvent("RowUpdated"); } </text>)
+                            .OnRowRemoving(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .OnRowRemoved(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .OnEditorPrepared("OnEditorPreparedGrid")
+                            .Columns(columns =>
+                            {
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                {
+                                    btns.Add().Name(GridColumnButtonName.Edit);
+                                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataElementControls_" + ViewBag.Id);
+                                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteDataElementControls_" + ViewBag.Id);
+                                }).Fixed(true);
+                                columns.AddFor(m => m.ID).Width(150).Visible(false).Fixed(true);
+                                columns.AddFor(m => m.PAG_ID).Width(150).Visible(false).Fixed(true);
+                                columns.AddFor(m => m.PEL_ID).Caption(_loc.GetLocalizedString("Element ID")).Width(150).Fixed(true);
+                                columns.AddFor(m => m.PEL_LBL).Caption(_loc.GetLocalizedString("Element label")).Width(150).Fixed(true);
+                                columns.AddFor(m => m.PEL_TYP).Caption(_loc.GetLocalizedString("Element type")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPEL_TYPE").LoadParams(new { type = "ChildrenLayout" }).Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                ).Fixed(true);
+                                columns.AddFor(m => m.PEL_DAT_TYPE).Caption(_loc.GetLocalizedString("Element data type")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPEL_DATA_TYPE").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                ).Fixed(true);
+                                columns.AddFor(m => m.PEL_LEN).Caption(_loc.GetLocalizedString("Element data length")).Width(150).DataType(GridColumnDataType.Number);
+                                columns.AddFor(m => m.PEL_COL).Caption(_loc.GetLocalizedString("Element column CSS")).Width(150);
+                                columns.AddFor(m => m.PEL_ROW).Caption(_loc.GetLocalizedString("Element row CSS")).Width(150);
+                                columns.AddFor(m => m.PEL_CSPN).Caption(_loc.GetLocalizedString("Element column colspan CSS")).Width(150);
+                                columns.AddFor(m => m.PEL_RSPN).Caption(_loc.GetLocalizedString("Element row colspan CSS")).Width(150);
+                                columns.AddFor(m => m.IS_KEY).Caption(_loc.GetLocalizedString("Is Key")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.IS_EDIT).Caption(_loc.GetLocalizedString("Modifiable")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_IS_REQUIRED).Caption(_loc.GetLocalizedString("Required")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.CONNECTION_NM).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetConnectionType").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                ).Caption(_loc.GetLocalizedString("Connection Type"));
+                                columns.AddFor(m => m.GRP_CD).Caption(_loc.GetLocalizedString("Combo group code")).Width(150).Caption(_loc.GetLocalizedString("Group code"));
+                                columns.AddFor(m => m.GRP_CD_CUSTOM).Width(300).Caption(_loc.GetLocalizedString("Group code custom SP name"));
+
+
+                                columns.AddFor(m => m.SP_CUSTOM_REFER).Width(300).Caption(_loc.GetLocalizedString("SP custom for refer"));
+
+
+                                columns.AddFor(m => m.PEL_DFVALUE).Caption(_loc.GetLocalizedString("Default value")).Width(150);
+                                columns.AddFor(m => m.PEL_ALGN).Caption(_loc.GetLocalizedString("Column Align")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypePEL_ALIGN").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                    .AllowClearing(true)
+                                );
+
+                                columns.AddFor(m => m.PEL_VALIDATE_RULE_API).Caption(_loc.GetLocalizedString("API Validate")).Width(150);
+                                columns.AddFor(m => m.PEL_VALIDATE_RULE_API_MSG).Caption(_loc.GetLocalizedString("API Validate Msg")).Width(150);
+                                columns.AddFor(m => m.PEL_VALIDATE_REGULAR_EXP).Caption(_loc.GetLocalizedString("Regular Validate")).Width(150);
+                                columns.AddFor(m => m.PEL_VALIDATE_REGULAR_EXP_MSG).Caption(_loc.GetLocalizedString("Regular Validate Msg")).Width(150);
+
+                                columns.AddFor(m => m.PEL_VIS).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_MAPYN).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_BINDYN).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_SEQ).Width(150).Caption(_loc.GetLocalizedString("Sequence"));
+                                columns.AddFor(m => m.PEL_FIX).Caption(_loc.GetLocalizedString("Fixed")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller(_loc.GetLocalizedString("Admin")).LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_FORL).Caption(_loc.GetLocalizedString("Format")).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeColumnFormat").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_CLICK).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GridDataPageActionsLayout").LoadParams(new { PAG_ID = ViewBag.pagID })
+                                    .Key("PAG_ID")
+                                    .Key("ACT_ID"))
+                                    .DisplayExpr("ACT_NM")
+                                    .ValueExpr("ACT_ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_DBLCLICK).Width(150).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GridDataPageActionsLayout").LoadParams(new { PAG_ID = ViewBag.pagID })
+                                    .Key("PAG_ID")
+                                    .Key("ACT_ID"))
+                                    .DisplayExpr("ACT_NM")
+                                    .ValueExpr("ACT_ID")
+                                    .AllowClearing(true)
+                                );
+                                columns.AddFor(m => m.PEL_EXP_TEXT).Caption(_loc.GetLocalizedString("Expression")).Width(150);
+                                columns.AddFor(m => m.PEL_REF_PAG_ID).Width(150);
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(20))
+                            .Pager(pager =>
+                            {
+                                pager.ShowPageSizeSelector(false);
+                                pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                pager.ShowInfo(true);
+                            })
+                        )
+                    </div>
+                    <div class="tab-pane fade" id="custom-tabs-two-profile-@ViewBag.Id" role="tabpanel" aria-labelledby="custom-tabs-two-profile-tab">
+                        @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYDataMap>()
+                            .ID( new string ("GridDataMappingSPLayout_"+ViewBag.Id))
+                            .DataSource(d => d.Mvc()
+                                .Controller("Admin")
+                                .LoadAction("GetDataGridDataMappingSPLayout")
+                                .LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID })
+                                .Key("MAP_ID")
+                            )
+                            .Height("600")
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .RepaintChangesOnly(true)
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Row);
+                                editing.AllowAdding(true);
+                                editing.AllowDeleting(true);
+                                editing.AllowUpdating(true);
+                            })
+                            .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                            .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                            .OnRowUpdating(@<text> function(e) { LogPageEvent("RowUpdating"); } </text>)
+                            .OnRowUpdated(@<text> function(e) { LogPageEvent("RowUpdated"); } </text>)
+                            .OnRowRemoving(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .OnRowRemoved(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .Columns(columns =>
+                            {
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                {
+                                    btns.Add().Name(GridColumnButtonName.Edit);
+                                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataGridMappingSPLayout_" + ViewBag.Id);
+                                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteDataGridMappingSPLayout_" + ViewBag.Id);
+                                });
+                                columns.AddFor(m => m.MAP_ID).Width("").Visible(false);
+                                columns.AddFor(m => m.MAP_PAG_ID).Width("").Visible(false);
+                                columns.AddFor(m => m.MAP_PEL_ID).Width("").Visible(false);
+                                columns.AddFor(m => m.MAP_SPNM).Width("50%").Caption(_loc.GetLocalizedString("Datasource Mapping Name")).CellTemplate(
+                                    @<text>
+                                        <a href="#" onclick="showPopupPageDataMappingDetails_@(ViewBag.Id)(this,'modal-xl')" data-map-id="<%-data.MAP_ID%>"
+                                            data-map-pag-id="<%-data.MAP_PAG_ID%>" data-map-pel-id="<%-data.MAP_PEL_ID%>" data-map-datasource-type="<%-data.MAP_SPTYPE%>"
+                                            data-map-datasource-name="<%-data.MAP_SPNM%>">
+                                            <%- value %>
+                                        </a>
+                                    </text>
+                                );
+                                columns.AddFor(m => m.MAP_SPTYPE).Width("25%").Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetSP_TYPE").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                ).Caption(_loc.GetLocalizedString("Datasource Mapping Type"));
+                                columns.AddFor(m => m.MAP_CNNAME).Width("25%").Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetConnectionType").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                ).Caption(_loc.GetLocalizedString("Connection Type"));
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(20))
+                            .Pager(pager =>
+                            {
+                                pager.ShowPageSizeSelector(false);
+                                pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                pager.ShowInfo(true);
+                            })
+                        )
+                    </div>
+                    <div class="tab-pane fade" id="custom-tabs-two-messages-@ViewBag.Id" role="tabpanel" aria-labelledby="custom-tabs-two-messages-tab">
+                        @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageActions>()
+                            .ID(new string("GridDataPageActionsLayout_"+ViewBag.Id))
+                            .DataSource(d => d.Mvc()
+                                .Controller("Admin")
+                                .LoadAction("GridDataPageActionsLayout")
+                                .LoadParams(new { PAG_ID = ViewBag.pagID })
+                                .Key("PAG_ID")
+                                .Key("ACT_ID")
+                            )
+                            .Height("600")
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .RepaintChangesOnly(true)
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Row);
+                                editing.AllowAdding(true);
+                                editing.AllowDeleting(true);
+                                editing.AllowUpdating(true);
+                            })
+                            .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                            .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                            .OnRowUpdating(@<text> function(e) { LogPageEvent("RowUpdating"); } </text>)
+                            .OnRowUpdated(@<text> function(e) { LogPageEvent("RowUpdated"); } </text>)
+                            .OnRowRemoving(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .OnRowRemoved(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .Columns(columns =>
+                            {
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                {
+                                    btns.Add().Name(GridColumnButtonName.Edit);
+                                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SavedDataPageActionsLayout_" + ViewBag.Id);
+                                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletedDataPageActionsLayout_" + ViewBag.Id);
+                                });
+                                columns.AddFor(m => m.PAG_ID).Width("").Visible(false);
+                                columns.AddFor(m => m.ACT_ID).Width("").Visible(false);
+                                columns.AddFor(m => m.ACT_NM).Width("25%").Caption(_loc.GetLocalizedString("Action Name")).CellTemplate(
+                                    @<text>
+                                        <a href="#" onclick="showPopupPageDataActionsDetails_@(ViewBag.Id)(this,'modal-xl')"
+                                            data-map-pag-id="<%-data.PAG_ID%>" data-map-act-id="<%-data.ACT_ID%>">
+                                            <%- value %>
+                                        </a>
+                                    </text>
+                                );
+                                columns.AddFor(m => m.ACT_TYPE).Caption(_loc.GetLocalizedString("Action Type")).Width("25%").Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetActionType").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                    );
+                                columns.AddFor(m => m.ACT_FN).Width("25%").Caption(_loc.GetLocalizedString("Functional Action"));
+                                columns.AddFor(m => m.ACT_LC).Width("25%").Caption(_loc.GetLocalizedString("Functional Action Location File"));
+                                columns.AddFor(m => m.IS_INIT).Width("25%").Caption(_loc.GetLocalizedString("IS INIT")).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                    .DisplayExpr("Name")
+                                    .ValueExpr("ID")
+                                    .AllowClearing(true)
+                                );
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(20))
+                            .Pager(pager =>
+                            {
+                                pager.ShowPageSizeSelector(false);
+                                pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                pager.ShowInfo(true);
+                            })
+                        )
+                    </div>
+                    <div class="tab-pane fade" id="custom-tabs-element-setting-reference-@ViewBag.Id" role="tabpanel" aria-labelledby="custom-tabs-element-setting-reference-tab">
+                        @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageLayElementReference>()
+                            .ID(new string("GridDataPageLayElementReference_"+ViewBag.Id))
+                            .DataSource(d => d.Mvc()
+                                .Controller("Admin")
+                                .LoadAction("GridDataPageLayElementReference")
+                                .LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID  })
+                                .Key("ID")
+                                .Key("PAG_ID")
+                                .Key("PEL_ID")
+                            )
+                            .Height("600")
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .RepaintChangesOnly(true)
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Row);
+                                editing.AllowAdding(true);
+                                editing.AllowDeleting(true);
+                                editing.AllowUpdating(true);
+                            })
+                            .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                            .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                            .OnRowUpdating(@<text> function(e) { LogPageEvent("RowUpdating"); } </text>)
+                            .OnRowUpdated(@<text> function(e) { LogPageEvent("RowUpdated"); } </text>)
+                            .OnRowRemoving(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .OnRowRemoved(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                            .Columns(columns =>
+                            {
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                {
+                                    btns.Add().Name(GridColumnButtonName.Edit);
+                                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SavedDataDataPageLayElementReference_" + ViewBag.Id);
+                                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletedDataPageLayElementReference_" + ViewBag.Id);
+                                });
+                                columns.AddFor(m => m.ID).Width("").Visible(false);
+                                columns.AddFor(m => m.PAG_ID).Width("").Visible(false);
+                                columns.AddFor(m => m.PEL_ID).Width("").Visible(false);
+                                if (ViewBag.pagTp == "C002") // TYPE GRID
+                                {
+                                    columns.AddFor(m => m.SOURCE_COL_NM).Width("25%").Caption(_loc.GetLocalizedString("Grid Column Name")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetListColumnInGrid").LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID  } ).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                                    columns.AddFor(m => m.TARGET_COL_NM).Width("25%").Caption(_loc.GetLocalizedString("Form Column Name")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetListColumnInForm").LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID  } ).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                                    columns.AddFor(m => m.PEL_ID_TO).Width("25%").Caption(_loc.GetLocalizedString("MAP TO")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPageElementRelationship").LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID }).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                                } if (ViewBag.pagTp == "C001") // TYPE FORM
+                                {
+                                    columns.AddFor(m => m.SOURCE_COL_NM).Width("25%").Caption(_loc.GetLocalizedString("Form Column Name")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetListColumnInForm").LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID  } ).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                                    columns.AddFor(m => m.TARGET_COL_NM).Width("25%").Caption(_loc.GetLocalizedString("Grid Column Name")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetListColumnInGrid").LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID  } ).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                                    columns.AddFor(m => m.PEL_ID_TO).Width("25%").Caption(_loc.GetLocalizedString("MAP TO")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPageElementRelationship").LoadParams(new { PAG_ID = ViewBag.pagID, PEL_ID = ViewBag.pelID }).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                                }
+                                columns.AddFor(m => m.REF_TYPE).Width("10%").Caption(_loc.GetLocalizedString("Ref Type")).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetReferenceType").Key("DTL_CD"))
+                                    .DisplayExpr("COD_NM")
+                                    .ValueExpr("DTL_CD")
+                                );
+
+                                columns.AddFor(m => m.DATA_MAP_ADDON).Width("15%").Caption(_loc.GetLocalizedString("DataMap with SP Custom"));
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(20))
+                            .Pager(pager =>
+                            {
+                                pager.ShowPageSizeSelector(false);
+                                pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                pager.ShowInfo(true);
+                            })
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,82 @@
+[
+  {
+    "id": "Modules.Admin",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.UIRender",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.FileUpload",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.CommonModels",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.Inventory",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.MasterData",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.Production",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.PurchaseOrder",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.SalesProject",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.SystemMgt",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Pleiger.Transaction",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Kiosk.Management",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Kiosk.Settings",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Kiosk.Monitoring",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Kiosk.Member",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  },
+  {
+    "id": "Modules.Parking",
+    "isBundledWithHost": true,
+    "version": "1.0.0"
+  }
+]

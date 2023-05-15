@@ -1,0 +1,512 @@
+﻿@using InfrastructureCore.Models.Identity;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@model SYUser;
+@{
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    var currentUser = (SYLoggedUser)ViewBag.CurrentUser;
+    string superAdmin = "G000C001";
+    Layout = null;
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    //pageSetting.DELETE_YN = true;
+    pageSetting.SEARCH_YN = true;
+    
+    pageSetting.EXCEL_YN = ViewBag.Excel;
+    pageSetting.CREATE_YN = true;
+
+    string PartnerCode = "PartnerCode" + ViewBag.Thread;
+    string UserType = "UserType" + ViewBag.Thread;
+    string gridUser = "gridUser" +ViewBag.thread;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    bool alowEdit = false;
+
+    if(currentUser.SystemUserType == "G000C001")
+    {
+        alowEdit = true;
+        pageSetting.CREATE_YN = true;
+    }
+    
+}
+
+<script>
+    // Quan add 2020/09/05
+    // Export excel
+    $(() => {
+        ReziePageUserManagement();
+    });
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+         
+        var dataGrid = $("#@(gridUser)");
+        ExportExcelCommon(dataGrid, "gridUser")
+     });
+
+    var dataSelected;
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+         
+        ReloadTab();
+        LoadingPage(0);
+    });
+
+    $("#btnCreate_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+
+        var url = '@Url.Action("ShowPopupCreateUser", "User")';
+        var obj = {
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+        LoadingPage(0);
+    });
+    function GridUserInstance() {
+        return $("#@gridUser").dxDataGrid("instance");
+    }
+    function ReloadTab() {
+         
+         $("#UserCode@(ViewBag.Thread)").dxTextBox("instance").option("value", '');
+         $("#UserName@(ViewBag.Thread)").dxTextBox("instance").option("value", '');
+         $("#UserType@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+         $("#IsBlock@(ViewBag.Thread)").dxRadioGroup("instance").option("value", '@_loc.GetLocalizedString("사용")');
+         $('#btnSearch_@ViewBag.Thread').trigger('click');
+    }
+
+
+    var isChangePWVisible = function (e) {
+        return !e.row.isEditing && e.row.data.UserID!='@currentUser.UserID';
+    }
+
+    function VisibleDeleteButton(e){
+        return e.row.data.UserType !== '@superAdmin' && !e.row.isEditing;
+    }
+
+    var grid = $("#@(gridUser)").dxDataGrid().dxDataGrid("instance");
+
+    function onEditorPreparing(e) {
+        if (e.parentType === "dataRow") {
+            if (e.dataField === "UserName") {
+                e.editorOptions.disabled = (e.row.data.UserType === '@superAdmin');
+            }
+            if (e.dataField === "UserType") {
+                e.editorOptions.disabled = (e.row.data.UserType === '@superAdmin');
+            }
+            if (e.dataField === "SiteID") {
+                e.editorOptions.disabled = (e.row.data.UserType === '@superAdmin');
+            }
+        }
+    }
+
+    // validate data
+    function ValidateDataUser(userCode, userName, userType, siteID) {
+        if (userCode == undefined || userCode == "") {
+            DevExpress.ui.dialog.alert("Please input User Code!", "Error");
+            return;
+        }
+
+        if (userName == undefined || userName == "") {
+            DevExpress.ui.dialog.alert("Please input UserName!", "Error");
+            return;
+        }
+
+        if (userType == undefined || userType == "") {
+            DevExpress.ui.dialog.alert("Please select User Type!", "Error");
+            return;
+        }
+
+        if ('@currentUser.UserType' == '@superAdmin' && (siteID == undefined || siteID == "")) {
+            DevExpress.ui.dialog.alert("Please select Site!", "Error");
+            return;
+        }
+
+        return true;
+    }
+
+       // Save data
+    function SaveDataUser(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = e.row.data;
+        if (ValidateDataUser(data.UserCode, data.UserName, data.UserType, data.SiteID)) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("SaveData","User")',
+                        type: "POST",
+                        data: data,
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    grid.refresh();
+                                });
+                                return;
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                return;
+                            }
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        }
+        LoadingPage(0);
+    }
+
+    // Delete data
+    function DeleteDataUser(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let userId = data.UserID;
+        let userCode = data.UserCode;
+
+         
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteData","User")',
+                    type: "POST",
+                    data:
+                    {
+                        userId: userId,
+                        userCode: userCode
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            $("#btnReload_@ViewBag.Thread").trigger("click");
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                grid.refresh();
+                            });
+                            return;
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                            return;
+                        }
+                    }
+                });
+            }
+            else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Show popup User Role
+    function ShowPopupChangPassword(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = e.row.data;
+        $.ajax({
+            url: '@Url.Action("ShowPopupChangPassword", "User")',
+            type: 'GET',
+            data: data,
+            dataType: 'html',
+            success: function (result) {
+                LoadingPage(0);
+                $("#modalContent").html(result);
+                RemoveClassPopup();
+                $("#modalContent").addClass('modal-md');
+                $('#modalControl').modal('show');
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Btn Search even
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+         
+        var UserCode = $('#UserCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var UserName = $('#UserName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var FirstName = $('#FirstName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        let UserType = $("#UserType@(ViewBag.Thread)").dxSelectBox("option", "value");
+
+        let IsBlock = $('#IsBlock@(ViewBag.Thread)').dxRadioGroup('instance').option("value")
+        if (IsBlock == "@_loc.GetLocalizedString("전체")")
+        {
+            IsBlock = null;
+        }
+        else if (IsBlock == "@_loc.GetLocalizedString("차단")")
+        {
+            IsBlock = false;
+        }
+        else
+        {
+            IsBlock = true;
+        }
+
+        let UseYN = $('#UseYN@(ViewBag.Thread)').dxRadioGroup('instance').option("value")
+        if (UseYN == "@_loc.GetLocalizedString("전체")")
+        {
+            UseYN = "";
+        }
+        else if (UseYN == "@_loc.GetLocalizedString("거래")")
+        {
+            UseYN = "Y";
+        }
+        else
+        {
+            UseYN = "N";
+        }
+         
+        $.ajax({
+            url: '@Url.Action("GetListDataSearch", "User")',
+            type: "GET",
+            data: {
+                UserCode: UserCode,
+                UserName: UserName,
+                FirstName: FirstName,
+                UserType: UserType,
+                IsBlock: IsBlock,
+                UseYN: UseYN
+            },
+                dataType: "json",
+                success: function (result) {
+                    LoadingPage(0);
+                    var grid = $("#@(gridUser)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                }
+        });
+        LoadingPage(0);
+    });
+
+    $(window).resize(function () {
+        ReziePageUserManagement();
+    });
+    function onItemGridToolbarPreparing(e) {
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Create")",
+                    onClick: function () {
+                        GridUserInstance().addRow();
+
+                        GridUserInstance().columnOption(0, "allowEditing", true);
+
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+    }
+    function ReziePageUserManagement() {
+        //alert('hello');
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            @*RecalculateResize(0.4, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+            RecalculateResize(0.6, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header" id="headerpage_@(ViewBag.Thread)">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Login ID")</label>
+                            @(Html.DevExtreme().TextBox().ID("UserCode" + ViewBag.Thread).Value(""))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("UserName")</label>
+                            @(Html.DevExtreme().TextBox().ID("UserName" + ViewBag.Thread).Value(""))
+                        </div>
+                    </div>
+                    <div class="col-md-2" hidden>
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("FirstName")</label>
+                            @(Html.DevExtreme().TextBox().ID("FirstName" + ViewBag.Thread).Value(""))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("UserType")</label>
+                            @(Html.DevExtreme().SelectBox()
+                            .ID(UserType)
+                            .DisplayExpr("COD_NM")
+                            .ValueExpr("DTL_CD")
+                            .DataSource(d => d.Mvc().Controller("User").LoadAction("GetListRole")
+                            .Key("DTL_CD")
+                            )
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            )
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("IsBlock")</label>
+                            <div class="dx-field">
+                                @(Html.DevExtreme().RadioGroup()
+                                .Items(new[] { @_loc.GetLocalizedString("전체"), 
+                                               @_loc.GetLocalizedString("사용"), 
+                                               @_loc.GetLocalizedString("차단") })
+                                .Value(@_loc.GetLocalizedString("사용"))
+                                .Layout(Orientation.Horizontal)
+                                .ID("IsBlock" + ViewBag.Thread)
+                               )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group" hidden>
+                            <label>@_loc.GetLocalizedString("Status")</label>
+                            <div class="dx-field">
+                                @(Html.DevExtreme().RadioGroup()
+                                .Items(new[] { @_loc.GetLocalizedString("전체"),
+                                    @_loc.GetLocalizedString("거래"),
+                                    @_loc.GetLocalizedString("중지") })
+                                .Value(@_loc.GetLocalizedString("전체"))
+                                .Layout(Orientation.Horizontal)
+                                .ID("UseYN" + ViewBag.Thread)
+                               )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="card-body p-0 pl-2 pr-2 pt-2" id="bodypage_@(ViewBag.Thread)">
+                <div class="row" style="height:100%">
+                    <div class="col-md-12" style="height:100%">
+                        @(Html.DevExtreme().DataGrid<SYUser>()
+                        .ID(gridUser)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .Height("98%")
+                        .Editing(e =>
+                        {
+                            if(currentUser.SystemUserType == "G000C001")
+                            {
+                                e.AllowAdding(true);
+                                e.AllowUpdating(true);
+                                e.AllowDeleting(true);
+                            }
+                            if(ViewBag.SysTemUserType == "G000C002")
+                            {
+                                e.AllowUpdating(true);
+                                e.AllowDeleting(true);
+                            }
+                            e.UseIcons(true);
+                        })
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.UserCode).Caption(_loc.GetLocalizedString("Login ID")).AllowEditing(alowEdit);
+                            //c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Company")).AllowEditing(alowEdit);
+                            c.AddFor(x => x.UserName).Caption(_loc.GetLocalizedString("UserName")).AllowEditing(alowEdit); ;
+                            c.AddFor(x => x.FirstName).Caption(_loc.GetLocalizedString("FirstName")).AllowEditing(alowEdit).Visible(false);
+                            c.AddFor(x => x.LastLoggedIn).Caption(_loc.GetLocalizedString("LastLogin")).Format("yyyy-MM-dd hh:mm:ss").AllowEditing(false);
+                            c.AddFor(x => x.LastName).Caption(_loc.GetLocalizedString("LastName")).Visible(false);
+                            c.AddFor(x => x.Email).Caption(_loc.GetLocalizedString("Email")).AllowEditing(alowEdit);
+                            c.AddFor(x => x.IsBlock).Caption(_loc.GetLocalizedString("IsBlock"));
+                            //c.AddFor(x => x.LastLogin).Caption(_loc.GetLocalizedString("Last Login"));
+                            c.AddFor(x => x.LastBlock).Caption(_loc.GetLocalizedString("LastBlock")).Format("yyyy-MM-dd").AllowEditing(alowEdit);
+                            //c.AddFor(x => x.PoMessage).Caption(_loc.GetLocalizedString("PoMessage"));
+                            c.AddFor(x => x.UserType).Caption(_loc.GetLocalizedString("UserType")).Lookup(l => l
+                                .DataSource(d => d.Mvc().Controller("User").LoadAction("GetListRole").Key("DTL_CD"))
+                                   .DisplayExpr("COD_NM")
+                                   .ValueExpr("DTL_CD")
+                                   .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            ).AllowEditing(alowEdit);
+                            if (currentUser.UserType == superAdmin) {
+                                c.AddFor(x => x.SiteID).Caption(_loc.GetLocalizedString("Site")).Lookup(l => l
+                                .DataSource(d => d.Mvc().Controller("Site").LoadAction("GetListData").Key("SiteID"))
+                                .DisplayExpr("SiteName")
+                                .ValueExpr("SiteID")
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                                ).Visible(true);
+                            }
+                            else
+                            {
+                                c.AddFor(x => x.SiteID).Caption(_loc.GetLocalizedString("Site")).Lookup(l => l
+                                .DataSource(d => d.Mvc().Controller("Site").LoadAction("GetListData").Key("SiteID"))
+                                .DisplayExpr("SiteName")
+                                .ValueExpr("SiteID")
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                                ).Visible(false);
+                            }
+
+                            c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                            {
+                                if (ViewBag.SysTemUserType == "G000C002")
+                                {
+                                    b.Add().Name(GridColumnButtonName.Edit);
+                                    b.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataUser");
+                                    b.Add().Icon("trash").Hint("Delete").OnClick("DeleteDataUser").Visible(new JS("VisibleDeleteButton"));
+                                    b.Add().Icon("preferences").Hint("Change Password ").OnClick("ShowPopupChangPassword");
+                                }
+                                //b.Add().Icon("preferences").Hint("Change Password ").OnClick("ShowPopupChangPassword").Visible(new JS("isChangePWVisible"));
+                            });
+                        })
+                        .DataSource(d => d.Mvc().Controller("User").LoadAction("GetListData").Key("UserCode"))
+                        .OnEditorPreparing("onEditorPreparing")
+                        //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(20))
+                            .Pager(pager =>
+                            {
+                                pager.ShowPageSizeSelector(false);
+                                pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                                pager.ShowInfo(true);
+                            })
+                    )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

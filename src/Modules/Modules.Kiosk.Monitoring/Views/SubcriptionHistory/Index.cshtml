@@ -1,0 +1,227 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string startTime = "startTime" + ViewBag.Thread;
+    string endTime = "endTime" + ViewBag.Thread;
+    string gridStore = "GridStore" + ViewBag.Thread;
+    string gridSubscription = "GridSubscription" + ViewBag.Thread;
+
+    var genderEntities = new[] {
+        new {id = false, name ="Women" },
+        new {id = true, name = "Man"}
+    };
+}
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        LoadStoreMaster(null, null, null, "#@gridStore");
+        LoadingPage(0);
+    })
+    // Get instance component
+    function GetGridSubscriptionInstance() {
+        return $("#@gridSubscription").dxDataGrid("instance");
+    }
+
+    function GetGridStoreMasterInstance() {
+        return $("#@gridStore").dxDataGrid("instance");
+    }
+
+    // Region: btn click event
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        var stores = GetGridStoreMasterInstance().getSelectedRowsData();
+        if(stores.length > 0) {
+            GetDataSubscription(stores[0].storeNo)
+            LoadingPage(0);
+            return;
+        }
+        GetDataSubscription(null);
+        LoadingPage(0);
+    });
+
+    function ShowDataSubscriptionHistory(e) {
+        LoadingPage(1);
+        debugger;
+        //GetGridSubscriptionInstance().selectRows();
+        GetDataSubscription(e.data.storeNo)
+    }
+    // End Region: btn click event
+
+
+    // Region: Get Data
+    function GetDataSubscription(storeNo) {
+        debugger;
+        var obj = {
+            storeNo: storeNo,
+            startTime: formatDate("#@startTime"),
+            endTime: formatDate("#@endTime"),
+        }
+        var url = '@Url.Action("GetSubscriptionHistory", "SubcriptionHistory")';
+        LoadGridData(url, obj, "#@gridSubscription", METHOD.GET);
+    }
+    // End Region: Get Data
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <label>@(_loc.GetLocalizedString("Check-In Period"))</label>
+                <div class="row mt-1">
+                    <div class="form-group col-md-2">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(startTime)
+                            .DisplayFormat("yyyy-MM-dd")
+                            .Value(DateTime.Today.AddMonths(-1))
+                            .ShowClearButton(true)
+                            )
+                    </div>
+                    <span class="mt-2">~</span>
+                    <div class="form-group col-md-2">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(endTime)
+                            .DisplayFormat("yyyy-MM-dd")
+                            .Value(DateTime.Today)
+                            .ShowClearButton(true)
+                            )
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-3">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                            .ID(gridStore)
+                            .Height("69vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .FilterRow(f => f.Visible(true))
+                            .HeaderFilter(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                //c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date")).Format("yyyy-MM-dd").Alignment(0);
+                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                //c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");
+                                //c.AddFor(x => x.UnitPrice).Caption(_loc.GetLocalizedStringUnit Price")).Format("#,##0");
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("ShowDataSubscriptionHistory")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+                    <div class="col-md-9">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_SubscriptionHistory>()
+                            .ID(gridSubscription)
+                            .Height("69vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .FilterRow(f => f.Visible(true))
+                            .HeaderFilter(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Multiple))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+
+                                    c.Add().Caption(_loc.GetLocalizedString("Store Information")).Alignment(0).Columns(columns =>
+                                {
+                                    columns.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                    //c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date")).Format("yyyy-MM-dd").Alignment(0);
+                                    columns.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                });
+                                c.Add().Caption(_loc.GetLocalizedString("Member Information")).Alignment(0).Columns(columns =>
+                                {
+                                    columns.AddFor(x => x.userName).Caption(_loc.GetLocalizedString("Username"));
+                                    columns.AddFor(x => x.birthday).Caption(_loc.GetLocalizedString("Birthday")).Format("yyyy-MM-dd").Alignment(0);
+                                    columns.Add().Caption(_loc.GetLocalizedString("Gender")).CalculateCellValue(@<text>
+                                        function(data) {
+                                            return data.gender == true ? "@_loc.GetLocalizedString("Man")" : "@_loc.GetLocalizedString("Women")";
+                                        }
+                                    </text>);
+                                    columns.AddFor(x => x.phoneNumber).Caption(_loc.GetLocalizedString("Phone Number"));
+                                    columns.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("checkindate")).Format("yyyy-MM-dd HH:mm:ss").Alignment(0);
+                                });
+                                c.Add().Caption(_loc.GetLocalizedString("Approval Information")).Alignment(0).Columns(columns =>
+                                {
+                                    columns.AddFor(x => x.approvalType).Caption(_loc.GetLocalizedString("Approval Type"));
+
+                                    //columns.AddFor(x => x.lastSimilarity).Caption(_loc.GetLocalizedString("Rate Similarity"));
+                                    columns.Add().Caption(_loc.GetLocalizedString("Rate Similarity")).CalculateCellValue(@<text>
+                                        function(data) {
+                                            return data.lastSimilarity == 0 ? "" : data.lastSimilarity;
+                                        }
+                                    </text>);
+                                    columns.AddFor(x => x.approveReject).Caption(_loc.GetLocalizedString("Approve Reject"));
+                                });
+
+                                //c.AddFor(x => x.UnitPrice).Caption(_loc.GetLocalizedStringUnit Price")).Format("#,##0");
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            //.OnRowClick("ShowAudioFileDetail")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

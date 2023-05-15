@@ -1,0 +1,1087 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.SEARCH_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+}
+
+    <script>
+    var SlipNumberSlt = null;
+    var PONumberSlt = null;
+    var poNumberSlt = null;
+    var partnerCodeSlt = null;
+    var isSuccess = false;
+    var flagCRUD = null;
+    var CheckedGoodsReturnDetail = false;
+
+    // Page start
+    $(document).ready(function () {
+        LoadingPage(1);
+        ResizeReleaseItemSlip();
+        pageStart();
+        LoadingPage(0);
+    });
+
+    function getParamsStartDateSearch() {
+        var value = $("#startDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        //var dateFormat = new Date(value);
+        //var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+        return ParsingDateyyyyMMdd(value);
+    }
+    function getParamsEndDateSearch() {
+        var value = $("#endDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        //var dateFormat = new Date(value);
+        //var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+        return ParsingDateyyyyMMdd(value);
+    }
+    function getParamsStatusSearch() {
+        //return $("#ddlStatus@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        return null;
+    }
+
+    function getParamsUserProjectCodeSearch() {
+        return $("#UserProjectCodeSearch@(ViewBag.Thread)").val();
+        }
+
+    function getParamsUserPONumberSearch() {
+        return $("#UserPONumberSearch@(ViewBag.Thread)").val();
+    }
+
+    function getParamsSlipNumberSlt() {
+        return SlipNumberSlt;
+    }
+
+    function getParamsPoNumberSlt() {
+        return PONumberSlt;
+    }
+
+    function getParamsPartnerCodeSlt() {
+        debugger;
+        return partnerCodeSlt;
+    }
+
+    function ShowDataItemSlipDetail(e) {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        var dataDelete = e.data;
+        if (typeof dataDelete !== 'undefined') {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        }
+
+        let data = e.data;
+        var slipNumberSelect = e.data.SlipNumber;
+        SlipNumberSlt = slipNumberSelect;
+        PONumberSlt = e.data.RelNumber;
+        partnerCodeSlt = e.data.PartnerCode;
+
+        $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        flagCRUD = "Edit";
+        //Show form detail
+        debugger;
+        SetDataFormDetail(data);
+
+        $.ajax({
+            url: '@Url.Action("GetListMESItemSlipDetailForRelease", "MESItemSlip")',
+            type: "GET",
+            data: {
+                slipNumber: slipNumberSelect,
+                poNumber: PONumberSlt,
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+                if (e.data.CheckedGoodsReturn == 0 || e.data.CheckedGoodsReturn == null)
+                {
+                    LoadingPage(0);
+                    $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+                    $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+                    CheckedGoodsReturnDetail = false;
+                }
+                else
+                {
+                    LoadingPage(0);
+                    $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+                    $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+                    CheckedGoodsReturnDetail = true;
+
+                }
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+    function SetDataFormDetail(data) {
+        debugger;
+
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", data.WHFromCode);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", data.WHToCode);
+        $("#SlipNumber@(ViewBag.Thread)").val(data.SlipNumber);
+        $("#PartnerCode@(ViewBag.Thread)").val(data.PartnerCode);
+        $("#PartnerName@(ViewBag.Thread)").val(data.PartnerName);
+        $("#Remark@(ViewBag.Thread)").val(data.Remark != null ? data.Remark : "");
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(data.SlipYMD));
+        //$("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("value", data.RelNumber);
+        $("#PONumberPopup@(ViewBag.Thread)").val(data.RelNumber);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(data.UserPONumber);
+        $("#ProjectCode@(ViewBag.Thread)").val(data.ProjectCode);
+        $("#UserProjectCode@(ViewBag.Thread)").val(data.UserProjectCode);
+
+
+        // set attribute readonly
+
+        //$("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+
+        $("#Remark@(ViewBag.Thread)").prop("disabled", false);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+
+    }
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        RefreshTab(this);
+    });
+
+    // search
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        pageStart();
+        clearGridItemSlipDtl();
+        debugger;
+        if (getParamsStartDateSearch() != null)
+        {
+            if (ValidateRangeDate(getParamsStartDateSearch(), getParamsEndDateSearch())) {
+                SearchAllData();
+            }
+        }
+        else
+        {
+            SearchAllData();
+        }
+
+    });
+
+    // create
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        //set mask button
+        $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        clearInputForm();
+        clearGridItemSlipDtl();
+        GetItemSlipMasterKey();
+        flagCRUD = "Insert";
+    });
+
+    // save
+    $('#btnSave_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        if (ValidateInputForm())
+        {
+            // Form Master
+            let itemSlipMaster = {
+                SlipNumber: $("#SlipNumber@(ViewBag.Thread)").val(),
+                SlipYMD: $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value"),
+                SlipType: '5',
+                PartnerCode: $("#PartnerCode@(ViewBag.Thread)").val(),
+                WHFromCode: $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                WHToCode: $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                TotalAmt: '',
+                TaxAmt: '',
+                Remark: $("#Remark@(ViewBag.Thread)").val(),
+                //RelNumber: $("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                RelNumber: $("#PONumberPopup@(ViewBag.Thread)").val(),
+            };
+            debugger;
+            var gridItemSlipDetailData = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance').getDataSource().items()
+
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+
+                    $.ajax({
+                        url: '@Url.Action("SaveDataMaterialInStock", "MESItemSlip")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: flagCRUD,
+                            itemSlipMaster: JSON.stringify(itemSlipMaster),
+                            itemSlipDetail: JSON.stringify(gridItemSlipDetailData)
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                    pageStart();
+                                    clearGridItemSlipDtl();
+                                    SearchAllData();
+                                });
+                            }
+                            else {
+                                LoadingPage(0);
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }, error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                });
+                    if (isSuccess) {
+                        LoadingPage(0);
+                    $.unblockUI();
+                }
+                } else {
+                    LoadingPage(0);
+                return;
+            }
+                LoadingPage(0);
+            });
+        }
+        LoadingPage(0);
+    });
+
+
+    // delete
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        var dataGridMst = $('#gridItemSlipMst@(ViewBag.Thread)').dxDataGrid('instance');
+        var dataGridDtl = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance');
+        var dataMst = dataGridMst.getSelectedRowsData();
+        var dataDtl = dataGridDtl.getSelectedRowsData();
+        if ((typeof dataMst !== 'undefined' && dataMst.length >= 0) || (typeof dataDtl !== 'undefined' && dataDtl.length >= 0)) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteItemSlip", "MESItemSlip")',
+                        type: "POST",
+                        data: { dataMst: dataMst, dataDtl: dataDtl },
+                        dataType: "json",
+                        success: function (rs) {
+                            if (rs.Success == true) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                    pageStart();
+                                    clearGridItemSlipDtl();
+                                    SearchAllData();
+                                });
+                            }
+                            else {
+                                LoadingPage(0);
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }, error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                    if (isSuccess) {
+                        LoadingPage(0);
+                        $.unblockUI();
+                    }
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        } else {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please make sure data are changed.", "Warning");
+        }
+    });
+
+    function GridItemSlipMstSelectionChanged(selectedItems) {
+        debugger;
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        }
+    }
+
+    function GridItemSlipDtlSelectionChanged(selectedItems) {
+        debugger;
+        var data = selectedItems.selectedRowsData;
+
+        if (CheckedGoodsReturnDetail == false) {
+            if (typeof data !== 'undefined' && data.length > 0) {
+                $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+            }
+            else {
+                $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+            }
+        }
+    }
+
+    function ValidateInputForm() {
+        debugger;
+        var checkSave = true;
+        // PO number
+        //let PONumber = $("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        let PONumber = $("#PONumberPopup@(ViewBag.Thread)").val();
+        if (PONumber == null || PONumber == undefined || PONumber == "") {
+            DevExpress.ui.dialog.alert("PO Status must be request!", "Error");
+            checkSave = false;
+            return checkSave;
+            //return false;
+        }
+        // WHPartnerCode
+        let WHPartnerCode = $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        if (WHPartnerCode == null || WHPartnerCode == undefined || WHPartnerCode == "") {
+            DevExpress.ui.dialog.alert("Please select Warehouse Partner!", "Error");
+            checkSave = false;
+            return checkSave;
+            //return false;
+        }
+
+        // WHPleigerCode
+        let WHPleigerCode = $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        if (WHPleigerCode == null || WHPleigerCode == undefined || WHPleigerCode == "") {
+            DevExpress.ui.dialog.alert("Please select Warehouse Pleiger!", "Error");
+            checkSave = false;
+            return checkSave;
+            //return false;
+        }
+        var gridItemSlipDetailData = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance').getDataSource().items()
+        if (gridItemSlipDetailData != null) {
+            $.each(gridItemSlipDetailData, function (index, item) {
+                debugger;
+                //if (gridItemSlipDetailData[index].Qty > gridItemSlipDetailData[index].POQty) { // need check
+                if (gridItemSlipDetailData[index].Qty > gridItemSlipDetailData[index].POQty ||
+                    gridItemSlipDetailData[index].Qty > gridItemSlipDetailData[index].TotalPOQty) { // 20201105 minh edit 
+                    DevExpress.ui.dialog.alert("Receive Qty cannot higher than Total PO Qty or PO Qty Remainning.", "Error");
+                    checkSave = false;
+                    return checkSave;
+                    //return false;
+                }
+                if (gridItemSlipDetailData[index].Qty <= 0) {
+                    DevExpress.ui.dialog.alert("Please input positive number or different zero.", "Error");
+                    checkSave = false;
+                    return checkSave;
+                }
+            });
+        }
+        debugger;
+        return checkSave;
+    }
+
+    function clearInputForm() {
+        //$("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", false);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", false);
+
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#Remark@(ViewBag.Thread)").prop("disabled", false);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", false);
+
+        $("#PartnerCode@(ViewBag.Thread)").val(null);
+        $("#PartnerName@(ViewBag.Thread)").val(null);
+        $("#ProjectCode@(ViewBag.Thread)").val(null);
+        $("#UserProjectCode@(ViewBag.Thread)").val(null);
+        $("#SlipNumber@(ViewBag.Thread)").val(null);
+        $("#Remark@(ViewBag.Thread)").val(null);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", new Date());
+        //$("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#PONumberPopup@(ViewBag.Thread)").val(null);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(null);
+    }
+    function clearFormWhenChangePONumber() {
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#PONumberPopup@(ViewBag.Thread)").val(null);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(null);
+        $("#Remark@(ViewBag.Thread)").val(null);
+    }
+
+    function pageStart() {
+        debugger;
+       // $("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+
+        $("#Remark@(ViewBag.Thread)").prop("disabled", true);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+
+        $("#PartnerCode@(ViewBag.Thread)").val(null);
+        $("#PartnerName@(ViewBag.Thread)").val(null);
+        $("#ProjectCode@(ViewBag.Thread)").val(null);
+        $("#UserProjectCode@(ViewBag.Thread)").val(null);
+        $("#Remark@(ViewBag.Thread)").val(null);
+        $("#SlipNumber@(ViewBag.Thread)").val(null);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '');
+        //$("#PONumber@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+        $("#PONumberPopup@(ViewBag.Thread)").val(null);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(null);
+
+        //set mask button
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+
+    }
+
+    function clearGridItemSlipDtl() {
+        var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+        grid.option("dataSource", null);
+        grid.refresh();
+    }
+
+    function createGridItemSlipDtlByPONumber() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("CreateGridItemSlipDtlByPONumber", "MESItemSlip")',
+            type: "GET",
+            data: {
+                poNumber: poNumberSlt
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    function isNotEmpty(value) {
+        return value !== undefined && value !== null && value !== "";
+    }
+
+    function SearchAllData() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListMESItemSlipMasterForRelease", "MESItemSlip")',
+            type: "GET",
+            data: {
+                startDate: getParamsStartDateSearch(),
+                endDate: getParamsEndDateSearch(),
+                status: getParamsStatusSearch(),
+                userProjectNo: getParamsUserProjectCodeSearch(),
+                userPoNumber: getParamsUserPONumberSearch()
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                var grid = $("#gridItemSlipMst@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+    function GetItemSlipMasterKey() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetItemSlipMasterKey", "MESItemSlip")',
+            type: "GET",
+            data: {},
+            dataType: 'json',
+            success: function (result) {
+                $("#SlipNumber@(ViewBag.Thread)").val(result);
+            }
+        });
+    }
+    function PONumberValueChanged(data) {
+        CheckSession();
+        debugger;
+        let dataSelected = data.value;
+        poNumberSlt = dataSelected;
+            //get data refer
+            $.ajax({
+                url: '@Url.Action("GetDataReferByPONumberForRelease", "MESItemSlip")',
+                type: "GET",
+                data: { PONumber: dataSelected},
+                dataType: 'json',
+                success: function (result) {
+                    SetDataFormDetailByPONumberValueChanged(result.data);
+                }
+            });
+            // get Item detail by POnumber
+            createGridItemSlipDtlByPONumber();
+
+    }
+
+        function SetDataFormDetailByPONumberValueChanged(data) {
+            debugger;
+            // set attribute readonly
+            $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+            $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+            $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+            $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+
+            $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+            $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+
+            $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+
+            // set value
+            $("#PartnerCode@(ViewBag.Thread)").val(data != null ? data.PartnerCode : "");
+            $("#PartnerName@(ViewBag.Thread)").val(data != null ? data.PartnerName : "");
+            $("#ProjectCode@(ViewBag.Thread)").val(data != null ? data.ProjectCode : "");
+            $("#UserProjectCode@(ViewBag.Thread)").val(data != null ? data.UserProjectCode : "");
+
+            partnerCodeSlt = data != null ? data.PartnerCode : "";
+
+            // reset value
+            var WHPartnerCodeValue = $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+            var WHPleigerCode = $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+
+            if (WHPartnerCodeValue == null || WHPartnerCodeValue == undefined || WHPartnerCodeValue == "") {
+                $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+            }
+            if (WHPleigerCode == null || WHPleigerCode == undefined || WHPleigerCode == "") {
+                $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+            }
+
+        }
+
+        function gridItemSlipDtlOnCellPrepared(e) {
+            if (e.rowType == 'data' && e.column.dataField == 'Qty') {
+                e.cellElement.css("color", "red");
+                e.cellElement.css('backgroundColor', "yellow");
+            }
+        }
+
+
+        function SetColorRowIsReturn(e)
+        {
+            debugger;
+
+                if (e.rowType === "data" && e.column.dataField == 'CheckedGoodsReturn')
+                {
+                    var CheckedGoodsReturn = e.value;
+                }
+
+            if (CheckedGoodsReturn == 'Goods Return') {
+                    e.cellElement.css("color", "red");
+                    e.cellElement.css('backgroundColor', "yellow");
+                }
+        }
+
+    function gridItemSlipDtlOnRowRemoved(e) {
+        debugger;
+        flagCRUD = "Delete";
+        var listDel = [];
+        listDel.push(e.data);
+
+        console.log(listDel);
+    }
+
+    function validateQtyInputNumber(e) {
+        debugger;
+        if (e.data.Qty > e.data.POQty) {
+            e.rule.message = "Qty cannot higher than POQty.";
+            return false;
+        }
+        if (e.data.Qty <= 0) {
+            e.rule.message = "Please input positive number or different zero.";
+            return false;
+        }
+        return true;
+    }
+
+        // Quan add 2020/09/23
+    $("#btnShowPopupSearchPo@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("PopupSearchPO", "MESItemSlip")',
+            type: "GET",
+            data:
+            {
+                Index: "@(ViewBag.Thread)"
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+    });
+
+    function onchangePONumber(e) {
+        CheckSession();
+        debugger;
+        var PONumberChange = $("#PONumberPopup@(ViewBag.Thread)").val();
+        var PartnerCodeChange = $("#PONumberPopup@(ViewBag.Thread)").val();
+
+        //get data refer
+        $.ajax({
+            url: '@Url.Action("GetDataReferByPONumberForRelease", "MESItemSlip")',
+            type: "GET",
+            data: { PONumber: PONumberChange },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                   @*var grid = $("#gridItemSlipMst@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();*@
+                //reset value
+                $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+                $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+                $("#PartnerCode@(ViewBag.Thread)").val(null);
+                $("#PartnerName@(ViewBag.Thread)").val(null);
+                $("#ProjectCode@(ViewBag.Thread)").val(null);
+                $("#UserProjectCode@(ViewBag.Thread)").val(null);                
+                $("#SlipNumber@(ViewBag.Thread)").val(null);
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    function SetCellValueQty(rowdata, value, currentRowData) {
+        console.log("cellvalue", value)
+        rowdata.Qty = value;
+    }
+
+    $(window).resize(function () {
+        ResizeReleaseItemSlip();
+    });
+
+    var setintervalReleaseItemSlip = setInterval(IntervalReleaseItemSlip, 25);
+    var demmReleaseItemSlip = 0;
+    function IntervalReleaseItemSlip() {
+        ++demmReleaseItemSlip;
+        //console.log(demmReleaseItemSlip);
+
+
+
+        if (demmReleaseItemSlip == 100) {
+            clearInterval(setintervalReleaseItemSlip);
+        }
+        else {
+            ResizeReleaseItemSlip();
+        }
+    }
+
+    //setInterval(function () {
+    //    //console.log("setInterval production request change");
+    //    ResizeGoodReturnPO();
+    //}, 25);
+
+    function ResizeReleaseItemSlip() {
+
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "rowleft_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                ReCalResize("bdpage_@(ViewBag.Thread)", "ID", "rowright_@(ViewBag.Thread)", "hdpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+    </script>
+
+@{
+    string idStatusDDL = "ddlStatus" + ViewBag.Thread;
+    string gridItemSlipMst = "gridItemSlipMst" + ViewBag.Thread;
+    string gridItemSlipDtl = "gridItemSlipDtl" + ViewBag.Thread;
+    string PONumberDDL = "PONumber" + ViewBag.Thread;
+    string WHPartnerCodeDDL = "WHPartnerCode" + ViewBag.Thread;
+    string WHPleigerCodeDDL = "WHPleigerCode" + ViewBag.Thread;
+}
+
+<div>
+    @*@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar })*@
+    <div id="menutoolbar_@(ViewBag.Thread)">
+        @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+    </div>
+   
+
+    <div class="row" id="divindex_@(ViewBag.Thread)">
+        <div class="col-md-6" style="height:100%">
+            <div class="card" style="height:100%;" id="rowleft_@(ViewBag.Thread)">
+                <div class="card-header p-2" id="headerpage_@(ViewBag.Thread)">
+                    <div class="row">
+                        <div class="col-md-6">
+
+                            <label>@(_loc.GetLocalizedString("Slip Date"))</label>
+                            <div class="form-group row">
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID("startDate"+ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        //.Value(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1))
+                                        .Value("")
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                        )
+                                </div>
+                                <div style="align-self: center;">~</div>
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID("endDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        //.Value(DateTime.Now)
+                                        .Value("")
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                        )
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="UserProjectCodeSearch">@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                                <input type="text" class="form-control" id="UserProjectCodeSearch@(ViewBag.Thread)">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="UserPONumberSearch">@(_loc.GetLocalizedString("UserPONumber"))</label>
+                                <input type="text" class="form-control" id="UserPONumberSearch@(ViewBag.Thread)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
+                <div class="card-body p-0 pl-2 pr-2 pt-2" id="bodypage_@(ViewBag.Thread)">
+                        <div class="row" style="height:100%">
+                            <div class="col-sm-12 col-xs-12" style="height:100%">
+                                <fieldset class="customFieldset" style="height:97%">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("ItemSlipMaster")</legend>
+                                    @(Html.DevExtreme().DataGrid<Modules.Pleiger.Models.MES_ItemSlipMaster>()
+                                    .ID(gridItemSlipMst)
+                                    .DataSource(
+                                        x=>x.Mvc().Controller("MESItemSlip")
+                                        .LoadAction("GetListMESItemSlipMasterForRelease").LoadParams(new { startDate = new JS("getParamsStartDateSearch"),
+                                            endDate = new JS("getParamsEndDateSearch"), status = new JS("getParamsStatusSearch"),
+                                            userProjectNo = new JS("getParamsUserProjectCodeSearch"), userPoNumber = new JS("getParamsUserPONumberSearch")
+                                        })
+                                        .Key("SlipNumber")
+                                    )
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .ColumnAutoWidth(true).Height("100%")
+                                    .OnCellPrepared("SetColorRowIsReturn")
+                                    .Selection(s => s.Mode(SelectionMode.Single)
+                                           // .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                           //.SelectAllMode(SelectAllMode.AllPages)
+                                    )
+                                    .Columns(c=> {
+                                    c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                                    c.AddFor(x => x.SlipNumber).Caption(_loc.GetLocalizedString("GoodReceiptSlipNumber"));                         
+                                    c.AddFor(x => x.SlipYMD).Caption(_loc.GetLocalizedString("Slip Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                    c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).AllowEditing(false);
+                                    c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("UserPONumber")).AllowEditing(false);
+                                    c.AddFor(x => x.RelNumber).Caption(_loc.GetLocalizedString("PO Number")).Visible(false);
+                                    //c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code"));
+                                    c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));
+                                    //c.AddFor(x => x.WHToCode).Caption(_loc.GetLocalizedString("WHPleigerName")).Visible(true);// Pleiger
+                                    c.AddFor(x => x.WHToName).Caption(_loc.GetLocalizedString("Warehouse")).Visible(true);// Pleiger
+                                    c.AddFor(x => x.TotalTaxAmt).Caption(_loc.GetLocalizedString("Total Tax Amt")).Format("#,##0.#0").Visible(false);
+                                    c.AddFor(x => x.WHFromCode).Caption(_loc.GetLocalizedString("Warehouse Partner")).Visible(false);
+                                    c.AddFor(x => x.UserCreated).Caption(_loc.GetLocalizedString("UserCreated")).Visible(false);
+                                    c.AddFor(x => x.CheckedGoodsReturn).Caption(_loc.GetLocalizedString("Goods return")) .CalculateCellValue(
+                                        @<text>
+                                                function(data)
+                                                {
+                                                    if(data.CheckedGoodsReturn===1)
+                                                         {return 'Goods Return'}
+                                                    else {return ''}
+                                                }
+                                        </text>
+                                        );
+                                    })
+                                    .RemoteOperations(true)
+                                    .Scrolling(s => s
+                                        .Mode(GridScrollingMode.Standard)
+                                    )
+                                    .Paging(p => p.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                    .OnRowDblClick("ShowDataItemSlipDetail")
+                                    //.OnSelectionChanged("GridItemSlipMstSelectionChanged")
+                                )
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+            
+        </div>
+
+        <div class="col-md-6" style="height:100%">
+            <div class="card" style="height:100%">
+                @*<div class="card-header">
+                    </div>*@
+                <div class="card-body p-1" style="height:100%">
+                    <div class="row" style="height:100%">
+                        <div class="col-sm-12 col-xs-12" style="height:100%" " id="rowright_@(ViewBag.Thread)">
+                            <div class="row" style="height:100%">
+                                <div class="col-12" id="hdpage_@(ViewBag.Thread)">
+                                    <fieldset class="customFieldset" style="height:100%">
+                                        <legend class="customLegend">@_loc.GetLocalizedString("ItemSlipMaster")</legend>
+                                        <div class="form-group row">
+                                            <div class="form-group col-md-3" hidden="hidden">
+                                                <label for="PONumber">@(_loc.GetLocalizedString("PO Number"))</label>
+                                                <div class="input-group mb-3">
+                                                    <input type="text" id="PONumberPopup@(ViewBag.Thread)" onchange="onchangePONumber()" class="form-control">
+                                                    @*<div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary" id="btnShowPopupSearchPo@(ViewBag.Thread)" type="button">
+                                                            <i class="fa fa-search"></i>
+                                                        </button>
+                                                    </div>*@
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label>@(_loc.GetLocalizedString("GoodsReceiptNumber"))</label>
+                                                <div class="input-group mb-3">
+                                                    <input type="text" id="UserPONumberPopup@(ViewBag.Thread)" onchange="onchangePONumber()" class="form-control">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary" id="btnShowPopupSearchPo@(ViewBag.Thread)" type="button">
+                                                            <i class="fa fa-search"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="PartnerCode">@(_loc.GetLocalizedString("Partner Code"))</label>
+                                                <input type="text" class="form-control" id="PartnerCode@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="PartnerName">@(_loc.GetLocalizedString("Partner Name"))</label>
+                                                <input type="text" class="form-control" id="PartnerName@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3" hidden="hidden">
+                                                <label for="ProjectCode">@(_loc.GetLocalizedString("Project Code"))</label>
+                                                <input type="text" class="form-control" id="ProjectCode@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                                                <input type="text" class="form-control" id="UserProjectCode@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="WHPartnerName">@(_loc.GetLocalizedString("WHPartnerName"))</label>
+                                                @(Html.DevExtreme().SelectBox()
+                                                            .ID(WHPartnerCodeDDL)
+                                                            .DisplayExpr("Name")
+                                                            .ValueExpr("ID")
+                                                            .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                                                .LoadAction("GetAllPartnerWarehouse").LoadParams(new { PartnerCode = new JS("getParamsPartnerCodeSlt") })
+                                                                .Key("ID")
+                                                            )
+                                                            //.OnValueChanged("PONumberValueChanged")
+                                                            .SearchEnabled(true)
+                                                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="WHPleigerName">@(_loc.GetLocalizedString("WHPleigerName"))</label>
+                                                @(Html.DevExtreme().SelectBox()
+                                                            .ID(WHPleigerCodeDDL)
+                                                            .DisplayExpr("Name")
+                                                            .ValueExpr("ID")
+                                                            .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                                                .LoadAction("GetAllPleigerMaterialWarehouse")
+                                                                .Key("ID")
+                                                            )
+                                                            //.OnValueChanged("PONumberValueChanged")
+                                                            .SearchEnabled(true)
+                                                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="SlipNumber">@(_loc.GetLocalizedString("GoodReceiptSlipNumber"))</label>
+                                                <input type="text" class="form-control" readonly id="SlipNumber@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="SlipDate">@(_loc.GetLocalizedString("Slip Date"))</label>
+                                                @(Html.DevExtreme().DateBox().ID("SlipDate" + ViewBag.Thread)
+                                                    .Type(DateBoxType.Date).DisplayFormat("yyyy-MM-dd")
+                                                    .MaxLength(10)
+                                                )
+                                            </div>
+
+                                            <div class="form-group col-md-12">
+                                                <label for="Remark">@(_loc.GetLocalizedString("Remark"))</label>
+                                                <input type="text" class="form-control" id="Remark@(ViewBag.Thread)">
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                                <div class="col-12" id="bdpage_@(ViewBag.Thread)">
+                                    <fieldset class="customFieldset" style="height:100%">
+                                        <legend class="customLegend">@(_loc.GetLocalizedString("ItemSlipDetail"))</legend>
+                                        @(Html.DevExtreme().DataGrid<Modules.Pleiger.Models.MES_ItemSlipDetail>()
+                                            .ID(gridItemSlipDtl)
+                                            .KeyExpr("ItemCode")
+                                            .DataSource(x => x.Mvc().Controller("MESItemSlip")
+                                                .LoadAction("GetListMESItemSlipDetailForRelease").LoadParams(new
+                                                {
+                                                    slipNumber = new JS("getParamsSlipNumberSlt"),
+                                                    poNumber =  new JS("getParamsPoNumberSlt")
+                                                })
+                                                .Key("ItemCode")
+                                            )
+                                            .ShowBorders(true)
+                                            .ShowColumnLines(true)
+                                            .ShowRowLines(true)
+                                            .AllowColumnResizing(true)
+                                            .AllowColumnReordering(true)
+                                            .ColumnAutoWidth(true).Height("100%")
+                                            .RepaintChangesOnly(false)
+                                            .OnCellPrepared("gridItemSlipDtlOnCellPrepared")
+                                            .OnRowRemoved("gridItemSlipDtlOnRowRemoved")
+                                            //.FilterRow(filterRow => filterRow
+                                            //    .Visible(true)
+                                            //    .ApplyFilter(GridApplyFilterMode.Auto)
+                                            //)
+                                            //.HeaderFilter(f => f.Visible(true))
+                                            .Selection(s => s.Mode(SelectionMode.Multiple)
+                                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                            .SelectAllMode(SelectAllMode.AllPages))
+                                            .Columns(c=> {
+                                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                                //c.Add().Caption("생산의뢰 코드");                                           
+                                                c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                                                c.AddFor(x => x.Unit).Caption(_loc.GetLocalizedString("Unit")).AllowEditing(false);
+                                                c.AddFor(x => x.Qty).Caption((_loc.GetLocalizedString("Receive Qty")))
+                                                .DataType(GridColumnDataType.Number).Format("#,##0").SetCellValue("SetCellValueQty");
+                                                //.ValidationRules(vr =>
+                                                // {
+                                                //     vr.AddRequired().Message("Required");
+                                                //     vr.AddCustom().ValidationCallback("validateQtyInputNumber").Message("");
+                                                // });
+                                                c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("PO Qty Remaining")).Format("#,##0").AllowEditing(false);
+                                                c.AddFor(x => x.TotalPOQty).Caption(_loc.GetLocalizedString("Total PO Qty")).Format("#,##0").AllowEditing(false);
+
+                                                c.AddFor(x => x.Cost).Caption(_loc.GetLocalizedString("Item Cost")).Format("#,##0.#0").AllowEditing(false).Visible(false);
+                                                c.AddFor(x => x.Amt).Caption(_loc.GetLocalizedString("Amt")).Format("#,##0.#0").AllowEditing(false).Visible(false)
+                                                .CalculateCellValue(
+                                                    @<text>
+                                                            function(data) {
+                                                                return data.Amt = data.Qty * data.Cost;
+                                                            }
+                                                    </text>
+                                                );
+                                                c.AddFor(x => x.Tax).Caption(_loc.GetLocalizedString("Tax")).Format("#,##0.#0").AllowEditing(false).CalculateCellValue(
+                                                    @<text>
+                                                            function(data) {
+                                                                return data.Tax = data.Amt * 0.1;
+                                                            }
+                                                    </text>
+                                                ).Visible(false);
+                                                c.AddFor(x => x.TaxAmt).Caption(_loc.GetLocalizedString("TaxAmt")).Format("#,##0.#0").AllowEditing(false).CalculateCellValue(
+                                                    @<text>
+                                                            function(data) {
+                                                                return data.TaxAmt = data.Amt + data.Tax;
+                                                            }
+                                                    </text>
+                                                ).Visible(false);
+                                                c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark"));
+
+                                            })
+                                            .RemoteOperations(true)
+                                            .Scrolling(s => s
+                                                .Mode(GridScrollingMode.Standard)
+                                            )
+                                            .Editing(e => e
+                                                .Mode(GridEditMode.Cell)
+                                                //.Texts()
+                                                //.AllowAdding(true).UseIcons(true)
+                                                .AllowUpdating(true).UseIcons(true)
+                                                //.AllowDeleting(true).UseIcons(true)
+                                            )
+                                            .Paging(p => p.PageSize(100))
+                                            .Pager(pager =>
+                                            {
+                                                pager.ShowInfo(true);
+                                                pager.ShowNavigationButtons(true);
+                                            })
+                                            .OnSelectionChanged("GridItemSlipDtlSelectionChanged")
+                                            //.Summary(s => s
+                                            //    .RecalculateWhileEditing(true)
+                                            //    .TotalItems(items => {
+                                            //        items.AddFor(x => x.Qty).SummaryType(SummaryType.Sum);
+
+                                            //    })
+                                            //)
+                                        )
+                                    </fieldset>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>

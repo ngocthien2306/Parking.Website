@@ -1,0 +1,59 @@
+[
+  {
+    "outputFileName": "wwwroot/css/vendor.css",
+    "inputFiles": [
+      "wwwroot/plugins/fontawesome-free/css/all.min.css",
+      "wwwroot/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css",
+      "wwwroot/plugins/icheck-bootstrap/icheck-bootstrap.min.css",
+      "wwwroot/plugins/jqvmap/jqvmap.min.css",
+      "wwwroot/dist/css/adminlte.min.css",
+      "wwwroot/plugins/overlayScrollbars/css/OverlayScrollbars.min.css",
+      "wwwroot/plugins/daterangepicker/daterangepicker.css",
+      "wwwroot/plugins/summernote/summernote-bs4.css",
+      "wwwroot/css/devextreme/dx.common.css",
+      "wwwroot/css/devextreme/dx.light.css",
+      "wwwroot/css/custom-style.css"
+
+    ],
+    "minify": {
+      "enabled": true
+    }
+  },
+
+  {
+    "outputFileName": "wwwroot/js/vendor.js",
+    "inputFiles": [
+      //"wwwroot/js/commonFunction.js",
+      //"wwwroot/js/html5-qrcode.min.js",
+      "wwwroot/js/devextreme/quill.min.js",
+      "wwwroot/js/turndown.js",
+      "wwwroot/js/showdown.min.js",
+      "wwwroot/plugins/jquery/jquery.min.js",
+      "wwwroot/js/devextreme/jquery.js",
+      "wwwroot/js/devextreme/cldr.js",
+      "wwwroot/js/devextreme/cldr/event.js",
+      "wwwroot/js/devextreme/cldr/supplemental.js",
+      "wwwroot/js/devextreme/cldr/unresolved.js",
+      "wwwroot/js/devextreme/jszip.js",
+      "wwwroot/js/devextreme/globalize.js",
+      "wwwroot/js/devextreme/globalize/message.js",
+      "wwwroot/js/devextreme/globalize/number.js",
+      "wwwroot/js/devextreme/globalize/currency.js",
+      "wwwroot/js/devextreme/globalize/date.js",
+      "wwwroot/js/devextreme/dx.all.js",
+      "wwwroot/plugins/bootstrap/js/bootstrap.bundle.min.js",
+      "wwwroot/js/devextreme/aspnet/dx.aspnet.mvc.js",
+      "wwwroot/js/devextreme/aspnet/dx.aspnet.data.js",
+      "wwwroot/js/jquery.blockUI.js",
+      "wwwroot/js/commonjs/tabpanel/tabpaneljs.js",
+      "wwwroot/js/commonjs/popup/popupjs.js",
+      "wwwroot/js/commonjs/acton/actionjs.js",
+      "wwwroot/js/commonjs/menu/menujs.js",
+      "wwwroot/js/commonjs/common/common.js",
+      "wwwroot/plugins/exceljs/3.3.1/exceljs.min.js"
+    ],
+    "minify": {
+      "enabled": true
+    }
+  }
+]

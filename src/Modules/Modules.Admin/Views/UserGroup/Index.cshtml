@@ -1,0 +1,477 @@
+﻿@using DevExtreme.AspNet.Mvc;
+@using InfrastructureCore.Models.Identity;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    var currentUser = (SYLoggedUser)ViewBag.CurrentUser;
+    string superAdmin = "G000C001";
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    
+    pageSetting.SAVE_YN = ViewBag.Save;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+}
+
+<script>
+    var groupIdSelected;
+    var siteIDUserGroup;
+   
+    $(document).ready(function () {
+        LoadingPage(1);
+        ResizePageUserGroup();
+        if ('@currentUser.UserType' != '@superAdmin') {
+            siteIDUserGroup = '@currentUser.SiteID';
+            ReloadGridUserGroup();
+            ReloadGridUserInUserGroup();
+        }
+        LoadingPage(0);
+    });
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        RefreshTab(this);
+    });
+
+    // Select data in grid List Page Dynamic to show data List Controls Layout
+    function gridGroupMasterSelectionChanged(selectedItems) {
+        LoadingPage(1);
+        CheckSession();
+        var data = selectedItems.selectedRowsData[0];
+        if (data != null && data!= '') {
+            $('#userGroupSelected').html(data.GROUP_NAME != null && data.GROUP_NAME != '' ? data.GROUP_NAME : '');
+        } else {
+            $('#userGroupSelected').html('');
+        }
+
+        if (data != null) {
+            groupIdSelected = data.GROUP_ID;
+            $.ajax({
+                url: '@Url.Action("GetListUserInUserGroup", "UserGroup")',
+                type: "GET",
+                data: { groupID: data.GROUP_ID, siteID: siteIDUserGroup },
+                dataType: "json",
+                success: function (result) {
+                    LoadingPage(0);
+                     
+                    var dataGrid = $('#gridUserInUserGroup').dxDataGrid('instance');
+                    var arrKey = [];
+                    $.each(result, function (index, item) {
+                        $.each(dataGrid.getDataSource().items(), function (index1, item1) {
+                            if (item.USER_ID == item1.UserCode) {
+                                 
+                                arrKey.push(item1.UserCode);
+                                //arrKey.push(item1.UserID);                               
+                            }
+                        });
+                    });
+                    dataGrid.selectRows(arrKey);
+                }
+            });
+        }
+
+        LoadingPage(0);
+    }
+
+    /// Save User Group
+    function SaveDataGroupMaster(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = e.row.data;
+        if ('@currentUser.UserType' === '@superAdmin') {
+            if (typeof siteIDUserGroup === 'undefined') {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Pleaes choose site setting first.", "Error");
+                return;
+            }
+        }
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataGroupMaster", "UserGroup")',
+                    type: "POST",
+                    data: { data: data, siteId: siteIDUserGroup },
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                ReloadGridUserGroup();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete User Group
+    function DeleteGroupMaster(e) {
+       //LoadingPage(1);
+        CheckSession();
+         
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteGroupMaster", "UserGroup")',
+                    type: "POST",
+                    data: { data: data, siteId: siteIDUserGroup},
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                           // LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                ReloadGridUserGroup();
+                            });
+                        }
+                        else {
+                           // LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            }
+            else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    $('#btnSave_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        SetUserIntoUserGroup();
+    });
+
+    // Set User into User Group
+    function SetUserIntoUserGroup() {
+         
+        var dataGrid = $('#gridUserInUserGroup').dxDataGrid('instance');
+        var data = dataGrid.getSelectedRowsData();
+
+        if (typeof data !== 'undefined' && data.length >= 0 && typeof groupIdSelected !== 'undefined') {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    $.ajax({
+                        url: '@Url.Action("SetUserIntoUserGroup", "UserGroup")',
+                        type: "POST",
+                        data: { data: data, groupId: groupIdSelected, siteId: siteIDUserGroup },
+                        dataType: "json",
+                        success: function (rs) {
+                            if (rs.Success == true) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert("Save Successs", "Success");
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert("Save Fail", "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+        } else {
+            DevExpress.ui.dialog.alert("Please make sure data are changed.", "Warning");
+        }
+    }
+
+    // Reload data User Group
+    function ReloadGridUserGroup() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListUserGroup", "UserGroup")',
+            type: "GET",
+            data: { siteID: siteIDUserGroup },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridUserGroup").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    // Reload data User in User Group
+    function ReloadGridUserInUserGroup() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListUserInSite", "UserGroup")',
+            type: "GET",
+            data: { siteID: siteIDUserGroup },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridUserInUserGroup").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    // Set Site
+    function SetSiteGroupUser(e) {
+        siteIDUserGroup = e.value;
+
+        ReloadGridUserGroup();
+        ReloadGridUserInUserGroup();
+
+        @*$.ajax({
+            url: '@Url.Action("GetListDataUserBySiteForSuperAdmin", "UserGroup")',
+            type: "GET",
+            data: { siteID: siteIDUserGroup },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridUserInUserGroup").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });*@
+    }
+
+    $(window).resize(function () {
+        ResizePageUserGroup();
+
+    });
+    function ResizePageUserGroup() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                //ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //ReCalResize("contentbody_@(ViewBag.Thread)", "ID", "bodypage_@(ViewBag.Thread)", "topbody_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+
+    function gridUserOnSelectionChanged(rowselected) {
+       
+        var UserIDselected = rowselected.currentSelectedRowKeys[0];
+         $.ajax({
+            url: '@Url.Action("CheckUserInGroup", "UserGroup")',
+            type: "GET",
+             data:
+             {
+                 userID: UserIDselected,
+                 siteID: '@currentUser.SiteID'
+             },
+            dataType: 'json',
+             success: function (result)
+             {
+                 if (result.length > 0)
+                 {
+                      
+                     //let gridUser = $("#gridUserInUserGroup").dxDataGrid("instance");
+                     //DevExpress.ui.dialog.alert("Users already have groups!", "Error");
+                     //gridUser.deselectRows(UserIDselected);
+
+                 }
+            }
+        });
+    }
+</script>
+
+@*@await Component.InvokeAsync("AccessToolbar")*@
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+
+</div>
+<div class="content">
+    <div class="container-fluid">
+        @if (currentUser.UserType == superAdmin)
+        {
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <div class="card">
+                        <div class="card-hear">
+                            <div class="row">
+                                <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                                    <div class="dx-field">
+                                        <div class="dx-field-label">Site</div>
+                                        <div class="dx-field-value">
+                                            @(Html.DevExtreme().SelectBox()
+                                                .ID("ddlSiteUserGroup")
+                                                .DataSource(d => d.Mvc().Controller("Site").LoadAction("GetListData"))
+                                                .DisplayExpr("SiteName")
+                                                .ValueExpr("SiteID")
+                                                .OnValueChanged("SetSiteGroupUser")
+                                                .SearchEnabled(true)
+                                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                                            )
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row" id="divindex_@(ViewBag.Thread)">
+            <div class="col-md-4 pl-0" style="height:100%">
+                <div class="card" style="height:100%">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6 localize-content>List User Group</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @(Html.DevExtreme().DataGrid<SYUserGroups>()
+                                    .ID("gridUserGroup")
+                                    .KeyExpr("GROUP_ID")
+                                    .Height(600)
+                                    .ShowBorders(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .FilterRow(filterRow => filterRow
+                                        .Visible(true)
+                                        .ApplyFilter(GridApplyFilterMode.Auto)
+                                    )
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Row);
+                                        if (ViewBag.SysTemUserType == "G000C002")
+                                        {
+                                            editing.AllowAdding(true);
+                                            editing.AllowDeleting(true);
+                                            editing.AllowUpdating(true);
+                                            editing.UseIcons(true);
+                                        }
+                                    })
+                                    .Columns(columns =>
+                                    {
+                                        columns.AddFor(m => m.NO).Caption(_loc.GetLocalizedString("No")).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                        columns.AddFor(m => m.GROUP_ID).Visible(false);// key
+                                        columns.AddFor(m => m.GROUP_NAME).Caption(_loc.GetLocalizedString("GroupName"));
+                                        columns.AddFor(m => m.DESCRIPTION).Caption(_loc.GetLocalizedString("Description"));
+                                        columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                        {
+                                            if(ViewBag.SysTemUserType=="G000C002")
+                                            {
+                                                b.Add().Name(GridColumnButtonName.Edit);
+                                                b.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataGroupMaster");
+                                                b.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteGroupMaster");
+                                            }
+
+                                        });
+                                    })
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(1000))
+                                    //.Pager(pager =>
+                                    //{
+                                    //    pager.ShowPageSizeSelector(false);
+                                    //    pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                    //    pager.ShowInfo(true);
+                                    //})
+                                    .OnSelectionChanged("gridGroupMasterSelectionChanged")
+                                )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8" style="height:100%">
+                <div class="card" style="height:100%">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6 localize-content>List User Data</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <input hidden id="txtMenuID" />
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @*<label localize-content>User Group Selected</label>*@
+                                    <label localize-content>User Group Selected:</label>
+                                    <strong><span id="userGroupSelected"></span></strong>
+                                    @(Html.DevExtreme().DataGrid<SYUser>()
+                                        .ID("gridUserInUserGroup")
+                                        .Height(600)
+                                        .ShowBorders(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .FilterRow(filterRow => filterRow
+                                            .Visible(true)
+                                            .ApplyFilter(GridApplyFilterMode.Auto)
+                                        )
+                                        .KeyExpr("UserCode")
+                                        //.KeyExpr("UserID")
+                                        .RepaintChangesOnly(true)
+                                        .Selection(s => s.Mode(SelectionMode.Multiple)
+                                        .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                        .SelectAllMode(SelectAllMode.AllPages))
+                                        //.OnSelectionChanged("gridUserOnSelectionChanged")
+                                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                        .Editing(editing =>
+                                        {
+                                            editing.Mode(GridEditMode.Row);
+                                            editing.UseIcons(true);
+                                            //editing.AllowAdding(true);
+                                            //editing.AllowDeleting(true);
+                                            //editing.AllowUpdating(true);
+                                        })
+                                        .Columns(columns =>
+                                        {
+                                            columns.AddFor(m => m.UserCode).Caption(_loc.GetLocalizedString("UserCode")).Alignment(HorizontalAlignment.Center).Width("20%");
+                                            columns.AddFor(m => m.UserName).Caption(_loc.GetLocalizedString("UserName")).Width("20%");
+                                            //columns.AddFor(m => m.GroupName).Caption(_loc.GetLocalizedString("GroupName")).Width("20%");
+                                            columns.AddFor(m => m.Email).Caption(_loc.GetLocalizedString("Email")).Width("30%");
+                                            columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                            {
+                                                b.Add().Name(GridColumnButtonName.Edit);
+                                                b.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataGroupMaster");
+                                                b.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteGroupMaster");
+                                            });
+                                        })
+                                        .HeaderFilter(f => f.Visible(true))
+                                        .Paging(paging => paging.PageSize(1000))
+                                    //.Pager(pager =>
+                                    //{
+                                    //    pager.ShowPageSizeSelector(false);
+                                    //    pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                                    //    pager.ShowInfo(true);
+                                    //})
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

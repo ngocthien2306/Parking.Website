@@ -1,0 +1,226 @@
+﻿@model List<Modules.Admin.Models.SYBoardContent>
+@using LazZiya.ExpressLocalization;
+@*@using InfrastructureCore.Web.LocalizationResources;
+    @using Modules.FileUpload.Models
+    <script>
+        function clickbutton() {
+            DevExpress.ui.dialog.alert('@_loc.GetLocalizedString("Weldome")', "Error");
+        }
+    </script>
+    <h3 localize-content><i></i>this is title</h3>*@
+@*<button class="btn btn-xs btn-secondary" title="Save" style="margin-right:5px" localize-content><i class="fa fa-save"></i> Save</button>
+    <h3 localize-content>this is title</h3>
+    @_loc.GetLocalizedString("Test999999")*@
+
+
+
+@*@{
+        FileInfor temp = new FileInfor();
+        temp.ID = "test";
+        temp.urlPath = "";
+    }*@
+
+@*@await Html.PartialAsync("~/Views/Shared/_FileUploadTemplate.cshtml", temp);*@
+
+    <script>
+        function OnChangeNoticeCheck(boardID, boardDocID) {
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("OnConfirmBoardContent", "CB")',
+                type: "POST",
+                data: {
+                    BoardID: boardID,
+                    BoardDocID: boardDocID,
+                },
+                dataType: "json",
+                success: function (result) {
+                    debugger;
+                    if (result.Success) {
+                        $("#close_" + boardID + "_" + boardDocID).click();
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });   
+        }
+        $(function () {
+            //function recalculate resize height
+            //The passed argument has to be at least a empty object or a object with your desired options
+            $('.toast-body-board').overlayScrollbars({});
+        });
+        $(window).resize(function () {
+            //function recalculate resize height
+        });
+    </script>
+    <div class="toasts-top-right fixed">
+        @*Show notice toast*@
+        @{
+            foreach (var item in Model)
+            {
+                <div class="toast bg-info" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false" style="width:350px;">
+                            <div class="toast-header">
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="OnChangeNoticeCheck('@item.BoardID',@item.BoardDocID)">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                
+
+                                <strong class="mr-auto ml-2">Notice</strong>
+                                <small class="text-muted" style="color: #ffeeee !important" id="dateDiff">@item.InsertDTNew before</small>
+                                <button type="button" id="close_@(@item.BoardID)_@(@item.BoardDocID)" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>                                 
+                                </button>
+                            </div>
+                        <div class="toast-body toast-body-board" style="height: 300px;overflow-y: auto;background-color: white;color: black;">
+                            <div class="form-group">
+                                <label class="col-sm-2 col-form-label"> Subject:</label>
+                                <div class="col-sm-10">
+                                    <span>@item.Subject</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-4 col-form-label"> Notice Date:</label>
+                                <div class="col-sm-8">
+                                    <span>@item.NoticeDT.ToString("yyyy-MM-dd")</span>
+                                </div>
+                            </div>
+                            <div class="form-group:">
+                                <label class="col-sm-2 col-form-label"> Content:</label>
+                                <div class="col-sm-10">
+                                    @Html.Raw(item.Body)
+                                </div>
+                            </div>
+                        </div>
+                </div>
+
+                <script>
+                    @*$(function () {
+                        var date1 = "@DateTime.Now";
+                        var date2 = "@item.InsertDTNew";
+                        getDateDiff(date2);
+                    });*@
+                </script>
+            }
+        }
+    </div>
+  
+        @*@{
+            foreach (var item in Model)
+            {
+                <div class="modal fade BoardContentConfirmPop" tabindex="-1" role="dialog" id="BoardContentConfirmPop_@(item.BoardID)_@(item.BoardDocID)">
+                    <div class="modal-dialog modal-md" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Notice</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group row">
+                                    <label class="col-sm-2 col-form-label"> Subject</label>
+                                    <div class="col-sm-10">
+                                        <span>@item.Subject</span>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-sm-2 col-form-label"> Subject</label>
+                                    <div class="col-sm-10">
+                                        @Html.Raw(item.Body)
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            }
+        }*@
+<script>
+    $(function () {
+        $('.toast').toast('show');
+    });
+
+    function getDateDiff(time1, time2) {
+        debugger;
+
+        //var DateDiff = {
+        //    inMinutes: function (d1, d2) {
+        //        var t2 = d2.getTime();
+        //        var t1 = d1.getTime();
+        //        return parseInt(((t2 - t1) / (60 * 1000)) - ((t2 - t1) / (3600 * 1000))*60);
+        //    },
+        //    inHours: function (d1, d2) {
+        //        var t2 = d2.getTime();
+        //        var t1 = d1.getTime();
+        //        return parseInt((t2 - t1) / (3600 * 1000));
+        //    },
+        //    inDays: function (d1, d2) {
+        //        var t2 = d2.getTime();
+        //        var t1 = d1.getTime();
+
+        //        return parseInt((t2 - t1) / (24 * 3600 * 1000));
+        //    },
+
+        //    inWeeks: function (d1, d2) {
+        //        var t2 = d2.getTime();
+        //        var t1 = d1.getTime();
+
+        //        return parseInt((t2 - t1) / (24 * 3600 * 1000 * 7));
+        //    },
+
+        //    inMonths: function (d1, d2) {
+        //        var d1Y = d1.getFullYear();
+        //        var d2Y = d2.getFullYear();
+        //        var d1M = d1.getMonth();
+        //        var d2M = d2.getMonth();
+
+        //        return (d2M + 12 * d2Y) - (d1M + 12 * d1Y);
+        //    },
+
+        //    inYears: function (d1, d2) {
+        //        return d2.getFullYear() - d1.getFullYear();
+        //    }
+        //}
+        //var date1 = new Date(time1);
+        //var date2 = new Date(time2);
+
+        //console.log('DateDiff.inMinutes(time1, time2) ', DateDiff.inMinutes(date2,date1));
+        //console.log('DateDiff.inHours(time1, time2) ', DateDiff.inHours(date2,date1));
+        //console.log('DateDiff.inDays(time1, time2) ', DateDiff.inDays(date2, date1));
+        //console.log('DateDiff.inWeeks(time1, time2) ', DateDiff.inWeeks(date2, date1));
+        //console.log('DateDiff.inMonths(time1, time2) ', DateDiff.inMonths(date2, date1));
+        //console.log('DateDiff.inYears(time1, time2) ', DateDiff.inYears(date2, date1));
+
+        //(time2);
+        //console.log('time1 ', time1);
+        console.log('time1 ', time1);
+        //time1 = ParsingDateyyyyMMdd(time1);
+        //time2 = ParsingDateyyyyMMdd(time2);
+        ////var str1 = time1.split('/');
+        ////var str2 = time2.split('/');
+        //var str1 = time1.split('-');
+        //var str2 = time2.split('-');
+        ////                yyyy   , mm       , dd
+        ////var t1 = new Date(str1[2], str1[0] - 1, str1[1]);
+        ////var t2 = new Date(str2[2], str2[0] - 1, str2[1]);
+        //var t1 = new Date(str1[0], str1[1] - 1, str1[2]);
+        //var t2 = new Date(str2[0], str2[1] - 1, str2[2]);
+        //var diffMS = t1 - t2;
+        //console.log(diffMS + ' ms');
+
+        //var diffS = diffMS / 1000;
+        //console.log(diffS + ' ');
+
+        //var diffM = diffS / 60;
+        //console.log(diffM + ' minutes');
+
+        //var diffH = diffM / 60;
+        //console.log(diffH + ' hours');
+
+        //var diffD = diffH / 24;
+        //console.log(diffD + ' days');
+        $("#dateDiff").text(time1);
+    }
+</script>

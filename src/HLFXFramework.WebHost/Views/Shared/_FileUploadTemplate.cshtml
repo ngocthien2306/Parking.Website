@@ -1,0 +1,345 @@
+﻿@model Modules.FileUpload.Models.FileInfor
+@{
+    string gridListFile = "gridListFile" + ViewBag.Thread;
+    string[] listFile = new String[] { };
+
+}
+<style>
+    .fileuploader-container {
+        /* border: 1px solid #d3d3d3;
+        margin: 15px 15px 10px 10px;*/
+    }
+</style>
+
+<script>
+    $(document).ready(function ()
+    {
+        setValue_@(Model.ID)('@Model.FileMasterID');
+        getValue_@(Model.ID)('@Model.FileMasterID');
+    });
+     //case nếu ko có file hiển thi ra dòng chữ : drop file here
+    @*$("#@(gridListFile)").dxDataGrid({
+        onContentReady: function (e) {
+            var gridFile = $("#@(gridListFile)").dxDataGrid("instance");
+            var items = gridFile.getDataSource().items();
+            if (items.length <= 0 || items == null) {
+               $("#@(gridListFile)").dxDataGrid({
+                    'noDataText' :'Drop file here'
+               });
+            }
+        }
+    })*@
+
+
+    var Pag_ID = '@Model.Pag_ID';
+    var Pag_Name = '@Model.Pag_Name';
+    var FileMasterID ='@Model.FileMasterID'
+    var fileID_@(Model.ID) = '';
+
+    function onUploadError()
+    {
+        DevExpress.ui.dialog.alert("File is too large or not allowed file extension", "Error");
+    }
+    // Quan change 2020/10/13
+    // When Upload file finish
+    function onUploaded(e) {
+      //  
+        var result = JSON.parse(e.request.response);
+        e.file.fileGuid = result.data.FileGuid;
+        fileID_@(Model.ID) = result.fileID;
+        updateIdFile(result.fileID);
+        ReloadListFile();
+
+        setTimeout(function () {
+            var buttonHtml = '<div class="dx-fileuploader-button-container btn-custom-file">' +
+                '<div class="dx-fileuploader-button dx-widget dx-button-has-icon">' +
+                '<div class="dx-button-content">' +
+                '<a href="#" onClick="deleteFilePopup(this,\''+ result.data.FileGuid +'\')">'+
+                '<i class="dx-icon dx-icon-remove"></i>' +
+                '</a>'+
+                '</div>' +
+                '</div>' +
+                '</div>';
+            var container = $(".dx-fileuploader-files-container");
+            var child = $(".dx-fileuploader-file-container");
+            var temp = $(".dx-fileuploader-files-container").find(child);
+            $.each(temp, function (i, item) {
+
+                var link = $("<a href='" + getLanguages() +"/FilesUpload/DownloadFile?fileguid=" + result.data.FileGuid + "'></a>");
+                var temp1 = item.children[1].children[0];
+
+                var temp2 = temp1.children[0];
+                link.append(temp2);
+                $(temp1).prepend(link);
+                var temp3 = $(temp1).find(".btn-custom-file");
+                if (temp3.length === 0) {
+                    $(temp1).append(buttonHtml)
+                }
+            });
+        }, 3000000);
+
+        //PVN Add
+        e.component.__uploadedFilesCount++;
+        if (e.component.option("value").length === e.component.__uploadedFilesCount) {
+            e.component.reset();
+            e.component.__uploadedFilesCount = null;
+        }
+    }
+
+    function deleteFile(e,fileguid) {
+        // Quan change 2020/10/13s
+         
+        $(e).parent().parent().parent().parent().parent().parent().remove();
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+             
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteFile", "FilesUpload")',
+                    type: "POST",
+                    data:
+                    {
+                        fileguid: fileguid,
+                        spName: '@Model.Sp_Name_CheckDeleteFile',
+                        fileMst: FileMasterID,
+                        BoardDocID:'@Model.BoardDocID'
+
+
+                   },
+                    success: function (result) {
+                        if (result.result == false) {
+                             
+                            DevExpress.ui.dialog.alert("Delete file fail", "Error");
+                        }
+                        else {
+                            ReloadListFile();
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                             
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+
+    function getValue_@(Model.ID)() {
+        return fileID_@(Model.ID);
+    }
+
+    function updateIdFile(value) {
+           //   
+            var uploader = $("#@Model.ID").dxFileUploader("instance");
+            var url = uploader.option("uploadUrl");
+            url = updateQueryStringParameter(url, "idFile", value);
+            uploader.option("uploadUrl", url);
+    }
+
+    function updateQueryStringParameter(uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        if (uri.match(re)) {
+            return uri.replace(re, '$1' + key + "=" + value + '$2');
+        }
+        else {
+            return uri + separator + key + "=" + value;
+        }
+    }
+    // Quan change 2020/10/13
+    function setValue_@(Model.ID)(fileId) {
+        // 
+        setValueGrid_@(Model.ID)(fileId);
+        fileID_@(Model.ID) = fileId;
+        updateIdFile(fileId);
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result)
+            {
+                var container = $(".dx-fileuploader-files-container");
+                var arrTemp = [];
+                $.each(result.data, function (index, item) {
+                    arrTemp.push(item);
+
+                    var strHTML = '<div class="dx-fileuploader-file-container">' +
+                        '<div class="dx-fileuploader-button-container">' +
+                        '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                        '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                        '</div>' +
+                        '</dSp_NameSp_Name_Namep_Namep_Nameiv>' +
+                        container.append(strHTML);
+                });
+                 
+                $('#@(gridListFile)').dxDataGrid('option', 'dataSource', arrTemp);
+                $('#@(gridListFile)').dxDataGrid("instance").refresh();
+            }
+        });
+    }
+
+    function setValueGrid_@(Model.ID)(fileId) {
+        fileID_@(Model.ID) = fileId;
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result) {
+                var arrTemp = [];
+                $.each(result.data, function (index, item) {
+                    arrTemp.push(item);
+                });
+                 
+                $('#@(gridListFile)').dxDataGrid('option', 'dataSource', arrTemp);
+
+            }
+        });
+    }
+
+    function ReloadListFile(){
+        $.ajax({
+            url: '@Url.Action(Model.Action_ReloadListFile, Model.Controller_ReloadListFile)',
+            type: 'GET',
+            data: { ID: Pag_ID },
+            dataType: 'json',
+            success: function (result) {
+                 
+                updateIdFile(result.FileID);
+                FileMasterID = result.FileID;
+                fileID_@(Model.ID)= result.FileID;
+                setValueGrid_@(Model.ID)(result.FileID);
+                setValue_@(Model.ID)(result.FileID);
+            }
+        });
+    }
+
+    function DeletegridListFilePopup(e) {
+        // 
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $(e).parent().parent().parent().parent().parent().parent().remove();
+                $.ajax({
+                    url: '@Url.Action("DeleteFile", "FilesUpload")',
+                    type: "POST",
+                    data:
+                    {
+                        fileguid: data.FileGuid,
+                        spName:   '@Model.Sp_Name_CheckDeleteFile',
+                        fileMst: FileMasterID,
+                        BoardDocID:'@Model.BoardDocID'
+
+
+                    },
+                    success: function (result) {
+                        if (result.result == false) {
+                             
+                            DevExpress.ui.dialog.alert("Delete fail", "Error");
+                        }
+                        else {
+                             
+                            updateIdFile("");
+                            ReloadListFile();
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                            $("#@(gridListFile)").dxDataGrid("instance").refresh();
+
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+
+    function gridDownloadFile(e) {
+       //  
+        var dataFileGuid = (e.row.data.FileGuid);
+        var dataFileID = '@Model.FileMasterID';
+        var link = $("<a href='" + getLanguages() + "/FilesUpload/DownloadFile?fileguid=" + dataFileGuid + "'></a>");
+        window.open(link[0].href, '_blank');
+
+    }
+
+    // Quan change 2020/10/13
+    function fileUploader_valueChanged(e)
+    {
+        var files = e.value;
+        if (files.length > 0)
+        {
+            listFile = files;
+        }
+    }
+</script>
+    <div id="fileuploader-container">
+        @(Html.DevExtreme().FileUploader().Visible(Model.UploadFile)
+        .ID(Model.ID)
+        .Name("myFile")
+        .Multiple(true)
+        .ChunkSize(5000000)
+        .MaxFileSize(20000000)
+        .Accept("*")
+        .UploadMode(FileUploadMode.Instantly)
+        .UploadUrl(Url.Action("UploadChunk_Popup", "FilesUpload", new { idFile = "", pagID = Model.Pag_ID, spName = Model.Sp_Name, idFileMaster = Model.FileMasterID, listFile = listFile, siteID = Model.Site_ID }))
+        .OnUploaded("onUploaded")
+        .OnUploadStarted(@<text>
+                             function (e) {
+                                if (!e.component.__uploadedFilesCount)
+                                {
+                                    e.component.__uploadedFilesCount = 0;
+                                }
+                            }
+                         </text>)
+        .AllowCanceling(true)
+        .ShowFileList(true)
+        .OnValueChanged("fileUploader_valueChanged")
+        )
+    </div>
+
+<div class="fileuploader-container">
+    @(Html.DevExtreme().DataGrid<Modules.Common.Models.SYFileUpload>()
+            .ID(gridListFile)
+            .KeyExpr("FileGuid")
+            .ShowBorders(true)
+            .ShowColumnLines(true)
+            .ShowRowLines(true)
+            .AllowColumnResizing(true)
+            .AllowColumnReordering(true)
+            .ColumnAutoWidth(true)
+            //.FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+            .Editing(editing =>
+            {
+                editing.AllowDeleting(true);
+                editing.UseIcons(true);
+            })
+            .Columns(c =>
+            {
+                c.AddFor(x => x.FilePathShowBrowser).Caption("FilePathShowBrowser").Alignment(HorizontalAlignment.Left).Visible(false);
+                c.AddFor(x => x.FileName).Caption(_loc.GetLocalizedString("FileName")).Alignment(HorizontalAlignment.Left);
+                c.AddFor(x => x.FileSize).Caption(_loc.GetLocalizedString("FileSize")).Alignment(HorizontalAlignment.Center).Format("#,##0");
+                c.AddFor(x => x.FileType).Caption(_loc.GetLocalizedString("FileType")).Alignment(HorizontalAlignment.Left).Visible(false);
+                c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                {
+                    if(Model.DeleteFile == true)
+                    {
+                        b.Add().Name(GridColumnButtonName.Delete).OnClick("DeletegridListFilePopup");
+
+                    }
+                    b.Add().Icon("download").Hint("DownLoad").OnClick("gridDownloadFile");
+
+                });
+            })
+            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+            //.HeaderFilter(f => f.Visible(true))
+            .Paging(paging => paging.PageSize(20))
+            .Pager(pager =>
+            {
+                pager.ShowPageSizeSelector(false);
+                pager.AllowedPageSizes(new[] { 20,20,60});
+                pager.ShowInfo(true);
+            })
+         )
+</div>

@@ -1,0 +1,158 @@
+﻿@model Modules.Pleiger.Models.MES_SaleProject;
+@{
+    Layout = null;
+}
+@{ 
+    string ProjectCode = "ProjectCode" + ViewBag.Thread;
+}
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="GenerateProjectCode">Generate Project Code</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="form-group col-md-3">
+                <label>년:</label>
+                <input type="text" readonly class="form-control" value="@DateTime.Now.Year" onblur="GenerateProjectCode()" id="txtYear">
+            </div>
+            <div class="form-group col-md-2">
+                <label>달:</label>
+                <input readonly class="form-control" value="@DateTime.Now.Month.ToString("00")" onblur="GenerateProjectCode()" id="txtMonth">
+            </div>
+            <div class="form-group col-md-3">
+                <label>생성하다:</label>
+                <input type="number" pattern="/^-?\d+\.?\d*$/e" onKeyPress="if(this.value.length==4) return false;" class="form-control" id="txtNumcode" onblur="GenerateProjectCode()">
+            </div>
+            <div class="form-group col-md-4">
+                <label>번호:</label>
+                <input readonly class="form-control" id="txtGenerateCode">
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-save-clear1" onclick="CheckProjectCodeDuplicate()">Save</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        GetListProjectType();
+        GenerateCode();
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    function GenerateCode() {
+        $.ajax({
+            url: '@Url.Action("GetListData", "MESSaleProject")',
+            type: 'GET',
+            async: false,
+            data: {},
+            dataType: 'json',
+            success: function (result) {
+
+                var max;
+                for (var i = 0; i < result.data.length - 1; i++) {
+                    if (max == null || parseInt(result.data[i]['ProjectCode'].substr(8)) > parseInt(result.data[i + 1]['ProjectCode'].substr(8)))
+                        max = result.data[i]['ProjectCode'].substr(8);
+                    else
+                        max = result.data[i + 1]['ProjectCode'].substr(8);
+                }
+                if (max != null) {
+                    let Year = '@DateTime.Now.Year';
+                    let Month = '@DateTime.Now.Month.ToString("00")';
+                    max = parseInt(max) + 0001;
+                    if (max.toString().length == 3) {
+                        max = '0' + max.toString();
+                    }
+                    else if (max.toString().length == 2) {
+                        max = '00' + max.toString();
+
+                    }
+                    else if (max.toString().length == 1) {
+                        max = '000' + max.toString();
+                    }
+                    let generateCode = "PJ" + Year + Month + max;
+                    $("#txtNumcode").val(max);
+                    $("#txtGenerateCode").val(generateCode);
+                }
+                else {
+                    let generateCode = "PJ" + Year + Month + '0001';
+                    $("#txtNumcode").val(max);
+                    $("#txtGenerateCode").val(generateCode);
+                }
+            }
+        });
+    }
+
+    function GenerateProjectCode() {
+        debugger;
+        let Year = $("#txtYear").val();
+        let Month = $("#txtMonth").val();
+        let Numcode = $("#txtNumcode").val();
+
+        if (Numcode != "") {
+            if (Numcode.length == 3) {
+                Numcode = '0' + Numcode.toString();
+            }
+            else if (Numcode.length == 2) {
+                Numcode = '00' + Numcode.toString();
+
+            }
+            else if (Numcode.length == 1) {
+                Numcode = '000' + Numcode.toString();
+            }
+            let generateCode = "PJ" + Year + Month + Numcode;
+            $("#txtGenerateCode").val(generateCode);
+        }
+        else {
+            GenerateCode();
+        }
+    }
+
+    function CheckProjectCodeDuplicate() {
+
+        let projectCode = $("#txtGenerateCode").val();
+        $.ajax({
+            url: '@Url.Action("CheckProjectCodeDuplicate", "MESSaleProject")',
+            type: 'GET',
+            async: false,
+            data: { ProjectCode: projectCode },
+            dataType: 'json',
+            success: function (result) {
+                if (result.result != null) {
+                    DevExpress.ui.dialog.alert("Project Code is exists!", "Error");
+                    return false;
+                }
+                else {
+                    let projectCode = $("#txtGenerateCode").val();
+                    debugger;
+                    $("#ProjectCode@(ViewBag.Thread)").val(projectCode);              
+                    $("#modalContentChild").html(null);
+                    $('#modalControlChild').modal('hide');
+                    return true;
+                }
+            }
+        });
+    }
+
+    // Get list PartnerType (ComCode = PJTP00)
+    function GetListProjectType() {
+        $.ajax({
+            url: '@Url.Action("GetListComCodeDTL", "MESComCode")',
+            type: 'GET',
+            data: { groupCD: "PJTP00" },
+            dataType: 'json',
+            success: function (result) {
+                $.each(result.data, function (index, item) {
+                    $("#ddlComcode").append('<option value="' + item.BASE_CODE + '">' + item.BASE_NAME1 + '</option>');
+                });
+            }
+        });
+    }
+</script>
+

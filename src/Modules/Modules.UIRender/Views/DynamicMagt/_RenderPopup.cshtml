@@ -1,0 +1,55 @@
+﻿@using Modules.Admin.Models;
+
+@model SYPageLayout
+@{
+    Layout = null;
+}
+
+<script>
+    var FormAction_@(Model.PAG_KEY) = "";
+    var lstAction_@Model.PAG_KEY =  @Html.Raw(Json.Serialize(Model.listAction));
+    $('#modal_@Model.PAG_KEY').on('shown.bs.modal', function (e) {
+        $.each(lstAction_@Model.PAG_KEY, function (index, item) {
+            if (item.IS_INIT === true) {
+                eval('RUN_' + `${item.ACT_ID}` + '_' + `${item.PAG_ID}` + '()');
+            }
+        });
+    });
+</script>
+
+@foreach (var item in Model.listToolbar)
+{
+    var action = Model.listAction.Where(m => m.ACT_ID == item.ACT_ID).FirstOrDefault();
+    if (action != null)
+    {
+        @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", action)
+    }
+}
+
+<div class="modal fade" id="modal_@Model.PAG_KEY" tabindex="-1" modal-p-container="modal_@Model.PAG_KEY" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" @*style="max-width: 70%"*@>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel" localize-content>@Model.PAG_TITLE</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    @foreach (var item in Model.listPageElement.Where(m => m.PEL_PRN == "" || m.PEL_PRN == null).OrderBy(m => m.PEL_SEQ))
+                    {
+                        item.listElementChild = Model.listPageElement.Where(m => m.PEL_PRN == item.PEL_ID_REAL).ToList();
+                        item.listAction = Model.listAction;
+                        item.PAG_KEY = Model.PAG_KEY;
+                        @await Html.PartialAsync("~/Views/DynamicMagt/_RenderPage.cshtml", item)
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                @await Component.InvokeAsync("AccessToolbar", new { PageID = Model.PAG_ID, PageType = "DynamicPop" })
+            </div>
+        </div>
+    </div>
+</div>

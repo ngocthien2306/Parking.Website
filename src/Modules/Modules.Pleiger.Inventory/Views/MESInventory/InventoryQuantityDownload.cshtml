@@ -1,0 +1,464 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+}
+
+@{
+    string gridInventoryCheck = "gridInventoryCheck" + ViewBag.Thread;
+    string Category = "ddlCategory" + ViewBag.Thread;
+    string Warehouse = "ddlWarehouse" + ViewBag.Thread;
+    string TransMonth = "TransMonth" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemName = "ItemName" + ViewBag.Thread;
+}
+
+<script>
+    var listSelected;
+    // Page start
+    $(document).ready(function () {
+        LoadingPage(1);
+        $("#btnExcel_@ViewBag.Thread").attr("disabled", true);
+        $("#btnSearch_@ViewBag.Thread").attr("disabled", true);
+        $("#TransMonthDiv").prop("hidden", true);
+        setTimeout(function () { LoadingPage(0); }, 1500);
+
+        var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        //var whName = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "WHTP00");
+
+        $("#@(Category)").dxSelectBox({
+            dataSource: category,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        GetWareHouseByCategory(null);
+        @*$("#@(Warehouse)").dxSelectBox({
+            dataSource: whName,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });*@
+
+    });
+
+    function getParamsWarehouseCode() {
+        return $("#ddlWarehouse@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    }
+
+    function getParamsCategory() {
+        return $("#ddlCategory@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+    }
+
+    function getParamsItemCode() {
+        //return $("#ItemCode@(ViewBag.Thread)").val();
+        return $('#@(ItemCode)').dxTextBox('instance').option('value');
+    }
+
+    function getParamsItemName() {
+        //return $("#ItemName@(ViewBag.Thread)").val();
+        return $('#@(ItemName)').dxTextBox('instance').option('value');
+    }
+
+    function getParamsCloseMonth() {
+        return $("#TransMonth@(ViewBag.Thread)").dxDateBox("instance").option("value");
+    }
+
+    // Search
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        //console.log(ParsingDateyyyyMMdd(getParamsCloseMonth()));
+        CheckSession();
+        LoadingPage(1);
+
+        var category = getParamsCategory();
+        var transMonth = getParamsCloseMonth();
+
+        if (category == 'IMTP03' || category == 'IMTP04') {
+            if (transMonth == null) {
+                DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Please select Target month."))', '@(_loc.GetLocalizedString("Error"))');
+                LoadingPage(0);
+                return;
+            }
+        }
+
+        $.ajax({
+            url: '@Url.Action("GetInventoryCurrentStockNew", "MESInventory")',
+            type: "GET",
+            data: {
+                //warehouseType: getParamsWarehouseCode(),
+                warehouseCode: getParamsWarehouseCode(),
+                category: getParamsCategory(),
+                itemCode: getParamsItemCode(),
+                itemName: getParamsItemName(),
+                closeMonth: ParsingDateyyyyMMdd(getParamsCloseMonth()),
+                Lang: getLanguages()
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                LoadingPage(1);
+                var grid = $("#gridInventoryCheck@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+                LoadingPage(0);
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+    });
+
+    // Download File
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        var transMonth;
+
+        var category = getParamsCategory();
+
+        if (category === 'IMTP01' || category === 'IMTP02') {
+            transMonth = '@DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss")';         
+        }
+        else {
+            transMonth = $("#TransMonth@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        }
+
+        if (transMonth === null) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Please select inventory closed month."))', '@(_loc.GetLocalizedString("Error"))');
+            LoadingPage(0);
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("DownloadFileInventoryCurrentStock", "MESInventory")',
+            type: "POST",
+            data: {
+                listSelected: JSON.stringify(listSelected),
+                transMonth: ParsingDateyyyyMMdd(transMonth)
+            },
+            dataType: 'json',
+            success: function (result) {
+                if (result.Result) {//success
+                    var link = $("<a href='" + getLanguages() + "/MESInventory/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                    location.href = link[0].href;
+                    LoadingPage(0);
+                } else {//fail
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("This month " + ParsingDateyyyyMMdd(transMonth).substring(0, 7) + " have inventory closed data. Excel cannot be exported, and cannot be uploaded.", "Error");
+                    return;
+                }
+
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    function GridInventoryCheckSelectionChanged(selectedItems) {
+        CheckSession();
+        debugger;
+        var data = selectedItems.selectedRowsData;
+        //listSelected = data;
+        listSelected = [];
+        $.each(selectedItems.selectedRowsData, function (index, item) {
+            var obj = {};
+            obj.WHCode = item.WHCode;
+            obj.ItemCode = item.ItemCode;
+            listSelected.push(obj);
+        })
+
+        if (typeof listSelected !== 'undefined' && listSelected.length > 0) {
+            $("#btnExcel_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnExcel_@ViewBag.Thread").attr("disabled", true);
+        }
+    }
+
+    function TransMonthDownloadValueChanged@(ViewBag.Thread)(data) {
+        DisableSaveButton();
+        debugger;
+        //check transmonth have data or no
+        var result = IsTransmonthHaveInventoryClosed(ParsingDateyyyyMMdd(data.value));
+        //if (result) {
+        //    DevExpress.ui.dialog.alert("This month " + ParsingDateyyyyMMdd(data.value) +" have inventory closed data. Excel cannot be exported, and cannot be uploaded.", "Error");
+        //    return;
+        //}
+    }
+
+    function IsTransmonthHaveInventoryClosed(data) {
+        CheckSession();
+        debugger;
+        $.ajax({
+            url: '@Url.Action("IsTransmonthHaveInventoryClosed", "MESInventory")',
+            type: "GETToStringoStringToStringStringStringString",
+            data: {
+                transMonth: data
+            },
+            dataType: 'json',
+            success: function (result) {
+                //debugger;
+                //return result;
+            }
+        }).done(function (res) {
+            debugger;
+            if (res) {
+                DevExpress.ui.dialog.alert("This month " + ParsingDateyyyyMMdd(data).substring(0, 7) + " have inventory closed data. Excel cannot be exported, and cannot be uploaded.", "Error");
+                return;
+            }
+        });
+    }
+
+    // PVN Add 2020-11-01
+    function onCategorySelectionChanged(e) {
+        console.log("onCategorySelectionChanged");
+        console.log(e);
+        debugger;
+        if (e.selectedItem != null) {
+            if (e.selectedItem.BASE_CODE === 'IMTP01' || e.selectedItem.BASE_CODE === 'IMTP02') {
+                $("#TransMonthDiv").prop("hidden", true);
+                $('#@TransMonth').dxDateBox('instance').option('value', null);
+                //$('#@Warehouse').dxSelectBox('instance').option('value', 'WHTP01');
+                //$('#@Warehouse').dxSelectBox('instance').option('disabled', true);
+            }
+            else if (e.selectedItem.BASE_CODE === 'IMTP03' || e.selectedItem.BASE_CODE === 'IMTP04') {
+                $("#TransMonthDiv").prop("hidden", false);
+                //$('#@Warehouse').dxSelectBox('instance').option('value', 'WHTP02');
+                //$('#@Warehouse').dxSelectBox('instance').option('disabled', true);
+            }
+        }
+    }
+
+    function onCategoryValueChanged(e) {
+        DisableSaveButton();
+        console.log("onCategoryValueChanged");
+        console.log(e);
+        if (e.value === null) {
+            @*$('#@Warehouse').dxSelectBox('instance').option('disabled', false);
+            $('#@Warehouse').dxSelectBox('instance').option('value', null);*@
+            //GetWareHouseByCategory(null);
+            $('#@(Warehouse)').dxSelectBox('instance').option('dataSource', []);
+        } else {
+            if (e.value === 'IMTP01' || e.value === 'IMTP02') {
+                GetWareHouseByCategory('WHTP01');
+            }
+            else if (e.value === 'IMTP03' || e.value === 'IMTP04') {
+                GetWareHouseByCategory('WHTP02');
+            }
+        }
+    }
+
+    function GetWareHouseByCategory(cate) {
+        $.ajax({
+            url: '@Url.Action("GetWareHouseByCategory", "MESInventory")',
+            type: 'GET',
+            data: { CategoryCode: cate },
+            dataType: 'json'
+        }).done(function (result) {
+            debugger;
+            $('#@(Warehouse)').dxSelectBox({
+                dataSource: result,
+                displayExpr: "WarehouseName",
+                valueExpr: "WarehouseCode"
+            })
+        })
+    }
+
+    function DisableSaveButton() {
+        debugger;
+        let count = 0;
+        var categoryCode = $('#@Category').dxSelectBox('instance').option('value');
+        var TransMonth = $('#@TransMonth').dxDateBox('instance').option('value');
+        var whType = $('#@Warehouse').dxSelectBox('instance').option('value');
+        var ItemCode = $('#@ItemCode').dxTextBox('instance').option('value');
+        var ItemName = $('#@ItemName').dxTextBox('instance').option('value');
+
+        if (categoryCode != null) {
+            count++;
+        }
+
+        if (TransMonth != null) {
+            count++;
+        }
+
+        if (whType != null) {
+            count++;
+        }
+
+        if (ItemCode != "") {
+            count++;
+        }
+
+        if (ItemName != "") {
+            count++;
+        }
+        console.log("Count DisableSaveButton");
+        console.log(count);
+        if (count >= 1) {
+            $("#btnSearch_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnSearch_@ViewBag.Thread").attr("disabled", true);
+        }
+    }
+
+    function onWarehouseValueChanged() {
+        DisableSaveButton();
+    }
+
+    function onItemCodeValueChanged() {
+        DisableSaveButton();
+    }
+
+    function onItemNameValueChanged() {
+        DisableSaveButton();
+    }
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="InventoryCheck">@_loc.GetLocalizedString("Inventory Check")</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div id="menutoolbar_@(ViewBag.Thread)">
+        @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="form-group col-md-2">
+                <label for="Category">@_loc.GetLocalizedString("Category")</label>
+                @(Html.DevExtreme().SelectBox()
+                                .ID(Category)
+                                .ShowClearButton(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                .OnSelectionChanged("onCategorySelectionChanged")
+                                .OnValueChanged("onCategoryValueChanged")
+                     )
+            </div>
+            <div class="form-group col-md-2" id="TransMonthDiv">
+                <label for="TransMonth">@_loc.GetLocalizedString("TransMonth")</label>
+                @(Html.DevExtreme().DateBox().ID(TransMonth)
+                                            .Type(DateBoxType.Date)
+                                            //.Value(DateTime.Now)
+                                            .DisplayFormat("yyyy-MM")
+                                            .CalendarOptions(opt =>
+                                                opt.MaxZoomLevel(CalendarZoomLevel.Year)
+                                                .MinZoomLevel(CalendarZoomLevel.Decade)
+                                                .ZoomLevel(CalendarZoomLevel.Year)
+                                                )
+                                            .MaxLength(10)
+                                            .OnValueChanged("TransMonthDownloadValueChanged" + ViewBag.Thread)
+                                        )
+            </div>
+            <div class="form-group col-md-3">
+                <label for="WarehouseName">@_loc.GetLocalizedString("Warehouse Name")</label>
+
+                @(Html.DevExtreme().SelectBox()
+                                .ID(Warehouse)
+                                .DisplayExpr("Name")
+                                .ValueExpr("ID")
+                                    .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                    .LoadAction("GetAllPleigerWarehouse")
+                                    .Key("ID")
+                                )
+                                .ShowClearButton(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                .OnValueChanged("onWarehouseValueChanged")
+                     )
+            </div>
+
+            <div class="form-group col-md-2">
+                <label for="ItemCode">@_loc.GetLocalizedString("Item Code")</label>
+                @(Html.DevExtreme().TextBox().ID(ItemCode)
+                    .OnValueChanged("onItemCodeValueChanged")
+                )
+                @*<input type="text" class="form-control" id="ItemCode@(ViewBag.Thread)">*@
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ItemName">@_loc.GetLocalizedString("Item Name")</label>
+                @(Html.DevExtreme().TextBox().ID(ItemName)
+                    .OnValueChanged("onItemNameValueChanged")
+                )
+                @*<input type="text" class="form-control" id="ItemName@(ViewBag.Thread)">*@
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("Stock Items")</legend>
+                    @(Html.DevExtreme().DataGrid<Modules.Pleiger.CommonModels.MES_InventoryCheckVO>()
+                            .ID(gridInventoryCheck)
+                            //.KeyExpr("WHCode").KeyExpr("ItemCode")
+                            //.DataSource(x => x.Mvc().Controller("MESInventory")
+                            //    .LoadAction("GetInventoryCurrentStock").LoadParams(new
+                            //    {
+                            //        warehouseCode = new JS("getParamsWarehouseCode"),
+                            //        category = new JS("getParamsCategory"),
+                            //        itemCode = new JS("getParamsItemCode"),
+                            //        itemName = new JS("getParamsItemName")
+                            //    })
+                            ////.Key("WHCode").Key("ItemCode")
+                            //)
+                            .KeyExpr("No")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .ColumnAutoWidth(true).Height(500)
+                            .RepaintChangesOnly(false)
+                            //.OnCellPrepared("gridItemSlipDtlOnCellPrepared")
+                            //.OnRowRemoved("gridItemSlipDtlOnRowRemoved")
+                            //.FilterRow(filterRow => filterRow
+                            //    .Visible(true)
+                            //    .ApplyFilter(GridApplyFilterMode.Auto)
+                            //)
+                            //.HeaderFilter(f => f.Visible(true))
+                            .Selection(s => s.Mode(SelectionMode.Multiple)
+                                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                            .SelectAllMode(SelectAllMode.AllPages)).CacheEnabled(true)// just select 1 page
+                            .Columns(c=> {
+                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false).Width("5%");
+                                //c.AddFor(x => x.WHCode).Caption(_loc.GetLocalizedString("Warehouse Code")).AllowEditing(false).Width("15%");
+                                c.AddFor(x => x.WHName).Caption(_loc.GetLocalizedString("Warehouse Name")).AllowEditing(false).Width("15%");
+                                //c.AddFor(x => x.CategoryCode).Caption(_loc.GetLocalizedString("Category Code")).AllowEditing(false).Width("15%");
+                                c.AddFor(x => x.CategoryName).Caption(_loc.GetLocalizedString("Category")).AllowEditing(false).Width("20%");
+                                c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false).Width("20%");
+                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false).Width("20%");
+                                c.AddFor(x => x.CurrentStockQty).Caption(_loc.GetLocalizedString("Current Stock Qty")).AllowEditing(false).Format("#,##0").Width("20%");
+                            })
+                            .OnSelectionChanged("GridInventoryCheckSelectionChanged")
+                            .RemoteOperations(true)
+                            .Scrolling(s => s
+                                .Mode(GridScrollingMode.Infinite)
+                            //.RowRenderingMode(GridRowRenderingMode.Virtual)
+                            )
+                            .Paging(p => p.PageSize(100))
+                            //.Pager(pager =>
+                            //{
+                            //    pager.ShowInfo(true);
+                            //    pager.ShowNavigationButtons(true);
+                            //})
+                        )
+                </fieldset>
+            </div>
+        </div>
+
+    </div>
+    @*<div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btnSave_@ViewBag.Thread">Save</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+    </div>*@
+</div>

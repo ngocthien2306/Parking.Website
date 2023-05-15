@@ -1,0 +1,1114 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+@{
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemCodeName = "ItemCodeName" + ViewBag.Thread;
+    string ProductType = "ProductType" + ViewBag.Thread;
+    string DomesticForeign = "DomesticForeign" + ViewBag.Thread;
+    string MonetaryUnit = "MonetaryUnit" + ViewBag.Thread;
+    string VatType = "VatType" + ViewBag.Thread;
+    string OrderTeamCode = "OrderTeamCode" + ViewBag.Thread;
+    string SalesClassification = "SalesClassification" + ViewBag.Thread;
+    string ProductTypeName = "ProductTypeName" + ViewBag.Thread;
+    string ProjectCodeMaster = "ProjectCodeMaster" + ViewBag.Thread;
+    string SalesOrderProject = "SalesOrderProject" + ViewBag.Thread;
+    string SalesOrderProjectName = "SalesOrderProjectName" + ViewBag.Thread;
+    string Manager = "Manager" + ViewBag.Thread;
+    string OrderDepartment = "OrderDepartment" + ViewBag.Thread;
+    string Customer = "Customer" + ViewBag.Thread;
+    string CustomerOrderNumber = "CustomerOrderNumber" + ViewBag.Thread;
+    string InitialCode = "InitialCode" + ViewBag.Thread;
+    string SalesOrderProjectShow = "SalesOrderProjectShow" + ViewBag.Thread;    
+}
+
+<script>
+    var searchInitialCode =[
+        {
+            ID: true,
+            Name: "Yes"
+        },
+        {
+            ID: false,
+            Name: "No"
+        },
+
+    ];
+
+    $(document).ready(function () {
+        debugger;
+        var DomesticForeign = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "CTTP00");
+        var VatType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "VAT000");
+        var MonetaryUnit = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "MOUT00");
+        var SalesClassification = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "SCS000");
+
+        $("#SalesClassification@(ViewBag.Thread)").dxSelectBox({
+            dataSource: SalesClassification,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox({
+            dataSource: DomesticForeign,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        $("#VatType@(ViewBag.Thread)").dxSelectBox({
+            dataSource: VatType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox({
+            dataSource: MonetaryUnit,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        if ('@Model.SalesClassification' != '' && '@Model.SalesClassification' != null) {
+            $("#SalesClassification@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.SalesClassification');
+        }
+
+        if ('@ViewBag.UserType' === 'G000C002' || '@ViewBag.UserType' === 'G000C003' || '@ViewBag.UserType' === 'G000C004') {
+            $("#btnSave_@ViewBag.Thread").attr("hidden", false);
+            $("#btnDelete_@ViewBag.Thread").attr("hidden", false);
+            $("#btnCopyProject_@ViewBag.Thread").attr("hidden", false);
+        }
+
+
+        if ('@Model.UserProjectCode' != null && '@Model.UserProjectCode' != '') {
+            $("#UserProjectCode@(ViewBag.Thread)").prop("readonly", true);
+        }
+        else {
+            $("#UserProjectCode@(ViewBag.Thread)").prop("readonly", false);
+        }
+
+        if ('@Model.ItemCode' != '' && '@Model.ItemCode' != null) {
+            $("#ItemCode@(ViewBag.Thread)").dxTextBox("instance").option("value", '@Model.ItemCode');
+        }
+
+        if ('@Model.ProductType' != '' && '@Model.ProductType' != null) {
+            $("#ProductType@(ViewBag.Thread)").dxTextBox("instance").option("value", '@Model.ProductType');
+        }
+
+        if ('@Model.DomesticForeign' != '' && '@Model.DomesticForeign' != null) {
+            $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.DomesticForeign');
+        }
+
+        if ('@Model.MonetaryUnit' != '' && '@Model.MonetaryUnit' != null) {
+            $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.MonetaryUnit');
+        }
+
+        if ('@Model.VatType' != '' && '@Model.VatType' != null) {
+            $("#VatType@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.VatType');
+        }
+
+        if ('@Model.OrderTeamName' != '' && '@Model.OrderTeamName' != null) {
+            $("#OrderDepartment@(ViewBag.Thread)").dxTextBox("instance").option("value", '@Model.OrderTeamName');
+        }
+
+        if ('@Model.ExchangeRate' != '' && '@Model.ExchangeRate' != null) {
+
+            $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.ExchangeRate');
+        }
+
+        if ('@Model.VatRate' != '' && '@Model.VatRate' != null) {
+
+            $("#VatRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.VatRate');
+        }
+
+        if ('@Model.OrderPrice' != '' && '@Model.OrderPrice' != null) {
+
+        $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.OrderPrice');
+        }
+
+        if ('@Model.ItemPrice' != '' && '@Model.ItemPrice' != null) {
+             $("#ItemPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value", @Model.ItemPrice);
+        }
+
+        if ('@Model.ConversionAmount' != '' && '@Model.ConversionAmount' != null) {
+            $("#ConversionAmount@(ViewBag.Thread)").dxNumberBox("instance").option("value", @Model.ConversionAmount);
+        }
+
+        $('#@(ProductTypeName)').find('.dx-texteditor-input').prop('readonly', true);
+        $('#@(SalesOrderProject)').find('.dx-texteditor-input').prop('readonly', true);
+        //GetListCustomerCombobox();
+
+
+    });
+
+    function MonetaryUnit_ValueChanged(data) {
+        if (data.value == 'KRW') {
+            $("#VatRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", 10);
+            $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", 1);
+            $("#ExchangeRateDate@(ViewBag.Thread)").dxDateBox("instance").option("value", null);
+            $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox({
+                disabled: true
+            });
+            $("#ExchangeRateDate@(ViewBag.Thread)").dxDateBox({
+                disabled: true
+            });
+            $("#VatRate@(ViewBag.Thread)").dxNumberBox({
+                disabled: true
+            });
+        } else {
+            $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox({
+                disabled: false
+            });
+            $("#VatRate@(ViewBag.Thread)").dxNumberBox({
+                disabled: false
+            });
+            $("#VatRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", 0);
+            $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", 0);
+            $("#ExchangeRateDate@(ViewBag.Thread)").dxDateBox({
+                disabled: false
+            });
+        }
+    }
+
+    function showPopupGetItem@(ViewBag.Thread)() {
+        $.ajax({
+            url: '@Url.Action("showPopupGetItem", "MESSaleProject")',
+            type: "GET",
+            data:
+            {
+                idParent: '@ViewBag.thread'
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContentChild").removeClass("modal-dialog");
+                $("#modalContentChild").removeClass("modal-md");
+                $("#modalContentChild").removeClass("modal-lg");
+                $("#modalContentChild").removeClass("modal-xl");
+                $("#modalContentChild").html(result);
+                $("#modalContentChild").addClass("modal-dialog modal-lg");
+                $('#modalControlChild').modal('show');
+
+            }
+        });
+    }
+
+    function showPopupGetSalesOrderProject@(ViewBag.Thread)() {
+        $.ajax({
+            url: '@Url.Action("showPopupGetSalesOrderProject", "MESProductionProject")',
+            type: "GET",
+            data:
+            {
+                idParent: '@ViewBag.thread'
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContentChild").removeClass("modal-dialog");
+                $("#modalContentChild").removeClass("modal-md");
+                $("#modalContentChild").removeClass("modal-lg");
+                $("#modalContentChild").removeClass("modal-xl");
+                $("#modalContentChild").html(result);
+                $("#modalContentChild").addClass("modal-dialog modal-lg");
+                $('#modalControlChild').modal('show');
+            }
+        });
+    }
+
+    function showPopupGetCustomer@(ViewBag.Thread)() {
+        $.ajax({
+            url: '@Url.Action("showPopupGetCustomer", "MESSaleProject")',
+            type: "GET",
+            data:
+            {
+                idParent: '@ViewBag.thread'
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContentChild").removeClass("modal-dialog");
+                $("#modalContentChild").removeClass("modal-md");
+                $("#modalContentChild").removeClass("modal-lg");
+                $("#modalContentChild").removeClass("modal-xl");
+                $("#modalContentChild").html(result);
+                $("#modalContentChild").addClass("modal-dialog modal-lg");
+                $('#modalControlChild').modal('show');
+            }
+        });
+    }
+
+    function ItemPriceOnValueChanged@(ViewBag.Thread)(data)
+    {
+        let OrderPrice = $("#ItemPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        let OrderQuantity = $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let TotalPrice = OrderPrice * OrderQuantity
+        $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value", TotalPrice);
+
+    }
+
+    function OrderQuantityOnValueChanged@(ViewBag.Thread)(data)
+    {
+        let OrderPrice = $("#ItemPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        let OrderQuantity = $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let TotalPrice = OrderPrice * OrderQuantity
+        $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value", TotalPrice);
+
+    }
+
+    // Add new task 2021-04-16
+    // ConversionAmount = TotalOrderPrice * ExchangeRate
+    function OrderPriceOnValueChanged@(ViewBag.Thread)(data)
+    {
+        let TotalOrderPrice = $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        let ExchangeRate = $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let ConversionAmount = TotalOrderPrice * ExchangeRate;
+        $("#ConversionAmount@(ViewBag.Thread)").dxNumberBox("instance").option("value", ConversionAmount);
+    }
+
+    function ExchangeRateOnValueChanged@(ViewBag.Thread)(data)
+    {
+        let TotalOrderPrice = $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        let ExchangeRate = $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        let ConversionAmount = TotalOrderPrice * ExchangeRate;
+        $("#ConversionAmount@(ViewBag.Thread)").dxNumberBox("instance").option("value", ConversionAmount);
+    }
+
+    function GetListCustomerCombobox() {
+        debugger;
+         $.ajax({
+            url: '@Url.Action("GetListCustomerCombobox", "MESProductionProject")',
+            type: "GET",
+            data:{},
+            dataType: "json",
+             success: function (result) {
+                 debugger;
+                 $("#@Customer").dxSelectBox({
+                     dataSource: result,
+                    displayExpr: "Name",
+                    valueExpr: "ID"
+                });
+            }
+        });
+    }
+
+    function SalesClassificationOnSelectionChanged(data) {
+        if (data.value == 'SCS001') {
+            //DevExpress.ui.dialog.alert(data.selectedItem.BASE_NAME + ' 은 생산없이 바로 출하처리 됩니다.', "Notice");
+            DevExpress.ui.dialog.alert('상품(Sales) 은 생산없이 바로 출하처리 됩니다.', "Notice");
+        }
+    }
+
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll;max-height:95vh">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Production Planning"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2" hidden="hidden">
+                <div class="col-md-4">
+                    <label>@(_loc.GetLocalizedString("Sales Order Project"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(SalesOrderProjectShow)
+                        .Value(Model.UserSalesOrderProjectCode)
+                        .Mode(TextBoxMode.Text)
+                        .StylingMode(EditorStylingMode.Outlined)
+                        .Buttons(buttons =>
+                        {
+                            buttons.Add()
+                            .Name("showPopupGetSalesOrderProject")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .ID("PopupGetItem" + ViewBag.Thread)
+                            .Type(ButtonType.Default)
+                            .Icon("find")
+                            .OnClick("showPopupGetSalesOrderProject" + ViewBag.Thread));
+                        })
+                    )
+                </div>
+
+                <div class="col-md-4">
+                    <label>@(_loc.GetLocalizedString("Sales Order Project"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(SalesOrderProject)
+                        .Value(Model.SalesOrderProjectCode)
+                        .Mode(TextBoxMode.Text)
+                        .StylingMode(EditorStylingMode.Outlined)
+                    )
+                </div>
+
+                <div class="col-md-4">
+                    <label>
+                        @(_loc.GetLocalizedString("Sales Order Project Name"))<span></span>
+                    </label>
+                    @(Html.DevExtreme().TextBox().ID(SalesOrderProjectName).Value(Model.SalesOrderProjectName).ReadOnly(true))
+                </div>
+
+                <div class="col-md-4">
+                    <label>
+                        @(_loc.GetLocalizedString("Manager"))<span></span>
+                    </label>
+                    @(Html.DevExtreme().TextBox().ID(Manager).Value(Model.InChargeSalesOrderProject).ReadOnly(true))
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-4">
+                    <label>@(_loc.GetLocalizedString("Order Department"))</label>
+                    @(Html.DevExtreme().TextBox()
+                    .ID(OrderDepartment)
+                    .Value(Model.OrderTeamName)
+                    )
+                </div>
+
+                <div class="col-md-4">
+                    <label>@(_loc.GetLocalizedString("Customer Pro"))</label>
+                    @(Html.DevExtreme().TextBox()
+                    .ID(Customer)
+                    .Value(Model.PartnerName))
+                    
+                </div>
+
+                <div class="col-md-4">
+                    <label>@(_loc.GetLocalizedString("Order Number Pro"))</label>
+                    @(Html.DevExtreme().TextBox().ID(CustomerOrderNumber).Value(Model.OrderNumberSalesOrderProject))
+                </div>
+
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3" hidden="hidden">
+                    <label>@(_loc.GetLocalizedString("Project Code"))</label>
+                    @Html.TextBoxFor(x => x.ProjectCode, new { @class = "form-control", @readonly = "readonly", @id = "ProjectCode" + ViewBag.Thread, @Value = Model.ProjectCode })
+                </div>
+
+                <div class="col-md-4">
+                    <label>@(_loc.GetLocalizedString("Sales Classification"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                            .ID(SalesClassification)
+                            .OnValueChanged("SalesClassificationOnSelectionChanged")
+                            .ShowClearButton(true)
+                            .SearchEnabled(true)
+                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                     )
+                </div>
+
+                <div class="col-md-8">
+                    <label>@(_loc.GetLocalizedString("Production Code Pro"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                            .ID("UserProjectCode" + ViewBag.Thread)
+                            .Value(Model.UserProjectCode)
+                    )
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Production Name Pro"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID("ProjectName" + ViewBag.Thread)
+                        .Value(Model.ProjectName)
+                        .MaxLength(200)
+                )
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Plan Delivery Date Pro"))<span class="required-input"> *</span></label>
+                        @(Html.DevExtreme().DateBox()
+                        .ID("PlanDeliveryDate" + ViewBag.Thread)
+                        .Value(Model.PlanDeliveryDate)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Name("PlanDeliveryDate")
+                        .Min(DateTime.Now)
+                        .MaxLength(10)
+                    )
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" hidden="hidden">
+                <div class="col-md-6" >
+                    <label>@(_loc.GetLocalizedString("Initial Code"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(InitialCode)
+                        .DataSource(new JS("searchInitialCode"))
+                        .DisplayExpr("Name")
+                        .ValueExpr("ID")
+                        .Value(Model.InitialCode)
+                )
+                </div>
+
+
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-6">
+                    <div>
+                        <label>@(_loc.GetLocalizedString("Product"))<span class="required-input"> *</span></label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ItemCodeName)
+                            .Value(Model.ItemName)
+                            .ReadOnly(true)
+                      )
+                    </div>
+                </div>
+                <div class="col-md-6" hidden="hidden">
+                    <div>                      
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ProductType)
+                            .Value(Model.ProductType)
+                
+                      )
+                    </div>
+                </div>
+                <div class="col-md-6" hidden="hidden">
+                    <div>                      
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ItemCode)
+                            .Value(Model.ItemCode)
+                
+                      )
+                    </div>
+                </div>
+                <div class="col-md-6">
+                     <label>@(_loc.GetLocalizedString("ProductType Pro"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(ProductTypeName)
+                        .Value(Model.ProductTypeName)
+                        .Mode(TextBoxMode.Text)
+                        .StylingMode(EditorStylingMode.Outlined)
+                        .Buttons(buttons =>
+                        {
+                            buttons.Add()
+                            .Name("showPopupGetItem")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .ID("PopupGetItem" + ViewBag.Thread)
+                            .Type(ButtonType.Default)
+                            .Icon("find")
+                            .OnClick("showPopupGetItem" + ViewBag.Thread));
+                        })
+                        )
+                </div>              
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("DomesticForeign"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(DomesticForeign)
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("VatType"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(VatType)
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("VatRate"))</label>
+                    @(Html.DevExtreme().NumberBox().ID("VatRate" + ViewBag.Thread).Format("#0.0")//Fortmat decimal(3,1)#,###.###0
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(99.9)
+                )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Monetary Unit"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(MonetaryUnit)
+                        .OnValueChanged("MonetaryUnit_ValueChanged")
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load moreR
+                )
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Order Quantity"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().NumberBox().ID("OrderQuantity" + ViewBag.Thread).Format("#,##0")//Fortmat decimal(3,1)#,###.###0
+                        .Value(Model.OrderQuantity).OnValueChanged("OrderQuantityOnValueChanged" + ViewBag.Thread)
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(999999)
+                )
+                </div><div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("ItemPrice"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().NumberBox()
+                                    .ID("ItemPrice" + ViewBag.Thread)
+                                    .Format("#,##0.00")
+                                    .OnValueChanged("ItemPriceOnValueChanged" + ViewBag.Thread)
+                                    .ShowSpinButtons(true)
+                                    .Min(0)
+                                )
+                </div>
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Total Order Price"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().NumberBox().ReadOnly(true)
+                        .ID("OrderPrice" + ViewBag.Thread)
+                        .Format("#,##0.00")
+                        .OnValueChanged("OrderPriceOnValueChanged" + ViewBag.Thread)
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                )
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("ExchangeRateDate"))</label>
+                    @(Html.DevExtreme().DateBox()
+                        .ID("ExchangeRateDate" + ViewBag.Thread)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Value(Model.ExchangeRateDate)
+                        .MaxLength(10)
+                )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("ExchangeRate"))</label>
+                    @(Html.DevExtreme().NumberBox().ID("ExchangeRate" + ViewBag.Thread)
+                        .Format("#,##0.00")
+                        .OnValueChanged("ExchangeRateOnValueChanged" + ViewBag.Thread)
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(99999.99)
+                    )
+
+                </div>
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Conversion Amount"))</label>
+                    @(Html.DevExtreme().NumberBox().ReadOnly(true)
+                        .ID("ConversionAmount" + ViewBag.Thread)
+                        .Format("#,##0.00")
+                        .OnValueChanged("ConversionAmount" + ViewBag.Thread)
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                )
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Create Date"))</label>
+                    @(Html.DevExtreme().DateBox()
+                        .ReadOnly(true)
+                        .ID("CreateDate" + ViewBag.Thread)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Value(Model.Created_At)
+                        .MaxLength(10)
+
+                )
+                </div>
+                <div class="col-md-9">
+                    <label>@(_loc.GetLocalizedString("ETC"))</label>
+                    @(Html.DevExtreme().TextBox()
+                            .MaxLength(150)
+                            .ID("ETC" + ViewBag.Thread)
+                            .Value(Model.ETC)
+                            .MaxLength(100)
+                )
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="modal-footer">
+
+        @if (Model.ProjectCode != null && ViewBag.SAVE_YN == true)
+        {
+            <button type="button" class="btn btn-sm btn-primary" id="btnCopyProject_@ViewBag.Thread" hidden="hidden"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Copy Project"))</button>
+        }
+        @if (Model.ProjectStatus == null || Model.ProjectStatus == "PJST01" || Model.ProjectStatus == "PJST02" || Model.ProjectStatus == "PJST09")
+        {
+            @if (ViewBag.SAVE_YN == true)
+            {
+                <button type="button" class="btn btn-sm btn-primary" id="btnSave_@ViewBag.Thread" hidden="hidden"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+            }
+
+            @if (Model.ProjectStatus != null && ViewBag.DELETE_YN == true)
+            {
+                <button type="button" class="btn btn-sm btn-primary" id="btnDelete_@ViewBag.Thread" hidden="hidden"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+            }
+        }
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+
+    </div>
+</div>
+
+<script>
+    var flagCopyProject = 0;
+
+     //Delete Button
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        let ProjectCode = $("#ProjectCode@(ViewBag.Thread)").val();
+        if (ProjectCode.length > 0) {
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure delete data?")</i>", "Confirm");
+            result.done(function (resultdialog) {
+                if (resultdialog) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteSalesProjects", "MESSaleProject")',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: { projectCode: ProjectCode },
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert(result.Message, "Success");
+                                $("#btnReload_@ViewBag.Index").trigger("click");
+                                $('#modalControl').modal('hide');
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+        } else {
+            DevExpress.ui.dialog.alert("Please select row to delete!", "Error");
+            return;
+        }
+    });
+     //Save Button
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        flagCopyProject = 0;
+        if (validateForm(flagCopyProject)) {
+            $("#frm-SaleSetting2").submit();
+        }
+
+    });
+    //Coppy Button
+    $("#btnCopyProject_@ViewBag.Thread").on("click", function () {
+        debugger;
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        flagCopyProject = 1;
+        if (validateForm(flagCopyProject)) {
+             $("#ProjectCode@(ViewBag.Thread)").val("");
+            let ProjectCodeCopy = $("#ProjectCode@(ViewBag.Thread)").val();
+            $("#frm-SaleSetting2").submit();
+
+        }
+    });
+
+    function addColorAndFocusValidatedxTextBox(idElement) {
+        debugger;
+        $(`${idElement}`).dxTextBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxTextBox("focus");
+        }, 2000)
+    }
+
+    function addColorAndFocusValidatedxDateBox(idElement) {
+        debugger;
+        $(`${idElement}`).dxDateBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxDateBox("focus");
+        }, 2000)
+    }
+
+    function addColorAndFocusValidatedxSelectBox(idElement) {
+        debugger;
+        $(`${idElement}`).dxSelectBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxSelectBox("focus");
+        }, 2000)
+    }
+
+    function removeColorAndFocusValidatedxTextBox(idElement) {
+        debugger;
+        $(`${idElement}`).dxTextBox('instance')._$element[0].style.borderColor = "";
+    }
+
+    function removeColorAndFocusValidatedxDateBox(idElement) {
+        $(`${idElement}`).dxDateBox('instance')._$element[0].style.borderColor = "";
+    }
+
+    function removeColorAndFocusValidatedxSelectBox(idElement) {
+        $(`${idElement}`).dxSelectBox('instance')._$element[0].style.borderColor = "";
+    }
+
+    function validateForm(flagCopyProject) {
+        let OrderDepartment = $('#OrderDepartment@(ViewBag.Thread)').dxTextBox("instance").option('value');
+        if (OrderDepartment == null || OrderDepartment == "" || typeof OrderDepartment === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorOrderDepartment")", "Error");
+            addColorAndFocusValidatedxTextBox('#OrderDepartment@(ViewBag.Thread)');
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxTextBox('#OrderDepartment@(ViewBag.Thread)');
+        }
+        let PartnerCode = $("#@Customer").dxTextBox("option", "value");
+        if (PartnerCode == null || PartnerCode == "" || typeof PartnerCode === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorCustomer")", "Error");
+            addColorAndFocusValidatedxTextBox('#Customer@(ViewBag.Thread)');
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxTextBox('#Customer@(ViewBag.Thread)');
+        }
+        let OrderNumber = $("#@CustomerOrderNumber").dxTextBox('instance').option('value');
+        if (OrderNumber == null || OrderNumber == "" || typeof OrderNumber === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorOrderNumber")", "Error");
+            addColorAndFocusValidatedxTextBox('#CustomerOrderNumber@(ViewBag.Thread)');
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxTextBox('#CustomerOrderNumber@(ViewBag.Thread)');
+        }
+
+        let UserProjectCode = $('#UserProjectCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        if (UserProjectCode == null || UserProjectCode == "" || typeof UserProjectCode === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorUserProjectCode")", "Error");
+            addColorAndFocusValidatedxTextBox('#UserProjectCode@(ViewBag.Thread)');
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxTextBox('#UserProjectCode@(ViewBag.Thread)');
+
+        }
+
+        let ProjectName = $('#ProjectName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        if (ProjectName == null || ProjectName == "" || typeof ProjectName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorProjectName")", "Error");
+            addColorAndFocusValidatedxTextBox('#ProjectName@(ViewBag.Thread)');
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxTextBox('#ProjectName@(ViewBag.Thread)');
+
+        }
+
+
+        let PlanDeliveryDate = $("#PlanDeliveryDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        let dateNow = new Date();
+        if (PlanDeliveryDate == null || PlanDeliveryDate == "" || typeof PlanDeliveryDate === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorPlanDeliveryDate")", "Error");
+            addColorAndFocusValidatedxDateBox("#PlanDeliveryDate@(ViewBag.Thread)");
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxDateBox("#PlanDeliveryDate@(ViewBag.Thread)");
+
+        }
+        let dateNowParse = ParsingDateyyyyMMdd(dateNow);
+        let dateParse = ParsingDateyyyyMMdd(PlanDeliveryDate);
+
+        if (dateParse < dateNowParse && flagCopyProject===1) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Plan Delivery Date should not be less than the current date")", "Error");
+            addColorAndFocusValidatedxDateBox("#PlanDeliveryDate@(ViewBag.Thread)");
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxDateBox("#PlanDeliveryDate@(ViewBag.Thread)");
+
+        }
+
+        let ProductType = $("#ProductTypeName@(ViewBag.Thread)").dxTextBox("option", "value");
+        if (ProductType == null || ProductType == "" || typeof ProductType === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorProductType")", "Error");
+            addColorAndFocusValidatedxTextBox("#@(ProductTypeName)");
+            return false;
+        }
+        else {
+            removeColorAndFocusValidatedxTextBox("#@(ProductTypeName)");
+        }
+
+        let ItemCode = $("#ItemCode@(ViewBag.Thread)").dxTextBox("option", "value");
+        if (ItemCode == null || ItemCode == "" || typeof ItemCode === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorItemCode")", "Error");
+            return false;
+        }
+
+        let DomesticForeign = $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (DomesticForeign == null || DomesticForeign == "" || typeof DomesticForeign === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorDomesticForeign")", "Error");
+            addColorAndFocusValidatedxSelectBox("#DomesticForeign@(ViewBag.Thread)");
+            return false;
+        } else {
+            removeColorAndFocusValidatedxSelectBox("#DomesticForeign@(ViewBag.Thread)");
+        }
+
+        let OrderQuantity = $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        if (OrderQuantity == null || OrderQuantity == "" || typeof OrderQuantity === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorOrderQuantity")", "Error");
+            $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox('instance')._$element[0].style.borderColor = "red";
+            setTimeout( function () {
+                $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("focus");
+                  },2000)
+            return false;
+        } else {
+            $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox('instance')._$element[0].style.borderColor = "";
+        }
+
+        let MonetaryUnit = $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (MonetaryUnit == null) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorMonetaryUnit")", "Error");
+            addColorAndFocusValidatedxSelectBox("#MonetaryUnit@(ViewBag.Thread)");
+            return false;
+        } else {
+            removeColorAndFocusValidatedxSelectBox("#MonetaryUnit@(ViewBag.Thread)");
+
+        }
+
+        let OrderPrice = $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        if (OrderPrice == null || typeof OrderPrice === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorOrderPrice")", "Error");
+            return false;
+        }
+
+        let ItemPrice = $("#ItemPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        if (ItemPrice == null || ItemPrice == "" || typeof ItemPrice === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorItemPrice")", "Error");
+            return false;
+        } 
+        let ConversionAmount = $("#ConversionAmount@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        if (ConversionAmount == null || typeof ConversionAmount === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorConversionAmount")", "Error");
+            return false;
+        }
+
+        return true;
+    }
+
+    $("#frm-SaleSetting2").submit(function (e) {
+        debugger;
+        e.preventDefault();
+        var data = new FormData(this);
+
+        let PlanDeliveryDate = $("#PlanDeliveryDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("PlanDeliveryDate", PlanDeliveryDate);
+
+        let ExchangeRateDate = $("#ExchangeRateDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("ExchangeRateDate", ExchangeRateDate);
+
+        let CreateDate = $("#CreateDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("CreateDate", CreateDate);
+
+        let ProductType = $("#ProductType@(ViewBag.Thread)").dxTextBox("option", "value");
+        data.append("ProductType", ProductType);
+
+        let ItemCode = $("#ItemCode@(ViewBag.Thread)").dxTextBox("option", "value");
+        data.append("ItemCode", ItemCode);
+
+        let PartnerCode = $("#@Customer").dxTextBox("option", "value");
+        data.append("PartnerCode", PartnerCode);
+
+        let OrderQuantity = $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let DomesticForeign = $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("DomesticForeign", DomesticForeign);
+
+        let MonetaryUnit = $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("MonetaryUnit", MonetaryUnit);
+
+
+        let VatType = $("#VatType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("VatType", VatType);
+
+        let projectCodeMaster = $("#@ProjectCodeMaster").dxSelectBox("option", "value");
+        data.append("VatType", VatType);
+
+
+        let ProjectCode = $("#ProjectCode@(ViewBag.Thread)").val();
+        data.append("ProjectCode", ProjectCode);
+
+
+        let UserProjectCode = $('#UserProjectCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        data.append("UserProjectCode", UserProjectCode);
+
+        let ProjectName = $('#ProjectName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        data.append("ProjectName", ProjectName);
+
+
+        let SalesClassification = $("#SalesClassification@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("SalesClassification", SalesClassification);
+
+        let ETC = $('#ETC@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        data.append("ETC", ETC);
+
+        let InitialCode = $('#@InitialCode').dxSelectBox('instance').option('value');
+        data.append("InitialCode", InitialCode);
+
+        let OrderNumber = $("#@CustomerOrderNumber").dxTextBox('instance').option('value');
+
+        let ExchangeRate = $("#ExchangeRate@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let VatRate = $("#VatRate@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let OrderPrice = $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let ItemPrice = $("#ItemPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let ConversionAmount = $("#ConversionAmount@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let salesOrderProjectCode = $("#@SalesOrderProject").dxTextBox('instance').option('value');
+
+        let OrderDepartment = $('#OrderDepartment@(ViewBag.Thread)').dxTextBox("instance").option('value');
+
+
+        var arrObj = {};
+
+        $.each($(this).serializeArray(), function (inx, item) {
+            arrObj[item.name] = item.value;
+        });
+        arrObj["ProductType"] = ProductType;
+        arrObj["ItemCode"] = ItemCode;
+        arrObj["PartnerCode"] = PartnerCode;
+        arrObj["DomesticForeign"] = DomesticForeign;
+        arrObj["MonetaryUnit"] = MonetaryUnit;
+
+        let param = {
+            ProjectCode: ProjectCode,
+            UserProjectCode: UserProjectCode,
+            ProjectName: ProjectName,
+            InCharge: '',
+            PlanDeliveryDate: ParsingDateyyyyMMdd(PlanDeliveryDate),
+            ProductType: ProductType,
+            ItemCode: ItemCode,
+            ProducCode: '',
+            PartnerCode: PartnerCode,
+            OrderNumber: OrderNumber,
+            DomesticForeign: DomesticForeign,
+            OrderQuantity: OrderQuantity,
+            DeliveredQty: '',
+            MonetaryUnit: MonetaryUnit,
+            OrderPrice: OrderPrice,
+            ExchangeRate: ExchangeRate,
+            ExchangeRateDate: ParsingDateyyyyMMdd(ExchangeRateDate),
+            VatType: VatType,
+            VatRate: VatRate,
+            OrderTeamCode: OrderDepartment,
+            SalesClassification: SalesClassification,
+            ETC: ETC,
+            FileID: '@ViewBag.Thread',
+            ItemPrice: ItemPrice,
+            ConversionAmount: ConversionAmount,
+            ProjectCodeMaster: projectCodeMaster,
+            SalesOrderProjectCode: salesOrderProjectCode,
+            InitialCode: InitialCode
+
+        };
+
+        var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure to save data?")</i>", "Confirm");
+        result.done(function (dialogResult) {
+            debugger;
+            if (dialogResult) {
+                $.ajax({
+                url: '@Url.Action("SaveSalesProject", "MESSaleProject")',
+                    async: false,
+                    type: 'POST',
+                    data: { data: JSON.stringify(param) },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+                            $("#btnSearch_@ViewBag.Index").trigger("click");
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                            $('#modalControl').modal('hide');
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    //Quan add 2020/08/19
+    //Check duplicate UserProject Code
+    function CheckDuplicate() {
+        var Check = false;
+        let UserProjectCode = $("#UserProjectCode@(ViewBag.Thread)").val();
+        $.ajax({
+            url: '@Url.Action("CheckDuplicate", "MESSaleProject")',
+            type: 'GET',
+            async: false,
+            data: {
+                DuplicateCode: UserProjectCode,
+                Type:"CheckUserProjectCode"
+            },
+            dataType: 'json',
+            success: function (result) {
+                if (result.result != null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("User Project Code is exists")", "Error");
+                    Check= true;
+                }
+                else {
+
+                    Check= false;
+                }
+            }
+        });
+        return Check;
+    }
+
+    function ShowGenerateCode() {
+        $.ajax({
+            url: '@Url.Action("ShowPopupGenerateCode", "MESSaleProject")',
+            type: "GET",
+            data: {
+                theadID: '@ViewBag.Thread'
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#modalContentChild").html(result);
+                $("#modalContentChild").addClass("modal-md");
+                $('#modalControlChild').modal('show');
+            }
+        });
+    }
+
+    $("#btnRequestProduction_@ViewBag.Thread").on("click", function () {
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure to request data ?")</i>",'@_loc.GetLocalizedString("Confirm")');
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    $.ajax({
+                        url: '@Url.Action("SaveSingleRequestProduction", "MESProductionProject")',
+                        async: false,
+                        type: 'POST',
+                        data: {
+                            ProjectCode: '@Model.ProjectCode'
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@_loc.GetLocalizedString("Request Successfully")', '@_loc.GetLocalizedString("Success")');
+                                $('#btnReload_@ViewBag.Index').trigger("click");
+                                $('#modalControl').modal('hide');
+                                LoadingPage(0);
+                            } else
+                            {
+                                DevExpress.ui.dialog.alert(result.Message, '@_loc.GetLocalizedString("Error")');
+                                LoadingPage(0);
+                            }
+                        }
+
+                    });
+                }
+            });
+    });
+
+</script>

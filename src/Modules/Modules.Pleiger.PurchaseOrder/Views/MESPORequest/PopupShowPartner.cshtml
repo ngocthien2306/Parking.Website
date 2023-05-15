@@ -1,0 +1,209 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@model List<MES_Partner>
+@{
+    Layout = null;
+    string gridPartner = "gridPartner" + ViewBag.Thread;
+    string txtPartnerCode = "txtPartnerCode" + ViewBag.Thread;
+    string partnerCodeSearch = "partnerCodeSearch" + ViewBag.Thread;
+    string partnerNameSearch = "partnerNameSearch" + ViewBag.Thread;
+}
+<script>
+
+    var selectedRow = null;
+    function selectionChangedPartner(e) {
+        selectedRow = e;
+    }
+    $("#btnChoosePartner").on("click", function () {
+        if (selectedRow == null || selectedRow == undefined) {
+            DevExpress.ui.dialog.alert("You must choose a Partner!", "Warning");
+            return;
+        } else {
+            eval(SelectRowProject@(ViewBag.Thread)(selectedRow));
+        }
+    });
+    function SelectRowProject@(ViewBag.Thread)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var PartnerCode = e.selectedRowKeys[0].PartnerCode;
+        var PartnerName = e.selectedRowKeys[0].PartnerName;
+        $('#modalControl').modal('hide');
+        $("#txtPartnerCode@(ViewBag.idParent)").dxTextBox("instance").option("value", PartnerName);
+        $("#PartnerCodeHidden").val(PartnerCode);
+        $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+        //
+        RenderPartnerOverSea(PartnerCode);
+        //
+        var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+        btnRegisterItem.option("disabled", false);
+        LoadingPage(0);
+    }
+    function DbClickSelectRowPartner(e) {
+        var PartnerCode = e.key.PartnerCode;
+        var PartnerName = e.key.PartnerName;
+        var GridDetailItemPO = $("#GridDetailItemPO").dxDataGrid("instance");
+        GridDetailItemPO.option("dataSource", null);
+        GridDetailItemPO.refresh();
+        $('#modalControl').modal('hide');
+        $("#txtPartnerCode@(ViewBag.idParent)").dxTextBox("instance").option("value", PartnerName);
+        $("#PartnerCodeHidden").val(PartnerCode);
+        $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+        //
+        RenderPartnerOverSea(PartnerCode);
+        //
+        var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+        btnRegisterItem.option("disabled", false);
+
+        LoadingPage(0);
+    }
+
+    function RenderPartnerOverSea(partnerCode) {
+          // debugger;
+           var sysuserty ='@(ViewBag.partnerCountry)';
+                if (partnerCode !== null || partnerCode !== "" || partnerCode !== undefined) {
+                    $.ajax({
+                        url: '@Url.Action("CheckPartnerOverSea", "MESPORequest")',
+                        type: "GET",
+                        async: false,
+                        data: {
+                            threadId: '@(ViewBag.Thread)',
+                            partnerCode: partnerCode
+                        },
+                        dataType: "json"
+                    }).done(function (resp) {
+                        debugger;
+                        console.log("selectboxValueChangedselectboxValueChanged ",resp);
+                        if (resp === null || resp.CountryType === null) {
+                             $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                        } else if (resp.CountryType === 'CTTP02') {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").removeClass('d-none');
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").show();
+                        } else {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                        }
+
+                    });
+                }
+    }
+
+    $("#btnSearchPartner").on("click", function () {
+        var partnerCodeSearch = $("#@partnerCodeSearch").dxTextBox("option", "value");
+        var partnerNameSearch = $("#@partnerNameSearch").dxTextBox("option", "value");
+       // var projectCode = $("#ProjectCodeHidden").val();
+        var projectCode = null;
+         $.ajax({
+                url: '@Url.Action("SearchPartner", "MESPORequest")',
+                type: "GET",
+                async: false,
+                data: {
+                    partnerCode: partnerCodeSearch,
+                    partnerName: partnerNameSearch,
+                    projectCode: (projectCode !== null && projectCode !== '') ? projectCode : null
+                },
+                dataType: "json"
+            }).done(function (resp) {
+                debugger;
+                var grid = $('#@(gridPartner)').dxDataGrid("instance");
+                grid.option("dataSource", resp);
+            });
+    });
+
+    function getParamsPartnerCodeSearch() {
+        return $("#@partnerCodeSearch").dxTextBox("option", "value");
+    }
+
+    function getParamsPartnerNameSearch() {
+        return $("#@partnerNameSearch").dxTextBox("option", "value");
+    }
+
+    function getParamsProjectCodeSearch() {
+        //return $("#ProjectCodeHidden").val();;
+        return null;
+    }
+</script>
+
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title">@_loc.GetLocalizedString("Partner List")</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="card py-1 mb-0">
+            <div class="row">
+                <div class="col-xs-12 col-md-12">
+                    <button class="btn btn-sm btn-secondary ml-2" id="btnSearchPartner" type="button" style="background-color: #009fe3;">
+                        <i class="fa fa-search mr-1"></i>@_loc.GetLocalizedString("Search")
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="btnChoosePartner" type="button" style="background-color: #009fe3;">
+                        <i class="fa fa-check mr-1"></i>@_loc.GetLocalizedString("Choose")
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-xs-12 col-md-3">
+                    <label>@(_loc.GetLocalizedString("Partner Code"))</label>
+                    @(Html.DevExtreme().TextBox().ID(partnerCodeSearch))
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                    @(Html.DevExtreme().TextBox().ID(partnerNameSearch))
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-xs-12 col-md-12">
+                    @{
+                        string SelectRowProject = "SelectRowProject" + ViewBag.Thread;
+                    }
+                    @(Html.DevExtreme().DataGrid<MES_Partner>()
+                        .ID(gridPartner)
+                        .DataSource(x => x.Mvc().Controller("MESPORequest").LoadAction("SearchPartner")
+                            .LoadParams(new
+                            {
+                                partnerCode = new JS("getParamsPartnerCodeSearch"),
+                                partnerName = new JS("getParamsPartnerNameSearch"),
+                                projectCode = new JS("getParamsProjectCodeSearch"),
+                            })
+                        )
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .RemoteOperations(true)
+                        .OnRowDblClick("DbClickSelectRowPartner")
+                        .OnSelectionChanged("selectionChangedPartner")
+                        .Editing(editing =>
+                        {
+                            editing.AllowUpdating(false);
+                        })
+                        .ColumnAutoWidth(true).Height(650)
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.NO).Caption(_loc.GetLocalizedString("No")).Width("15%");
+                            c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code")).Width("25%");
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name")).Width("30%");
+                            c.AddFor(x => x.CountryType).Caption(_loc.GetLocalizedString("Country Type")).Width("30%");
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                      )
+                </div>
+            </div>
+        </div>     
+    </div>
+</div>

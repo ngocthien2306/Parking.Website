@@ -1,0 +1,643 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = true;
+    pageSetting.CREATE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    // grid info
+    string gridParking = "gridParking" + ViewBag.Thread;
+    string gridUserMgt = "gridUserMgt" + ViewBag.Thread;
+
+    // info store
+    string storeName = "storeName" + ViewBag.Thread;
+    string zipCode = "zipCode" + ViewBag.Thread;
+    string address1 = "address1" + ViewBag.Thread;
+    string address2 = "address2" + ViewBag.Thread;
+    string location = "location" + ViewBag.Thread;
+    string bizNumber = "bizNumber" + ViewBag.Thread;
+    string bizPhoneNumber = "bizPhoneNumber" + ViewBag.Thread;
+    string openDate = "openDate" + ViewBag.Thread;
+    string memo = "memo" + ViewBag.Thread;
+    string registDate = "registDate" + ViewBag.Thread;
+
+    string monitoringStartime = "monitoringStartime" + ViewBag.Thread;
+    string monitoringEndtime = "monitoringEndtime" + ViewBag.Thread;
+
+    // btn
+    string btnCreateOrDetail = "btnCreateOrDetail" + ViewBag.Thread;
+
+}
+<style type="text/css" class="cssStyles">
+</style>
+
+<script>
+
+    var storeNoMaster;
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        LoadParkingMaster(null, "#@gridParking");
+        //$("#@gridParking").dxDataGrid({
+        //    // ...
+        //    focusedRowEnabled: true,
+        //    focusedRowIndex: 0
+        //});
+        LoadComboBoxLocation();
+        $('#btnSave_@(ViewBag.Thread)').prop('disabled', true);
+        LoadingPage(0);
+    })
+
+    // Region: btn click event
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        SaveStoreMaster();
+        LoadingPage(0);
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $('#btnCreate_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        CreateStoreMaster();
+        LoadingPage(0);
+    });
+
+    function EnableCreateBtn() {
+        $("#@btnCreateOrDetail").dxButton("instance").option("disabled", false);
+
+    }
+    // End Region: btn click event
+
+    // Region: Get Data
+    function LoadComboBoxLocation() {
+        debugger;
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("LCT000", url, '#@location', true);
+    }
+    function GetDataStoreMaster(e) {
+        LoadingPage(1);
+        storeNoMaster = e.data.storeNo;
+        // remove selected row
+        GetGridIntance("#@gridUserMgt").selectRows();
+        GetDataUserMgt(e.data.storeNo);
+        BiddingDataStoreMaster(e.data.storeNo);
+        $('#btnSave_@(ViewBag.Thread)').prop('disabled', false);
+    }
+
+    function GetDataUserMgt(storeNo) {
+        $.ajax({
+            url: '@Url.Action("GetUserStoreMgt", "StoreMgt")',
+            type: "GET",
+            data: {
+                storeNo: storeNo
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                GetGridIntance("#@gridUserMgt").option("dataSource", result);
+                if(result.length != 0) {
+                     $("#@btnCreateOrDetail").dxButton("instance").option("disabled", true);
+                     $("#@btnCreateOrDetail").dxButton("instance").option("text", "@_loc.GetLocalizedString("Detail")");
+
+                }
+                else {
+                    $("#@btnCreateOrDetail").dxButton("instance").option("disabled", false);
+                    $("#@btnCreateOrDetail").dxButton("instance").option("text", "@_loc.GetLocalizedString("Create 1")");
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function BiddingDataStoreMaster(storeNo) {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetStoreMasters", "StoreMgt")',
+            type: METHOD.POST,
+            data: {
+                storeNo: storeNo
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+
+                SetDataElement("#@storeName", result[0].storeName);
+                SetDataElement("#@location", result[0].location);
+                SetDataElement("#@zipCode", result[0].zipCode);
+                SetDataElement("#@address1", result[0].address1);
+                SetDataElement("#@address2", result[0].address2);
+                SetDataElement("#@bizNumber", result[0].bizNumber);
+                SetDataElement("#@bizPhoneNumber", result[0].bizPhoneNumber);
+                SetDataElement("#@openDate", result[0].openDate);
+                SetDataElement("#@memo", result[0].memo);
+                SetDataElement("#@registDate", result[0].registDate);
+                SetDataElement("#@monitoringEndtime", result[0].monitoringEndtime);
+                SetDataElement("#@monitoringStartime", result[0].monitoringStartime);
+
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function ShowUserStoreMgtDetail(storeNo, userId) {
+        var url = '@Url.Action("ShowUserStoreMgtDetail", "StoreMgt")';
+        var obj = {
+            storeNo: storeNo,
+            userId: userId,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+    function OpenStoreMgtDetail(e) {
+        debugger;
+        var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
+        if (gridStore.length < 1) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0001))', '@(_loc.GetLocalizedString("Message"))');
+            return;
+        }
+        ShowUserStoreMgtDetail(gridStore[0].storeNo, e.data.userId);
+    }
+    // End Region: Get Data
+
+    // Region: Create - Update - Delete
+    function onItemGridToolbarPreparingUser(e) {
+        debugger;
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    elementAttr: {
+                        id: "@btnCreateOrDetail"
+                    },
+                    text: "@_loc.GetLocalizedString("Create 1")",
+                    onClick: function () {
+                        debugger;
+                        var gridUserMgt = GetGridIntance("#@gridUserMgt").getSelectedRowsData();
+                        var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
+
+                        if (gridStore.length < 1) {
+                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0001))', '@(_loc.GetLocalizedString("Message"))');
+                            return;
+                        }
+                        if (gridUserMgt.length == 0) {
+                            ShowUserStoreMgtDetail(null, null);
+
+                        }
+                        else if (gridUserMgt.length > 0) {
+                            ShowUserStoreMgtDetail(gridUserMgt[0].storeNo, gridUserMgt[0].userId);
+
+                        }
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+
+    }
+
+    function RequestStoreMaster(obj, storeNo) {
+        $.ajax({
+            url: '@Url.Action("RequestStoreMaster", "StoreMgt")',
+            type: "GET",
+            data: {
+                storeMaster: JSON.stringify(obj),
+                storeNo: storeNo
+            },
+            dataType: 'json',
+            async: false,
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices successfully!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'success',
+                            6000
+                        );
+                    }, 5000);
+                }
+                else {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices fairly!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'error',
+                            6000
+                        );
+                    }, 5000);
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+
+    function CreateStoreMaster() {
+        SetDataElement("#@storeName", "");
+        SetDataElement("#@location", "");
+        SetDataElement("#@zipCode", "");
+        SetDataElement("#@address1", "");
+        SetDataElement("#@address2", "");
+        SetDataElement("#@bizNumber", "");
+        SetDataElement("#@bizPhoneNumber", "");
+        SetDataElement("#@openDate", "");
+        SetDataElement("#@memo", "");
+        SetDataElement("#@registDate", "");
+        SetDataElement("#@monitoringStartime", "");
+        SetDataElement("#@monitoringEndtime", "");
+        GetGridIntance("#@gridUserMgt").option("dataSource", null);
+        GetGridIntance("#@gridParking").selectRows();
+
+        $('#btnSave_@(ViewBag.Thread)').prop('disabled', false);
+    }
+
+    function SaveStoreMaster() {
+        if (ValidationInputStoreMaster()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
+                    var storeNo = gridStore.length == 0 ? null : gridStore[0].storeNo;
+                    var url = '@Url.Action("SaveStoreMaster", "StoreMgt")';
+                    var obj = {
+                        storeName: GetDataElement("#@storeName"),
+                        storeNo: storeNo,
+                        location: GetDataElement("#@location"),
+                        zipCode: GetDataElement("#@zipCode"),
+                        address1: GetDataElement("#@address1"),
+                        address2: GetDataElement("#@address2"),
+                        bizNumber: GetDataElement("#@bizNumber"),
+                        bizPhoneNumber: GetDataElement("#@bizPhoneNumber"),
+                        openDate: ParsingDateyyyyMMdd($("#@openDate").dxDateBox('instance').option("value")),
+                        memo: GetDataElement("#@memo"),
+                        monitoringStartime: getDateTime("#@monitoringStartime"),
+                        monitoringEndtime: getDateTime("#@monitoringEndtime"),
+                    }
+
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: obj,
+                        dataType: 'json',
+                        async: false,
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+
+                                DevExpress.ui.notify(
+                                    {
+                                        message: '@_loc.GetLocalizedString("Save store successfully! Sending information to syschonous on Kiosk Devices. Please wait a second")',
+                                        position: {
+                                            my: 'bottom right',
+                                            at: 'bottom right'
+                                        },
+                                        width: '30%'
+                                    },
+                                    'info',
+                                    5000
+                                );
+
+                                //RequestStoreMaster(obj, result.Data);
+
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                            LoadingPage(0);
+                        },
+                        error: function () {
+                            LoadingPage(0);
+                        }
+                    });
+
+                    //CRUDData(url, obj, METHOD.POST);
+
+                    setTimeout(function () {
+                        LoadStoreMaster(null, "#@gridParking");
+                    }, 1000);
+
+
+                }
+            })
+        }
+    }
+
+    // End Region: Create - Update - Delete
+
+    // Region: Validation data
+    function ValidationInputStoreMaster() {
+        let storeName = GetDataElement("#@storeName");
+        if (storeName == null || storeName == "" || typeof storeName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input StoreName")", "Error")
+            ValidateElement("#@storeName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@storeName")
+        }
+
+        let location = GetDataElement("#@location");
+        if (location == null || location == "" || typeof location === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Location")", "Error")
+            ValidateElement("#@location")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@location")
+        }
+
+        let openDate = GetDataElement("#@openDate");
+        if (openDate == null || openDate == "" || typeof openDate === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Open Date")", "Error")
+            ValidateElement("#@openDate")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@openDate")
+        }
+
+
+        let monitoringStartime = GetDataElement("#@monitoringStartime");
+        if (monitoringStartime == null || monitoringStartime == "" || typeof monitoringStartime === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Monitoring Startime")", "Error")
+            ValidateElement("#@monitoringStartime")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@monitoringStartime")
+        }
+
+
+        let monitoringEndtime = GetDataElement("#@monitoringEndtime");
+        if (monitoringEndtime == null || monitoringEndtime == "" || typeof monitoringEndtime === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Monitoring Endtime")", "Error")
+            ValidateElement("#@monitoringEndtime")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@monitoringEndtime")
+        }
+        return true;
+    }
+    // End Region
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:100%">
+                    <div class="col-md-4">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                            .ID(gridParking)
+                            .Height("84vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .FilterRow(f => f.Visible(true))
+                            .HeaderFilter(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");
+                            })
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("GetDataStoreMaster")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+                    <div class="col-md-8">
+                        <h6>
+                            <strong>@(_loc.GetLocalizedString("Manager Information"))</strong>
+                        </h6>
+                        <div class="body-top-site ml-2">
+                            @(
+                                Html.DevExtreme().DataGrid<KIO_UserStore>()
+                                .ID(gridUserMgt)
+                                .Height("30vh")
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .FilterRow(f => f.Visible(true))
+                                .HeaderFilter(f => f.Visible(true))
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .RemoteOperations(true)
+                                .ColumnAutoWidth(true)
+                                .ColumnFixing(c => c.Enabled(true))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .Columns(c =>
+                                {
+                                    c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                    c.AddFor(x => x.userId).Caption(_loc.GetLocalizedString("User ID"));
+                                    c.AddFor(x => x.userName).Caption(_loc.GetLocalizedString("Username"));
+                                    c.AddFor(x => x.birthday).Caption(_loc.GetLocalizedString("Birthday")).Format("yyyy-MM-dd").Alignment(0);
+                                    c.AddFor(x => x.phoneNumber).Caption(_loc.GetLocalizedString("Phone Number"));
+                                    c.AddFor(x => x.email).Caption(_loc.GetLocalizedString("Email"));
+                                })
+                                // <%- data.FirstName %>
+@*                                .MasterDetail(md =>
+                                {
+                                    md.Enabled(true);
+                                    md.Template(@<text>
+                                        <span class="master-detail-caption">@_loc.GetLocalizedString("History management of store") <%- data.storeName %>: </span>
+                                        <br/>
+                                        @(
+                                            Html.DevExtreme().DataGrid<KIO_HistoryUserStore>()
+                                            .ColumnAutoWidth(true)
+                                            .ShowBorders(true)
+                                            .Columns(columns =>
+                                            {
+                                                columns.AddFor(m => m.no).Caption(_loc.GetLocalizedString("No"));
+                                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString("User ID"));
+                                                columns.AddFor(m => m.userName).Caption(_loc.GetLocalizedString("Username"));
+                                                columns.AddFor(m => m.updatedAt).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd hh:mm:ss").Alignment(0);
+                                                columns.AddFor(m => m.phoneNumber).Caption(_loc.GetLocalizedString("Phone Number"));
+                                                columns.AddFor(m => m.email).Caption(_loc.GetLocalizedString("Email"));
+                                            })
+                                                .DataSource(d => d.Mvc()
+                                                .Controller("StoreMgt")
+                                                .LoadAction("GetHistoryManager")
+                                                .LoadParams(new { storeNo = new JS("data.storeNo"), userId = new JS("data.userId") })
+                                            )
+                                         )
+                                        </text>);
+                                })*@
+@*                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })*@
+                                .OnRowDblClick("OpenStoreMgtDetail")
+                                .OnSelectionChanged("EnableCreateBtn")
+                                .OnToolbarPreparing("onItemGridToolbarPreparingUser")
+                                //.Paging(paging => paging.PageSize(100))
+                                )
+                        </div>
+                        <hr />
+                        <h6>
+                            <strong>
+                                @(_loc.GetLocalizedString("Parking Information"))
+                            </strong>
+                        </h6>
+                        <div class="body-bottom-site ml-2">
+
+                            <div class="row mt-1">
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Parking Name"))<span class="required-input"> *</span></label>
+                                    @(Html.DevExtreme().TextBox()
+                                        .ID(storeName)
+                                        .MaxLength(50)
+                                        )
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Location"))<span class="required-input"> *</span></label>
+                                    @(Html.DevExtreme().SelectBox()
+                                        .ID(location)
+
+                                        )
+                                </div>
+                            </div>
+                            <div class="row mt-1">
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Zip Code"))</label>
+                                    <div class="row mb-2">
+                                        <div class="col-md-3">
+                                            @(
+                                                Html.DevExtreme().TextBox()
+                                                .ID(zipCode)
+                                                .Placeholder(_loc.GetLocalizedString("Zip Code"))
+                                                .MaxLength(10)
+                                                )
+                                        </div>
+                                        <div class="col-md-9">
+                                            @(
+                                                Html.DevExtreme().TextBox()
+                                                .ID(address1)
+                                                .Placeholder(_loc.GetLocalizedString("Address 1"))
+                                                .MaxLength(100)
+                                                )
+                                        </div>
+                                    </div>
+                                    @(
+                                        Html.DevExtreme().TextBox()
+                                        .ID(address2)
+                                        .Placeholder(_loc.GetLocalizedString("Address 2"))
+                                        .MaxLength(100)
+                                     )
+
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Biz Number"))</label>
+                                    <div>
+                                        @(
+                                        Html.DevExtreme().TextBox()
+                                        .ID(bizNumber)
+                                        .MaxLength(15)
+                                        )
+                                    </div>
+                                    
+                                </div>
+                            </div>
+
+                            <div class="row mt-1">
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Capacity"))<span class="required-input"> *</span></label>
+                                    @(
+                                        Html.DevExtreme().NumberBox()
+                                        .ID(monitoringStartime)
+                                        .Min(1)
+                                        .Max(10000000)
+                                      
+                                        )
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Registered Date"))</label>
+                                    @(
+                                        Html.DevExtreme().DateBox()
+                                        .ID(registDate)
+
+                                        )
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Open Date"))<span class="required-input"> *</span></label>
+                                    @(
+                                        Html.DevExtreme().DateBox()
+                                        .ID(openDate)
+                                        )
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

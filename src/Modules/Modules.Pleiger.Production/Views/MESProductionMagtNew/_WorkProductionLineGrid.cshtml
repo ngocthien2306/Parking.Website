@@ -1,0 +1,914 @@
+﻿@using Modules.Pleiger.Production.Model;
+@using Modules.Pleiger.CommonModels;
+@model ProductLineGroup;
+@{
+    ViewBag.ChildThread = ViewBag.Thread + "_" + Model.GroupLine;
+    List<MES_ProductLine> lstProdLines = (List<MES_ProductLine>)ViewBag.lstProdLines;
+    MES_SaleProject saleProject = ViewBag.saleProject;
+    if (Model.ProdcnLines.Count == 0)
+    {
+        Model.PlanRequestQty = 0;
+    }
+    else
+    {
+        Model.PlanRequestQty = Model.ProdcnLines[0].PlanRequestQty;
+    }
+
+    string tb_PlannedQuantity = "tb_PlannedQuantity" + ViewBag.ChildThread;
+    string tb_ProductionDoneQty = "tb_ProductionDoneQty" + ViewBag.ChildThread;
+    string grid_Lines = "grid_Lines" + ViewBag.ChildThread;
+
+    string WorkerAuthenticationPop = "WorkerAuthenticationPop" + ViewBag.ChildThread;
+    string btnProductAuthen = "btnProductAuthen" + ViewBag.ChildThread;
+    string btnLineAuthen = "btnLineAuthen" + ViewBag.ChildThread;
+    string IDPop = "IDPop" + ViewBag.ChildThread;
+    string PasswordPop = "PasswordPop" + ViewBag.ChildThread;
+
+    string ProductionlineDoingPop = "ProductionlineDoingPop" + ViewBag.ChildThread;
+    string ProjectCodePop = "ProjectCodePop" + ViewBag.ChildThread;
+    string ProjectNamePop = "ProjectNamePop" + ViewBag.ChildThread;
+    string ProjectStatusPop = "ProjectStatusPop" + ViewBag.ChildThread;
+    string CurentUserPop = "CurentUserPop" + ViewBag.ChildThread;
+    string RequestCodePop = "RequestCodePop" + ViewBag.ChildThread;
+    string RequestDatePop = "RequestDatePop" + ViewBag.ChildThread;
+    string OrderQuantityPop = "OrderQuantityPop" + ViewBag.ChildThread;
+    string RealProductQuantityPop = "RealProductQuantityPop" + ViewBag.ChildThread;
+    string ItemCodePop = "ItemCodePop" + ViewBag.ChildThread;
+    string ItemNamePop = "ItemNamePop" + ViewBag.ChildThread;
+    string ProdcnLineCodePop = "ProdcnLineCodePop" + ViewBag.ChildThread;
+    string FinishWHCodePop = "FinishWHCodePop" + ViewBag.ChildThread;
+    string ProdLineStartDatePop = "ProdLineStartDatePop" + ViewBag.ChildThread;
+    string ProductionQuantityPop = "ProductionQuantityPop" + ViewBag.ChildThread;
+    string ProductionMessagePop = "ProductionMessagePop" + ViewBag.ChildThread;
+    string GroupLine = "GroupLine" + ViewBag.ChildThread;
+}
+
+<script>
+    var ClickedRowKey@(ViewBag.ChildThread);
+
+    function isStatusStartButtonVisible@(ViewBag.ChildThread)(e) {
+        return e.row.data.ProdcnLineState === 'PJLN01'; // Ready
+    }
+
+    function isStatusDoingButtonVisible@(ViewBag.ChildThread)(e) {
+        return e.row.data.ProdcnLineState === 'PJLN02'; // Doing
+    }
+
+    function numberingRow@(ViewBag.ChildThread)(e) {
+        if (e.rowType === "data" && e.column.dataField === "No") {
+            e.value = e.rowIndex + 1;
+            e.cellElement.text(e.rowIndex + 1);
+        }
+    };
+
+    function outSoureColoring@(ViewBag.ChildThread)(e) {
+        if (e.rowType === "data" && e.column.dataField === "OutSourceName") {
+            if (e.data.OutSource == "INEX02") {
+                e.cellElement.css("background-color", "yellow");
+            }
+        }
+    };
+
+    function Reload@(ViewBag.ChildThread)() {
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GetListProductionLineByGroup", "MESProductionMagtNew")',
+            type: "GET",
+            data: {
+                projectCode: '@saleProject.ProjectCode',
+                groupLine: '@Model.GroupLine'
+            },
+            dataType: "json",
+            success: function (result) {
+                $("#@tb_PlannedQuantity").dxTextBox("option", "value", result.ProdcnLines[0]?.PlanRequestQty);
+                $("#@tb_ProductionDoneQty").dxTextBox("option", "value", result.GroupDoneQty);
+                $("#@grid_Lines").dxDataGrid("option", "dataSource", result.ProdcnLines);
+                $("#@grid_Lines").dxDataGrid("option", "keyExpr", "ProdcnLineCode");
+                $("#@grid_Lines").dxDataGrid("refresh");
+                if (isCompleteWorkVisable@(ViewBag.Thread)()) {
+                    $("#btnCompleted_@(ViewBag.Thread)").show();
+                } else {
+                    $("#btnCompleted_@(ViewBag.Thread)").hide();
+                }
+                debugger;
+                //let url = '/MESProductionMagtNew/WorkDetailManagement?projectCode=' + '@ViewBag.ProjectCode' + '&menuid=' + '@ViewBag.MenuID';
+                //GenerateTabConmonBoard('CBDetail', url, menuIDoTabActive, true)
+                LoadingPage(0);
+            },
+            error: function (error) {
+                LoadingPage(0);
+            }
+        });
+    }
+    function addColorAndFocusValidatedxNumberBox@(ViewBag.ChildThread)(idElement) {
+        $(`${idElement}`).dxNumberBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxNumberBox("focus");
+        }, 2000)
+    }
+    function isLastLine@(ViewBag.ChildThread)() {
+        var currentRowIndex = $("#@grid_Lines").dxDataGrid("instance").getRowIndexByKey(ClickedRowKey@(ViewBag.ChildThread));
+        var data = $("#@grid_Lines").dxDataGrid("instance").option("dataSource");
+        //if (currentRowIndex == (data.store._array.length - 1)) {
+        if (currentRowIndex == (data.length - 1)) {
+            console.log("Last Line");
+            return true;
+        } else {
+            console.log("Not Last Line");
+            return false;
+        }
+    };
+    function getProductionQtyHint@(ViewBag.ChildThread)() {
+        var currentRowIndex = $("#@grid_Lines").dxDataGrid("instance").getRowIndexByKey(ClickedRowKey@(ViewBag.ChildThread));
+        var currentCell = $("#@grid_Lines").dxDataGrid("instance").getCellElement(currentRowIndex, "ProdDoneQty");
+        var currentLineQty = parseInt(currentCell[0].innerText);
+        var upperRowIndex = currentRowIndex - 1;
+        if (upperRowIndex >= 0) {
+            var upperCell = $("#@grid_Lines").dxDataGrid("instance").getCellElement(upperRowIndex, "ProdDoneQty");
+            var upperLineQty = parseInt(upperCell[0].innerText);
+            var hintQty = upperLineQty - currentLineQty;
+
+            if (hintQty > 0) {
+                return hintQty;
+            } else {
+                return 0;
+            }
+        } else {
+            var requestQty = $("#@tb_PlannedQuantity").dxTextBox("option", "value");
+            var hintQty = parseInt(requestQty) - parseInt(currentLineQty);
+            if (hintQty > 0) {
+                return hintQty;
+            } else {
+                return 0;
+            }
+        };
+    };
+
+    function ShowPopupProductionLine@(ViewBag.ChildThread)(e) {
+        debugger;
+        var data = e.row.data;
+        $.ajax({
+            url: '@Url.Action("GetListProductionLinesDataCheckComplete", "MESProductionMagtNew")',
+            type: "GET",
+            data: {
+                ProjectCode: data.ProjectCode,
+                ProdcnCode: data.ProdcnCode,
+                ProdcnLineCode: data.ProdcnLineCode,
+                GroupLine: data.GroupLine,
+                LineOrder: data.LineOrder
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.length > 0) {
+                    if (result[0].ProdDoneQty == data.ProdDoneQty) {
+
+                        ClickedRowKey@(ViewBag.ChildThread) = e.row.key;
+                        FinishWarehouseCodeSlt = data.FinishWarehouseCode;
+                        $("#@ProdcnLineCodePop").dxSelectBox("instance").option("value", data.ProdcnLineCode);
+                        $("#@RealProductQuantityPop").dxNumberBox("instance").option("value", data.ProdDoneQty);
+                        $("#@OrderQuantityPop").dxNumberBox("instance").option("value", data.PlanRequestQty); // dat modify 7/2/2022
+                        $("#@FinishWHCodePop").dxSelectBox("instance").option("value", data.FinishWarehouseCode);
+                        $("#@ProdLineStartDatePop").dxDateBox("instance").option("value", data.ProdLineStartDate);
+                        $("#@ProductionMessagePop").dxTextBox("instance").option("value", data.Remark);
+                        $("#@GroupLine").dxTextBox("instance").option("value", data.GroupLine);
+
+                        if (data.ProdcnLineState === 'PJLN01') {
+                            $(".line-state-doing").addClass("d-none");
+                            $(".line-state-start").removeClass("d-none");
+                            //$("#btnSave_@(ViewBag.ChildThread)").addClass("d-none");
+                            $("#@ProductionlineDoingPop").modal("show");
+                        }
+                        else if (data.ProdcnLineState === 'PJLN02') {
+                            $(".line-state-doing").removeClass("d-none");
+                            $(".line-state-start").addClass("d-none");
+                            //$("#btnSave_@(ViewBag.ChildThread)").addClass("d-none");
+                            $("#@ProductionlineDoingPop").modal("show");
+                            var hintQty = getProductionQtyHint@(ViewBag.ChildThread)();
+                            $("#@ProductionQuantityPop").dxNumberBox("option", "value", hintQty);
+                        }
+                    }
+                    else
+                    {
+                          DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("The data has been changed before, please reload the data first.")", "Error");
+                    }
+                }
+            }
+        });
+    }
+
+    function addColorAndFocusValidatedxSelectBox(idElement) {
+        $(`${idElement}`).dxSelectBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxSelectBox("focus");
+        }, 2000)
+    }
+
+    function removeColorAndFocusValidatedxSelectBox(idElement) {
+        $(`${idElement}`).dxSelectBox('instance')._$element[0].style.borderColor = "";
+    }
+    function OnCompleteLine@(ViewBag.ChildThread)() {
+        CheckSession();
+        let OrderQuantity = $("#@OrderQuantityPop").dxNumberBox("instance").option("value");
+        let ProductionQuantity = $("#@ProductionQuantityPop").dxNumberBox("instance").option("value");
+        let RealProductQuantity = $("#@RealProductQuantityPop").dxNumberBox("instance").option("value");
+        let masterWHCode = $("#@FinishWHCodePop").dxSelectBox("instance").option("value");
+        let sumQuantity = RealProductQuantity + ProductionQuantity;
+
+        if (ProductionQuantity === null || ProductionQuantity <= 0) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ProductionQuantityHigher0")", "Error");
+            addColorAndFocusValidatedxNumberBox@(ViewBag.ChildThread)("#@ProductionQuantityPop");
+            return;
+        }
+
+        var currentRowIndex = $("#@grid_Lines").dxDataGrid("instance").getRowIndexByKey(ClickedRowKey@(ViewBag.ChildThread));
+        var upperRowIndex = currentRowIndex - 1;
+        if (upperRowIndex >= 0) {
+            var currentCell = $("#@grid_Lines").dxDataGrid("instance").getCellElement(currentRowIndex, "ProdDoneQty");
+            var upperCell = $("#@grid_Lines").dxDataGrid("instance").getCellElement(upperRowIndex, "ProdDoneQty");
+
+            var currentLineQty = parseInt(currentCell[0].innerText);
+            var upperLineQty = parseInt(upperCell[0].innerText);
+
+            if ((currentLineQty + ProductionQuantity) > upperLineQty) {
+                DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("The number of completions must not exceed the limit")", "Notice");
+                return;
+            }
+        };
+
+        if (OrderQuantity < sumQuantity) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ImpossibleProductionQuantity")", "Error");
+            addColorAndFocusValidatedxNumberBox@(ViewBag.ChildThread)("#@ProductionQuantityPop");
+            return;
+        }
+
+        if (masterWHCode === null || masterWHCode === '' ) {
+             DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Select Warehouse")", "Error");
+             addColorAndFocusValidatedxSelectBox('#@FinishWHCodePop');
+        }
+        else
+        {
+
+            if (isLastLine@(ViewBag.ChildThread)()) {
+                UpdateLastLineDoneQty@(ViewBag.ChildThread)();
+            }
+            else
+            {
+                UpdateLineDoneQty@(ViewBag.ChildThread)();
+            };
+              removeColorAndFocusValidatedxSelectBox('#@FinishWHCodePop');
+
+
+        }
+
+
+    }
+    function UpdateLineDoneQty@(ViewBag.ChildThread)(){
+        var ProdcnLineCode =  $("#@ProdcnLineCodePop").dxSelectBox("instance").option("value");
+        let RealProductQuantity = $("#@RealProductQuantityPop").dxNumberBox("instance").option("value");
+        let ProductionQuantity = $("#@ProductionQuantityPop").dxNumberBox("instance").option("value");
+        let OrderQuantity = $("#@OrderQuantityPop").dxNumberBox("instance").option("value");
+        let sumQuantity = RealProductQuantity + ProductionQuantity;
+
+        let itemCode = $("#@ItemCodePop").dxTextBox("instance").option("value");
+        let finishWHCode = $("#@FinishWHCodePop").dxSelectBox("instance").option("value");
+        let masterWHCode = $("#MaterWHCode" + "@ViewBag.Thread").dxSelectBox("instance").option("value");
+        let productionMessage = $("#@ProductionMessagePop").dxTextBox("instance").option("value");
+        let GroupLine = $("#@GroupLine").dxTextBox("instance").option("value");
+
+        if (OrderQuantity > sumQuantity) {
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure you want to complete the Production Quantity?")</i>", "Confirm");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("OnUpdateProdLineDoneQty", "MESProductionMagtNew")',
+                        type: "POST",
+                        data: {
+                            ProjectCode: '@saleProject.ProjectCode',
+                            ProdcnCode: '@saleProject.ProdcnCode',
+                            ProdcnLineCode: ProdcnLineCode,
+                            ProductionQuantity: ProductionQuantity,
+                            ItemCode: itemCode,
+                            FinishWHCode: finishWHCode,
+                            MasterWHCode: masterWHCode,
+                            ProductionMessage: productionMessage,
+                            GroupLine: GroupLine
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Success");
+                                Reload@(ViewBag.ChildThread)();
+                                $("#@ProductionQuantityPop").dxNumberBox("instance").option("value", 0);
+
+                            }
+                            else {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                $("#@ProductionQuantityPop").dxNumberBox("instance").option("value", 0);
+
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        else if (OrderQuantity == sumQuantity) {
+            $("#btnSave_@(ViewBag.Thread)").attr("hidden", true);
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("AllRequestedQuantities")</i>", "Confirm");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    var ProdcnLineCode =  $("#@ProdcnLineCodePop").dxSelectBox("instance").option("value");
+                    $.ajax({
+                        url: '@Url.Action("OnUpdateProdLineDoneQtyAndState", "MESProductionMagtNew")',
+                        type: "POST",
+                        data: {
+                            ProjectCode: '@saleProject.ProjectCode',
+                            ProdcnCode: '@saleProject.ProdcnCode',
+                            ProdcnLineCode: ProdcnLineCode,
+                            ProductionQuantity: ProductionQuantity,
+                            ItemCode: itemCode,
+                            FinishWHCode: finishWHCode,
+                            MasterWHCode: masterWHCode,
+                            ProductionMessage: productionMessage,
+                            GroupLine: GroupLine
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                Reload@(ViewBag.ChildThread)();
+                            }
+                            else {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                return;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    };
+
+    function UpdateLastLineDoneQty@(ViewBag.ChildThread)(){
+        var ProdcnLineCode =  $("#@ProdcnLineCodePop").dxSelectBox("instance").option("value");
+        let RealProductQuantity = $("#@RealProductQuantityPop").dxNumberBox("instance").option("value");
+        let ProductionQuantity = $("#@ProductionQuantityPop").dxNumberBox("instance").option("value");
+        let OrderQuantity = $("#@OrderQuantityPop").dxNumberBox("instance").option("value");
+        let sumQuantity = RealProductQuantity + ProductionQuantity;
+
+        let itemCode = $("#@ItemCodePop").dxTextBox("instance").option("value");
+        let finishWHCode = $("#@FinishWHCodePop").dxSelectBox("instance").option("value");
+        let masterWHCode = $("#MaterWHCode" + "@ViewBag.Thread").dxSelectBox("instance").option("value");
+        let productionMessage = $("#@ProductionMessagePop").dxTextBox("instance").option("value");
+        let GroupLine = $("#@GroupLine").dxTextBox("instance").option("value");
+
+        if (OrderQuantity > sumQuantity) {
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure you want to complete the Production Quantity?")</i>", "Confirm");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("OnUpdateLastProdLineDoneQty", "MESProductionMagtNew")',
+                        type: "POST",
+                        data: {
+                            ProjectCode: '@saleProject.ProjectCode',
+                            ProdcnCode: '@saleProject.ProdcnCode',
+                            ProdcnLineCode: ProdcnLineCode,
+                            ProductionQuantity: ProductionQuantity,
+                            ItemCode: itemCode,
+                            FinishWHCode: finishWHCode,
+                            MasterWHCode: masterWHCode,
+                            ProductionMessage: productionMessage,
+                            GroupLine: GroupLine
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Success");
+                                Reload@(ViewBag.ChildThread)();
+                                $("#@ProductionQuantityPop").dxNumberBox("instance").option("value", 0);
+
+                            }
+                            else {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                $("#@ProductionQuantityPop").dxNumberBox("instance").option("value", 0);
+
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        else if (OrderQuantity == sumQuantity) {
+            $("#btnSave_@(ViewBag.Thread)").attr("hidden", true);
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("AllRequestedQuantities")</i>", "Confirm");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    var ProdcnLineCode =  $("#@ProdcnLineCodePop").dxSelectBox("instance").option("value");
+                    $.ajax({
+                        url: '@Url.Action("OnUpdateLastProdLineDoneQtyAndState", "MESProductionMagtNew")',
+                        type: "POST",
+                        data: {
+                            ProjectCode: '@saleProject.ProjectCode',
+                            ProdcnCode: '@saleProject.ProdcnCode',
+                            ProdcnLineCode: ProdcnLineCode,
+                            ProductionQuantity: ProductionQuantity,
+                            ItemCode: itemCode,
+                            FinishWHCode: finishWHCode,
+                            MasterWHCode: masterWHCode,
+                            ProductionMessage: productionMessage,
+                            GroupLine: GroupLine
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                Reload@(ViewBag.ChildThread)();
+                            }
+                            else {
+                                $("#@ProductionlineDoingPop").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                return;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    };
+
+    function OnStartLine@(ViewBag.ChildThread)() {
+        CheckSession();
+        let ProdcnLineCode =  $("#@ProdcnLineCodePop").dxSelectBox("instance").option("value");
+        let FinishWarehouseCode = $("#@FinishWHCodePop").dxSelectBox("instance").option("value");
+        let productionMessage = $("#@ProductionMessagePop").dxTextBox("instance").option("value");
+        let GroupLine = $("#@GroupLine").dxTextBox("instance").option("value");
+
+        $.ajax({
+            url: '@Url.Action("OnUpdateProdLineStatus", "MESProductionMagtNew")',
+            type: "POST",
+            data: {
+                ProjectCode: '@saleProject.ProjectCode',
+                ProdcnCode: '@saleProject.ProdcnCode',
+                ProdcnLineCode: ProdcnLineCode,
+                ItemCode: '@saleProject.ItemCode',
+                FNWarehouse: FinishWarehouseCode,
+                RequestCode: '@saleProject.RequestCode',
+                FinishWarehouseCodeSlt: FinishWarehouseCodeSlt,
+                ProductionMessage: productionMessage
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    $("#@ProductionlineDoingPop").modal("hide");
+                    Reload@(ViewBag.ChildThread)();
+                }
+                else {
+                    $("#@ProductionlineDoingPop").modal("hide");
+                    DevExpress.ui.dialog.alert(result.Message, "Error")
+                }
+            }
+        });
+    }
+
+    function ShowAuthenPop@(ViewBag.ChildThread)() {
+        $("#@btnLineAuthen").removeClass("d-none");
+        $("#@btnProductAuthen").addClass("d-none");
+        OnStartLine@(ViewBag.ChildThread)();
+        //$("#WorkerAuthenticationPop@(ViewBag.ChildThread)").modal("show");
+    }
+    function onWorkerAuthen@(ViewBag.ChildThread)() {
+        let id = $("#ID@(ViewBag.ChildThread)").dxTextBox("instance").option("value");
+        let pw = $("#Password@(ViewBag.ChildThread)").dxTextBox("instance").option("value");
+        $.ajax({
+            url: '@Url.Action("OnWorkLogin", "MESAccount")',
+            type: "POST",
+            data: {
+                id: id,
+                pw:pw
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    $("#@WorkerAuthenticationPop").modal("hide");
+                    OnStartLine@(ViewBag.ChildThread)();
+                }
+                else {
+                    DevExpress.ui.dialog.alert("Login fail.", "Error");
+                }
+            }
+        });
+    }
+    function onWorkerAuthenCompleted@(ViewBag.ChildThread)() {
+        let id = $("#ID@(ViewBag.ChildThread)").dxTextBox("instance").option("value");
+        let pw = $("#Password@(ViewBag.ChildThread)").dxTextBox("instance").option("value");
+        $.ajax({
+            url: '@Url.Action("OnWorkLogin", "MESAccount")',
+            type: "POST",
+            data: {
+                id: id,
+                pw:pw
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    $("#@WorkerAuthenticationPop").modal("hide");
+                    onUpdateWorkCompleted@(ViewBag.Thread)();
+                }
+                else {
+                    DevExpress.ui.dialog.alert("Login fail.", "Error");
+                }
+            }
+        });
+    }
+    function removeColorAndFocusValidatedxNumberBox@(ViewBag.ChildThread)(idElement) {
+        $(`${idElement}`).dxNumberBox('instance')._$element[0].style.borderColor = "";
+    }
+
+    //Event Handler
+    function OnInitialized@(ViewBag.ChildThread)(e) {
+        if ("@Model.isCompleted" != "True") {
+            $("#btnCompleted_@(ViewBag.Thread)").hide();
+        }
+        else {
+              $("#btnCompleted_@(ViewBag.Thread)").show();
+        }
+    }
+    function onCellPrepared@(ViewBag.ChildThread)(e) {
+        numberingRow@(ViewBag.ChildThread)(e);
+        outSoureColoring@(ViewBag.ChildThread)(e);
+        @*if ("@Model.isCompleted" == "False") {
+            debugger;
+            $("#btnCompleted_@(ViewBag.Thread)").hide();
+        }*@
+    };
+    function setDefaultNewRow@(ViewBag.ChildThread)(e) {
+        e.data.ProdcnLineState = "PJLN01";
+    }
+    function ProductionQuantityPopOnChange@(ViewBag.ChildThread)(e) {
+        removeColorAndFocusValidatedxNumberBox@(ViewBag.ChildThread)("#@ProductionQuantityPop");
+    }
+</script>
+
+<div>
+    <div class="row">
+        <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Production Line " + Model.GroupLine)</label>
+    </div>
+    <div class="row align-items-center" style="margin-bottom:1%">
+        <label class="col-2 col-form-label text-center">@_loc.GetLocalizedString("Plan Production Qty"):</label>
+        <div class="col-2">
+            @(Html.DevExtreme().TextBox().ID(tb_PlannedQuantity).ReadOnly(true).Value(Model.PlanRequestQty.ToString()))
+        </div>
+        <label class="col-1 col-form-label text-center">@_loc.GetLocalizedString("Production Done Qty"):</label>
+        <div class="col-2">
+            @(Html.DevExtreme().TextBox().ID(tb_ProductionDoneQty).ReadOnly(true).Value(Model.GroupDoneQty.ToString()))
+        </div>
+    </div>
+
+    @(Html.DevExtreme().DataGrid<MES_ProjectProdcnLines>()
+        .ID(grid_Lines)
+        .KeyExpr("ProdcnLineCode")
+        .DataSource(Model.ProdcnLines)
+        .ShowBorders(true)
+        .ShowRowLines(true)
+        .AllowColumnResizing(true)
+        .ColumnAutoWidth(true)
+        .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Standard))
+        .Paging(paging =>
+        {
+            paging.Enabled(true);
+            paging.PageSize(10);
+        })
+        .Pager(p => p
+            .ShowPageSizeSelector(true)
+            .AllowedPageSizes(new[] { 10, 25, 50, 100 })
+        )
+        .Editing(editing =>
+        {
+            editing.Mode(GridEditMode.Cell);
+            editing.AllowUpdating(true);
+        })
+        .RepaintChangesOnly(false)
+        .Columns(columns =>
+        {
+            columns.AddFor(m => m.LineOrder).Caption(_loc.GetLocalizedString("Line Order"))
+                .Alignment(HorizontalAlignment.Center)
+                .AllowEditing(false);
+            columns.AddFor(m => m.ProductLineName).Caption(_loc.GetLocalizedString("Production Line Name"))
+                .AllowEditing(false);
+            columns.AddFor(m => m.FinishWarehouseCode).Caption(_loc.GetLocalizedString("FinishWarehouseCode"))
+                .Visible(false)
+                .AllowEditing(false);
+            columns.AddFor(m => m.OutSourceName).Caption(_loc.GetLocalizedString("OutSource"))
+                .Alignment(HorizontalAlignment.Center)
+                .AllowEditing(false);
+            columns.AddFor(m => m.LineManagerUsername).Caption(_loc.GetLocalizedString("Line Manager"))
+                .AllowEditing(false);
+            columns.AddFor(m => m.PlanStartDate).Caption(_loc.GetLocalizedString("Plan Start Date"))
+                .DataType(GridColumnDataType.Date)
+                .Format("yyyy-MM-dd")
+                .AllowEditing(false);
+            columns.AddFor(m => m.PlanEndDate).Caption(_loc.GetLocalizedString("Plan End Date"))
+                .DataType(GridColumnDataType.Date)
+                .Format("yyyy-MM-dd")
+                .AllowEditing(false);
+            columns.AddFor(m => m.ProdLineStartDate).Caption(_loc.GetLocalizedString("Start Date"))
+                .DataType(GridColumnDataType.Date)
+                .Format("yyyy-MM-dd")
+                .AllowEditing(false);
+            columns.AddFor(m => m.ProdLineEndDate).Caption(_loc.GetLocalizedString("End Date"))
+                .DataType(GridColumnDataType.Date)
+                .Format("yyyy-MM-dd")
+                .AllowEditing(false);
+            columns.AddFor(m => m.ProdcnLineStateName).Caption(_loc.GetLocalizedString("Production Status"))
+                .Alignment(HorizontalAlignment.Center)
+                .AllowEditing(false);
+            columns.AddFor(m => m.ProdDoneQty).Caption(_loc.GetLocalizedString("Cumulative production quantity"))
+                .DataType(GridColumnDataType.Number)
+                .Format(Format.FixedPoint)
+                .AllowEditing(false);
+            columns.AddFor(m => m.Remark).Caption(_loc.GetLocalizedString("Production messsage"))
+              .AllowEditing(false);
+            columns.AddFor(m => m.GroupLine).Caption(_loc.GetLocalizedString("GroupLine"))
+            .AllowEditing(false);
+            if (Model.btnSave == true)
+            {
+                columns.Add().Type(GridCommandColumnType.Buttons).Alignment(HorizontalAlignment.Center).Buttons(b =>
+                {
+                    b.Add()
+                        .Icon("fas fa-play")
+                        .Hint("Start Work")
+                        .OnClick("ShowPopupProductionLine" + ViewBag.ChildThread)
+                        .Visible(new JS("isStatusStartButtonVisible" + ViewBag.ChildThread));
+                    b.Add()
+                        .Icon("check")
+                        .Hint("End Work")
+                        .OnClick("ShowPopupProductionLine" + ViewBag.ChildThread)
+                        .Visible(new JS("isStatusDoingButtonVisible" + ViewBag.ChildThread));
+                }).Caption(_loc.GetLocalizedString("Work Event"));
+            }
+        })
+                @*.Summary(s=>{
+                    s.TotalItems(m => m.Add().SummaryType(SummaryType.Sum)
+                        .CustomizeText(@<text>
+                            function(data) {
+                                var doneQty = $("#@tb_ProductionDoneQty").dxTextBox("option", "value");
+                                return "@(_loc.GetLocalizedString("Sum")): " + doneQty;
+                            }
+                        </text>)
+                        .DisplayFormat("Sum: {0}").Column("ProdDoneQty"));
+                })*@
+            .Summary(s => s
+                        .RecalculateWhileEditing(true)
+                        .TotalItems(items =>
+                        {
+                            items.AddFor(m => m.ProdDoneQty)
+                                .SummaryType(SummaryType.Sum)
+                                .Alignment(HorizontalAlignment.Right)
+                                .DisplayFormat("" + _loc.GetLocalizedString("Production Completed Quantity") + " : {0}")
+                                .ValueFormat(Format.FixedPoint);
+                        })
+                    )
+        .OnInitialized("OnInitialized" + ViewBag.ChildThread)
+        .OnCellPrepared("onCellPrepared" + ViewBag.ChildThread)
+    )
+</div>
+
+<!-------------------------Popup set processing line----------------------------->
+<div id="@WorkerAuthenticationPop" class="modal fade" style="z-index: 1051;" tabindex="-1" role="dialog" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @_loc.GetLocalizedString("Worker Authentication")
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <p>
+                            @_loc.GetLocalizedString("RFID card reader")
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <p style="color:red">@_loc.GetLocalizedString("RFID card IDPW")@*RFID Card가 없을 경우 ID, Password 입력 하십시오.*@</p>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label"> ID:</label>
+                    <div class="col-sm-8">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(IDPop)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">
+                        Password:
+                    </label>
+                    <div class="col-sm-8">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(PasswordPop)
+                            .Mode(TextBoxMode.Password)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="@btnLineAuthen" class="btn btn-primary" onclick="onWorkerAuthen@(ViewBag.ChildThread)()">
+                    Login
+                </button>
+                <button type="button" id="@btnProductAuthen" class="btn btn-primary" onclick="onWorkerAuthen@(ViewBag.ChildThread)()">
+                    Login
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-------------------------Popup set done line----------------------------->
+<div id="@ProductionlineDoingPop" class="modal fade" tabindex="-1" role="dialog" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @_loc.GetLocalizedString("Work Processing")
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Project Code")</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ProjectCodePop)
+                            .Disabled(true)
+                            .Value(saleProject.ProjectCode))
+                    </div>
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Project Name")</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ProjectNamePop)
+                            .Disabled(true)
+                            .Value(saleProject.ProjectName))
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Project Status")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ProjectStatusPop)
+                            .Disabled(true)
+                            .Value(saleProject.ProjectStatusName))
+                    </div>
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Worker")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(CurentUserPop)
+                            .Disabled(true)
+                            .Value(ViewBag.CurentUser))
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Production Req Code")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(RequestCodePop)
+                            .Disabled(true)
+                            .Value(saleProject.RequestCode))
+                    </div>
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Request Date")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(RequestDatePop)
+                            .Type(DateBoxType.Date)
+                            .Value(saleProject.RequestDate)
+                            .Disabled(true)
+                            .Value(DateTime.Now)
+                            .DisplayFormat("yyyy-MM-dd")
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Request Quantity")</label> @*Assign Qty*@
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().NumberBox()
+                            .ID(OrderQuantityPop)
+                            .Disabled(true))
+                    </div>
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Real Product Quantity")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().NumberBox()
+                            .ID(RealProductQuantityPop)
+                            .Format("#,##0")
+                            .Disabled(true)
+                            .Value(0))
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Item Code")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ItemCodePop)
+                            .Disabled(true)
+                            .Value(saleProject.ItemCode))
+                    </div>
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Item Name")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ItemNamePop)
+                            .Disabled(true)
+                            .Value(saleProject.ItemName))
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Production Line Selected")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().SelectBox()
+                            .ID(ProdcnLineCodePop)
+                            .DataSource(lstProdLines)
+                            .DisplayExpr("ProductLineName")
+                            .ValueExpr("ProductLineCode").Disabled(true)
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("WareHouse")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().SelectBox()
+                            .ID(FinishWHCodePop)
+                            .DataSource(d => d.Mvc()
+                                    .Controller("MESProductionMagtNew")
+                                    .LoadAction("GetListWareHouseInternal")
+                                    .Key("WarehouseCode")
+                                )
+                            //.Value(Model.MaterWHCode) 0001
+                            .DisplayExpr("WarehouseName")
+                            .ValueExpr("WarehouseCode")//.Disabled(true)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label line-state-doing">@_loc.GetLocalizedString("Start Date")</label>
+                    <div class="col-md-4 line-state-doing">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(ProdLineStartDatePop)
+                            .Type(DateBoxType.Date)
+                            .Disabled(true)
+                            .Value(DateTime.Now)
+                            .DisplayFormat("yyyy-MM-dd")
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label line-state-doing">@_loc.GetLocalizedString("Production Quantity")</label>
+                    <div class="col-md-4 line-state-doing">
+                        @(Html.DevExtreme().NumberBox()
+                            .ID(ProductionQuantityPop)
+                            .Value(0)
+                            .Min(0)
+                            .OnValueChanged("ProductionQuantityPopOnChange" + ViewBag.ChildThread))
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label line-state-doing">@_loc.GetLocalizedString("Production Message")</label>
+                    <div class="col-md-9 line-state-doing">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(ProductionMessagePop)
+                            )
+                    </div>
+
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label line-state-doing">@_loc.GetLocalizedString("Group Line")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox()
+                            .ID(GroupLine)
+                            .Disabled(true)
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary line-state-doing" onclick="OnCompleteLine@(ViewBag.ChildThread)()">
+                    @_loc.GetLocalizedString("Completed")
+                </button>
+                <button type="button" class="btn btn-primary line-state-start" onclick="ShowAuthenPop@(ViewBag.ChildThread)()">
+                    @_loc.GetLocalizedString("Start")
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">@_loc.GetLocalizedString("Close")</button>
+            </div>
+        </div>
+    </div>
+</div>

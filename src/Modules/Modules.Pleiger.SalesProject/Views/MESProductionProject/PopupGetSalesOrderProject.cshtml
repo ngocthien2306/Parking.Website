@@ -1,0 +1,210 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+
+@model MES_SalesOrderProjectNew;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+
+@{
+    string ProjectOrderType = "ProjectOrderType" + ViewBag.Thread;
+    string CustomerOrderNumber = "CustomerOrderNumber" + ViewBag.Thread;
+    string SalesOrderProjectName = "SalesOrderProjectName" + ViewBag.Thread;
+    string SalesOrderProjectCode = "SalesOrderProjectCode" + ViewBag.Thread;
+    string SaleOrderProjectGrid = "SaleOrderProjectGrid" + ViewBag.Thread;
+}
+<script>
+    $(document).ready(function () {
+        var ProjectOrderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        $("#@ProjectOrderType").dxSelectBox({
+            dataSource: ProjectOrderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        SearchDataSaleOrderProjectPopup();
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+    });
+
+    function SearchDataSaleOrderProjectPopup() {
+        CheckSession();
+        LoadingPage(1);
+        var ProjectOrderType = $('#@ProjectOrderType').dxSelectBox('instance').option('value');
+        var customerOrderNumber = $('#@CustomerOrderNumber').dxTextBox('instance').option('value');
+        var salesOrderProjectName = $('#@SalesOrderProjectName').dxTextBox('instance').option('value');
+        var SalesOrderProjectCode = $('#@SalesOrderProjectCode').dxTextBox('instance').option('value');
+         $.ajax({
+            url: '@Url.Action("GetListSalesOrderProjectPopup", "MESProductionProject")',
+            type: 'GET',
+            async: true,
+            data:
+            {
+                ProjectOrderType: ProjectOrderType,
+                OrderNumber: customerOrderNumber,
+                SalesOrderProjectName: salesOrderProjectName,
+                SalesOrderProjectCode: SalesOrderProjectCode
+            },
+            dataType: 'json',
+             success: function (result) {
+
+                LoadingPage(0);
+                $('#@SaleOrderProjectGrid').dxDataGrid({
+                    dataSource: result
+                })
+            },
+             error: function ()
+             {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        SearchDataSaleOrderProjectPopup();
+    });
+
+    function gridSaleOrderProjectPopupSelectionChanged@(ViewBag.Thread)(selectedItems)
+    {
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        }
+        LoadingPage(0);
+    }
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        debugger;
+        if (!CheckSession()) {
+            window.location.reload(true);
+         }
+
+        var dataGrid = $('#@SaleOrderProjectGrid').dxDataGrid('instance');
+        var data = dataGrid.getSelectedRowsData();
+
+        $("#SalesOrderProjectShow@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].UserSalesOrderProjectCode);
+        $("#SalesOrderProject@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].SalesOrderProjectCode);
+        $("#SalesOrderProjectName@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].SalesOrderProjectName);
+        $("#Manager@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].InCharge);
+        $("#CustomerOrderNumber@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].OrderNumber);
+        $("#Customer@(ViewBag.idParent)").dxSelectBox("instance").option("value", data[0].PartnerCode);
+        $("#OrderDepartment@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].OrderTeamName);
+
+        $('#modalControlChild').modal('hide');
+        LoadingPage(0);
+    });
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Selection Of Order Business"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-sm btn-secondary btn-action" title="Search" menu-id="btnSearch_@ViewBag.Thread" id="btnSearch_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                <button class="btn btn-sm btn-primary btn-action" title="Add Item" menu-id="btnSave_@ViewBag.Thread" id="btnSave_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-plus"></i> @_loc.GetLocalizedString("Choose Item")</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Project Order Type"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                    .ID(ProjectOrderType)
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+
+                              )
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Customer Order Number"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                    .ID(CustomerOrderNumber))
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Sales Order Project Code"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(SalesOrderProjectCode))
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Sales Order Project Name"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(SalesOrderProjectName))
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+
+            @(Html.DevExtreme().DataGrid<MES_SalesOrderProjectNew>()
+                        .ID(SaleOrderProjectGrid)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true).Height(450)
+                        .ShowRowLines(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto))
+                        .Width("100%")
+                        .RepaintChangesOnly(true)
+                        .ColumnAutoWidth(true).AllowColumnResizing(true)
+                        .Editing(editing =>
+                        {
+                            editing.Mode(GridEditMode.Cell);
+                            editing.AllowUpdating(true);
+
+                        })
+                        .Selection(s => s.Mode(SelectionMode.Single)
+                        .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                        .SelectAllMode(SelectAllMode.AllPages))
+                        .Columns(c=> {
+                            c.AddFor(x => x.No).Caption((@_loc.GetLocalizedString("No."))).AllowEditing(false);
+                            c.AddFor(x => x.ProjectOrderType).Caption((@_loc.GetLocalizedString("Project Order Type"))).AllowEditing(false);
+                            c.AddFor(x => x.UserSalesOrderProjectCode).Caption((@_loc.GetLocalizedString("Sales Order Project Code"))).AllowEditing(false);
+                            c.AddFor(x => x.SalesOrderProjectName).Caption((@_loc.GetLocalizedString("Sales Order Project Name"))).AllowEditing(false);
+                            c.AddFor(x => x.SalesOrderStatus).Caption((@_loc.GetLocalizedString("Status"))).AllowEditing(false);
+                            c.AddFor(x => x.InCharge).Caption((@_loc.GetLocalizedString("In Charge"))).AllowEditing(false);
+                            c.AddFor(x => x.OrderTeamName).Caption((@_loc.GetLocalizedString("Order Team Name"))).AllowEditing(false);
+                            c.AddFor(x => x.OrderNumber).Caption((@_loc.GetLocalizedString("Order Number"))).AllowEditing(false);
+                            c.AddFor(x => x.Customer).Caption((@_loc.GetLocalizedString("Customer"))).AllowEditing(false);
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        .OnSelectionChanged("gridSaleOrderProjectPopupSelectionChanged" + ViewBag.Thread)
+                    )
+
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,25 @@
+﻿@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+   
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var listWidgetMst = ViewBag.ListWidgetMst;
+}
+
+
+
+
+@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+Datasource Page

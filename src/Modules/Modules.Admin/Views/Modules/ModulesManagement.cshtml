@@ -1,0 +1,231 @@
+﻿@using DevExtreme.AspNet.Mvc;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Module;
+@{
+    ViewData["Title"] = "Modules";
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = null;
+}
+
+<script>
+    var item;
+    // trace log event
+    function LogPageEvent(eventName) {
+        gridPageEvent = eventName;
+    }
+
+     // Save/Edit item in grid modules by site
+    function SavedDataModulesBySite(e) {
+        CheckSession();
+         
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+                 
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("SavedDataModulesBySite", "Modules")',
+                        type: "POST",
+                        data: { data: data, state: gridPageEvent },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    var grid = $("#DataGridModules").dxDataGrid("instance");
+                                    grid.refresh();
+                                });
+                            }
+                            else {
+                               DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+        });
+    }
+
+    // Delete item in grid modules by site
+    function DeletedDataModulesBySite(e) {
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+                 
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("DeletedDataModulesBySite", "Modules")',
+                        type: "POST",
+                        data: { data: data },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    var grid = $("#DataGridModules").dxDataGrid("instance");
+                                    grid.refresh();
+                                });
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+        });
+    }
+
+    function OnEditorPreparedGrid(options) {
+        CheckSession();
+        if (options.parentType == 'dataRow' && options.dataField == 'IS_BUNDLE_WITH_HOST') {
+            options.editorElement.dxSelectBox('instance').option('value', 'true');
+        }
+        if (options.parentType == 'dataRow' && options.dataField == 'IS_ACTIVE') {
+            options.editorElement.dxSelectBox('instance').option('value', 'true');
+        }
+    }
+
+    $('#btnApplySetting').on("click", function () {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("ApplyModulesConfig", "Modules")',
+            type: "POST",
+            data: {  },
+            dataType: "json",
+            success: function (rs) {
+                //if (rs.Success == true) {
+                //    DevExpress.ui.dialog.alert("Save Successs", "Success");
+                //}
+                //else {
+                //    DevExpress.ui.dialog.alert("Save Fail", "Error");
+                //}
+            }
+        });
+    });
+
+</script>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button class="btn btn-warning float-right" id="btnApplySetting" style="margin-right:5px"><i class="fa fa-cogs"></i> Apply</button>
+                                @*<button class="btn btn-danger float-right" id="btnDelete" disabled="true"><i class="fa fa-trash"></i> Delete</button>
+                                    <button class="btn btn-success float-right" id="btnSave" style="margin-right:5px"><i class="fa fa-save"></i> Save</button>
+                                    <button class="btn btn-default float-right" id="btnEdit" style="margin-right:5px"><i class="fa fa-edit"></i> Edit</button>
+                                    <button class="btn btn-default float-right" id="btnCreate" style="margin-right:5px"><i class="fa fa-pen"></i> Create new</button>
+                                    <button class="btn btn-default float-right" id="btnSearch" style="margin-right:5px"><i class="fa fa-search"></i> Search</button>*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>List Modules In System</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @(Html.DevExtreme().DataGrid<SYModulesMg>()
+                                    .ID("DataGridModules")
+                                    .DataSource(d => d.Mvc()
+                                        .Controller("Modules")
+                                        .LoadAction("GetAllModulesBySite")
+                                        .LoadParams(new {  })
+                                        .Key("ID")
+                                    )
+                                    .Height("500")
+                                    .ShowBorders(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .FilterRow(filterRow => filterRow
+                                        .Visible(true)
+                                        .ApplyFilter(GridApplyFilterMode.Auto)
+                                    )
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Row);
+                                        editing.AllowAdding(true);
+                                        editing.AllowDeleting(true);
+                                        editing.AllowUpdating(true);
+                                    })
+                                    .OnEditorPrepared("OnEditorPreparedGrid")
+                                    .OnRowInserted("function(e) { e.component.navigateToRow(e.key); }")
+                                    .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                                    .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                                    @*.Selection(selection => selection.Mode(SelectionMode.Multiple))
+                                    .OnSelectionChanged(@<text>
+                                        function(data) {
+                                            var deleteButton = $("#btnDelete");
+                                            deleteButton.attr("disabled",!data.selectedRowsData.length);
+                                        }
+                                    </text>)*@
+                                    .Columns(columns =>
+                                    {
+                                        columns.AddFor(m => m.ID).Width("20%").Caption(_loc.GetLocalizedString("Module ID"));
+                                        columns.AddFor(m => m.NAME).Width("20%").Caption(_loc.GetLocalizedString("Module Name"));
+                                        columns.AddFor(m => m.VERSION).Width("20%").Caption(_loc.GetLocalizedString("Module Version"));
+                                        columns.AddFor(m => m.IS_BUNDLE_WITH_HOST).Caption(_loc.GetLocalizedString("Load Bundle To Host")).Width("20%").Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                            .DisplayExpr("Name")
+                                            .ValueExpr("ID"));
+                                        columns.AddFor(m => m.IS_ACTIVE).Caption(_loc.GetLocalizedString("Module Active")).Width("20%").Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalseBool").Key("ID"))
+                                            .DisplayExpr("Name")
+                                            .ValueExpr("ID"));
+
+                                        columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                        {
+                                            btns.Add().Name(GridColumnButtonName.Edit);
+                                            btns.Add().Name(GridColumnButtonName.Save).OnClick("SavedDataModulesBySite");
+                                            btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletedDataModulesBySite");
+                                        });
+
+
+                                    })
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(10))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowPageSizeSelector(false);
+                                        pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                        pager.ShowInfo(true);
+                                    })
+                                )
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

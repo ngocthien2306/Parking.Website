@@ -1,0 +1,162 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Admin.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu
+@model MES_SalesOrderProjectNew;
+@{
+    Layout = null;
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = _loc.GetLocalizedString("Excel Template");
+    info.ID = "btnDownloadTemplate";
+    info.Icon = "<i class='fas fa-download'></i>";
+    lstNewToolbar.Add(info);
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = true;
+}
+
+
+<style>
+    .hidden-grid {
+        display: none;
+    }
+
+    .hidden-tab {
+        display: none;
+    }
+</style>
+<script>
+     var fileLocation = "";
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+         debugger;
+         var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+         yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                LoadingPage(1);
+                if (fileLocation != "" && fileLocation != undefined && fileLocation != null) {
+                    $.ajax({
+                        url: '@Url.Action("InsertDataFromExcelItem", "MESItemHandMade")',
+                        data: {
+                           fileLoc: fileLocation
+                        },
+                        dataType: 'json',
+                        type: 'GET'
+                    }).done(function (result) {
+                        //$(".dx-toolbar-items-container").removeClass('hidden-grid');
+                        $('#modalControl').modal('hide');
+                        DevExpress.ui.dialog.alert(result.Message, "Message");
+                        $('#btnReload_@ViewBag.Index').trigger('click');
+                    }).fail(function (result) {
+                        $('#modalControl').modal('hide');
+                        //DevExpress.ui.dialog.alert(result.Message, "Failed");
+                        DevExpress.ui.dialog.alert("You need to fullfill the data in the excel file!", "Failed");
+                    })
+                }
+                else {
+                DevExpress.ui.dialog.alert("Failed To Save Data!", "Failed");
+                }
+            }
+
+            //$(".dx-toolbar-items-container").addClass('hidden-tab');
+        })
+
+        
+
+
+    });
+
+    $("#btnDownloadTemplate_@ViewBag.Thread").on("click", function () {
+        debugger;
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("ItemManagementDownloadFileTemplate", "MESItemHandMade")',
+            type: "GET",
+            data: {
+                @*PageID: '@Model.PAG_ID',
+                ActID: '@Model.ACT_ID',
+                PageKey: '@Model.PAG_KEY'*@
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                if (result.Result) {//success
+                    if (result.fileName != '' || result.fileName != null) {
+                        //var link = $("<a href='" + getLanguages() + "/MESItemHandMade/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                        var link = $("<a href='" + getLanguages() + "/MESItemHandMade/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                        location.href = link[0].href;
+                        LoadingPage(0);
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert("File does not exists!", "Error");
+                    }
+
+                    LoadingPage(0);
+                } else {//fail
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("", "Error");
+                    return;
+                }
+
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+    });
+
+    function OnUploadedFileSaleProjectImport@(ViewBag.Thread)(e) {
+        debugger;
+        console.log(e);
+        var result = JSON.parse(e.request.response);
+        fileLocation = result.data;
+    }
+
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="popupSalePJImportExcel">@_loc.GetLocalizedString("Item Management")</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div id="menutoolbar_@(ViewBag.Thread)">
+        @await Component.InvokeAsync("AccessToolbar", new { lstNewToolbar = lstNewToolbar, pageSetting = pageSetting, threadID = ViewBag.Thread })
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <form id="form" method="post" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="fileuploader-container">
+                        @(Html.DevExtreme().FileUploader()
+                            .ID("Test")
+                            .Name("myFile")
+                            .ChunkSize(10000000)
+                            .MaxFileSize(50000000000)
+                            .AllowedFileExtensions(new[] { ".xls", ".xlsx" })
+                            .SelectButtonText(@_loc.GetLocalizedString("Select file"))
+                            .UploadUrl(Url.Action("UploadFilePopup", "MESSaleProject"))
+                            .OnUploaded("OnUploadedFileSaleProjectImport" + ViewBag.Thread)
+                            //.OnUploadAborted("OnUploadAbortedPopupFileInventoryCurrentStock" + ViewBag.Thread)
+                            //.OnUploadError("OnUploadErrorFileInventoryCurrentStock" + ViewBag.Thread)
+                            //.AllowCanceling(true)
+                            //.ShowFileList(true)
+                    )
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="row">
+            <div class="col-12">
+
+            </div>
+        </div>
+
+    </div>
+    @*<div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="btnSave_@ViewBag.Thread">Save</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>*@
+</div>

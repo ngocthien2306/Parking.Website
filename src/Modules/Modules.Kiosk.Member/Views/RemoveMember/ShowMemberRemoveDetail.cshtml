@@ -1,0 +1,313 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Models
+
+@model KIO_SubscriptionHistory;
+@{
+    Layout = null;
+
+    string idCartPhoto = "idCartPhoto" + ViewBag.Thread;
+    string takenPhoto = "takenPhoto" + ViewBag.Thread;
+    string btnChangeIdCardPhoto = "btnChangeIdCardPhoto" + ViewBag.Thread;
+    string btnChangeKioskPhoto = "btnChangeKioskPhoto" + ViewBag.Thread;
+    string userName = "userName" + ViewBag.Thread;
+    string gender = "gender" + ViewBag.Thread;
+    string birthday = "birthday" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string gridUserHistory = "gridUserHistory" + ViewBag.Thread;
+    string uploadImageCardId = "uploadImageCardId";
+    string uploadImageTaken = "uploadImageTaken";
+    string imgTakenPath = "imgTakenPath" + ViewBag.Thread;
+    string imgCardPath = "imgCardPath" + ViewBag.Thread;
+    var genderData = new[] {
+        new { id = true, text = _loc.GetLocalizedString("Man") },
+        new { id = false, text = _loc.GetLocalizedString("Women") },
+    };
+}
+<style>
+
+</style>
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        setTimeout(function () {
+            GetRemoveHistory("@Model.userId");
+            GetGridIntance("#@gridUserHistory").refresh();
+        }, 300);
+        SetImage();
+        LoadingPage(0);
+    })
+
+    // Region: Btn event
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        SaveMemberRemove();
+        LoadingPage(0);
+    });
+    $('#btnDelete_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+                var url = '@Url.Action("DeleteMemberRemove", "RemoveMember")';
+                var obj = {
+                    userId: "@Model.userId",
+                    storeNo: "@Model.storeNo"
+                }
+                CRUDData(url, obj, METHOD.DELETE);
+                setTimeout(function () {
+                    LoadMemberRemoveManagement(storeNoMemberScreen, null);
+                }, 1000);
+
+            }
+        })
+        LoadingPage(0);
+    });
+    function LoadImageTakenAfterUpload(e) {
+        debugger;
+        $("#@uploadImageTaken .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("photo-taken");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@imgTakenPath", res.path);
+    }
+    function LoadImageCardAfterUpload(e) {
+        debugger;
+        $("#@uploadImageCardId .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("photo-card-id");
+        var res = JSON.parse(e.request.response)
+        img.src = res.data;
+        SetDataElement("#@imgCardPath", res.path);
+    }
+
+    // End Region: Btn event
+
+    // Region: Get data
+    function SetImage() {
+        $.ajax({
+            url: '@Url.Action("GetImageMemberRemove", "RemoveMember")',
+            type: METHOD.GET,
+            data: {
+                storeNo: "@Model.storeNo",
+                userId: "@Model.userId"
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                document.getElementById("photo-taken").src = result.takenPhotoBase64;
+                document.getElementById("photo-card-id").src = result.idCardPhotoBase64;
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+
+    }
+    function GetRemoveHistory(userId) {
+        var obj = {
+            userId: userId
+        }
+        var url = '@Url.Action("GetRemoveHistory", "RemoveMember")';
+        LoadGridData(url, obj, "#@gridUserHistory", METHOD.GET);
+    }
+    // End Region: Get data
+
+    // Region: Create - Update - Delete
+    function SaveMemberRemove() {
+        if (ValidationInputMemberRemove()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var url = '@Url.Action("SaveMemberRemove", "RemoveMember")';
+                    var obj = {
+                        userId: "@Model.userId",
+                        userName: GetDataElement("#@userName"),
+                        gender: GetDataElement("#@gender"),
+                        phone: GetDataElement("#@phoneNumber"),
+                        birthday: GetDataElement("#@birthday"),
+                        imgTakenPath: GetDataElement("#@imgTakenPath"),
+                        imgCardPath: GetDataElement("#@imgCardPath"),
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                    setTimeout(function () {
+                        LoadMemberRemoveManagement(storeNoMemberScreen, null);
+                    }, 500);
+
+                }
+            })
+        }
+    }
+    // End Region: Create - Update - Delete
+
+    //Region: Validation Data
+    function ValidationInputMemberRemove() {
+        let userName = GetDataElement("#@userName");
+        if (userName == null || userName == "" || typeof userName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Username")", "Error")
+            ValidateElement("#@userName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@userName")
+        }
+        return true;
+    }
+        //End Region Validation Data
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="ShowMemberDetail">@(_loc.GetLocalizedString("Profile"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row" style="height:60vh">
+                <div class="col-md-7">
+                    <div class="row pb-2 ml-2 mr-2">
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("ID Photo")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-taken" style="width: 100%; height: 300px; object-fit: cover" src="" class="rounded float-start" alt="...">
+                            </div>
+
+                            <div class="row" style="justify-content: space-between">
+                                @(Html.DevExtreme().FileUploader()
+                                    .Name("imageFileTaken")
+                                    .Accept("*")
+                                    .ID(uploadImageTaken)
+                                    .Multiple(false)
+                                    .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                    .UploadMode(FileUploadMode.Instantly)
+                                    .UploadUrl(Url.Action("UploadImageTaken", "MemberMgt") + "?userId=" + Model.userId)
+                                    .SelectButtonText("Search")
+                                    .LabelText("")
+                                    .OnUploaded("LoadImageTakenAfterUpload")
+                                    )
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                        </div>
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("Kiosk Photo")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-card-id" style="width: 100%; height: 300px; object-fit: cover" src="" class="rounded float-end" alt="...">
+                            </div>
+                            <div class="row" style="justify-content: space-between">
+                                <div>
+                                    @(Html.DevExtreme().FileUploader()
+                                        .Name("imageFileCard")
+                                        .Accept("*")
+                                        .Multiple(false)
+                                        .ID(uploadImageCardId)
+                                        .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                        .UploadMode(FileUploadMode.Instantly)
+                                        .UploadUrl(Url.Action("UploadImageCard", "MemberMgt") + "?userId=" + Model.userId)
+
+                                        .SelectButtonText("Search")
+                                        .LabelText("")
+                                        .OnUploaded("LoadImageCardAfterUpload")
+                                        )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Username"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(userName)
+                                .MaxLength(20)
+                                .Value(Model.userName == null ? "" : Model.userName)
+                                )
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Gender"))</label>
+                            @(Html.DevExtreme().RadioGroup()
+                                .DataSource(genderData)
+                                .Value(Model.gender)
+                                .DisplayExpr("text")
+                                .ValueExpr("id")
+                                .ID(gender)
+                                .Layout(Orientation.Horizontal)
+                                )
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Birthday"))</label>
+                            @(Html.DevExtreme().DateBox()
+                                .ID(birthday)
+                                .Value(Model.birthday == null ? DateTime.Now : Model.birthday)
+                                )
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Phone Number"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(phoneNumber)
+                                .Value(Model.phoneNumber == null ? "" : Model.phoneNumber)
+
+                                )
+                        </div>
+                        @(Html.DevExtreme().TextBox()
+                            .ID(imgTakenPath).Visible(false)
+                            )
+                        @(Html.DevExtreme().TextBox()
+                            .ID(imgCardPath).Visible(false)
+                            )
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("Entrance Details")</legend>
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_UserHistory>()
+                            .ID(gridUserHistory)
+                            .Height("52vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                c.AddFor(x => x.loginTime).Caption(_loc.GetLocalizedString("Login Time")).Format("yyyy-MM-dd HH:mm:ss").Alignment(0);
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            //.OnRowClick("ShowAudioFileDetail")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" id="btnDelete_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

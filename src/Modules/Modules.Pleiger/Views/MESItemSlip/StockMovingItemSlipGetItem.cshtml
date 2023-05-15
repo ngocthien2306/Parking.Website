@@ -1,0 +1,246 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+
+@model MES_ItemSlipDetail;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+
+@{
+    string gridItem = "gridItem" + ViewBag.Thread;
+    string txtItemCode = "ItemCode" + ViewBag.Thread;
+    string txtItemName = "ItemName" + ViewBag.Thread;
+}
+<script>
+
+    $(document).ready(function () {
+
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetItemInWareHouse", "MESItem")',
+            type: "GET",
+            data: { WareHouseCode:'@ViewBag.WareHouseCode' },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                var grid = $("#@(gridItem)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+            }
+        });
+        //$("#btnSave_@ViewBag.Thread").attr("disabled", true);
+
+    });
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+        debugger;
+            var ItemCode = $('#@txtItemCode').dxTextBox('instance').option('value');
+            var ItemName = $('#@txtItemName').dxTextBox('instance').option('value');
+
+            $.ajax({
+                url: '@Url.Action("SearchItemInWareHouse", "MESItem")',
+                type: 'GET',
+                async: false,
+                data:
+                {
+                    WareHouseCode: '@ViewBag.WareHouseCode',
+                    ItemCode: ItemCode,
+                    ItemName: ItemName,
+                },
+                dataType: 'json',
+                success: function (result)
+                {
+                var grid = $("#@(gridItem)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                },
+                error: function () {
+                    LoadingPage(0);
+                }
+            });
+            LoadingPage(0);
+    });
+
+    function ItemRequestPopupSelectionChanged(selectedItems) {
+        //debugger;
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        }
+        LoadingPage(0);
+    }
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Item Part List"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-sm btn-secondary btn-action" title="Search" menu-id="btnSearch_@ViewBag.Thread" id="btnSearch_@ViewBag.Thread" style="margin-right:5px"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                <button class="btn btn-sm btn-primary btn-action" title="Add Item" menu-id="btnSave_@ViewBag.Thread" id="btnSave_@ViewBag.Thread" style="margin-right:5px"><i class="fa fa-plus"></i> @_loc.GetLocalizedString("Add Item")</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-body">
+        <fieldset class="customFieldset">
+            <legend class="customLegend">@_loc.GetLocalizedString("Item Part List")</legend>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID(txtItemCode)
+                    )
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group ">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID(txtItemName)
+
+                     )
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="form-group">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("Item Part List")</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemSlipDetail>()
+                                    .ID(gridItem)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true).Height(450)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto))
+                                    .Width("100%")
+                                    .RepaintChangesOnly(true)
+                                    .ColumnAutoWidth(true)
+                                    .AllowColumnResizing(true)
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Cell);
+                                        //editing.AllowAdding(true);
+                                        //editing.AllowDeleting(true);
+                                        editing.AllowUpdating(true);
+                                        //editing.UseIcons(true);
+
+                                    })
+                                    .Selection(s => s.Mode(SelectionMode.Multiple)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=>
+                                    {
+                                        c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code"))).Width("15%").AllowEditing(false);
+                                        c.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name"))).Width("40%").AllowEditing(false);
+                                        c.AddFor(x => x.Unit).Caption((@_loc.GetLocalizedString("Unit"))).Width("10%").AllowEditing(false);
+                                        c.AddFor(x => x.Qty).Caption((@_loc.GetLocalizedString("Request Qty"))).Width("15%").Format("#,##0").Visible(false);
+                                        c.AddFor(x => x.RealQty).Caption((@_loc.GetLocalizedString("Warehouse From In Stock"))).Width("10%").Format("#,##0").AllowEditing(false);
+                                        c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark")).Width("20%");
+
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                   .OnSelectionChanged("ItemRequestPopupSelectionChanged")
+                   )
+                </fieldset>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>
+
+<script>
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        debugger;
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+
+        $("#frm-SaleSetting2").submit();
+    });
+
+
+
+    $("#frm-SaleSetting2").submit(function (e) {
+        e.preventDefault();
+        debugger;
+        var dataGrid = $('#@gridItem').dxDataGrid('instance');
+        var flagselectItem = dataGrid.getSelectedRowsData();
+        var data = dataGrid.getSelectedRowsData();
+        console.log(data);
+        var gridItemMaterial = $('#gridItemSlipDtl@(@ViewBag.OldThread)').dxDataGrid("instance");
+        if (gridItemMaterial == null) {
+            gridItemMaterial = [];
+        }
+        var ItemListRequest = gridItemMaterial.getDataSource().items();  
+
+        $.each(ItemListRequest, function (index, item) {
+            console.log(item)
+            data.push(item)
+        });
+        var ListItemFinal = {};
+        var Cell = {};
+        data.forEach(function (item) {
+            Cell = ListItemFinal[item.ItemCode] = ListItemFinal[item.ItemCode] || {};
+            Cell["No"] = item.No;
+            Cell["ItemCode"] = item.ItemCode;
+            Cell["ItemName"] = item.ItemName;
+            Cell["Unit"] = item.Unit;
+            Cell["Qty"] = item.Qty;
+            Cell["RealQty"] = item.RealQty;
+            Cell["Remark"] = item.Remark;
+        });
+        let listItemFinish = [];
+
+        var count = 1;
+        $.each(ListItemFinal, function (index, item) {
+            item.No = count++;
+            listItemFinish.push(item);
+        });
+        if (count == listItemFinish.length + 1) {
+            count = 1;
+        }
+
+        var mainGridItems = $('#gridItemSlipDtl@(@ViewBag.OldThread)').dxDataGrid("instance");
+        // Check if select item
+        if (flagselectItem.length == 0) {
+            DevExpress.ui.dialog.alert("Please select an item!", "Error");
+        }
+        else {
+            mainGridItems = mainGridItems.option("dataSource", listItemFinish);
+            //$('#modalControl').modal('hide');
+        }
+        LoadingPage(0);
+
+    });
+
+</script>

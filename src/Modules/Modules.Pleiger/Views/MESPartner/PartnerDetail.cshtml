@@ -1,0 +1,111 @@
+﻿@using Modules.FileUpload.Models
+@using Modules.Common.Models;
+@{
+    Layout = null;
+}
+    <script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        GetListPartnerType();
+        GetListCountryType();
+        GetListStatus();
+        setTimeout(function () { LoadingPage(0); }, 1500);
+
+    });      
+    
+    function PartnerGridRowClickEvent(selectedRow) {
+        LoadingPage(1);
+        debugger;
+        selectedRow = JSON.parse(selectedRow);
+        var pagID = selectedRow.PartnerCode;
+        var fileID = selectedRow.FileID;
+        var pagName = selectedRow.PartnerName;
+
+         $.ajax({
+            url: '@Url.Action("ShowPartnerPopupFileUpload", "MESPartner")',
+            type: "GET",
+             data: { pagID: pagID, fileID: fileID, pagName : pagName},
+            dataType: "html",
+             success: function (result) {
+                 debugger;
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                 $('#modalControl').modal('show');
+                 LoadingPage(0);
+             }, error: function (result) {
+                 LoadingPage(0);
+                 return;
+             }
+         });
+        LoadingPage(0);
+    }
+
+    // Get list PartnerType (ComCode = ACCT00)
+        function GetListPartnerType() {
+            LoadingPage(1);
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("GetListComCodeDTL", "MESComCode")',
+                type: 'GET',
+                data: { groupCD: "ACCT00" },
+                dataType: 'json',
+                success: function (result) {
+                    $("#PartnerType").append('<option value="">--- Select ---</option>');
+                    $.each(result.data, function (index, item) {
+                        $("#PartnerType").append('<option value="' + item.BASE_CODE + '">' + item.BASE_NAME1 + '</option>');
+                    });
+                    LoadingPage(0);
+                }, error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+
+    // Get list CountryType (ComCode = CTTP00)
+        function GetListCountryType() {
+            LoadingPage(1);
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("GetListComCodeDTL", "MESComCode")',
+                type: 'GET',
+                data: { groupCD: "CTTP00" },
+                dataType: 'json',
+                success: function (result) {
+                    $("#CountryType").append('<option value="">--- Select ---</option>');
+                    $.each(result.data, function (index, item) {
+                        $("#CountryType").append('<option value="' + item.BASE_CODE + '">' + item.BASE_NAME1 + '</option>');
+                    });
+                    LoadingPage(0);
+                }
+            });
+        }
+
+    // Get list Use YN (ComCode = USE000)
+        function GetListStatus() {
+            LoadingPage(1);
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("GetListComCodeDTL", "MESComCode")',
+                type: 'GET',
+                data: { groupCD: "USE000" },
+                dataType: 'json',
+                success: function (result) {
+                    $("#StatusRadio").html(null);
+                    $.each(result.data, function (index, item) {
+                        let html = '';
+                        html += '<div class="form-check form-check-inline">';
+                        html += '<input type="radio" class="form-check-input" id="' + item.BASE_CODE + '" name="Status">';
+                        html += '<label class="form-check-label" for="' + item.BASE_CODE + '">' + item.BASE_NAME1 + '</label>';
+                        html += '</div>';
+                        $("#StatusRadio").append(html);
+
+                    });
+                    LoadingPage(0);
+                }
+            });
+        }
+
+    </script>

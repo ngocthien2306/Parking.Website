@@ -1,0 +1,233 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@model List<MES_SaleProject>
+@{
+    Layout = null;
+    string gridItemByPartner = "gridItemByPartner" + ViewBag.Thread;
+    string txtItemName = "txtItemName" + ViewBag.Thread;
+    string txtItemCode = "txtItemCode" + ViewBag.Thread;
+    string gridProjectCode = "gridProjectCode" + ViewBag.Thread;
+    string txtProjectCode = "txtProjectCode" + ViewBag.Thread;
+    string txtProductionProjectCode = "txtProductionProjectCode" + ViewBag.Thread;
+    string txtProductionProjectName = "txtProductionProjectName" + ViewBag.Thread;
+    string projectOrderType = "selectProjectOrderType" + ViewBag.Thread;
+
+}
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        var ProjectOrderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        $("#@projectOrderType").dxSelectBox({
+            dataSource: ProjectOrderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        $("#@projectOrderType").dxSelectBox("instance").option("value", 'POT000');
+
+        @*var listProject = @Html.Raw(Json.Serialize(Model));
+        var grid = $('#@(gridProjectCode)').dxDataGrid("instance");
+        grid.option("dataSource", listProject);
+        grid.refresh();*@
+        $("#btnSearchPJCode").trigger('click');
+        LoadingPage(0);
+    });
+
+    function SelectRowProject@(ViewBag.Thread)(e) {
+        LoadingPage(1);
+        CheckSession();
+        var ProjectCode = e.selectedRowKeys[0].ProjectCode;
+        var UserProjectCode = e.selectedRowKeys[0].UserProjectCode;
+        var ProjectOrderTypeDetail = e.selectedRowKeys[0].ProjectOrderType;
+        var SalesOrderProjectCodeDetail = e.selectedRowKeys[0].SalesOrderProjectName;
+
+        $("#ProjectOrderTypeDetail").dxTextBox("instance").option("value", ProjectOrderTypeDetail);
+        $("#SalesOrderProjectCodeDetail").dxTextBox("instance").option("value", SalesOrderProjectCodeDetail);
+        $("#ProjectCode").dxTextBox("instance").option("value", UserProjectCode);
+        $("#ProjectCodeHidden").val(ProjectCode);
+        $('#modalControl').modal('hide');
+
+        LoadingPage(0);
+    }
+
+    function CreateInstance_Partner_ByProject(ProjectCode) {
+        CheckSession();
+        var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+        partnerField.option("disabled", false);
+        LoadingPage(0);
+    }
+
+    $("#btnSearchPJCode").on("click", function () {
+        CheckSession();
+        //var projectCode = $("#txtProjectCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var projectType = $('#@projectOrderType').dxSelectBox('instance').option('value');
+        var productionProjectCode = $("#@(txtProductionProjectCode)").dxTextBox("option", "value");
+        var productionProjectName = $("#@(txtProductionProjectName)").dxTextBox("option", "value");
+        var itemCode = $("#@(txtItemCode)").dxTextBox("option", "value");
+        var itemName = $("#@(txtItemName)").dxTextBox("option", "value");
+        LoadingPage(1);
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("SearchProjectCode", "MESPORequest")',
+            data: {
+                itemCode: itemCode,
+                itemName: itemName,
+                productionProjectCode: productionProjectCode,
+                productionProjectName: productionProjectName,
+                projectType: projectType
+            },
+            dataType: "json"
+        }).done(function (resp) {
+            var grid = $("#@(gridProjectCode)").dxDataGrid("instance");
+            grid.option("dataSource", resp);
+            grid.refresh();
+            LoadingPage(0);
+        });
+    });
+
+
+    var selectedRow = null;
+    function selectionChanged(e) {
+        selectedRow = e;
+    }
+
+    $("#btnChooseProject").on("click", function () {
+        if (selectedRow == null || selectedRow == undefined) {
+            DevExpress.ui.dialog.alert("You must choose a Project!", "Warning");
+            return;
+        } else {
+            eval(SelectRowProject@(ViewBag.Thread)(selectedRow));
+        }
+    });
+
+    function DbClickSelectRow(e) {
+        var ProjectCode = e.key.ProjectCode;
+        var UserProjectCode = e.key.UserProjectCode;
+        var ProjectOrderTypeDetail = e.key.ProjectOrderType;
+        var SalesOrderProjectCodeDetail = e.key.SalesOrderProjectName;
+
+        $("#ProjectOrderTypeDetail").dxTextBox("instance").option("value", ProjectOrderTypeDetail);
+        $("#SalesOrderProjectCodeDetail").dxTextBox("instance").option("value", SalesOrderProjectCodeDetail);
+
+        $("#ProjectCode").dxTextBox("instance").option("value", UserProjectCode);
+        $("#ProjectCodeHidden").val(ProjectCode);
+        $('#modalControl').modal('hide');
+
+        LoadingPage(0);
+    }
+
+</script>
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title">@_loc.GetLocalizedString("ProjectList")</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="card py-1 mb-0">
+            <div class="row">
+                <div class="col-xs-12 col-md-12">
+                    <button class="btn btn-sm btn-secondary ml-2" id="btnSearchPJCode" type="button" style="background-color: #009fe3;">
+                        <i class="fa fa-search mr-1"></i>  @_loc.GetLocalizedString("Search")
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="btnChooseProject" type="button" style="background-color: #009fe3;">
+                        <i class="fa fa-check mr-1"></i>  @_loc.GetLocalizedString("Choose")
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                @*<div class="col-xs-12 col-md-6">
+            <label>@_loc.GetLocalizedString("User Project Code")</label>
+            @(Html.DevExtreme().SelectBox()
+                .ID(txtProjectCode)
+                .DisplayExpr("PJCodePJName").ValueExpr("ProjectCode")
+                .DataSource(d => d.Mvc().Controller("MESPORequest")
+                    .LoadAction("GetProjectCodeByStatus")
+                    .Key("ProjectCode")
+                ) .DeferRendering(true).SearchEnabled(true).MinSearchLength(2).ShowDataBeforeSearch(false)
+            .ShowClearButton(true)
+            .SearchEnabled(true)
+            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+            )
+        </div>*@
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("Project Order Type"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                            .ID(projectOrderType)
+                            .ShowClearButton(true)
+                            .SearchEnabled(true)
+                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                        )
+                </div>
+                <div class="col-xs-12 col-md-2">
+                    <label>@(_loc.GetLocalizedString("Production Project Code"))</label>
+                    @(Html.DevExtreme().TextBox().ID(txtProductionProjectCode).ShowClearButton(true))
+                </div>
+                <div class="col-xs-12 col-md-2">
+                    <label>@(_loc.GetLocalizedString("Production Project Name"))</label>
+                    @(Html.DevExtreme().TextBox().ID(txtProductionProjectName).ShowClearButton(true))
+                </div>
+
+
+                <div class="col-xs-12 col-md-3">
+                    <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                    @(Html.DevExtreme().TextBox().ID(txtItemCode).ShowClearButton(true)
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                    @(Html.DevExtreme().TextBox().ID(txtItemName).ShowClearButton(true))
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-xs-12 col-md-12">
+                    @{
+                        string SelectRowProject = "SelectRowProject" + ViewBag.Thread;
+                    }
+                    @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                        .ID(gridProjectCode)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .OnRowDblClick("DbClickSelectRow")
+                        .OnSelectionChanged("selectionChanged")
+                        .Editing(editing =>
+                        {
+                            editing.AllowUpdating(false);
+                        })
+                        .ColumnAutoWidth(true).Height(650)
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                            c.AddFor(x => x.ProjectOrderType).Caption(_loc.GetLocalizedString("Project Order Type"));
+                            c.AddFor(x => x.SalesOrderProjectName).Caption(_loc.GetLocalizedString("Sales Order Project Code"));
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode"));
+                            c.AddFor(x => x.ProjectName).Caption(_loc.GetLocalizedString("Production Project Name"));
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                      )
+                </div>
+            </div>
+        </div>     
+    </div>
+</div>

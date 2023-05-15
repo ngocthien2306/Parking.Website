@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Localization\" />
+    <Folder Include="Microsoft\AspNetCore\Mvc\" />
+    <Folder Include="Tasks\" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="AutoMapper" Version="9.0.0" />
+    <PackageReference Include="Dapper" Version="2.0.35" />
+    <PackageReference Include="DevExpress.Xpo" Version="19.1.7" />
+    <PackageReference Include="DevExtreme.Web" Version="19.2.6" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.11.3" />
+    <PackageReference Include="EPPlus" Version="5.3.0" />
+    <PackageReference Include="linq2db" Version="2.9.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.9.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.0" />
+    <PackageReference Include="MySql.Data" Version="8.0.20" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.19.70" />
+    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="systembase.barcode">
+      <HintPath>..\LibReport\systembase.barcode.dll</HintPath>
+    </Reference>
+    <Reference Include="systembase.iTextSharp">
+      <HintPath>..\LibReport\systembase.iTextSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="systembase.json">
+      <HintPath>..\LibReport\systembase.json.dll</HintPath>
+    </Reference>
+    <Reference Include="systembase.report">
+      <HintPath>..\LibReport\systembase.report.dll</HintPath>
+    </Reference>
+    <Reference Include="systembase.report.renderer.gdi">
+      <HintPath>..\LibReport\systembase.report.renderer.gdi.dll</HintPath>
+    </Reference>
+    <Reference Include="systembase.report.renderer.pdf">
+      <HintPath>..\LibReport\systembase.report.renderer.pdf.dll</HintPath>
+    </Reference>
+    <Reference Include="zxing">
+      <HintPath>..\LibReport\zxing.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

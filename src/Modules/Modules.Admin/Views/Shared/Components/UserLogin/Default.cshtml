@@ -1,0 +1,9 @@
+﻿@using InfrastructureCore.Models.Identity;
+
+@model SYLoggedUser
+
+<li class="nav-item">
+    <a class="nav-link" onclick="ShowPopupUserInformation()">
+        <i class="fas fa-user" aria-hidden="true"></i> @Model.UserName
+    </a>
+</li>

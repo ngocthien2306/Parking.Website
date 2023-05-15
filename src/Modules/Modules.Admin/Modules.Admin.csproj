@@ -1,0 +1,59 @@
+﻿<!--<Project Sdk="Microsoft.NET.Sdk">-->
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <!--<OutputPath>..\..\HLFXFramework.WebHost\Modules\Modules.Admin</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+  <!--Copy Views file when build-->
+  <!--<ItemGroup>
+    <ViewsFiles Include="Views\**\*.*" />
+  </ItemGroup>s
+  <Target Name="CopyModule" AfterTargets="Build">
+    <Copy SourceFiles="@(ViewsFiles)" DestinationFiles="@(ViewsFiles->'..\..\HLFXFramework.WebHost\Modules\Modules.Admin\Views\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+  <ItemGroup>
+    <None Remove="Views\Home\Index.cshtml" />
+  </ItemGroup>-->
+
+  <ItemGroup>
+    <PackageReference Include="DevExtreme.AspNet.Core" Version="20.1.4" />
+    <PackageReference Include="DevExtreme.AspNet.Data" Version="2.5.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.0" />
+    <!--<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.0" />-->
+    <PackageReference Include="Serilog" Version="2.9.0" />
+    <PackageReference Include="System.Management" Version="4.7.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.7.0" />
+  </ItemGroup>
+  <!--<ItemGroup>
+    <Content Include="Views\Home\Index.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>-->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\InfrastructureCore.Web\InfrastructureCore.Web.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+    <ProjectReference Include="..\Modules.Common\Modules.Common.csproj" />
+    <ProjectReference Include="..\Modules.FileUpload\Modules.FileUpload.csproj" />
+  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\InfrastructureCore.Web\InfrastructureCore.Web.csproj" />
+		<ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+		<ProjectReference Include="..\Modules.Common\Modules.Common.csproj" />
+		<ProjectReference Include="..\Modules.FileUpload\Modules.FileUpload.csproj" />
+		<ProjectReference Include="..\Modules.Pleiger.CommonModels\Modules.Pleiger.CommonModels.csproj" />
+	</ItemGroup>
+  <ItemGroup>
+    <Compile Update="Models\SYPageLayout.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,352 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    var InitialCode = new[] { "All", "Yes", "No" };
+
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string projectStatusGrid = "projectStatusGrid" + ViewBag.Thread;
+    string frmProjectOrderType = "frmProjectOrderType" + ViewBag.Thread;
+    string frmSaleOrderProjectCode = "frmSaleOrderProjectCode" + ViewBag.Thread;
+    string frmProjectStatus = "frmProjectStatus" + ViewBag.Thread;
+    string frmProductType = "frmProductType" + ViewBag.Thread;
+    string frmProjectName = "frmProjectName" + ViewBag.Thread;
+    string frmUserProjectCode = "frmUserProjectCode" + ViewBag.Thread;
+    string frmSalesClassification = "frmSalesClassification" + ViewBag.Thread;
+    string InitialCheck = "InitialCodeCheckBox" + ViewBag.Thread;
+
+}
+
+<script>
+    var projectStatusGrid;
+    var frmProjectOrderType;
+    var frmSaleOrderProjectCode;
+    var frmProjectStatus;
+    var frmProductType;
+    var frmProjectName;
+    var frmUserProjectCode;
+    var frmSalesClassification;
+
+    $(document).ready(function () {
+        projectStatusGrid = $("#@projectStatusGrid").dxDataGrid('instance');
+        frmProjectOrderType = $("#@frmProjectOrderType").dxSelectBox('instance');
+        frmSaleOrderProjectCode = $("#@frmSaleOrderProjectCode").dxTextBox('instance');
+        frmProjectStatus = $("#@frmProjectStatus").dxSelectBox('instance');
+        frmProductType = $("#@frmProductType").dxSelectBox('instance');
+        frmProjectName = $("#@frmProjectName").dxTextBox('instance');
+        frmUserProjectCode = $("#@frmUserProjectCode").dxTextBox('instance');
+        frmSalesClassification = $("#@frmSalesClassification").dxSelectBox('instance');
+
+        loadCombobox@(ViewBag.Thread)();
+        SearchProjectStatus@(ViewBag.Thread)();
+    });
+
+    function loadCombobox@(ViewBag.Thread)() {
+        LoadingPage(1);
+
+        var orderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        orderType.unshift({
+            BASE_CODE: "All",
+            BASE_NAME: "All"
+        });
+        var status = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "PJST00");
+        var salesClassification = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "SCS000");
+        salesClassification.unshift({
+            BASE_CODE: "All",
+            BASE_NAME: "All"
+        });
+
+        $("#@frmProjectOrderType").dxSelectBox({
+            dataSource: orderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: orderType[0].BASE_CODE
+        });
+        $("#@frmProjectStatus").dxSelectBox({
+            dataSource: status,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: status[0].BASE_CODE
+        });
+        $("#@frmSalesClassification").dxSelectBox({
+            dataSource: salesClassification,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: salesClassification[0].BASE_CODE
+        });
+
+        LoadingPage(0);
+    }
+    function SearchProjectStatus@(ViewBag.Thread)() {
+        LoadingPage(1);
+        const projectOrderType = frmProjectOrderType.option("value");
+        const saleOrderProjectCode = frmSaleOrderProjectCode.option("value");
+        const projectStatus = frmProjectStatus.option("value");
+        const productType = frmProductType.option("value");
+        const projectName = frmProjectName.option("value");
+        const userProjectCode = frmUserProjectCode.option("value");
+        const saleClassification = frmSalesClassification.option("value");
+        //const initialCode = $("#@InitialCheck").dxRadioGroup("instance").option("value");
+
+
+        $.ajax({
+            url: '@Url.Action("SearchProjectStatus", "MESProjectStatus")',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                ProjectOrderType: projectOrderType,
+                SaleOrderProjectCode: saleOrderProjectCode,
+                ProjectStatus: projectStatus,
+                ProductType: productType,
+                ProjectName: projectName,
+                UserProjectCode: userProjectCode,
+                SalesClassification: saleClassification,
+                checkCode: null,
+
+            },
+            success: function (result) {
+                debugger;
+                //projectStatusGrid.option("dataSource", result);
+
+                $("#@(projectStatusGrid)").dxDataGrid("instance").option("dataSource", result);
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                console.log(error);
+                projectStatusGrid.option("dataSource", null);
+                LoadingPage(0);
+            },
+        });
+    }
+    function exportExcel@(ViewBag.Thread)() {
+        LoadingPage(1);
+        CheckSession();
+        var dataGrid = $("#@projectStatusGrid");
+        ExportExcelCommon(dataGrid, "Project Status");
+        LoadingPage(0);
+    };
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        SearchProjectStatus@(ViewBag.Thread)();
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        exportExcel@(ViewBag.Thread)();
+    });
+
+</script>
+
+<div class="row w-100 m-0">
+    <div class="col">
+        <div id="menutoolbar_@(ViewBag.Thread)">
+            @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+        </div>
+    </div>
+</div>
+<div class="row w-100 m-0">
+    <div class="col">
+        <div class="card">
+            <div class="card-body p-1" style="height: 100%">
+                <form class="row w-100 mx-auto row justify-content-between">
+                    <div class="row w-100 m-0">
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmProjectOrderType)">@(_loc.GetLocalizedString("Order Type"))</label>
+                            <div class="row p-1">
+                                @(
+                                Html.DevExtreme()
+                                .SelectBox()
+                                .AcceptCustomValue(true)
+                                .ID(frmProjectOrderType)
+                                .Width("100%")
+                                .ShowClearButton(true)
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmSaleOrderProjectCode)">@(_loc.GetLocalizedString("Sales Order Project Code"))</label>
+                            <div class="row p-1">
+                                @(
+                                Html.DevExtreme()
+                                .TextBox()
+                                .ID(frmSaleOrderProjectCode)
+                                .Width("100%")
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmProjectStatus)">@(_loc.GetLocalizedString("Status"))</label>
+                            <div class="row p-1">
+                                @(
+                                Html.DevExtreme()
+                                .SelectBox()
+                                .AcceptCustomValue(true)
+                                .ID(frmProjectStatus)
+                                .Width("100%")
+                                .ShowClearButton(true)
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmProductType)">@(_loc.GetLocalizedString("Product Type"))</label>
+                            <div class="row p-1">
+                                @(
+                                Html.DevExtreme()
+                                .SelectBox()
+                                .ID(frmProductType)
+                                .AcceptCustomValue(true)
+                                .ValueExpr("ID")
+                                .DisplayExpr("Name")
+                                .DataSource(d =>
+                                    d.Mvc()
+                                    .Controller("MESProjectStatus")
+                                    .LoadAction("LoadProductTypeCombobox")
+                                    .LoadMode(DataSourceLoadMode.Raw)
+                                    .Key("ID"))
+                                .Value("All")
+                                .Width("100%")
+                                .ShowClearButton(true)
+                                )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row w-100 m-0">
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmProjectName)">@(_loc.GetLocalizedString("Project Name"))</label>
+                            <div class="row p-1">
+                                @(Html.DevExtreme()
+                                .TextBox()
+                                .ID(frmProjectName)
+                                .Width("100%")
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmUserProjectCode)">@(_loc.GetLocalizedString("User Project Code"))</label>
+                            <div class="row p-1">
+                                @(Html.DevExtreme()
+                                .TextBox()
+                                .ID(frmUserProjectCode)
+                                .Width("100%")
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmSalesClassification)">@(_loc.GetLocalizedString("Sales Classification"))</label>
+                            <div class="row p-1">
+                                @(
+                                Html.DevExtreme()
+                                .SelectBox()
+                                .ID(frmSalesClassification)
+                                .AcceptCustomValue(true)
+                                .Width("100%")
+                                .ShowClearButton(true)
+                                )
+                            </div>
+                        </div>
+                        @*<div class="form-group col-sm-3 col-12">
+                            <label class="row p-1" for="@(frmSalesClassification)">@(_loc.GetLocalizedString("Initial Code"))</label>
+                            <div class="row p-1">
+                                @(Html.DevExtreme().RadioGroup()
+                                .Items(InitialCode)
+                                .Value("All")
+                                .Layout(Orientation.Horizontal)
+                                .ID(InitialCheck)
+                            )
+                            </div>
+                        </div>*@
+                    </div>
+                </form>
+                <fieldset class="customFieldset row w-100 mx-auto overflow-auto">
+                    <legend class="customLegend">@(_loc.GetLocalizedString("Project Status"))</legend>
+                    <div class="row w-100">
+                        @(
+                        Html.DevExtreme()
+                        .DataGrid<MES_SaleProject>()
+                        .ID(projectStatusGrid)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .Height("65vh")
+                        .Width("100%")
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                        .RepaintChangesOnly(true)
+                        .Selection(s => s.Mode(SelectionMode.Single)
+                        .SelectAllMode(SelectAllMode.AllPages))
+                        .Columns(c => {
+                            c.AddFor(x => x.No).Caption("No");
+                            c.AddFor(x => x.ProjectOrderType).Caption(_loc.GetLocalizedString("Order Type"));
+                            c.AddFor(x => x.SalesOrderProjectCode).Caption(_loc.GetLocalizedString("Sales Order Project Code"));
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode"));
+                            c.AddFor(x => x.ProjectName).Caption(_loc.GetLocalizedString("Production Project Name"));
+                            c.AddFor(x => x.ProjectStatusName).Caption(_loc.GetLocalizedString("Project Status"));
+                            c.AddFor(x => x.SalesClassificationName).Caption(_loc.GetLocalizedString("Sales Classification"));
+                            c.AddFor(x => x.InCharge).Caption(_loc.GetLocalizedString("In Charge"));
+                            c.AddFor(x => x.PlanDeliveryDate).Caption(_loc.GetLocalizedString("Plan Delivery Date"))
+                                .DataType(GridColumnDataType.Date)
+                                .Format("yyyy-MM-dd");
+                            c.AddFor(x => x.ProductType).Caption(_loc.GetLocalizedString("Product Type"));
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Customer Name"));
+                            c.AddFor(x => x.OrderNumber).Caption(_loc.GetLocalizedString("Order Number"))
+                                .DataType(GridColumnDataType.Number)
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.OrderQuantity).Caption(_loc.GetLocalizedString("Order Quantity"))
+                                .DataType(GridColumnDataType.Number)
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.ProdcnDoneQty).Caption(_loc.GetLocalizedString("Produced Quantity"))
+                                .DataType(GridColumnDataType.Number)
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.ItemPrice).Caption(_loc.GetLocalizedString("Item Price"))
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.MonetaryUnit).Caption(_loc.GetLocalizedString("Monetary Unit"));
+                            c.AddFor(x => x.OrderPrice).Caption(_loc.GetLocalizedString("Order Price"))
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.DeliveryTotalQty).Caption(_loc.GetLocalizedString("Delivery Total Qty"))
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.SalesAmount).Caption(_loc.GetLocalizedString("Sales Amount"))
+                                .Format(Format.FixedPoint);
+                            c.AddFor(x => x.RequestDate).Caption((_loc.GetLocalizedString("Request Date")))
+                                                          .DataType(GridColumnDataType.Date).Format("yyyy-MM-dd")
+                                                          .Alignment(HorizontalAlignment.Center);
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            pager.Visible(true);
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+
+                        )
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,571 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.SAVE_YN = true;
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string BOMTreeView = "BOMTreeView" + ViewBag.Thread;
+    string BOMItemDetail = "BOMItemDetail" + ViewBag.Thread;
+    string ItemSelectBox = "ItemSelectBox" + ViewBag.Thread;
+    string ItemClassSelectBox = "ItemClassSelectBox" + ViewBag.Thread;
+
+    //Not Use
+    string BOMTreeList = "BOMTreeList" + ViewBag.Thread;
+    string BOMItemDetailTreeList = "BOMItemDetailTreeList" + ViewBag.Thread;
+}
+
+<style>
+    .currently-active-item {
+        font-weight: bold;
+    }  
+</style>
+<script>
+    var updating = false;
+    var UpdateArr = [];
+    var DeleteArr = [];
+    var InsertArr = [];
+    var InsertArrFromGetOther = [];
+
+    $(document).ready(function () {
+        ResizeBOM();
+
+         $('#@(BOMItemDetail)').dxDataGrid({
+            editing: {
+                texts: {
+                    deleteRow: ""
+                }
+            }
+        })
+    })
+
+
+    $(window).resize(function () {
+        ResizeBOM();
+    });
+
+    function InitBOMTreeView() {
+        return $('#@(BOMTreeView)').dxTreeView('instance');
+    }
+
+    function InitBOMItemDetail() {
+        return $('#@(BOMItemDetail)').dxDataGrid('instance');
+    }
+
+    function InitItemSelectBox() {
+        return $('#@(ItemSelectBox)').dxSelectBox('instance');
+    }
+
+    function InitItemClassSelectBox() {
+        return ('#@ItemClassSelectBox').dxSelectBox('instance');
+    }
+
+     //Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        RefreshTab(this);
+    });
+
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+        var itemCode = $("#@(ItemSelectBox)").dxSelectBox('instance').option('value');
+        var itemClassCode = $("#@(ItemClassSelectBox)").dxSelectBox('instance').option('value');
+
+        if (itemCode != null) {
+            $.ajax({
+                url: '@Url.Action("GetDataSearch", "MESBOMMgt")',
+                data: { ItemCode: itemCode, ParentItemLevel: null },
+                type: 'POST',
+                dataType: 'json'
+            }).done(function (result) {
+
+                $('#@(BOMTreeView)').dxTreeView({
+                    //dataSource: result,
+                    dataStructure: "plain",
+                    searchEnabled: true,
+                    keyExpr: "Id",
+                    displayExpr: "NameKor",
+                    parentIdExpr: "ParentItemLevel",
+                    selectedExpr: "selected",
+                    itemTemplate: function (data, index, element) {
+                        const $item = $("<div>").text(
+                            "[" + data.ItemCode + "]" + " - " + data.NameKor
+                        );
+                        element.append($item);
+                        return $item;
+                    }
+                    //height: 500
+                });
+
+                if (result.length == 0) {
+                    debugger;
+                    var ItemCodeSelected = InitItemSelectBox()._getCurrentValue();
+                    var ItemNameSelected = InitItemSelectBox()._changedValue;
+
+                    var obj = {}, listObj = [];
+                    obj.Id = 0;
+                    obj.ItemCode = ItemCodeSelected;
+                    obj.NameKor = ItemNameSelected;
+                    obj.ParentItemCode = ItemCodeSelected;
+                    obj.ParentItemLevel = 0;
+                    obj.ItemLevel = 0;
+                    obj.Qty = 0;
+
+                    listObj.push(obj);
+
+                    $('#@(BOMTreeView)').dxTreeView('instance').option('dataSource', listObj);
+                }
+                else {
+                    $('#@(BOMTreeView)').dxTreeView('instance').option('dataSource', result);
+                }
+
+                $('#@(BOMItemDetail)').dxDataGrid('instance').option('dataSource', null);
+
+            @*$('#@(BOMTreeList)').dxTreeList({
+                dataSource: result,
+                //dataStructure: "plain",
+                keyExpr: "Id",
+                parentIdExpr: "ParentItemLevel",
+                showBorders: true,
+                showColumnLines: true,
+                showRowLines: true,
+                height: 500,
+                searchPanel: {
+                    visible: true,
+                    width: 250
+                },
+                headerFilter: {
+                    visible: true
+                },
+                selection: {
+                    mode: "single"
+                },
+                columns: [{
+                    dataField: "NameKor",
+                    caption: "NameKor",
+                    cellTemplate: function (container, options) {
+                        debugger;
+                        container.append("[" + options.data.ItemCode + "] - " + options.data.NameKor);
+                    }
+                }]
+            });*@
+
+                //console.log(BOMTreeView.getDataSource());
+            })
+        }
+        else {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("You need to select an Item!")", "@_loc.GetLocalizedString("Notice")");
+        }
+    });
+
+    $('#btnSave_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+
+        var BOMItemDetail = InitBOMItemDetail().getDataSource();
+        if (BOMItemDetail != null) {
+            var BOMItemDetailItems = BOMItemDetail.items();
+            InsertArrFromGetOther.push($('#@BOMTreeView').dxTreeView('instance').selectedItem);
+            $.each(BOMItemDetailItems, function (index, item) {
+                debugger;
+                if (item.Id == 0) {
+                    debugger;
+                    InsertArr.push(item);
+                }
+
+                if (item.Id == -1) {
+                    debugger;
+                    InsertArrFromGetOther.push(item);
+                }
+            });
+        }
+
+        if (InsertArr.length != 0 || UpdateArr.length != 0 || DeleteArr.length != 0 || InsertArrFromGetOther.length != 0) {
+            $.ajax({
+                url: '@Url.Action("InsertBOMItems", "MESBOMMgt")',
+                data: {
+                    InsertArr: JSON.stringify(InsertArr),
+                    UpdateArr: JSON.stringify(UpdateArr),
+                    DeleteArr: JSON.stringify(DeleteArr),
+                    InsertArrFromGetOther: JSON.stringify(InsertArrFromGetOther)
+                },
+                dataType: 'json',
+                type: 'POST'
+            }).done(function (result) {
+                if (result.Success) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString(MessageCode.MD0004)", "@_loc.GetLocalizedString("Notice")");
+                }
+                else {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString(MessageCode.MD0005)", "@_loc.GetLocalizedString("Error")");
+                }
+
+                UpdateArr = []; InsertArr = []; DeleteArr = [];
+
+                $('#btnSearch_@ViewBag.Thread').trigger("click");
+            });
+        }
+        else {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Nothing to save!")", "@_loc.GetLocalizedString("Notice")");
+        }
+    });
+
+    function OpenPopupCRUD(e, viewName) {
+        CheckSession();
+        debugger;
+
+        var BOMTreeView = InitBOMTreeView();
+
+        var BOMTreeViewSelectedItem = BOMTreeView.selectedItem;
+
+        if (BOMTreeViewSelectedItem != null || BOMTreeViewSelectedItem != undefined) {
+            $.ajax({
+                url: '@Url.Action("BOMCRUDPopup", "MESBOMMgt")',
+                type: "POST",
+                data:
+                {
+                    SelectedItem: BOMTreeViewSelectedItem,//BOMItemSelected[0],
+                    viewbagIndex: '@ViewBag.Thread',
+                    viewName: viewName
+                },
+                dataType: "html",
+                success: function (result) {
+                    $("#modalContent").html(result);
+                    $("#modalContent").addClass("modal-xl");
+                    $('#modalControl').modal('show');
+                    //LoadingPage(0);
+                }
+            });
+
+            //var keys = BOMItemDetail.getSelectedRowKeys();
+            //BOMItemDetail.deselectRows(keys);
+        }
+        else {
+             DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("You need to select a row in BOM Tree!")", "@_loc.GetLocalizedString("Notice")");
+        }
+    }
+
+    function onToolbarPreparing(e) {
+
+        $.each(e.toolbarOptions.items, function (index, item) {
+            debugger;
+
+            if (item.name == 'saveButton' || item.name == 'revertButton') {
+                e.toolbarOptions.items[index].visible = false;
+            }
+        });
+
+        e.toolbarOptions.items.unshift(
+            {
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: '@_loc.GetLocalizedString("Add item")',
+                    elementAttr: { id: 'btnAddItem' },
+                    onClick: function (e) {
+                        OpenPopupCRUD(e, 'BOMPopupCRUD');
+                    },
+                    //disabled: true
+                }
+            },
+            {
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: '@_loc.GetLocalizedString("Get Other")',
+                    onClick: function (e) {
+                        //OpenGetOtherBomPopup(e);
+                        OpenPopupCRUD(e, 'GetOtherBOMPopup');
+                    }
+                }
+            }
+        );
+    }
+
+    function onItemTreeViewClick(e) {
+        CheckSession();
+        LoadingPage(1);
+        $(".dx-treeview-item").removeClass("currently-active-item");
+        $(e.itemElement).addClass("currently-active-item");
+
+        e.component.selectedItem = e.itemData;
+
+        debugger;
+        $.ajax({
+            url: '@Url.Action("InsertParentItem", "MESBOMMgt")',
+            data: { mesBom: e.itemData },
+            type: "POST",
+            dataType: 'json'
+        }).done(function (result) {
+            debugger;
+            $('#@(BOMItemDetail)').dxDataGrid('instance').option('dataSource', result);
+            LoadingPage(0);
+            //var btnAddItem = $("#btnAddItem").dxButton("instance");
+            //btnAddItem.option("disabled", false);
+            //$('#@(BOMItemDetailTreeList)').dxTreeList('instance').option('dataSource', result);
+        })
+    }
+
+    function onRowInsertedDataGrid(e) {
+        if (!updating)
+            updating = true;
+        console.log("onRowInsertedDataGrid");
+        console.log(e);
+        console.log("updating: " + updating);
+    }
+
+    function onRowUpdatedDataGrid(e) {
+        if (!updating)
+            updating = true;
+        console.log("onRowUpdatedDataGrid");
+        console.log(e);
+        console.log("updating: " + updating);
+
+        UpdateArr.push(e.data);
+    }
+
+    function onRowRemovedDataGrid(e) {
+        if (!updating)
+            updating = true;
+        console.log("onRowRemovedDataGrid");
+        console.log(e);
+        console.log("updating: " + updating);
+
+        DeleteArr.push(e.data);
+    }
+
+    function onContentReadyDataGrid(e) {
+        if (updating && !e.component.hasEditData()) {  // updates finished successfully
+            console.log("onContentReady");
+            updating = false;
+            console.log("updating: " + updating);
+        }
+    }
+
+    function onItemClassSelectionChanged(e) {
+        debugger;
+        if (e.selectedItem !== null) {
+            $.ajax({
+                url: '@Url.Action("GetItemByClassCode", "MESBOMMgt")',
+                type: 'GET',
+                data: { itemClassCode: e.selectedItem.ItemClassCode },
+                dataType: 'json'
+            }).done(function (result) {
+                $('#@(ItemSelectBox)').dxSelectBox({
+                    dataSource: {
+                        store: result.data,
+                        paginate: true,
+                        pagesize: 50
+                    },
+                    displayExpr: "NameKor",
+                    valueExpr: "ItemCode"
+                })
+            })
+        }
+    }
+
+    function ResizeBOM() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+       
+
+        if ($("#divindex_@(ViewBag.Thread)").is(':visible')) {
+            ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            //ReCalResize("bdpage_@(ViewBag.Thread)", "ID", "rowright_@(ViewBag.Thread)", "hdpage_@(ViewBag.Thread)", "height");
+        }
+       
+    }
+
+    function onItemSelectionChanged(e) {
+        debugger;
+        $('#@(BOMTreeView)').dxTreeView('instance').option('dataSource', []);
+
+        $('#@(BOMItemDetail)').dxDataGrid('instance').option('dataSource', null);
+
+        //$('#btnSearch_@(ViewBag.Thread)').trigger('click');
+
+    }
+
+    function onItemClassValueChanged(e) {
+        debugger;
+        if (e.value === null) {
+            debugger;
+            $('#@(ItemSelectBox)').dxSelectBox('instance').option('dataSource', []);
+            $('#@(BOMTreeView)').dxTreeView('instance').option('dataSource', []);
+            $('#@(BOMItemDetail)').dxDataGrid('instance').option('dataSource', null);
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="content" id="divindex_@(ViewBag.Thread)">
+    <div class="container-fluid p-0">
+        <div class="row" id="headerpage_@(ViewBag.Thread)">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header" >
+                        <div class="row">
+                            <div class="form-group col-md-3">
+                                <label>@(_loc.GetLocalizedString("Item Class"))</label>
+                                @(Html.DevExtreme().SelectBox().ID(ItemClassSelectBox)
+                                    .DataSource(d => d.Mvc().Controller("MESBOMMgt").LoadAction("LoadItemClass"))
+                                    .DisplayExpr("ClassNameKor")
+                                    .ValueExpr("ItemClassCode")
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .OnSelectionChanged("onItemClassSelectionChanged")
+                                    .OnValueChanged("onItemClassValueChanged")
+                              )
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                                @(Html.DevExtreme().SelectBox().ID(ItemSelectBox)
+                                    //.DataSource(d => d.Mvc().Controller("MESBOMMgt").LoadAction("GetItemFinish"))
+                                    //.DisplayExpr("NameKor")
+                                    //.ValueExpr("ItemCode")
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .OnSelectionChanged("onItemSelectionChanged")
+                              )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="bodypage_@(ViewBag.Thread)">
+            <div class="col-md-4 pr-0" style="height:100%">
+                <div class="card" style="height:100%">
+                    <div class="card-header" style="height:5%">
+                        <label>
+                            @_loc.GetLocalizedString("BOM Tree")
+                        </label>
+                    </div>
+                    <div class="card-body" style="height:95%">
+                        @(Html.DevExtreme().TreeView()
+                        .ID(BOMTreeView)
+                        //.KeyExpr("ItemCode")
+                        //.DisplayExpr("NameKor")
+                        //.ParentIdExpr("ItemLevel")
+                        //.SelectedExpr("Selected")
+                        //.DataStructure(TreeViewDataStructure.Plain)
+                        //.Width(340)
+                        .Height("100%")
+                        .FocusStateEnabled(false)
+                        //.ShowCheckBoxesMode(TreeViewCheckBoxMode.Normal)
+                        //.ItemTemplate(@<text>
+                        //    <div>
+                        //        <%- NameKor %>
+                        //    </div>
+                        //</text>)
+                        .OnItemClick("onItemTreeViewClick")
+
+                    //@(Html.DevExtreme().TreeList()
+                    //    .ID(BOMTreeList)
+                    //    .Height(500)
+
+                    )
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8 pl-0" style="height:100%">
+                <div class="card" style="height:100%">
+                    <div class="card-header" style="height:5%">
+                        <label>
+                            @_loc.GetLocalizedString("BOM Details")
+                        </label>
+                    </div>
+                    <div class="card-body" style="height:95%">
+                        @(Html.DevExtreme().DataGrid<MES_BOM>()
+                            .ID(BOMItemDetail)
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            //.Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Virtual))
+                            //.KeyExpr("ItemCode")
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                            .Height("100%")
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Cell);
+                                editing.AllowDeleting(true);
+                                editing.UseIcons(true);
+                                editing.AllowUpdating(true);
+                            })
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.Id).Caption("Category").Width("13%").Visible(false);
+                                columns.AddFor(m => m.CategoryName).Caption(_loc.GetLocalizedString("Category")).Width("13%").AllowEditing(false);
+                                columns.AddFor(m => m.ItemClass).Caption(_loc.GetLocalizedString("Item Class")).Width("10%").AllowEditing(false);
+                                columns.AddFor(m => m.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).Width("10%").AllowEditing(false);
+                                columns.AddFor(m => m.NameKor).Caption(_loc.GetLocalizedString("Name Kor")).Width("32%").AllowEditing(false);
+                                columns.AddFor(m => m.ParentItemCode).Caption(_loc.GetLocalizedString("Parent Item Code")).Width("15%").AllowEditing(false);
+                                columns.AddFor(m => m.Qty).Caption(_loc.GetLocalizedString("Need Qty")).AllowEditing(true);
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .OnToolbarPreparing("onToolbarPreparing")
+                            .OnRowInserted("onRowInsertedDataGrid")
+                            .OnRowUpdated("onRowUpdatedDataGrid")
+                            .OnRowRemoved("onRowRemovedDataGrid")
+                            .OnContentReady("onContentReadyDataGrid")
+                        //.Paging(paging => paging.PageSize(500))
+                        //.Pager(pager =>
+                        //{
+                        //    pager.ShowInfo(true);
+                        //    pager.ShowNavigationButtons(true);
+                        //})
+                        )
+
+                        @*@(Html.DevExtreme().TreeList<MES_BOM>()
+                            .ID(BOMItemDetailTreeList)
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .KeyExpr("Id")
+                            .ParentIdExpr("ParentItemLevel")
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Height(500)
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.CategoryName).Caption("Category").Width("10%");
+                                columns.AddFor(m => m.ItemClass).Caption("Item Class").Width("10%");
+                                columns.AddFor(m => m.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).Width("13%");
+                                columns.AddFor(m => m.NameKor).Caption(_loc.GetLocalizedString("Name Kor")).Width("40%");
+                                columns.AddFor(m => m.ParentItemCode).Caption(_loc.GetLocalizedString("Parent Item Code")).Width("15%");
+                                columns.AddFor(m => m.Qty).Caption(_loc.GetLocalizedString("Need Quantity"));
+                            })
+                            .OnToolbarPreparing("onToolbarPreparing")
+                        )*@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+

@@ -1,0 +1,172 @@
+﻿@using InfrastructureCore.Models.Site;
+@using Modules.Common.Models;
+
+@{
+    Layout = null;
+    var siteSuperAdmin = "THL000";
+}
+
+<script>
+    var grid;
+
+    $(document).ready(function () {
+        grid = $("#gridSite").dxDataGrid("instance");
+    });
+
+    // Visible Delete Site Button
+    function VisibleDeleteSiteButton(e) {
+        return e.row.data.SiteCode !== '@siteSuperAdmin';
+    }
+
+    function onEditorSitePreparing(e) {
+        CheckSession();
+
+        if (e.parentType === "dataRow") {
+            if (e.dataField === "SiteCode") {
+                e.editorOptions.disabled = (e.row.data.SiteCode === '@siteSuperAdmin');
+            }
+        }
+    }
+
+    // validate data
+    function ValidateData(siteCode, siteName) {
+        if (siteCode == undefined || siteCode == "") {
+            DevExpress.ui.dialog.alert("Please input Site Code!", "Error");
+            return;
+        }
+
+        if (siteName == undefined || siteName == "") {
+            DevExpress.ui.dialog.alert("Please input Site Name!", "Error");
+            return;
+        }
+        return true;
+    }
+
+    // Show Site Detail
+    function ShowSiteDetail(e) {
+        CheckSession();
+
+        let rowData = e.row.data;
+
+        let url = "/Site/SiteDetail?siteID=" + rowData.SiteID;
+        GenerateTab("Site Detail" + rowData.SiteName, url);
+    }
+
+    // Save data
+    function SaveData(e) {
+        CheckSession();
+
+        var data = e.row.data;
+        let siteID = data.SiteID;
+        if (siteID === undefined) {
+            siteID = "";
+        }
+        if (ValidateData(data.SiteCode, data.SiteName)) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("SaveData", "Site")',
+                        type: "POST",
+                        data: {
+                            siteID: siteID, siteCode: data.SiteCode, siteName: data.SiteName, siteDescription: data.SiteDescription
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    grid.refresh();
+                                });
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+        }
+    }
+
+    // Delete data
+    function DeleteData(e) {
+        CheckSession();
+        var data = (e.row.data);
+        let siteID = data.SiteID;
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteData","Site")',
+                    type: "POST",
+                    data: { siteID: siteID },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        @(Html.DevExtreme().DataGrid<SYSite>()
+            .ID("gridSite")
+            .ShowBorders(true)
+            .ShowColumnLines(true)
+            .ShowRowLines(true)
+            .AllowColumnResizing(true)
+            .AllowColumnReordering(true)
+            .ColumnAutoWidth(true)
+            .FilterRow(filterRow => filterRow
+                .Visible(true)
+                .ApplyFilter(GridApplyFilterMode.Auto)
+            )
+            .Editing(e =>
+            {
+                e.AllowAdding(true);
+                e.AllowUpdating(true);
+                e.AllowDeleting(true);
+                e.UseIcons(true);
+            })
+            .Columns(c =>
+            {
+                c.AddFor(x => x.SiteCode).Caption(_loc.GetLocalizedString("Site Code"));
+                c.AddFor(x => x.SiteName).Caption(_loc.GetLocalizedString("Site Name"));
+                c.AddFor(x => x.SiteDescription).Caption(_loc.GetLocalizedString("Site Description"));
+                c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                {
+                    b.Add().Name(GridColumnButtonName.Edit);
+                    b.Add().Name(GridColumnButtonName.Save).OnClick("SaveData");
+                    b.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteData").Visible(new JS("VisibleDeleteSiteButton"));
+                    b.Add().Icon("preferences").Hint("Detail").OnClick("ShowSiteDetail");
+                });
+            })
+            .DataSource(d => d.Mvc().Controller("Site").LoadAction("GetListData").Key("SiteID"))
+            .OnEditorPreparing("onEditorSitePreparing")
+            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+            .HeaderFilter(f => f.Visible(true))
+                .Paging(paging => paging.PageSize(20))
+                .Pager(pager =>
+                {
+                    pager.ShowPageSizeSelector(false);
+                    pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                    pager.ShowInfo(true);
+                })
+            )
+    </div>
+</div>

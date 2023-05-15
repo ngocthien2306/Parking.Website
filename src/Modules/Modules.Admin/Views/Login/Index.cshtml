@@ -1,0 +1,212 @@
+﻿@using InfrastructureCore.Models.Identity;
+@{
+    ViewData["Title"] = "Index";
+    Layout = null;
+}
+@ViewBag.message
+<meta charset="UTF-8">
+<meta name="description" content="">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!-- Animate.css -->
+<link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">
+<!-- Ionicons -->
+@*<link rel="stylesheet" href=" https: //code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">*@
+<!-- icheck bootstrap -->
+<link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+<!-- Theme style -->
+<link rel="stylesheet" href="~/dist/css/adminlte.min.css">
+<!-- Google Font: Source Sans Pro -->
+@*<link href="https:// fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">*@
+
+<body class="hold-transition login-page">
+    <div class="login-box">
+        <!-- /.login-logo -->
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">Sign in to start your session</p>
+                <form id="frm-login" action="@Url.Action("OnLogin", "Login")" method="post">
+                    <div class="input-group mb-3">
+                        <input type="text" id="txtSiteCode" class="form-control" placeholder="Site Code">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fa fa-sitemap"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" id="txtUserName" class="form-control" placeholder="User Name">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-user"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" id="txtPassword" class="form-control" placeholder="Password">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="icheck-primary">
+                                <input type="checkbox" id="remember">
+                                <label for="remember">
+                                    Remember Me
+                                </label>
+                            </div>
+                        </div>
+                        <!-- /.col -->
+                        <div class="col-4">
+                            <button type="submit" id="btnLogin" class="btn btn-primary btn-block">Sign In</button>
+                        </div>
+                        <!-- /.col -->
+                    </div>
+                </form>
+
+                <!-- /.social-auth-links -->
+                <p class="mb-1">
+                    <a href="forgot-password.html">I forgot my password</a>
+                </p>
+
+            </div>
+            <!-- /.login-card-body -->
+        </div>
+    </div>
+    @*<iframe id="test" src="/Views/Home/Test.cshtml"></iframe>*@
+    @*@await Html.PartialAsync("~/Views/Home/Test.cshtml")*@
+    <!-- jQuery -->
+    <script src="~/plugins/jquery/jquery.min.js"></script>
+    <script src="~/js/jquery.blockUI.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="~/dist/js/adminlte.min.js"></script>
+    <script>
+        //$('#userCd').keyup(function (e) {
+        //    if (e.keyCode === 13) {
+        //        $('#btnLogin').trigger('click');
+        //    }
+        //});
+        //$('#userPs').keyup(function (e) {
+        //    if (e.keyCode === 13) {
+        //        $('#btnLogin').trigger('click');
+        //    }
+        //});
+        //$(window).keyup(function (e) {
+        //    if (e.keyCode === 13) {
+        //        $('#btnLogin').trigger('click');
+        //    }
+        //});
+
+      
+
+        $('#frm-login').submit(function (e) {
+            $.blockUI();
+            e.preventDefault();
+            localStorage.clear();
+            let siteCode = $("#txtSiteCode").val();
+            let userName = $("#txtUserName").val();
+            let password = $("#txtPassword").val();
+
+            if (siteCode == "") {
+                $.unblockUI();
+                alert("Please input site code!")
+                return;
+            }
+
+            if (userName == "") {
+                $.unblockUI();
+                alert("Please input user name!")
+                return;
+            }
+
+            if (password == "") {
+                $.unblockUI();
+                alert("Please input pass word!")
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("OnLogin","Login")',
+                type: 'POST',
+                data: {
+                    siteCode: siteCode,
+                    userName: userName,
+                    password: password
+                },
+                dataType: 'json',
+                success: function (result) {
+                    if (result.Success === true) {
+                        $.unblockUI();
+                        if (result.Error != '@((int)ValidateResultError.NoError)') {
+                            if (result.Error == '@((int)ValidateResultError.PasswordMostExpired)') {
+                                alert("Password is most expired!");
+                            }
+                        }
+                         
+                        location.href = result.ReturnURL;
+                    }
+                    else {
+                         
+                        $.unblockUI();
+                        if (result.Error == '@((int)ValidateResultError.IsBlocked)') {
+                            alert("User is Block 15 Minute!");
+                        }
+                         if (result.Error == '@((int)ValidateResultError.PasswordNotValid)') {
+                             alert("Password is NotValid!");
+                        }
+                        if (result.Error == '@((int)ValidateResultError.PasswordExpired)') {
+                            alert("Password is expired!");
+                        }
+                        else if (result.Error == '@((int)ValidateResultError.CredentialNotFound)') {
+                            alert("User not found!");
+                        }
+                    }
+                }
+
+            });
+        });
+        function setCookie(cname, cvalue, exdays) {
+            var d = new Date();
+            d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+            var expires = "expires=" + d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+        function deleteCookie(name) {
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        };
+
+        function checkCookie() {
+            var userid = getCookie("accountid");
+            var userp = getCookie("accountpassw");
+            if (userid !== '' && userp !== '') {
+                $("#userCd").val(userid);
+                $("#userPs").val(userp);
+                $("#cksaveaccount").prop('checked', true);
+                $("#cksaveaccount").attr('checked', true);
+            }
+        }
+
+        $(function () {
+            checkCookie();
+        })
+    </script>
+</body>

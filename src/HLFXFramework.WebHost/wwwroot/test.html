@@ -1,0 +1,187 @@
+﻿<script>
+    // Get list Menu Level
+    function GetListMenuLevel() {
+        $.ajax({
+            url: '@Url.Action("GetListMenulevel","Menu")',
+            type: 'GET',
+            datatype: 'json',
+            success: function (result) {
+                ddlMenuLevel.option("dataSource", result);
+            }
+        });
+    }
+
+    // Change Menu Level
+    function DdlMenuLevelChangeValue(e) {
+        let menuLevel = e.value;
+        if (menuLevel != 1) {
+            GetListMenuParent(menuLevel);
+            ddlMenuParent.option("disabled", false);
+        }
+        else {
+            ddlMenuParent.option("disabled", true);
+        }
+    }
+
+    // Get list Menu Parent
+    function GetListMenuParent(menuLevel) {
+        $.ajax({
+            url: '@Url.Action("GetListMenuParent", "Menu")',
+            type: 'GET',
+            data: { siteID: siteID, menuLevel: menuLevel },
+            datatype: 'json',
+            success: function (result) {
+                ddlMenuParent.option("dataSource", result);
+            }
+        });
+    }
+
+    // Get list Program
+    function GetListPageLayout() {
+        $.ajax({
+            url: '@Url.Action("GetListPageLayout", "Menu")',
+            type: 'GET',
+            datatype: 'json',
+            success: function (result) {
+                ddlProgram.option("dataSource", result);
+            }
+        });
+    }
+
+    // Set SiteID
+    function SetSiteID(e) {
+        siteID = e.value;
+
+        GetListMenuBySite(siteID);
+    }
+
+    // Get list menu by SiteID
+    function GetListMenuBySite(siteID) {
+        $.ajax({
+            url: '@Url.Action("GetListDataByGroup", "Menu")',
+            type: "GET",
+            data: { siteID: siteID },
+            dataType: 'json',
+            success: function (result) {
+                $("#treeMenuList").dxTreeList("option", "dataSource", JSON.parse(result));
+            }
+        });
+    }
+
+    // Disable input
+    function DisableInput() {
+        txtMenuName.option("disabled", true);
+        txtMenuPath.option("disabled", true);
+        ddlMenuLevel.option("disabled", true);
+        ddlMenuParent.option("disabled", true);
+        txtMenuSEQ.option("disabled", true);
+        ckbAdminLevel.option("disabled", true);
+        ckbMenuType.option("disabled", true);
+        ddlProgram.option("disabled", true);
+        ckbMobileUse.option("disabled", true);
+        ckbIntraUse.option("disabled", true);
+        txtMenuDescription.option("disabled", true);
+    }
+
+    // Active input before Create/Edit Menu
+    function ActiveInput() {
+        txtMenuName.option("disabled", false);
+        txtMenuPath.option("disabled", false);
+        ddlMenuLevel.option("disabled", false);
+        ddlMenuParent.option("disabled", true);
+        txtMenuSEQ.option("disabled", false);
+        ckbAdminLevel.option("disabled", false);
+        ckbMenuType.option("disabled", false);
+        ckbMobileUse.option("disabled", false);
+        ckbIntraUse.option("disabled", false);
+        txtMenuDescription.option("disabled", false);
+    }
+
+    // Clear input
+    function ClearInput() {
+        txtMenuName.option("value", null);
+        txtMenuPath.option("value", null);
+        ddlMenuLevel.option("value", null);
+        ddlMenuParent.option("value", null);
+        txtMenuSEQ.option("value", null);
+        ckbAdminLevel.option("value", null);
+        ckbMenuType.option("value", null);
+        ddlProgram.option("value", null);
+        ckbMobileUse.option("value", null);
+        ckbIntraUse.option("value", null);
+        txtMenuDescription.option("value", null);
+    }
+
+    // Select Row from Tree List
+    function SelectRowData(e) {
+        selectionRow = true;
+        if (row != undefined || row != null) {
+            row = null;
+        }
+        row = e;
+
+        let data = e.data;
+        $("#txtMenuID").val(data.MenuID);
+        txtMenuName.option("value", data.MenuName);
+        txtMenuPath.option("value", data.MenuPath);
+
+        ddlMenuLevel.option("value", data.MenuLevel); // Menu level
+        GetListMenuParent(data.MenuLevel);
+        ddlMenuParent.option("value", data.MenuParentID); // Menu Parent
+        txtMenuSEQ.option("value", data.MenuSeq);
+
+        if (data.AdminLevel == 'Y') {
+            ckbAdminLevel.option("value", true);
+        }
+        if (data.MenuType == 'Y') {
+            ckbMenuType.option("value", true);
+        }
+        ddlProgram.option("value", data.ProgramID);
+
+        if (data.MobileUse == 'Y') {
+            ckbMobileUse.option("value", true);
+        }
+        if (data.IntraUse == 'Y') {
+            ckbIntraUse.option("value", true);
+        }
+
+        txtMenuDescription.option("value", data.MenuDesc);
+    }
+
+    // Validate data
+    function ValidateData(menuName, menuLevel) {
+        if (menuName == "" || menuName == null) {
+            DevExpress.ui.dialog.alert("Please input Menu Name!", "Error");
+            return;
+        }
+
+        if (menuLevel == "" || menuLevel == null) {
+            DevExpress.ui.dialog.alert("Please input Menu Level!", "Error");
+            return;
+        }
+
+        return true;
+    }
+
+    // Is Dynamic menu
+    function SetIsDynamic(e) {
+        let value = e.value;
+        if (value == true) {
+            ddlProgram.option("disabled", false);
+        }
+        else {
+            ddlProgram.option("disabled", true);
+            ddlProgram.option("value", null);
+            txtMenuPath.option("value", null);
+        }
+    }
+
+    // Set Dynamic URL
+    function SetDynamicUrl(e) {
+        let pageID = e.value;
+        if (pageID != -1) {
+            let url = "/DynamicMagt/?PageID=" + pageID;
+            txtMenuPath.option("value", url);
+        }
+    }
+</script>

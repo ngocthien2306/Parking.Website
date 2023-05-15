@@ -1,0 +1,69 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@*<div class="form-group col-@Model.PEL_COL" hidden="@Model.PEL_VIS">*@
+
+@{
+   string  idTextBox = Model.PEL_ID + ViewBag.Thread;
+}
+
+
+<script>
+    function getValue_@(Model.PEL_ID)() {
+        var flagRequired = false;// Init flag required field
+        var value = $("#@(Model.PEL_ID)@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        // Check required field
+        if ("@(Model.PEL_IS_REQUIRED)" === "True") {
+            if (typeof value !== 'undefined' && value != "" && value != null) {
+                flagRequired = false;
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return value;
+            }
+            else
+            {
+                flagRequired = true;
+                $("#@(Model.PEL_ID)").dxValidator({
+                    validationRules: [{ type: "required" }]
+                });
+                DevExpress.validationEngine.validateGroup();
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return null;
+            }
+
+        }
+        else
+        {
+            return value;
+        }
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(Model.PEL_ID)@(ViewBag.Thread)").dxTextBox("instance").option("value",value);
+    }
+</script>
+@{if (Model.PEL_DFVALUE != null && Model.PEL_DFVALUE != "")
+    {
+        <script>
+            $( document ).ready(function() {
+                setValue_@(Model.PEL_ID)@(ViewBag.Thread)("@Model.PEL_DFVALUE");
+            });
+
+        </script>
+
+    }
+}
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+    @*@(Html.DevExtreme().TextBox().ID(Model.PEL_ID)*@
+    @(Html.DevExtreme().TextBox().ID(idTextBox)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .MaxLength(@Model.PEL_LEN) // Data length can input
+            )
+    @*<div class="dx-field">
+            <div class="dx-field-label">@Model.PEL_LBL</div>
+            <div class="dx-field-value">
+                @(Html.DevExtreme().TextBox().ID(Model.PEL_ID)
+                    .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                    .MaxLength(@Model.PEL_LEN) // Data length can input
+                )
+            </div>
+        </div>*@
+</div>

@@ -1,0 +1,291 @@
+﻿@model List<InfrastructureCore.Models.Menu.SYMenu>
+@*@{
+    var menuLevel2first = new List<InfrastructureCore.Models.Menu.SYMenu>();
+    var menuActivefirst = new List<InfrastructureCore.Models.Menu.SYMenu>();
+
+    if (Model != null)
+    {
+        menuLevel2first = @Model.Where(x => x.MenuLevel == 2).ToList();
+        menuActivefirst = menuLevel2first.Where(x => x.MenuPath.Contains("/CB?bid=")).ToList();
+    }
+}*@
+<style>
+    .nav.nav-treeview {
+        padding-left: 15px;
+        word-wrap: break-word;
+    }
+
+    .nav-item {
+        word-wrap: break-word;
+    }
+
+    .nav-link {
+        word-wrap: break-word;
+    }
+</style>
+@*<script>
+    $(document).ready(function ()
+    {       
+        let menuLevel2first = @Html.Raw(Json.Serialize(menuLevel2first));
+        let menuActivefirst = @Html.Raw(Json.Serialize(menuActivefirst));
+
+        if (menuActivefirst.length>0)
+        {
+            $("#divTabLink").append(GenerateTabLink(menuActivefirst[0].MenuIDActivefirst, menuActivefirst[0].MenuNameActivefirst, false));
+            $("#divTabContent").append(GenerateTabContent(menuActivefirst[0].MenuIDActivefirst, menuActivefirst[0].MenuPathActivefirst, false));
+            ActiveTab(menuActivefirst[0].MenuIDActivefirst, false);
+        }
+        else
+        {
+
+            $("#divTabLink").append(GenerateTabLink(menuLevel2first[0].MenuID, menuLevel2first[0].MenuName, false));
+            $("#divTabContent").append(GenerateTabContent(menuLevel2first[0].MenuIDActivefirst, menuLevel2first[0].MenuPath, false));
+            ActiveTab(menuLevel2first[0].MenuIDActivefirst, false);
+        }        
+    });
+
+</script>*@
+<ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false" id="myUL">
+    @if (Model != null)
+    {
+
+        var menuRoute = Model.Where(x => x.MenuLevel == 1).FirstOrDefault();
+        var menuLevel2 = Model.Where(x => x.MenuLevel == 2).ToList();
+
+
+        if (menuRoute != null)
+        {
+            if (ViewBag.CurrentLanguage == "en")
+            {
+                <li class="nav-header"><h6>@menuRoute.MenuNameEng</h6></li>
+                @foreach (var item in menuLevel2)
+                {
+                    var checkSubMenu = Model.Find(x => x.MenuParentID == item.MenuID);
+                    if (checkSubMenu == null)
+                    {
+                        if (item.MenuDesc == "USEURL")// Quân đang set cứng điều kiện nếu Description= USEURL (khi click vào menu sẽ sử dụng URL)
+                        {
+                            <li class="nav-item menu-lv2">
+                                <a is-active-color href="@(@item.MenuPath)" target="_blank" class="nav-link" menu-id="@item.MenuID">
+                                    <i class='nav-icon @(item.MenuIconCode)'></i>
+                                    <p>@item.MenuNameEng</p>
+                                </a>
+                            </li>
+                        }
+                        else
+                        if (item.MenuPath != null && item.MenuPath != "")
+                        {
+                            <li class="nav-item menu-lv2">
+                                <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@item.MenuName)', '@item.MenuPath', '@item.MenuID', false)" class="nav-link" menu-id="@item.MenuID">
+                                    <i class='nav-icon @(item.MenuIconCode)'></i>
+                                    <p>@item.MenuNameEng</p>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item menu-lv2">
+                                <a is-active-color href="javascript:;" class="nav-link" menu-id="@item.MenuID">
+                                    <i class='nav-icon @(item.MenuIconCode)'></i>
+                                    <p>@item.MenuNameEng</p>
+                                </a>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        var listSubMenu = Model.Where(x => x.MenuParentID == item.MenuID);
+
+                        <li class="nav-item has-treeview">
+                            <a href="#Menu_@item.MenuID" class="nav-link parent-link" menu-id="@item.MenuID">
+                                <i class='nav-icon @(item.MenuIconCode)'></i>
+                                <p>
+                                    @item.MenuNameEng
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            @if (listSubMenu != null)
+                            {
+                                <ul is-active-route class="nav nav-treeview" id="Menu_@item.MenuID" parent-menu-id="@item.MenuID">
+                                    @foreach (var subItem in listSubMenu)
+                                    {
+                                        if (subItem.MenuPath != null && subItem.MenuPath != "")
+                                        {
+                                            <li class="nav-item">
+                                                <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@subItem.MenuName)', '@subItem.MenuPath', '@subItem.MenuID', false)" class="nav-link" menu-id="@subItem.MenuID">
+                                                    <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                    <p>@subItem.MenuNameEng</p>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="nav-item">
+                                                <a is-active-color href="javascript:;" class="nav-link" menu-id="@subItem.MenuID">
+                                                    <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                    <p>@subItem.MenuNameEng</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                    }
+                                </ul>
+                            }
+                        </li>
+                    }
+                }
+            }
+            else
+            {
+                <li class="nav-header"><h6>@menuRoute.MenuName</h6></li>
+                @foreach (var item in menuLevel2)
+                {
+                    var checkSubMenu = Model.Find(x => x.MenuParentID == item.MenuID);
+                    if (checkSubMenu == null)
+                    {
+                        if (item.MenuDesc == "USEURL")// Quân đang set cứng điều kiện nếu Description= USEURL (khi click vào menu sẽ sử dụng URL)
+                        {
+                            <li class="nav-item menu-lv2">
+                                <a is-active-color href="@(@item.MenuPath)" target="_blank" class="nav-link" menu-id="@item.MenuID">
+                                    <i class='nav-icon @(item.MenuIconCode)'></i>
+                                    <p>@item.MenuName</p>
+                                </a>
+                            </li>
+                        }
+                        else
+                      if (item.MenuPath != null && item.MenuPath != "")
+                        {
+                            <li class="nav-item menu-lv2">
+                                <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@item.MenuName)', '@item.MenuPath', '@item.MenuID', false)" class="nav-link" menu-id="@item.MenuID">
+                                    <i class='nav-icon @(item.MenuIconCode)'></i>
+                                    <p>@item.MenuName</p>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item menu-lv2">
+                                <a is-active-color href="javascript:;" class="nav-link" menu-id="@item.MenuID">
+                                    <i class='nav-icon @(item.MenuIconCode)'></i>
+                                    <p>@item.MenuName</p>
+                                </a>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        var listSubMenu = Model.Where(x => x.MenuParentID == item.MenuID);
+
+                        <li class="nav-item has-treeview">
+                            <a href="#Menu_@item.MenuID" class="nav-link parent-link" menu-id="@item.MenuID">
+                                <i class='nav-icon @(item.MenuIconCode)'></i>
+                                <p>
+                                    @item.MenuName
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            @if (listSubMenu != null)
+                            {
+                                <ul is-active-route class="nav nav-treeview" id="Menu_@item.MenuID" parent-menu-id="@item.MenuID">
+                                    @foreach (var subItem in listSubMenu)
+                                    {
+                                        if (subItem.MenuPath != null && subItem.MenuPath != "")
+                                        {
+                                            <li class="nav-item">
+                                                <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@subItem.MenuName)', '@subItem.MenuPath', '@subItem.MenuID', false)" class="nav-link" menu-id="@subItem.MenuID">
+                                                    <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                    <p>@subItem.MenuName</p>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="nav-item">
+                                                <a is-active-color href="javascript:;" class="nav-link" menu-id="@subItem.MenuID">
+                                                    <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                    <p>@subItem.MenuName</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                    }
+                                </ul>
+                            }
+                        </li>
+                    }
+                }
+            }
+
+        }
+        else
+        {
+            @foreach (var item in menuLevel2)
+            {
+                var checkSubMenu = Model.Find(x => x.MenuParentID == item.MenuID);
+                if (checkSubMenu == null)
+                {
+                    if (item.MenuPath != null && item.MenuPath != "")
+                    {
+                        <li class="nav-item menu-lv2">
+                            <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@item.MenuName)', '@item.MenuPath', '@item.MenuID', false)" class="nav-link" menu-id="@item.MenuID">
+                                <i class='nav-icon @(item.MenuIconCode)'></i>
+                                <p>@item.MenuName</p>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item menu-lv2">
+                            <a is-active-color href="javascript:;" class="nav-link" menu-id="@item.MenuID">
+                                <i class='nav-icon @(item.MenuIconCode)'></i>
+                                <p>@item.MenuName</p>
+                            </a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    var listSubMenu = Model.Where(x => x.MenuParentID == item.MenuID);
+
+                    <li class="nav-item has-treeview">
+                        <a href="#Menu_@item.MenuID" class="nav-link parent-link" menu-id="@item.MenuID">
+                            <i class='nav-icon @(item.MenuIconCode)'></i>
+                            <p>
+                                @item.MenuName
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        @if (listSubMenu != null)
+                        {
+                            <ul is-active-route class="nav nav-treeview" id="Menu_@item.MenuID" parent-menu-id="@item.MenuID">
+                                @foreach (var subItem in listSubMenu)
+                                {
+                                    if (subItem.MenuPath != null && subItem.MenuPath != "")
+                                    {
+                                        <li class="nav-item">
+                                            <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@subItem.MenuName)', '@subItem.MenuPath', '@subItem.MenuID', false)" class="nav-link" menu-id="@subItem.MenuID">
+                                                <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                <p>@subItem.MenuName</p>
+                                            </a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="nav-item">
+                                            <a is-active-color href="javascript:;" class="nav-link" menu-id="@subItem.MenuID">
+                                                <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                <p>@subItem.MenuName</p>
+                                            </a>
+                                        </li>
+                                    }
+
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            }
+        }
+
+    }
+</ul>

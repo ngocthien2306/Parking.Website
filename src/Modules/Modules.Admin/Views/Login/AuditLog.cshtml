@@ -1,0 +1,212 @@
+﻿@using InfrastructureCore.Models.Identity;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@model SYAuditLogTracking;
+@{
+
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+
+    string PartnerCode = "PartnerCode" + ViewBag.Thread;
+    string UserType = "UserType" + ViewBag.Thread;
+    string gridAuditLogTracking = "gridAuditLogTracking" + ViewBag.Thread;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    lstNewToolbar.Add(info);
+
+}
+
+<script>
+     $(document).ready(function () {
+        $('#btnSearch_@ViewBag.Thread').trigger("click");
+     });
+
+     $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+     });
+
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        var UserName = $('#UserName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        $.ajax({
+        url: '@Url.Action("GetAuditLogTracking", "Login")',
+        type: "GET",
+        data:
+        {
+            UserName: UserName,
+            startDate: getParamsStartDateSearch@(ViewBag.Thread)(),
+            endDate: getParamsEndDateSearch@(ViewBag.Thread)(),
+        },
+        dataType: "json",
+        }).done(function (data) {
+            LoadingPage(0);
+            $("#AuditLogTrackingHeader").dxHtmlEditor("instance").option("value", null);
+            $("#gridAuditLogTracking@(ViewBag.Thread)").dxDataGrid({
+                dataSource: data,
+            });
+        }).fail(function (resp) {
+            LoadingPage(0);
+
+        });
+    });
+    function getParamsStartDateSearch@(ViewBag.Thread)() {
+        var value = $("#startDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        return ParsingDateyyyyMMdd(value);
+    }
+
+    function getParamsEndDateSearch@(ViewBag.Thread)() {
+        var value = $("#endDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        return ParsingDateyyyyMMdd(value);
+    }
+
+    function OnSelectionChanged_gridAuditLogTracking(selectedItems) {
+        var data = selectedItems.selectedRowsData[0];
+        if (data != null && data != undefined) {
+            $("#AuditLogTrackingHeader").dxHtmlEditor("instance").option("value", data.HEADER_MAP);
+        } else {
+            $("#AuditLogTrackingHeader").dxHtmlEditor("instance").option("value", null);
+
+        }
+
+    }
+
+    $(window).resize(function () {
+    ReziePage();
+
+    });
+
+    function ReziePage() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row pr-1" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row">
+                    <div class="col-md-2">
+                        <label>@_loc.GetLocalizedString("Login ID")</label>
+                        @(Html.DevExtreme().TextBox().ID("UserName" + ViewBag.Thread).Value(""))
+                    </div>
+
+                    <div class="col-md-6 row">
+                        <div class="col-md-5 form-group">
+                            <label>@(_loc.GetLocalizedString("Date Log"))</label>
+                            @(Html.DevExtreme().DateBox().ID("startDate" + ViewBag.Thread)
+                                .Type(DateBoxType.Date)
+                                .Value(DateTime.Now.ToString("yyyy-MM-01"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                             )
+                        </div>
+                        <div style="align-self: center;">~</div>
+                        <div class="col-md-5 form-group">
+                            <label>@(_loc.GetLocalizedString("Date Log"))</label>
+                            @(Html.DevExtreme().DateBox().ID("endDate" + ViewBag.Thread)
+                                .Type(DateBoxType.Date)
+                                .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-0 pl-2 pr-3 pt-3" id="bodypage_@(ViewBag.Thread)">
+                <div style="height:30%">
+                    @(Html.DevExtreme().DataGrid<SYAuditLogTracking>()
+                    .ID(gridAuditLogTracking)
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .ColumnAutoWidth(true)
+                    .OnSelectionChanged("OnSelectionChanged_gridAuditLogTracking")
+                    .FilterRow(filterRow => filterRow
+                    .Visible(true)
+                    .ApplyFilter(GridApplyFilterMode.Auto))
+                    .Selection(s => s.Mode(SelectionMode.Single)
+                                        .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                        .SelectAllMode(SelectAllMode.AllPages)).CacheEnabled(true)// just select 1 page
+                                                                                                  //.FilterRow(filterRow => filterRow
+                                                                                                  //    .Visible(true)
+                                                                                                  //    .ApplyFilter(GridApplyFilterMode.Auto)
+                                                                                                  //)
+                    .Height("100%")
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.EVENT_ID).Caption(_loc.GetLocalizedString("AuditLog ID")).AllowEditing(false).Width("10%");
+                        c.AddFor(x => x.ACTION_TYPE).Caption(_loc.GetLocalizedString("Action Type")).AllowEditing(false).Width("10%");
+                        c.AddFor(x => x.USERNAME).Caption(_loc.GetLocalizedString("Login ID")).AllowEditing(false).Width("20%");
+                        //c.AddFor(x => x.PASSWORD).Caption(_loc.GetLocalizedString("Password")).AllowEditing(false).Width("30%");
+                        c.AddFor(x => x.SOURCE_IP).Caption(_loc.GetLocalizedString("Source IP")).AllowEditing(false).Width("20%");
+                        c.AddFor(x => x.URL).Caption(_loc.GetLocalizedString("URL")).AllowEditing(false).Width("10%");
+                        c.AddFor(x => x.MESSAGE).Caption(_loc.GetLocalizedString("Message")).AllowEditing(false).Width("20%");
+                        c.AddFor(x => x.DATE_LOG).Caption(_loc.GetLocalizedString("Date Log")).AllowEditing(false).Width("10%").Format("yyyy-MM-dd hh:mm:ss");
+
+
+                        c.AddFor(x => x.HEADER_MAP).Caption(_loc.GetLocalizedString("HEADER_MAP")).AllowEditing(false).Visible(false);
+                        c.AddFor(x => x.PATH).Caption(_loc.GetLocalizedString("PATH")).AllowEditing(false).Visible(false);
+                        c.AddFor(x => x.OLD_DATA).Caption(_loc.GetLocalizedString("OLD_DATA")).AllowEditing(false).Visible(false);
+                        c.AddFor(x => x.NEW_DATA).Caption(_loc.GetLocalizedString("NEW_DATA")).AllowEditing(false).Visible(false);
+
+
+                    })
+                    .DataSource(d => d.Mvc().Controller("Login")
+                    .LoadAction("GetAuditLogTracking").LoadParams(new { UserName = "" })
+                    .Key("EVENT_ID"))
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    //.HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(5))
+                    .Pager(pager =>
+                    {
+                        pager.ShowPageSizeSelector(false);
+                        pager.AllowedPageSizes(new[] { 5, 10, 15 });
+                        pager.ShowInfo(true);
+                    })
+                     )
+                </div>
+                <div style="height:380px;width:100%">
+                    @(Html.DevExtreme()
+                            .HtmlEditor()
+                            .ID("AuditLogTrackingHeader")
+                            .Height("100%")
+                            .Width("100%")
+                            .ReadOnly(true)
+                            .MediaResizing(m => m.Enabled(true))
+                         )
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,143 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Models
+
+@model KIO_StoreDevice;
+@{
+    Layout = null;
+    string loginId = "loginId" + ViewBag.Thread;
+    string userName = "userName" + ViewBag.Thread;
+    string userType = "userType" + ViewBag.Thread;
+    string email = "email" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+}
+
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        LoadingPage(0);
+    })
+    // Region: Get, Check data
+
+    // End Region: Get, Check data
+
+    // Region: Btn event
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+
+        if (ValidateInputSaveUser()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+    
+                    var url = '@Url.Action("SaveUser", "User")';
+                    var obj = {
+                        UserCode: GetDataElement("#@loginId"),
+                        UserName: GetDataElement("#@userName"),
+                        UserType: GetDataElement("#@userType"),
+                        Email: GetDataElement("#@email"),
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                    setTimeout(function () {
+                        $("#btnSearch_@ViewBag.Index").trigger("click");
+                    }, 1000);
+
+                }
+            })
+        }
+    })
+    // End Region: Btn event
+
+    // Region: Validate data
+
+    function ValidateInputSaveUser() {
+        let loginId = GetDataElement("#@loginId");
+        if (loginId == null || loginId == "" || typeof loginId === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Login ID")", "Error")
+            ValidateElement("#@loginId")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@loginId")
+        }
+
+        let userName = GetDataElement("#@userName");
+        if (userName == null || userName == "" || typeof userName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Username")", "Error")
+            ValidateElement("#@userName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@userName")
+        }
+
+        let userType = GetDataElement("#@userType");
+        if (userType == null || userType == "" || typeof userType === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input User Type")", "Error")
+            ValidateElement("#@userType")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@userType")
+        }
+        return true;
+
+    }
+        // End region: Validate data
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("User Information Management"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2">
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Login ID"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(loginId)
+                        )
+                </div>
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Username"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(userName)
+                        )
+                </div>
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("User Type"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(userType)
+                        .DisplayExpr("COD_NM")
+                        .ValueExpr("DTL_CD")
+                        .DataSource(d => d.Mvc().Controller("User").LoadAction("GetListRole")
+                        .Key("DTL_CD")
+                        )
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                        )
+                </div>
+            </div>
+            <div class="row pt-2 pb-2">
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Email"))</label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(email)
+                        )
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

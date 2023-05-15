@@ -1,0 +1,492 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Http.Extensions;
+@using InfrastructureCore.Models.Site;
+@using InfrastructureCore.Extensions;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    pageSetting.CREATE_YN = true;
+    //pageSetting.DELETE_YN = true;
+    string gridSaleProject = "gridSaleProject";
+    string OrderTeamCode = "OrderTeamCode" + ViewBag.Thread;
+    string UserProjectCode = "UserProjectCode" + ViewBag.Thread;
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var priorities = new[] { "All", "True", "False" };
+
+}
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        var projectStatus = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "PJST00");
+        ReziePageSaleProject();
+        @*ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");*@
+        @*RecalculateResize(0.1, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+        RecalculateResize(0.85, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+
+        $("#projectStatus").dxSelectBox({
+            dataSource: projectStatus,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        //debugger;
+        //function recalculate resize height divindex
+        loadDataSaleProject();
+
+        LoadingPage(0);
+
+    })
+
+
+    //var setintervalsaleproject = setInterval(IntervalSaleProject, 1500);
+    //var demsaleproject = 0;
+    //function IntervalSaleProject() {
+    //    ++demsaleproject;
+    //    //console.log(demm);
+
+    //    if (demsaleproject == 50) {
+    //        clearInterval(setintervalsaleproject);
+    //    }
+    //    else {
+    //        ReziePageSaleProject();
+    //    }
+    //}
+     //Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+
+    });
+
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        ShowCreateSalesProjectPopupCreate();
+        //LoadingPage(0);
+    });
+
+    // start delete Region
+    var ArrProjectIds = [];
+
+    function onSelectChanged(event) {
+        debugger;
+        LoadingPage(1);
+        ArrProjectIds = [];
+        var gridSaleProject = $("#gridSaleProject").dxDataGrid("instance");
+        var arrData = event.selectedRowKeys;
+        // console.log(arrData);
+        $.each(arrData, function (idx, item) {
+            if (item.ProjectCode !== null && item.projectCode != "") {
+                if (item.ProjectStatus != null && (item.ProjectStatus === 'PJST01' || item.ProjectStatus === 'PJST02')) {
+                    ArrProjectIds.push(item.ProjectCode);
+                }
+                else {
+                    LoadingPage(0);
+                    // remove
+                    ArrProjectIds.pop(item.ProjectCode);
+                    //var keys = gridSaleProject.getSelectedRowKeys();
+                    gridSaleProject.deselectRows(item);
+                    ///DevExpress.ui.dialog.alert("Cannot delete this project have status different Planned!", "Error");
+                    return;
+                }
+            }
+        })
+        LoadingPage(0);
+        return ArrProjectIds;
+
+    }
+
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        if (ArrProjectIds.length > 0) {
+            var result = DevExpress.ui.dialog.confirm("<i>Are you sure to delete ?</i>", "Confirm changes");
+            result.done(function (resultdialog) {
+                if (resultdialog) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteSalesProjects", "MESSaleProject")',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: { projectCode: ArrProjectIds },
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                $("#btnReload_@ViewBag.Thread").trigger("click");
+                                //$("#gridSaleProject").dxDataGrid("instance").refresh();
+                                LoadingPage(0);
+                                $("#gridSaleProject").dxDataGrid("instance").refresh();
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            debugger
+        } else {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select row to delete!", "Error");
+            return;
+
+        }
+        LoadingPage(0);
+    });
+
+    // start search region
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        loadDataSaleProject();
+    });
+
+    // end search region
+    // function load data
+    function loadDataSaleProject() {
+        LoadingPage(1);
+        debugger;
+        var UserCode;
+        if ('@ViewBag.UserType' === 'G000C006' ||'@ViewBag.UserType' ==='G000C007' ||'@ViewBag.UserType' ==='G000C005') {
+            UserCode = '@ViewBag.UserCode';
+        }
+
+        var txtProductType = $('#txtProductType').dxSelectBox('instance').option('value');
+        var txtProjectCode = $('#txtProjectCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var txtProjectName = $('#txtProjectName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var txtItemCode = $('#txtItemCode').dxTextBox('instance').option('value');
+        var txtItemName = $('#txtItemName').dxTextBox('instance').option('value');
+        var projectStatus = $("#projectStatus").dxSelectBox('instance').option('value');
+        // var UserProjectCode = $('#UserProjectCode@(ViewBag.Thread)').dxSelectBox("option", "value");
+        var UserProjectCode = $('#UserProjectCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+
+        var OrderTeamCode = $("#OrderTeamCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        $.ajax({
+            url: '@Url.Action("SearchSaleProjects", "MESSaleProject")',
+        type: "GET",
+        data: {
+            ProductType: txtProductType,
+            ProjectCode: txtProjectCode,
+            ProjectName: txtProjectName,
+            ItemCode: txtItemCode,
+            ItemName: txtItemName,
+            ProjectStatus: projectStatus,
+            UserProjectCode: UserProjectCode,
+            OrderTeamCode: OrderTeamCode,
+            UserCode: UserCode
+
+        },
+        dataType: "json",
+        }).done(function (resp) {
+            LoadingPage(0);
+            $("#gridSaleProject").dxDataGrid({
+                dataSource: resp,
+            });
+        }).fail(function (resp) {
+            LoadingPage(0);
+
+        });
+        LoadingPage(0);
+    }
+
+    function ShowCreateSalesProjectPopupCreate() {
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+                url: '@Url.Action("SalesProjectCreatePopup", "MESSaleProject")',
+                type: "GET",
+                data:
+                {
+                    projectCode: null,
+                    viewbagIndex: '@ViewBag.Thread',
+                },
+                dataType: "html",
+                success: function (result) {
+                    // parent popup
+                    $("#modalContent").html(result);
+                    $("#modalContent").addClass("modal-xl");
+                    $('#modalControl').modal('show');
+                    //LoadingPage(0);
+                }
+            });
+    }
+
+    function ShowPopupDetailSaleProject(e) {
+        //var projectCodeSelected = e.data.ProjectCode;
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        let projectCodeSelected = $(e).attr("data-Project-Code").trim();
+        $.ajax({
+            url: '@Url.Action("SalesProjectCreatePopup", "MESSaleProject")',
+            type: "GET",
+            data: {
+                projectCode: projectCodeSelected,
+                viewbagIndex: '@ViewBag.Thread',
+            },
+            dataType: "html",
+            success: function (result) {
+
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function productTypeOnValueChanged(data) {
+        var itemClassCode = data.value;
+        var arrJson;
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("GetItemCodeNameByItemClassCode", "MESSaleProject")',
+            data: { itemClassCode: itemClassCode },
+            dataType: "json",
+            async: true
+        }).done(function (resp) {
+             debugger;
+            arrJson = resp.data;
+            console.log(arrJson);
+            //$("#txtItemCode").dxSelectBox({
+            //    disabled: false,
+            //    dataSource: arrJson,
+            //    displayExpr: "Name",
+            //    valueExpr: "ID"
+            //});
+        });
+    }
+
+    function ShowCreateSalesProjectPopup(e) {
+        LoadingPage(1);
+        let data = e.data;
+        debugger;
+        $.ajax({
+            url: '@Url.Action("SalesProjectUpdatePopup", "MESSaleProject")',
+            type: "GET",
+            data: { projectCode: data.ProjectCode  },
+            dataType: "html",
+            success: function (result) {
+                $("#modalContent").html(result);
+                $("#modalContent").find("#btnGeneCode").hide();
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+                LoadingPage(0);
+            }
+        });
+    }
+
+    // Select row SalesProject
+    function SelectRowSalesProject(e) {
+        selectItemClassRow = true;
+        itemRowData = e.data;
+        ProjectCode = itemRowData.ProjectCode;
+    }
+
+    // Quan add 2020/08/19
+    // Export excel
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        debugger;
+        var dataGrid = $("#@(gridSaleProject)");
+        ExportExcelCommon(dataGrid, "SaleProject");
+        debugger;
+        LoadingPage(0);
+    });
+    $(window).resize(function () {
+        //function recalculate resize height
+        ReziePageSaleProject();
+
+    });
+    function ReziePageSaleProject() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            @*RecalculateResize(0.4, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+            RecalculateResize(0.6, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //RecalculateResize(0.55, "height", "topbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+                //RecalculateResize(0.4, "height", "contentbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+            }
+        }
+    }
+</script>
+<div  id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div class="row pr-1" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row">
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("User Project"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID("UserProjectCode" + ViewBag.Thread)
+                                    .Value("")
+                            )
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Project Status"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                                    .ID("projectStatus")
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+
+                            )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("ProductType"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                                .ID("txtProductType")
+                                .DisplayExpr("ClassNameKor").ValueExpr("ItemClassCode")
+                                .DataSource(d => d.Mvc().Controller("MESItemClass")
+                                    .LoadAction("GetItemClassByCategory")
+                                    .Key("ItemClassCode")
+                                )
+                                .ShowClearButton(true)
+                                .OnValueChanged("productTypeOnValueChanged")
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                .AcceptCustomValue(true)
+
+                              )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @*@(Html.DevExtreme().SelectBox().ID("txtItemCode")
+                              .ShowClearButton(true)
+                              .Disabled(true)
+                              .SearchEnabled(true)
+                              .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                        )*@
+                        @(Html.DevExtreme().TextBox().ID("txtItemCode").ShowClearButton(true))
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @*@(Html.DevExtreme().SelectBox().ID("txtItemCode")
+                              .ShowClearButton(true)
+                              .Disabled(true)
+                              .SearchEnabled(true)
+                              .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                        )*@
+                        @(Html.DevExtreme().TextBox().ID("txtItemName").ShowClearButton(true))
+                    </div>
+
+
+                    <div class="form-group col-md-2" hidden="hidden">
+                        <label>@(_loc.GetLocalizedString("Projectname"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID("txtProjectName"+ViewBag.Thread)
+                                    .Value("")
+                              )
+                    </div>
+                    <div class="form-group col-md-2" hidden="hidden">
+                        <label>@(_loc.GetLocalizedString("Project Code"))</label>
+                        @(Html.DevExtreme().TextBox()
+                                    .ID("txtProjectCode"+ViewBag.Thread)
+                                    .Value("")
+                            )
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("OrderTeamCode"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                                .ID(OrderTeamCode)
+                                .DisplayExpr("BASE_NAME1")
+                                .ValueExpr("BASE_CODE")
+                                .DataSource(d => d.Mvc().Controller("MESComCode")
+                                .LoadAction("GetListComCodeDTL")
+                                .LoadParams(new { groupCD ="ORG000" })
+                                .Key("BASE_CODE"))
+                                .ShowClearButton(true)
+                    .SearchEnabled(true)
+                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="card-body p-0 pl-2 pr-2 pb-2">
+
+                @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                    .ID("gridSaleProject")
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .Selection(s => s.Mode(SelectionMode.Single))
+                    .Height("100%")
+                    //.OnSelectionChanged("onSelectChanged")
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .ColumnAutoWidth(true)
+                    .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto)
+                    )
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.No).Caption("No");
+                        c.AddFor(x => x.ProjectCode).Caption((_loc.GetLocalizedString("Project Code"))).Visible(false);
+                        c.AddFor(x => x.UserProjectCode).Caption((_loc.GetLocalizedString("UserProjectCode")))
+                        .CellTemplate
+                        (
+                            @<text>
+                                    <a href="#" onclick="ShowPopupDetailSaleProject(this)" data-Project-Code ="<%-data.ProjectCode%>">
+                                        <%-data.UserProjectCode%>
+                                    </a>
+                            </text>
+                        );
+                        c.AddFor(x => x.ProjectName).Caption((_loc.GetLocalizedString("Projectname")));
+                        c.AddFor(x => x.ProjectStatusName).Caption((_loc.GetLocalizedString("StatusName")));
+                        c.AddFor(x => x.InCharge).Caption((_loc.GetLocalizedString("InCharge")));
+                        c.AddFor(x => x.ProductType).Caption((_loc.GetLocalizedString("ProductType")));
+                        c.AddFor(x => x.ItemCode).Caption((_loc.GetLocalizedString("Item Code")));
+                        c.AddFor(x => x.ItemName).Caption((_loc.GetLocalizedString("Item Name")));//Item Name
+                        c.AddFor(x => x.PartnerName).Caption((_loc.GetLocalizedString("Custommer Name")));
+                        c.AddFor(x => x.OrderNumber).Caption((_loc.GetLocalizedString("OrderNumber")));
+                        c.AddFor(x => x.DomesticForeign).Caption((_loc.GetLocalizedString("DomesticForeign")));
+                        c.AddFor(x => x.OrderQuantity).Caption((_loc.GetLocalizedString("Order Quantity"))).Format("#,##0");
+                        c.AddFor(x => x.OrderTeamCodeName).Caption((_loc.GetLocalizedString("OrderTeamCodeName")));
+                    })
+
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    .HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(100))
+                    .Pager(pager =>
+                    {
+                        pager.ShowInfo(true);
+                        pager.ShowNavigationButtons(true);
+                    })
+                    //.OnRowDblClick("ShowPopupDetailSaleProject")
+                    )
+
+                    </div>
+        </div>
+    </div>
+</div>
+
+   
+
+

@@ -1,0 +1,657 @@
+﻿@using DevExtreme.AspNet.Mvc;
+@using Modules.Common.Models;
+@using Modules.Pleiger.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    //pageSetting.EDIT_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+}
+@*<style>
+    #gridDeleteSelected {
+        position: absolute;
+        z-index: 1;
+        right: 0;
+        margin: 1px;
+        top: 0;
+        margin-right: 50px;
+    }
+
+        #gridDeleteSelected .dx-button-text {
+            line-height: 0;
+        }
+</style>*@
+<script>
+    var groupCdSelected;
+    var temp = [];
+    var tempListDtlDelete = [];
+
+    // Page start
+    $(document).ready(function () {
+        LoadingPage(1);
+        ResizePageMesComCode();
+        ReloadGridComCodeMST();
+        LoadingPage(0);
+    });
+
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // Select data in grid List Page Dynamic to show data List Controls Layout
+    function gridCommonCodeMasterSelectionChanged(selectedItems) {
+        //LoadingPage(1);
+        CheckSession();
+        debugger;
+        var data = selectedItems.selectedRowsData[0];
+        console.log("gridCommonCodeMasterSelectionChanged ", data);
+        debugger;
+        //$('#userGroupSelected').html(data.GROUP_NAME);
+        if (data != null && data != '') {
+            groupCdSelected = data.GROUP_CD;
+
+            $.ajax({
+                url: '@Url.Action("GetListComCodeDTL", "MESComCode")',
+                type: "GET",
+                data: { groupCD: data.GROUP_CD},
+                dataType: "json",
+                success: function (result) {
+                    var grid = $("#gridMES_ComCodeDtls").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                    LoadingPage(0);
+                },
+                error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+
+    }
+
+    function SaveDataMES_ComCodeMst(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = e.row.data;
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataGroupMaster", "UserGroup")',
+                    type: "POST",
+                    data: { data: data, siteId: siteIDUserGroup },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                ReloadGridComCodeMST();
+
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    },
+                    error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete User Group
+    function DeleteMES_ComCodeMst(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteGroupMaster", "UserGroup")',
+                    type: "POST",
+                    data: { data: data, siteId: siteIDUserGroup},
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                ReloadGridComCodeMST();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    },
+                    error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+            }
+            else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete Common Master Group
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        DeleteAllData();
+    });
+
+
+    function DeleteAllData() {
+        debugger;
+        LoadingPage(1);
+        var dataGrid = $("#gridMES_ComCodeMst").dxDataGrid("instance");
+        var dataMstSelected = dataGrid.getSelectedRowsData();
+        if (dataMstSelected.length == 0 || dataMstSelected == undefined) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select group code master which want to delete!", "Error");
+        }
+        else {
+            dataMstSelected[0].__deleted__ = true;
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            debugger;
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    $.ajax({
+                        url: '@Url.Action("DeleteDataComCodeMST", "MESComCode")',
+                        type: "POST",
+                        data: { dataMST: dataMstSelected[0]},
+                        dataType: 'json',
+                        success: function (result) {
+                            LoadingPage(0);
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert(result.Message, "Success", function () {
+                                    ReloadGridComCodeMST();
+                                    ReloadGridComCodeDTL();
+                                });
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        },
+                        error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+        LoadingPage(0);
+    }
+
+    $('#btnSave_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+         SaveAllData();
+     });
+
+    // SaveAllData
+    function SaveAllData() {
+        LoadingPage(1);
+        var dataGridMST = $('#gridMES_ComCodeMst').dxDataGrid('instance');
+        var dataGridDTL = $('#gridMES_ComCodeDtls').dxDataGrid('instance');
+        //var data = dataGrid.getSelectedRowsData();
+        debugger;
+        var dataMST = dataGridMST.getDataSource() != null ? dataGridMST.getDataSource().items() : 'undefined';
+        var dataDTL = dataGridDTL.getDataSource() != null ? dataGridDTL.getDataSource().items() : 'undefined';
+
+        var dataDTLDelete = tempListDtlDelete;
+
+        if ((typeof dataMST !== 'undefined' && dataMST.length >= 0) ||
+            (typeof dataDTL !== 'undefined' && dataDTL.length >= 0) ||
+            (typeof dataDTLDelete !== 'undefined' && dataDTLDelete.length >= 0)) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("SaveDataListComCodeMST", "MESComCode")',
+                        type: "POST",
+                        data: { dataMST: dataMST, dataDTL: dataDTL, groupCdSelected: groupCdSelected, dataDTLDelete: dataDTLDelete },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    ReloadGridComCodeMST();
+                                    ReloadGridComCodeDTL();
+                                    // reset
+                                    tempListDtlDelete = [];
+
+                                    $("#gridMES_ComCodeMst").dxDataGrid("instance").columnOption(0, "allowEditing", false);
+                                });
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        },
+                        error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        } else {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please make sure data are changed.", "Warning");
+        }
+        LoadingPage(0);
+    }
+
+    // Reload data CommonCode MST
+    function ReloadGridComCodeMST() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListComCodeMST", "MESComCode")',
+            type: "GET",
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridMES_ComCodeMst").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+
+                //$("#gridMES_ComCodeMst").dxDataGrid({
+                //    editing: {
+                //        allowUpdating: false,
+                //        mode: 'cell' // 'batch' | 'cell' | 'form' | 'popup'
+                //    }
+                //});
+            }
+        });
+
+    }
+    // Reload data CommonCode DTL
+    function ReloadGridComCodeDTL() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListComCodeDTL", "MESComCode")',
+            type: "GET",
+            dataType: 'json',
+            data: { groupCD: groupCdSelected },
+            success: function (result) {
+                var grid = $("#gridMES_ComCodeDtls").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+
+    }
+
+    // Handling Create button in toolbar
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        var grid = $("#gridMES_ComCodeMst").dxDataGrid("instance");
+
+        // add new row
+        //$("#gridMES_ComCodeMst").dxDataGrid("addRow");
+        grid.addRow();
+        $("#gridMES_ComCodeMst").dxDataGrid("instance").columnOption(0, "allowEditing", true);
+        LoadingPage(0);
+        //var dataSource = grid.getDataSource();
+        //dataSource.store().insert(defaultData).then(function () {
+        //    dataSource.reload();
+        //})
+     });
+
+
+    // Handling Create button in toolbar
+    $('#btnEdit_@ViewBag.Thread').on("click", function () {
+        debugger;
+        var grid = $("#gridMES_ComCodeMst").dxDataGrid("instance");
+        //$("#gridMES_ComCodeMst").dxDataGrid({
+        //    editing: {
+        //        allowUpdating: true,
+        //        mode: 'cell' // 'batch' | 'cell' | 'form' | 'popup'
+        //    }
+        //});
+
+        //var dataSource = grid.getDataSource();
+        //dataSource.store().insert(defaultData).then(function () {
+        //    dataSource.reload();
+        //})
+    });
+
+    function onRowUpdated(e) {
+        e.data.__modified__ = true;
+    }
+    function onRowInserted(e) {
+        e.data.__created__ = true;
+    }
+    function onRowRemoved(e) {
+        debugger;
+        e.data.__deleted__ = true;
+    }
+    function onEditorPrepared(e) {
+
+    }
+    function onCellPrepared(e) {
+    debugger;
+        //if (e.row !== undefined) {
+        //    if (e.column.dataField === "GROUP_CD" && e.row.isNewRow) {
+        //        e.column.allowEditing = true;
+        //    }
+        //}
+
+    }
+
+    function onEditorPreparing(e) {
+        if (e.dataField === "GROUP_CD") {
+            //e.allowEditing = false;
+        }
+    }
+
+    function onRowValidating(e) {
+        if (!e.isValid) {
+            //button.option("disabled", true);
+        }
+    }
+
+    function onRowUpdatedDTL(e) {
+        e.data.__modified__ = true;
+    }
+    function onRowInsertedDTL(e) {
+        e.data.__created__ = true;
+    }
+    function onRowRemovedDTL(e) {
+        debugger;
+        e.data.__deleted__ = true;
+    }
+    function onEditorPreparedDTL(e) {
+
+    }
+
+    function onCellPreparedDTL(e) {
+        if (e.rowIndex == 0) {
+            $("#gridMES_ComCodeMst").dxDataGrid("instance").columnOption(0, "allowEditing", true);
+
+        }
+        else {
+            $("#gridMES_ComCodeMst").dxDataGrid("instance").columnOption(0, "allowEditing", false);
+        }
+
+    }
+
+    function onEditorPreparingDTL(e) {
+        if (e.dataField === "GROUP_CD") {
+            //e.allowEditing = false;
+        }
+    }
+
+    function onRowValidatingDTL(e) {
+        if (!e.isValid) {
+            //button.option("disabled", true);
+        }
+    }
+
+
+    function OnRowClick(e) {
+        debugger;
+        if (e.rowIndex == 0) {
+            $("#gridMES_ComCodeMst").dxDataGrid("instance").columnOption(0, "allowEditing", true);
+        }
+        else {
+            $("#gridMES_ComCodeMst").dxDataGrid("instance").columnOption(0, "allowEditing", false);
+        }
+    }
+
+    function onToolbarPreparing(e) {
+        e.toolbarOptions.items.unshift({
+            location: "after",
+            widget: "dxButton",
+            options: {
+                //elementAttr: { "id": "gridDeleteSelected" },
+
+                text: '@_loc.GetLocalizedString("Delete ComCode Details")',
+                onClick: function (e) {
+                    var dataGrid = $("#gridMES_ComCodeDtls").dxDataGrid("instance");
+                    $.when.apply($, dataGrid.getSelectedRowsData().map(function (data) {
+                        // set row delete status
+                        data.__deleted__ = true;
+                        tempListDtlDelete.push(data);
+                        return dataGrid.getDataSource().store().remove(data.BASE_CODE);
+                    })).done(function () {
+                        SaveAllData();
+                        //dataGrid.refresh();
+                    });
+
+
+                },
+                onContentReady: function (e) {
+                    // set button e.element ID here
+                    console.log("id");
+                    console.log(e.element[0]);
+                    e.element[0].id = "gridDeleteSelected";
+                },
+            disabled: true
+            }
+        })
+    }
+
+    $(window).resize(function () {
+        ResizePageMesComCode();
+
+    });
+    function ResizePageMesComCode() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                //ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //ReCalResize("contentbody_@(ViewBag.Thread)", "ID", "bodypage_@(ViewBag.Thread)", "topbody_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+
+@*@await Component.InvokeAsync("AccessToolbar")*@
+@*@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting })*@
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-4 p-0" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>@(_loc.GetLocalizedString("Common Code Master"))</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-2" style="height:96%;">
+                <div class="row" style="height:100%;">
+                    <div class="col-md-12" style="height:100%;">
+                        @(Html.DevExtreme().DataGrid<MES_ComCodeMst>()
+                            .ID("gridMES_ComCodeMst")
+                            .KeyExpr("GROUP_CD")
+                            .Height("100%")
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single)
+                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                            .SelectAllMode(SelectAllMode.AllPages))
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            //.OnInitNewRow("onInitNewRow")
+                            .OnRowUpdated("onRowUpdated")
+                            .OnRowInserted("onRowInserted")
+                            .OnRowRemoved("onRowRemoved")
+                            .OnEditorPrepared("onEditorPrepared")
+                            .OnCellPrepared("onCellPrepared")
+                            .OnEditorPreparing("onEditorPreparing")
+                            //.OnEditingStart("OnEditingStart")
+                            .OnRowClick("OnRowClick")
+                            //.OnDisposing("onDisposing")
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Cell);
+                                editing.AllowUpdating(true);
+                                editing.UseIcons(true);
+                            })
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.GROUP_CD).Caption(_loc.GetLocalizedString("Group Code")).Width("30%").AllowEditing(false);//.AllowEditing(false);// key
+                                columns.AddFor(m => m.GROUP_NM1).Caption(_loc.GetLocalizedString("GroupName1")).Width("35%");
+                                columns.AddFor(m => m.GROUP_NM2).Caption(_loc.GetLocalizedString("GroupName2")).Width("35%");
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                {
+                                    //b.Add().Name(GridColumnButtonName.Edit);
+                                    //b.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataMES_ComCodeMst");
+                                    //b.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteMES_ComCodeMst");
+                                });
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            //.Paging(paging => paging.PageSize(10))
+                            //.Pager(pager =>
+                            //{
+                            //    pager.ShowPageSizeSelector(false);
+                            //    pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                            //    pager.ShowInfo(true);
+                            //})
+                            .OnSelectionChanged("gridCommonCodeMasterSelectionChanged")
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>@(_loc.GetLocalizedString("Common Code Detail"))</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-2" style="height:96%;">
+                <input hidden id="txtMenuID" />
+                <div class="row" style="height:100%;">
+                    <div class="col-md-12" style="height:100%;">
+                        <div class="form-group" style="height:100%;">
+                           
+                            @(Html.DevExtreme().DataGrid<MES_ComCodeDtls>()
+                                .ID("gridMES_ComCodeDtls")
+                                .Height("100%")
+                                .ShowBorders(true)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .KeyExpr("GROUP_CD")
+                                .KeyExpr("BASE_CODE")
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Multiple)
+                                .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .Editing(editing =>
+                                {
+                                    editing.Mode(GridEditMode.Cell);
+                                    editing.AllowAdding(true);
+                                    //editing.AllowDeleting(true);
+                                    editing.AllowUpdating(true);
+                                    editing.UseIcons(true);
+                                    //editing.StartEditAction(GridStartEditAction.DblClick);
+                                })
+                                .OnRowUpdated("onRowUpdatedDTL")
+                                .OnRowInserted("onRowInsertedDTL")
+                                .OnRowRemoved("onRowRemovedDTL")
+                                .OnEditorPrepared("onEditorPreparedDTL")
+                                .OnCellPrepared("onCellPreparedDTL")
+                                .OnEditorPreparing("onEditorPreparingDTL")
+                                .OnToolbarPreparing("onToolbarPreparing")
+                                .Columns(columns =>
+                                {
+                                    //columns.AddFor(m => m.NO).Caption(_loc.GetLocalizedString("Group Name")"No.").AllowEditing(false).Width("10%");
+                                    columns.AddFor(m => m.BASE_CODE).Caption(_loc.GetLocalizedString("Base Code")).Width("20%");
+                                    columns.AddFor(m => m.BASE_NAME1).Caption(_loc.GetLocalizedString("BaseCode Name1")).Width("20%");
+                                    columns.AddFor(m => m.BASE_NAME2).Caption(_loc.GetLocalizedString("BaseCode Name2")).Width("20%");
+                                    columns.AddFor(m => m.BASE_NAME3).Caption(_loc.GetLocalizedString("BaseCode Name3")).Width("20%");
+                                    columns.AddFor(m => m.SORT).Caption(_loc.GetLocalizedString("Sort")).Width("10%").DataType(GridColumnDataType.Number);
+                                    columns.AddFor(m => m.USE_YN).Caption(_loc.GetLocalizedString("Use Y/N")).Width("10%").DataType(GridColumnDataType.Boolean);
+                                    //columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                    //{
+                                    //    b.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteMES_ComCodeDtls");
+                                    //});
+                                })
+                                .OnSelectionChanged(@<text>
+                                    function(data) {
+                                        debugger;
+                                        var grid = $("#gridMES_ComCodeDtls").dxDataGrid("instance");
+                                        var deleteButton = $("#gridDeleteSelected").dxButton("instance");
+                                        deleteButton.option("disabled", !data.selectedRowsData.length);
+                                    }
+                                    </text>)
+                                .HeaderFilter(f => f.Visible(true))
+                            //.Paging(paging => paging.PageSize(20))
+                            //.Pager(pager =>
+                            //{
+                            //    pager.ShowPageSizeSelector(false);
+                            //    pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                            //    pager.ShowInfo(true);
+                            //})
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    

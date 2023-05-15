@@ -1,0 +1,104 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+    <script>
+    $(document).ready(function () {
+        getDataRadioCheckbox_@(Model.PEL_ID)@(ViewBag.Thread)();
+    });
+
+    function getLanguages() {
+        let cookie = {};
+        document.cookie.split(';').forEach(function (el) {
+            let [k, v] = el.split('=');
+            cookie[k.trim()] = v;
+        })
+        var lang = '/en';
+        if (cookie["langname"] !== undefined) {
+            lang = '/' + cookie["langname"];
+        }
+        if (cookie["langname"] !== undefined && cookie["langname"] == "ko") {
+            $('#btnlanguage').html("KR")
+        }
+        if (cookie["langname"] !== undefined && cookie["langname"] == "en") {
+            $('#btnlanguage').html("EN")
+        }
+        return lang;
+    }
+
+    function getDataRadioCheckbox_@(Model.PEL_ID)@(ViewBag.Thread)() {
+        // call get by Groupcode
+        if ('@Model.GRP_CD' != '') {
+            $.ajax({
+            url: '@Url.Action("GetRadiocheckboxDynamicByGroupCodeAndConnection_MultiLang", "Admin")',
+            type: "GET",
+                data: { GRP_CD: '@Model.GRP_CD', CONNECTION_NM: '@Model.CONNECTION_NM', Lang: getLanguages() },
+                success: function (result) {
+                    gridData = $('#@Model.PEL_ID@(ViewBag.Thread)').dxRadioGroup('instance');
+                    gridData.option("dataSource", result.data);
+            }
+        });
+        }
+        // Call by Sp name custom
+        else
+        {
+            $.ajax({
+                url: '@Url.Action("GetRadiocheckboxDynamicByCustomSPAndConnection_MultiLang", "Admin")',
+                type: "GET",
+                data: { GRP_CD_CUSTOM: '@Model.GRP_CD_CUSTOM', CONNECTION_NM: '@Model.CONNECTION_NM', Lang: getLanguages() },
+                success: function (result) {
+                    gridData = $('#@Model.PEL_ID@(ViewBag.Thread)').dxRadioGroup('instance');
+                    gridData.option("dataSource", result.data);
+                }
+            });
+        }
+    }
+
+    function getValue_@(Model.PEL_ID)() {
+        var value = $("#@(Model.PEL_ID + ViewBag.Thread)").dxRadioGroup("instance").option("value");
+        return value;
+    }
+
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(Model.PEL_ID + ViewBag.Thread)").dxRadioGroup("instance").option("value", value);
+        return value;
+    }
+
+    function radioGroup_valueChanged_@(Model.PEL_ID)@(ViewBag.Thread)(e) {
+        var itemSelected = e.component.option("items");
+    }
+
+
+    </script>
+@{if (Model.PEL_DFVALUE != null && Model.PEL_DFVALUE != "")
+    {
+        <script>
+            $( document ).ready(function() {
+                setValue_@(Model.PEL_ID)("@Model.PEL_DFVALUE");
+            });
+
+        </script>
+
+    }
+}
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+    @(Html.DevExtreme().RadioGroup().ID(Model.PEL_ID + ViewBag.Thread)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .Layout(Orientation.Horizontal) // align items
+                .OnValueChanged("radioGroup_valueChanged_" + Model.PEL_ID + ViewBag.Thread)
+                .DisplayExpr("text")
+                .ValueExpr("value")
+            )
+    @*<div class="dx-field">
+        <div class="dx-field-label">@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().RadioGroup().ID(Model.PEL_ID)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .Layout(Orientation.Horizontal) // align items
+                .OnValueChanged("radioGroup_valueChanged_" + (Model.PEL_ID))
+                .DisplayExpr("text")
+                .ValueExpr("value")
+            )
+        </div>
+    </div>*@
+</div>

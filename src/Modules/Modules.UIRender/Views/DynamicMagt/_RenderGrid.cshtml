@@ -1,0 +1,1091 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@using Modules.UIRender.Models;
+@using Modules.Admin.Models;
+
+@{
+    ColumnGridModel colInfo = new ColumnGridModel();
+    List<string> colKeys = new List<string>();
+    string editType = "";
+    string col = "";
+    //string idGrid = Model.PEL_ID + ViewBag.Thread;
+    string idGrid = Model.PEL_ID + ViewBag.GridMenuID;
+    string idGridWareHouse = Model.PEL_ID_REAL;
+}
+
+@*<style>
+        .customFieldset {
+            padding: 1em;
+            border: 0.5px groove #ffffff !important;
+            box-shadow: 0px 0px 0px 0px #ffffff;
+        }
+
+        .customLegend {
+            width: auto;
+            padding: 0 10px;
+            border-bottom: none;
+            font-size: 14px;
+            font-weight: 700;
+        }
+    </style>*@
+
+<script>
+
+
+     var objPagEleData_@(Model.PEL_ID) = {
+        MapId: '',
+        PelId: '',
+        MapType: 'GRID',
+        PostData: {
+            DeletedRows: [],
+            AddedRows: [],
+            UpdatedRows: []
+        }
+    }
+
+    debugger;
+    var grid_@(Model.PEL_ID)_Keys = @Html.Raw(Json.Serialize(colKeys));
+    var gridData_@(idGrid);
+    var data_@(Model.PEL_ID);
+    var data_dbl_@(Model.PEL_ID);
+    var info_col_@(Model.PEL_ID) =@Html.Raw(Json.Serialize(Model.listElementChild));
+    var insertNewRow = false;
+
+
+
+    //function isNotEmpty(value) {
+    //    return value !== undefined && value !== null && value !== "";
+    //}
+
+
+    //var store = new DevExpress.data.CustomStore({
+    //    key: "ItemCode",
+    //    load: function (loadOptions) {
+    //        var deferred = $.Deferred(),
+    //            args = {};
+
+    //        [
+    //            "skip",
+    //            "take",
+    //            "requireTotalCount",
+    //            "requireGroupCount",
+    //            "sort",
+    //            "filter",
+    //            "totalSummary",
+    //            "group",
+    //            "groupSummary"
+    //        ].forEach(function (i) {
+    //            if (i in loadOptions && isNotEmpty(loadOptions[i]))
+    //                args[i] = JSON.stringify(loadOptions[i]);
+    //        });
+    //        $.ajax({
+    //            url: "https://js.devexpress.com/Demos/WidgetsGalleryDataService/api/orders",
+    //            dataType: "json",
+    //            data: args,
+    //            success: function (result) {
+    //                deferred.resolve(result.data, {
+    //                    totalCount: 30000,
+    //                    summary: result.summary,
+    //                    groupCount: result.groupCount
+    //                });
+    //            },
+    //            error: function () {
+    //                deferred.reject("Data Loading Error");
+    //            },
+    //            timeout: 5000
+    //        });
+
+    //        return deferred.promise();
+    //    }
+    //});
+
+
+
+
+    function OnInitNewRow_@(Model.PEL_ID)(e) {
+        debugger;
+        $.each(info_col_@(Model.PEL_ID), function (index, item) {
+            var value = '';
+            // set default value
+            if (item.PEL_DFVALUE !== null) {
+                // check param is function js or not
+                if (item.PEL_DFVALUE.startsWith("FN_")) {
+                    value = eval(item.PEL_DFVALUE);
+                    if (value !== undefined) {
+                        eval('e.data.' + item.PEL_ID_REAL + '="' + value + '"');
+                    } else {
+                        $('#@idGrid').dxDataGrid('instance').refresh();
+                        return;
+                    }
+                } else {
+                    value = item.PEL_DFVALUE;
+                    eval('e.data.' + item.PEL_ID_REAL + '="' + value + '"');
+                }
+            }
+        });
+        insertNewRow = true;
+    }
+
+    function OnRowRemoved_@(Model.PEL_ID)(e) {
+        debugger;
+        // update value of form
+        var listReference@(Model.PAG_ID)_@(Model.PEL_ID) = @Html.Raw(Json.Serialize(Model.listReference));
+        if (listReference@(Model.PAG_ID)_@(Model.PEL_ID) != null) {
+            // update value between form and grid
+            setValueReference_@(Model.PEL_ID)();
+        }
+        if (e.data.State !== "INSERTED") {
+            objPagEleData_@(Model.PEL_ID).PostData.DeletedRows.push(e.data);
+        }
+        @*if ('@editType' === 'G011C001') {
+            eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+           // onPostData();
+        }*@
+        var editMode = '@Model.EDIT_TYPE';
+        if (editMode !== '' && editMode === 'G011C001') {//post server save
+            // onPostData();
+            debugger;
+            eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+        }
+        else {
+            //post client save - removed deleted row on the grid
+            debugger;
+            var grid = $('#@(idGrid)').dxDataGrid('instance');
+            var newDataSource = grid.getDataSource().items();
+            var i = -1;
+            newDataSource.forEach(function (item, index) {
+                debugger
+                var data = JSON.stringify(e.data);
+                if (JSON.stringify(item) === data) {
+                    i = index;
+                }
+            });
+            //const index = newDataSource.indexOf(newDataSource.find(pdLineCd => pdLineCd = e.data));
+            if (i !== -1) {
+                newDataSource.splice(i, 1);
+                $('#@(idGrid)').dxDataGrid({
+                    dataSource: newDataSource
+                });
+                grid.refresh();
+            }
+        }
+    }
+
+    function compareRowWithKey(gridKeys, ParamKeys) {
+        if (gridKeys.length == 1) {
+
+        }
+    }
+
+    function OnRowUpdated_@(Model.PEL_ID)(e) {
+        debugger;
+
+        var listReference@(Model.PAG_ID)_@(Model.PEL_ID) = @Html.Raw(Json.Serialize(Model.listReference));
+        // Update value even update or insert row
+        if (listReference@(Model.PAG_ID)_@(Model.PEL_ID) != null) {
+            // update value between form and grid
+            setValueReference_@(Model.PEL_ID)();
+        }
+
+        var grid = $('#@(idGrid)').dxDataGrid('instance');
+        var newDataSource = grid.getDataSource().items();
+        var findIndex = -1;
+        newDataSource.forEach(function (item, index) {
+            var JsonData = JSON.stringify(e.key);
+            var JsonItem = JSON.stringify(item);
+            if (JsonItem === JsonData) {
+                findIndex = index;
+            }
+        });
+
+        let countKey = Object.keys(e.key).length;
+        let countData = Object.keys(e.data).length;
+
+        if (countKey > countData) {
+            if (e.key.State == "INSERTED") {
+                //$.each(objPagEleData_@(Model.PEL_ID).PostData.AddedRows, function (index, item) {
+                //    if (item.__KEY__ == e.key.__KEY__) {
+                //        item = e.key;
+                //    }
+                //});
+                //
+                ////var gridPropName = Object.keys(e.data);
+                //var changeValuePropName = Object.keys(e.data);
+                //eval('e.key.' + changeValuePropName[0] + '= e.data.' + changeValuePropName[0]);
+                //
+                //objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows.push(e.key);
+                //
+                //console.log(e.key);
+                //
+                //var editMode = '@Model.EDIT_TYPE';
+                //if (editMode !== '' && editMode === 'G011C001') {//post server save
+                //    // onPostData();
+                //    eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+                //}
+                //else {
+                //    debugger;
+                //
+                //    var dataPropName = Object.keys(e.data);
+                //    //var dataPropValue = eval('e.data.' + dataPropName);
+                //    if (i !== -1) {
+                //        eval('newDataSource[i].' + dataPropName[0] + ' = e.key.' + dataPropName[0]);
+                //    }
+                //    //$('#@(idGrid)').dxDataGrid('instance').option('dataSource', newDataSource);
+                //    grid.getDataSource().load();
+                //    console.log(objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows);
+                //
+                //}
+            }
+            else if (e.key.State == null || e.key.State == "UPDATE") {
+                //e.key.State = "UPDATE";
+                debugger;
+
+                for (var i = 0; i < countData; i++) {
+                    var changeValuePropName = Object.keys(e.data);
+                    eval('e.key.' + changeValuePropName[i] + '= e.data.' + changeValuePropName[i]);
+
+                    objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows.push(e.key);
+
+                    console.log(e.key);
+                    //if()
+
+
+                }
+
+
+                var editMode = '@Model.EDIT_TYPE';
+                if (editMode !== '' && editMode === 'G011C001') {//post server save
+                    // onPostData();
+                    eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+                }
+                else {
+                    var dataPropName = Object.keys(e.data);
+                    //var dataPropValue = eval('e.data.' + dataPropName);
+                    if (findIndex !== -1) {
+                        eval('newDataSource[findIndex].' + dataPropName[i] + ' = e.key.' + dataPropName[i]);
+                    }
+                    //$('#@(idGrid)').dxDataGrid('instance').option('dataSource', newDataSource);
+                    grid.getDataSource().load();
+                    console.log(objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows);
+
+                }
+            }
+        }
+        else {
+            if (e.data.State == "INSERTED") {
+                //$.each(objPagEleData_@(Model.PEL_ID).PostData.AddedRows, function (index, item) {
+                //    if (item.__KEY__ == e.data.__KEY__) {
+                //        item = e.data;
+                //    }
+                //});
+                //
+                ////var gridPropName = Object.keys(e.data);
+                //var changeValuePropName = Object.keys(e.key);
+                //eval('e.data.' + changeValuePropName[0] + '= e.key.' + changeValuePropName[0]);
+                //
+                //objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows.push(e.data);
+                //
+                //console.log(e.key);
+                //
+                //var editMode = '@Model.EDIT_TYPE';
+                //if (editMode !== '' && editMode === 'G011C001') {//post server save
+                //    // onPostData();
+                //    eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+                //}
+                //else {
+                //    debugger;
+                //
+                //    var dataPropName = Object.keys(e.key);
+                //    //var dataPropValue = eval('e.data.' + dataPropName);
+                //    if (i !== -1) {
+                //        eval('newDataSource[i].' + dataPropName[0] + ' = e.data.' + dataPropName[0]);
+                //    }
+                //    //$('#@(idGrid)').dxDataGrid('instance').option('dataSource', newDataSource);
+                //    grid.getDataSource().load();
+                //    console.log(objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows);
+                //
+                //}
+            }
+            else if (e.data.State == null || e.data.State == "UPDATE") {
+                //e.key.State = "UPDATE";
+                debugger;
+
+                for (var i = 0; i < countKey; i++) {
+                    var changeValuePropName = Object.keys(e.key);
+                    eval('e.data.' + changeValuePropName[i] + '= e.key.' + changeValuePropName[i]);
+
+                    objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows.push(e.data);
+
+                    console.log(e.key);
+                    //if()
+
+                    var editMode = '@Model.EDIT_TYPE';
+
+                }
+
+                if (editMode !== '' && editMode === 'G011C001') {//post server save
+                        // onPostData();
+                        eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+                    }
+                    else {
+                        var dataPropName = Object.keys(e.data);
+                        //var dataPropValue = eval('e.data.' + dataPropName);
+                        if (findIndex !== -1) {
+                            eval('newDataSource[findIndex].' + dataPropName[i] + ' = e.data.' + dataPropName[i]);
+                        }
+                        //$('#@(idGrid)').dxDataGrid('instance').option('dataSource', newDataSource);
+                        grid.getDataSource().load();
+                        console.log(objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows);
+
+                    }
+            }
+        }
+
+        //if (e.data.State == "INSERTED") {
+        //    $.each(objPagEleData_@(Model.PEL_ID).PostData.AddedRows, function (index, item) {
+        //        if (item.__KEY__ == e.data.__KEY__) {
+        //            item = e.data;
+        //        }
+        //    });
+        //
+        //    var gridPropName = Object.keys(e.data);
+        //    var changeValuePropName = Object.keys(e.key);
+        //    eval('e.data.' + changeValuePropName[0] + '= e.key.' + changeValuePropName[0]);
+        //
+        //    objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows.push(e.data);
+        //
+        //    console.log(e.key);
+        //
+        //    var editMode = '@Model.EDIT_TYPE';
+        //    if (editMode !== '' && editMode === 'G011C001') {//post server save
+        //        // onPostData();
+        //        eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+        //    }
+        //    else {
+        //        debugger;
+        //
+        //        var dataPropName = Object.keys(e.key);
+        //        //var dataPropValue = eval('e.data.' + dataPropName);
+        //        if (i !== -1) {
+        //            eval('newDataSource[i].' + dataPropName[0] + ' = e.data.' + dataPropName[0]);
+        //        }
+        //        //$('#@(idGrid)').dxDataGrid('instance').option('dataSource', newDataSource);
+        //        grid.getDataSource().load();
+        //        console.log(objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows);
+        //
+        //
+        //    @*$('#@(idGrid)').dxDataGrid({
+        //        //columns: [
+        //        //    {
+        //        //        //dataField: dataPropName[0],
+        //        //        dataField: 'ProductLineName',
+        //        //        setCellValue: function (rowData, value) {
+        //        //            debugger;
+        //        //            console.log('set cell value log');
+        //        //            console.log(value);
+        //        //            console.log(eval(rowData + '.' + dataPropName[0] + '=' + value));
+        //        //            eval(rowData + '.' + dataPropName[0] + '=' + value);
+        //        //            //rowData.ProductLineName = value
+        //        //        }
+        //        //    }
+        //        //]
+        //        //SetCellValue: function (rowData, value) {
+        //        //    debugger;
+        //        //    console.log('set cell value log');
+        //        //    console.log(value);
+        //        //    console.log(eval(rowData + '.' + dataPropName[0] + '=' + value));
+        //        //    eval(rowData + '.' + dataPropName[0] + '=' + value);
+        //        //}
+        //        dataField: dataPropName[0],
+        //        setCellValue: function (rowData, value) {
+        //            debugger;
+        //            console.log('set cell value log');
+        //            console.log(value);
+        //            console.log(eval(rowData + '.' + dataPropName[0] + '=' + value));
+        //            eval(rowData + '.' + dataPropName[0] + '=' + value);
+        //            //rowData.ProductLineName = value
+        //        }
+        //    });*@
+        //
+        //    }
+        //}
+        //else if (e.key.State == null || e.key.State == "UPDATE") {
+        //    //e.key.State = "UPDATE";
+        //    debugger;
+        //
+        //    var gridPropName = Object.keys(e.key);
+        //    var changeValuePropName = Object.keys(e.data);
+        //    eval('e.key.' + changeValuePropName[0] + '= e.data.' + changeValuePropName[0]);
+        //
+        //    objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows.push(e.key);
+        //
+        //    console.log(e.key);
+        //    //if()
+        //
+        //    var editMode = '@Model.EDIT_TYPE';
+        //    if (editMode !== '' && editMode === 'G011C001') {//post server save
+        //        // onPostData();
+        //        eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+        //    }
+        //    else {
+        //        debugger;
+        //
+        //        var dataPropName = Object.keys(e.data);
+        //        //var dataPropValue = eval('e.data.' + dataPropName);
+        //        if (i !== -1) {
+        //            eval('newDataSource[i].' + dataPropName[0] + ' = e.key.' + dataPropName[0]);
+        //        }
+        //        //$('#@(idGrid)').dxDataGrid('instance').option('dataSource', newDataSource);
+        //        grid.getDataSource().load();
+        //        console.log(objPagEleData_@(Model.PEL_ID).PostData.UpdatedRows);
+        //
+        //
+        //    @*$('#@(idGrid)').dxDataGrid({
+        //        //columns: [
+        //        //    {
+        //        //        //dataField: dataPropName[0],
+        //        //        dataField: 'ProductLineName',
+        //        //        setCellValue: function (rowData, value) {
+        //        //            debugger;
+        //        //            console.log('set cell value log');
+        //        //            console.log(value);
+        //        //            console.log(eval(rowData + '.' + dataPropName[0] + '=' + value));
+        //        //            eval(rowData + '.' + dataPropName[0] + '=' + value);
+        //        //            //rowData.ProductLineName = value
+        //        //        }
+        //        //    }
+        //        //]
+        //        //SetCellValue: function (rowData, value) {
+        //        //    debugger;
+        //        //    console.log('set cell value log');
+        //        //    console.log(value);
+        //        //    console.log(eval(rowData + '.' + dataPropName[0] + '=' + value));
+        //        //    eval(rowData + '.' + dataPropName[0] + '=' + value);
+        //        //}
+        //        dataField: dataPropName[0],
+        //        setCellValue: function (rowData, value) {
+        //            debugger;
+        //            console.log('set cell value log');
+        //            console.log(value);
+        //            console.log(eval(rowData + '.' + dataPropName[0] + '=' + value));
+        //            eval(rowData + '.' + dataPropName[0] + '=' + value);
+        //            //rowData.ProductLineName = value
+        //        }
+        //    });*@
+        //
+        //    }
+        //}
+        //else if (e.data.State == "INSERTED") {
+
+        //}
+
+        @*if ('@editType' === 'G011C001') {
+            //onPostData();
+            eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+        }*@
+
+    }
+
+    function OnRowInserted_@(Model.PEL_ID)(e) {
+        debugger;
+
+        e.data.State = "INSERTED";
+        objPagEleData_@(Model.PEL_ID).PostData.AddedRows.push(e.data);
+
+        var editMode = '@Model.EDIT_TYPE';
+        if (editMode !== '' && editMode === 'G011C001') {//post server save
+            // onPostData();
+            eval('RUN_' +@(Model.EDIT_ACT)+'_' +@(Model.PAG_ID)+'()');
+        }
+        else {
+            var grid = $('#@(idGrid)').dxDataGrid('instance').getDataSource();
+
+            @*var ObjProp = Object.keys(e.data);
+
+            ObjProp.forEach(function (item, index) {
+                debugger;
+                if (item == '@Model.PEL_ID_REAL') {
+
+                }
+            })*@
+
+            grid.items().unshift(e.data);
+
+            var unique = grid.items().filter(function (elem, index, self) {
+                return index === self.indexOf(elem);
+            });
+
+            $('#@(idGrid)').dxDataGrid({
+                dataSource: unique
+            });
+
+            $('#@(idGrid)').dxDataGrid('instance').refresh();
+        }
+    }
+
+    function OnRowValidating_@(Model.PEL_ID)(e) {
+        countRequired = [];
+        var component = e.component;
+        $.each(e.brokenRules || [], function (index, brokenRule) {
+            if (brokenRule.type != null && brokenRule.type == "async") {
+                //brokenRule.message = "Invalid, duplicate"; // hard code(need improve)
+            }
+            var $cell = brokenRule.validator.element(),
+                columnIndex = $cell.index(),
+                rowIndex = $cell.parent().index();
+            //setTimeout(function () {
+            //    component.getController("editorFactory")._showValidationMessage(component.getCellElement(rowIndex, columnIndex), brokenRule.message, brokenRule.column.alignment);
+            //});
+            countRequired.push(true);
+        });
+    }
+
+    function OnToolbarPreparing_@(Model.PEL_ID)(e) {
+        //debugger;
+        for (var i = 0; i < e.toolbarOptions.items.length; i++) {
+            if (e.toolbarOptions.items[i].name == 'revertButton') {
+                e.toolbarOptions.items[i].options.onClick = function (arg) {
+                    e.component.cancelEditData();
+                    e.component.refresh();
+                    countRequired = [];
+                }
+            }
+        }
+
+
+
+        let toolbarItems = e.toolbarOptions.items;
+        if ('@Model.GRID_MODE_EDIT' == "G014C001" || '@Model.EDIT_TYPE' == "G014C002") {
+            toolbarItems.forEach(function (item, index) {
+                if (item.name == "saveButton") {
+                    //toolbarItems.splice(index, 1);
+                    toolbarItems[index].visible = false;
+                    toolbarItems[index].disabled = false;
+                }
+            })
+        }
+    }
+
+    function OnContentReady_@(Model.PEL_ID)(e) {
+        debugger;
+        if (!e.component.instance().getController('validating').validate()) {
+            e.component.instance().option("groupPanel.visible", false);
+
+        }
+        else {
+            e.component.instance().option("groupPanel.visible", true);
+        }
+    }
+
+    @*function DynamicGridToolBar(e) {
+        if (@Model.EDIT_TYPE == "G014C001" || @Model.EDIT_TYPE == "G014C003") {
+            var grid = $("#@(idGrid)").dxDataGrid('instance');
+
+            let toolbarItems = e.toolbarOptions.items;
+
+            toolbarItems.forEach(function (item, index) {
+                if (item.name == "saveButton") {
+                    toolbarItems.splice(index, 1);
+                }
+            })
+        }
+    }*@
+
+
+        @*function OnCellPrepared_@(Model.PEL_ID)(e) {
+            if (@colKeys> 0)
+            {
+                debugger
+
+
+
+                if (e.rowType === "data") {
+                    if (e.column.dataField === keyCode)
+                    {
+                        if (insertNewRow)
+                        {
+                            e.column.allowEditing = true;
+                            return;
+                        }
+                        else
+                        {
+                            e.column.allowEditing = false;
+                            return;
+                        }
+                    }
+                }
+            }
+        }*@
+
+    function OnCellClick_@(Model.PEL_ID)(e) {
+        if (e.rowType === "data") {
+        }
+    }
+
+    function DynamicGridCallculate@(Model.PEL_ID)(e) {
+        // heightmainfooter Kiểm tra nếu sitesetting nếu không có footer thì set height sẽ dài hơn
+        var heightmainfooter = $('.main-footer').outerHeight();
+        if (@Model.PEL_HGT != 0) {
+            return @Model.PEL_HGT;
+        } else {
+            if (heightmainfooter != undefined) {
+                return "65vh";
+
+            } else {
+                return "71vh";
+            }
+        }
+    }
+
+    // Quan add task 2021-04-16
+    // Set color cell
+    function OnCellPrepared@(Model.PEL_ID)(e)
+    {
+        debugger;
+        if (e.rowType == 'data' && e.column.dataField == 'RealQuantity')
+        {
+            if (e.data.RealQuantity < 0) {
+                e.cellElement.css("color", "red");
+                //e.cellElement.css('backgroundColor', "yellow");
+            }
+        }
+    }
+</script>
+
+
+
+@{
+    var listKey = Model.listElementChild.Where(x => x.IS_KEY == true).ToList();
+    if (listKey.Count > 0)
+    {
+        foreach (var item in listKey)
+        {
+            <script>
+                function OnCellPrepared_@(Model.PEL_ID)(e) {
+                    if (e.rowType === "data") {
+                        if (e.column.dataField === '@item.PEL_ID_REAL') {
+                            if (insertNewRow) {
+                                e.column.allowEditing = true;
+                                return;
+                            }
+                            else {
+                                e.column.allowEditing = false;
+                                return;
+                            }
+                        }
+                    }
+            }
+            </script>
+        }
+    }
+    else
+    {
+        <script>
+            function OnCellPrepared_@(Model.PEL_ID)(e) { }
+        </script>
+    }
+}
+
+
+@{
+    <script>
+        //function buttonColumnEvent(pelid, pagid) {
+        //    console.log(pelid);
+        //    console.log(pagid);
+        //}
+        function buttonColumnEvent(obj) {
+            debugger;
+            var dataSelect = $("#@idGrid").dxDataGrid('instance').getSelectedRowsData()[0];
+            if (typeof dataSelect === 'undefined') { // stupid code here
+                DevExpress.ui.dialog.alert("You must selected the row before do something.", "Error");
+            }
+            // do something
+        }
+        function buttonColumnEventOnOptionChanged(pelid, pagid) {
+            //var buttonText = e.component.option("text");
+            console.log(pelid);
+        }
+    </script>
+}
+
+
+<script>
+    $(function() {
+        $.ajax({
+            url: '@Url.Action("InitGridDynamic", "DynamicMagt")',
+            type: "POST",
+            data: {pelID:'@Model.PEL_ID', pagID: '@idGrid'},
+            success: function (result) {
+            debugger;
+                gridData_@(idGrid) = $('#@idGrid').dxDataGrid('instance');
+                gridData_@(idGrid).option("dataSource", result);
+            }
+        });
+    });
+</script>
+
+@*upload file*@
+<script>
+    function fileUploader_valueChanged(e) {
+        debugger;
+        var key = e.element.attr('data-id');
+        //e.component.option('uploadUrl', '/Home/UploadFile?key=' + key);
+    }
+</script>
+
+@{
+    // find pel have validate API
+    foreach (var item in Model.listElementChild)
+    {
+        if (item.PEL_VALIDATE_RULE_API != null && item.PEL_VALIDATE_RULE_API != "")
+        {
+            <script>
+                function asyncValidation_@(item.PAG_ID)_@(item.PEL_ID_REAL)(params)
+                {
+                    var oldData = params.data;
+                    let param = {
+                        Key: "",
+                        Value: ""
+                    }
+                    param.Value = params.value;
+                    params.Key = params.column.dataField;
+                    return $.ajax({
+                        url: getLanguages() + '/@item.PEL_VALIDATE_RULE_API',
+                        type: "POST",
+                        data: {
+                            Key: params.column.dataField,
+                            Value: params.value
+                        },
+                        success: function (result) {
+                            if (!result) {//Fail
+                                // set message error
+                            }
+                        }
+                    });
+                }
+            </script>
+        }
+
+        if (item.PEL_TYP == "G002C020") // just type combobox custom
+        {
+            <script>
+                function SetCellValue_@(item.PAG_ID)_@(item.PEL_ID_REAL)(newData, value, currentRowData) {
+
+                    return getDataRefer_@(item.PAG_ID)_@(item.PEL_ID_REAL)(value).done(function (data) {
+                        // set value to current column
+                        newData.@(item.PEL_ID_REAL) = value; // column with combobox
+                        //list columns refer
+                        var listReference = @Html.Raw(Json.Serialize(Model.listReference));
+                        // set value to another column
+                        $.each(listReference, function (index, item1) {
+                            // Mapping relation with combobox, autocomplete
+                            if (item1.REF_TYPE === 'G012C003') {
+                                let value = null;
+                                if (data.data.length > 0) {
+                                    value = eval('data.data[0].' + item1.DATA_MAP_ADDON);
+                                }
+                                eval('newData.' + item1.TARGET_COL_NM + '= value !== undefined ? value : null;');
+                            }
+                        });
+
+                    });
+                }
+
+                function getDataRefer_@(item.PAG_ID)_@(item.PEL_ID_REAL)(value) {
+                    var promise = $.ajax({
+                        // URL return data addon combobox
+                        url: getLanguages() + "/Admin/GetReferDataCustomAutocomplete",
+                        dataType: "json",
+                        data: {
+                            SP_CUSTOM: '@item.SP_CUSTOM_REFER',
+                            value: value,
+                            CONNECTION_NM: '@item.CONNECTION_NM'
+                        }
+                    });
+                    return promise;
+                }
+            </script>
+        }
+    }
+}
+
+@{
+    // find pel have column type upload file
+    foreach (var item in Model.listElementChild)
+    {
+        if (item.PEL_TYP == "G002C012")
+        {
+            <script>
+                function showPopupFiles_@(item.PAG_ID)_@(item.PEL_ID_REAL)(e) {
+                }
+            </script>
+        }
+    }
+}
+
+
+@{
+    if (Model.listReference != null)
+    {
+        <script>
+                $(function () {
+                    setValueReference_@(Model.PEL_ID)();
+                })
+                function setValueReference_@(Model.PEL_ID)() {
+                    var listReference@(Model.PAG_ID)_@(Model.PEL_ID) = @Html.Raw(Json.Serialize(Model.listReference));
+                    $.each(listReference@(Model.PAG_ID)_@(Model.PEL_ID), function (index, item) {
+                        if (item.REF_TYPE === 'G012C002') { // mapping from grid to form Reference Grid -> Form
+                            // get instane of Grid
+                            var gridData_@(idGrid) = $('#@idGrid').dxDataGrid('instance');
+                            // get all data of Grid
+                            var allData = gridData_@(idGrid).option("dataSource");
+                            let total = 0;
+                            // get sum value for all data
+                            $.each(allData, function (index1, item1) {
+                                total += parseFloat(gridData_@(idGrid).cellValue(index1, item.SOURCE_COL_NM));
+                            });
+                            // set to form
+                            //let functionName = "setValue_" + item.TARGET_COL_NM + "_" + item.PAG_ID + "_21(" + total + ");"
+                            let functionName = "setValue_" + item.TARGET_COL_NM + "_" + item.PAG_ID + "(" + total + ");";
+                            console.log(functionName);
+                            return eval(functionName);
+                        }
+                    });
+                }
+        </script>
+    }
+}
+
+@{
+    foreach (var item in Model.listDataMap)
+    {
+        <script>
+            debugger;
+            function getData_@(Model.PEL_ID)_@(item.MAP_ID)() {
+                let tempMap = @Html.Raw(Json.Serialize(item.lstMapDetail.Where(m => m.FLD_IO == 0)));
+                let tempColMap = @Html.Raw(Json.Serialize(item.lstMapDetail.Where(m => m.FLD_IO == 1)));
+                let lstParam = [];
+                $.each(tempMap, function (index, item) {
+                   let param = {
+                        Key: "",
+                        Value: ""
+                    }
+                    if (item.FLD_TYPE === "G007C001") {
+                        param.Key = item.MAP_TO;
+                        eval('param.Value = getValue_' + item.MAP_FROM + '();');
+                    }
+                    else {
+                        param.Key = item.MAP_TO;
+                        eval('param.Value = data_'+item.FRM_PEL_ID+'.' + item.MAP_FROM + ';');
+                    }
+
+                    lstParam.push(param);
+                });
+                $.ajax({
+                        url: '@Url.Action("CallSPSelect", "DynamicMagt")',
+                        type: "POST",
+                        data: { lstParam: lstParam, spname: '@item.MAP_SPNM', connectionType: '@item.MAP_CNNAME'},
+                    success: function (result) {
+                            gridData_@(idGrid)= $('#@idGrid').dxDataGrid('instance');
+                            gridData_@(idGrid).option("dataSource", result.data);
+                        }
+                });
+
+                //mapid_grid_<id>_rowDeletes array of dataRowObject (json) (field, )
+                //mapid_grid_<id>_rowDeletes array of dataRowObject (json) (field, )
+                //mapid_grid_<id>_rowDeletes array of dataRowObject (json) (field, )
+                /*
+                 * dataRow.MAP_FLD
+                 * */
+
+
+            }
+        </script>
+    }
+}
+@{
+    if (Model.PEL_CLICK != 0 && Model.PEL_CLICK != null)
+    {
+        var actionEL = Model.listAction.Where(m => m.ACT_ID == Model.PEL_CLICK).FirstOrDefault();
+
+        if (actionEL != null)
+        {
+            @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", actionEL)
+        }
+    }
+    if (Model.PEL_DBLCLICK != 0 && Model.PEL_DBLCLICK != null)
+    {
+        var actionEL = Model.listAction.Where(m => m.ACT_ID == Model.PEL_DBLCLICK).FirstOrDefault();
+        var dataPag = new SYPageLayout();
+
+        if (actionEL != null)
+        {
+            if (actionEL.listActionDetail != null)
+            {
+                actionEL.PAG_KEY = Model.PAG_KEY;
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", actionEL)
+
+            }
+        }
+    }
+}
+
+
+
+
+
+<div class="p-1 col-@Model.PEL_COL">
+    <fieldset class="customFieldset">
+        <legend class="customLegend">@_loc.GetLocalizedString(Model.PEL_LBL != null ? Model.PEL_LBL : "")</legend>
+        @{
+            //List<string> gridKeys = new List<string>();
+            var twp = Html.DevExtreme().DataGrid()
+                .ID(idGrid)
+                .ShowBorders(true)
+                //.ColumnHidingEnabled(true)
+                .ShowRowLines(true)
+                .ShowColumnLines(true)
+                .AllowColumnResizing(true)
+                .AllowColumnReordering(true)
+                //.FilterRow(filterRow => filterRow
+                //    .Visible(true)
+                //    .ApplyFilter(GridApplyFilterMode.Auto)
+                //)
+                //.Export(e => e.Enabled(true).AllowExportSelectedData(true))
+                //.Height(Model.PEL_HGT != 0 ? Model.PEL_HGT : 500)
+                .Height(new JS("DynamicGridCallculate" + Model.PEL_ID))
+                //.HeaderFilter(f => f.Visible(true))
+                .RepaintChangesOnly(true)
+                .Selection(s => s.Mode(SelectionMode.Single))
+                //.FocusedRowEnabled(true)
+                // Quan change Scrolling Model.PAGING_TYP=0(không paging) thì set GridScrollingMode.Virtual
+                .Scrolling(s => s.Mode(Model.PAGING_TYP == "0" ? GridScrollingMode.Virtual : GridScrollingMode.Standard))
+                .ColumnFixing(c => c.Enabled(true))
+                .ColumnAutoWidth(true)
+                .Paging(paging => paging.PageSize(100))
+                .Pager(pager =>
+                {
+                    //pager.ShowPageSizeSelector(false);
+                    //pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                    pager.ShowInfo(true);
+                    pager.ShowNavigationButtons(true);
+                    pager.Visible(Model.PAGING_TYP == "0" ? false : true);
+                    //pager.InfoText("Page #{0}. Total: {1} ({2} items)"); Custom show page info
+                })
+            //.RemoteOperations(o => o.Paging(true))
+
+            // RemoteOperations = True  Paging
+            // RemoteOperations = False No Paging
+            .RemoteOperations(Model.PAGING_TYP == "0" ? false : true)
+            .Editing(editing =>
+            {
+                if (Model.IS_EDIT == true)
+                {
+                    editType = Model.EDIT_TYPE;
+                    if (Model.GRID_MODE_EDIT != null)
+                    {
+                        switch (Model.GRID_MODE_EDIT)
+                        {
+                            case "G014C001":// cell
+                                editing.Mode(GridEditMode.Batch);
+                                break;
+                            case "G014C002":// batch
+                                editing.Mode(GridEditMode.Batch);
+                                break;
+                            case "G014C003":// row
+                                editing.Mode(GridEditMode.Row);
+                                break;
+                            default: //cell
+                                editing.Mode(GridEditMode.Cell);
+                                break;
+                        }
+                    }
+                    //editing.Mode(GridEditMode.Row); // Changed mode cell to row to handle catch data
+
+                    // Quan add 2021-02-01
+                    // Set permission Button
+                    editing.AllowAdding(ViewBag.Save);
+                    editing.AllowUpdating(Model.IS_UPDATE && ViewBag.Edit); // Quan add 2021-03-07
+                    editing.AllowDeleting(Model.IS_DELETE && ViewBag.Delete);
+                    editing.UseIcons(true);
+                    //editing.AllowDeleting(new JS("allowDeleting"));
+                    //editing.StartEditAction(GridStartEditAction.DblClick);
+                }
+                else
+                {
+                    editType = "";
+                }
+            })
+            //.OnEditorPreparing("SettingDefaultValueInGrid")
+            .OnRowUpdated("OnRowUpdated")
+            .OnRowInserted("OnRowInserted")
+            .OnRowRemoved("OnRowRemoved")
+            .OnRowValidating("OnRowValidating")
+            .OnToolbarPreparing("OnToolbarPreparing")
+            .OnCellPrepared("OnCellPrepared_" + Model.PEL_ID)
+            //.OnCellClick("OnCellClick_" + Model.PEL_ID)
+            //.OnEditorPrepared("SettingDefaultValueInGrid")
+
+
+            .Columns(c =>
+            {
+
+                foreach (var item in Model.listElementChild.OrderBy(m => m.PEL_SEQ))
+                {
+                    if (item.IS_KEY == true)
+                    {
+                        colKeys.Add(item.PEL_ID_REAL);
+                    }
+                    colInfo.ColInfo = c; // column Add
+                    colInfo.ColData = item; // Data Add
+                    Html.PartialAsync("~/Views/DynamicMagt/_RenderGridColumn.cshtml", colInfo);
+                }
+            });
+
+            if (colKeys.Count > 0)
+            {
+                twp.KeyExpr(colKeys);
+            }
+
+            if (Model.PEL_CLICK != 0 && Model.PEL_CLICK != null)
+            {
+                //twp.OnSelectionChanged("select_" + Model.PEL_ID);
+                twp.OnSelectionChanged("RUN_ONCLICK_" + Model.PEL_CLICK + "_" + Model.PAG_ID);
+                //  twp.OnFocusedRowChanged("RUN_" + Model.PEL_CLICK + "_" + Model.PAG_ID);
+
+            }
+            if (Model.PEL_DBLCLICK != 0 && Model.PEL_DBLCLICK != null)
+            {
+                //twp.OnRowDblClick("select_dbl_" + Model.PEL_ID);
+                twp.OnRowDblClick("RUN_" + Model.PEL_DBLCLICK + "_" + Model.PAG_ID);
+            }
+            twp.OnRowUpdated("OnRowUpdated_" + Model.PEL_ID);
+
+            twp.OnRowInserted("OnRowInserted_" + Model.PEL_ID);
+            twp.OnRowRemoved("OnRowRemoved_" + Model.PEL_ID);
+            twp.OnInitNewRow("OnInitNewRow_" + Model.PEL_ID);
+            twp.OnRowValidating("OnRowValidating_" + Model.PEL_ID);
+            twp.OnToolbarPreparing("OnToolbarPreparing_" + Model.PEL_ID);
+            twp.OnCellPrepared("OnCellPrepared" + Model.PEL_ID);
+            
+            //twp.OnEditorPreparing("OnEditorPreparing_" + Model.PEL_ID);
+            //twp.OnContentReady("OnContentReady_" + Model.PEL_ID);
+            if (Model.PAGING_TYP == "0")
+            {
+                twp.Summary(s => s
+                .RecalculateWhileEditing(true)
+                .TotalItems(a => a.Add()
+                .ValueFormat("#,##0")
+                .Alignment(HorizontalAlignment.Right).DisplayFormat("" + _loc.GetLocalizedString("Sum") + " : {0}")
+                //.SummaryType(SummaryType.Sum).Column(Model.listElementChild[7].PEL_ID_REAL) // Tiếp tục phát triển phần setting Sum cho từng columns
+                // Hiện tại chưa dùng Model.listElementChild[7].PEL_ID_REAL được vì khi đó những page dymanic khác không có dữ liệu sẽ bị lỗi
+                // SummaryType(SummaryType.Sum).Column("OrderPrice") khi dùng cách này nhưng page không có tên columns sẽ không bị lỗi
+                .SummaryType(SummaryType.Sum).Column("OrderPrice")
+                ));
+            }
+
+            twp.Render();
+
+        }
+
+    </fieldset>
+</div>

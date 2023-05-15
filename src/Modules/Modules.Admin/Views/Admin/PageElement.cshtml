@@ -1,0 +1,783 @@
+﻿@using Modules.Common.Models;
+@{
+    ViewData["Title"] = "PageElement";
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = null;
+}
+
+@*@User.Identity.IsAuthenticated*@
+<script type="text/javascript">
+    var gridPageEvent = "";
+    var PAG_ID_Selected = "";
+    var PAG_ID_SEND_DATA = "";
+    var PEL_PRN_Selected = "";
+    function contextMenu_ItemClick(e) {
+        if(!e.itemData.Items) {
+            DevExpress.ui.notify("The \"" + e.itemData.Text + "\" item was clicked", "success", 1500);
+        }
+    }
+    function getValuePagID(){
+        return PAG_ID_Selected;
+    }
+
+    function getValuePelID(){
+        return PEL_PRN_Selected;
+    }
+    function getValuePelIDNull() {
+        return null;
+    }
+
+    function getValuePagIDToPopup() {
+        return PAG_ID_SEND_DATA;
+    }
+
+    function getCities(options) {
+        LoadingPage(1);
+        CheckSession();
+        return {
+            store: DevExpress.data.AspNet.createStore({
+                key: "ID",
+                loadUrl: '@Url.Action("Get", "SelectActionMappingName", new { httproute = true })'
+            }),
+            //filter: options.data ? ["StateID", "=", options.data.StateID] : null
+            filter: options.data ? ["PAG_ID", "=", PAG_ID_Selected] : null
+        };
+        LoadingPage(0);
+    }
+
+    function onEditorPreparingControlLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        if (e.parentType === "dataRow" && (e.dataField === "PEL_CLICK" || e.dataField === "PEL_DBLCLICK")) {
+            if (e.row.data.PEL_TYP === "C001") {
+                e.editorOptions.disabled = (typeof e.row.data.StateID !== "number");
+            }
+            //else {
+            //    e.editorOptions.disabled = false;
+            //}
+        }
+        LoadingPage(0);
+    }
+
+    function Test(rowData, value) {
+        rowData.PEL_TYP = value;
+        rowData.PEL_CLICK = null;
+        rowData.PEL_DBLCLICK = null;
+    }
+
+    // Save data item in List Controls Layout
+    function SaveDataListControls(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        data.PAG_ID = PAG_ID_Selected;
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataListControls","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageListControls").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in List Controls Layout
+    function DeleteDataListControls(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        data.PAG_ID = PAG_ID_Selected;
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteDataGridPageElement","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageListControls").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in List Page Dynamic
+    function SaveDataPageLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveDataPageLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageLayout").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in List Page Dynamic
+    function DeletePageLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletePageLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageLayout").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in popup setting relationship
+    function SavePageRelationshipLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SavePageRelationshipLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GetDataGridPageRelationshipLayout").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in popup setting relationship
+    function DeletePageRelationshipLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletePageRelationshipLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                 var grid = $("#GetDataGridPageRelationshipLayout").dxDataGrid("instance");
+                                 grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Save/Edit item in tab Page action toolbar
+    function SavedDataPageToolbarActionsLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+        data.PAG_ID = PAG_ID_Selected;
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SavedDataPageToolbarActionsLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageToolbarActions").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Delete item in tab Page action toolbar
+    function DeletedDataPageToolbarActionsLayout(e) {
+        LoadingPage(1);
+        CheckSession();
+        var data = (e.row.data);
+        let id = data.ID;
+        if (id === undefined) {
+            id = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeletedDataPageToolbarActionsLayout","Admin")',
+                    type: "POST",
+                    data: { data: data, state: gridPageEvent },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                var grid = $("#GridPageToolbarActions").dxDataGrid("instance");
+                                grid.refresh();
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // trace log event
+    function LogPageEvent(eventName) {
+        LoadingPage(1);
+        CheckSession();
+        gridPageEvent = eventName;
+        LoadingPage(0);
+    }
+
+    // Select data in grid List Page Dynamic to show data List Controls Layout
+    function selectionChangedListPageDynamic(selectedItems) {
+        LoadingPage(1);
+        CheckSession();
+        var data = selectedItems.selectedRowsData[0];
+        PAG_ID_Selected = data.PAG_ID;
+        PEL_PRN_Selected = data.PEL_PRN;
+        if (data) {
+            // refresh Page element
+            var pageElementGridData = $('#GridPageListControls').dxDataGrid('instance');
+            pageElementGridData.refresh();
+            // refresh Page toolbar action
+            var pageToolbarActionGridData = $('#GridPageToolbarActions').dxDataGrid('instance');
+            pageToolbarActionGridData.refresh();
+        }
+        LoadingPage(0);
+    }
+
+    function showPopupSettingRelationship(obj) {
+        LoadingPage(1);
+        CheckSession();
+        let datapagid = $(obj).attr("data-pag-id").trim();
+        let datapagkey = $(obj).attr("data-pag-key").trim();
+        PAG_ID_SEND_DATA = datapagid;
+        // ajax call Partial view (contain datasource of DataGrid )
+        // Replace Partial view to div content of modal - modal-popup-setting-relationship
+        $('#modal-popup-setting-relationship').modal('show');
+        var gridData = $('#GetDataGridPageRelationshipLayout').dxDataGrid('instance');
+        gridData.refresh();
+        LoadingPage(0);
+    }
+</script>
+
+<div class="modal fade" id="modal-popup-setting-relationship" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Setting Page Layout Relationship</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageRelationship>()
+                    .ID("GetDataGridPageRelationshipLayout")
+                    .DataSource(d => d.Mvc()
+                        .Controller("Admin")
+                        .LoadAction("GetDataGridPageRelationshipLayout")
+                        .LoadParams(new { PAG_ID = new JS("getValuePagIDToPopup") })
+                        .Key("ID")
+                    )
+                    .ShowBorders(true)
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto)
+                    )
+                    .RepaintChangesOnly(true)
+                    .Selection(s => s.Mode(SelectionMode.Single))
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    .Editing(editing =>
+                    {
+                        editing.Mode(GridEditMode.Row);
+                        editing.AllowAdding(true);
+                        editing.AllowDeleting(true);
+                        editing.AllowUpdating(true);
+                    })
+                    .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                    .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                    .Columns(columns =>
+                    {
+                        columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                        {
+                            btns.Add().Name(GridColumnButtonName.Edit);
+                            btns.Add().Name(GridColumnButtonName.Save).OnClick("SavePageRelationshipLayout");
+                            btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletePageRelationshipLayout");
+                        });
+                        columns.AddFor(m => m.PAG_ID).Width("50%").AllowEditing(true).Caption(_loc.GetLocalizedString("Page ID-Parent")).Lookup(lookup => lookup
+                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetComboboxTypePage").Key("PAG_ID"))
+                            .DisplayExpr("PAG_KEY")
+                            .ValueExpr("PAG_ID")
+                        );
+                        columns.AddFor(m => m.POP_ID).Width("50%").Caption(_loc.GetLocalizedString("Page Popup ID-Children")).Lookup(lookup => lookup
+                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("SelectPageLayoutTypePopup").Key("PAG_ID"))
+                            .DisplayExpr("PAG_KEY")
+                            .ValueExpr("PAG_ID")
+                        );
+                    })
+                    .HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(10))
+                    .Pager(pager =>
+                    {
+                        pager.ShowPageSizeSelector(false);
+                        pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                        pager.ShowInfo(true);
+                    })
+                    )
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12"><h4>List Page Dynamic</h4></div>
+    <div class="col-md-12">
+        @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageLayout>()
+            .ID("GridPageLayout")
+            .DataSource(d => d.Mvc()
+                .Controller("Admin")
+                .LoadAction("GetDataGridPageLayout")
+                .Key("PAG_ID")
+            )
+            .Height("350")
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .AllowColumnResizing(true)
+            .FilterRow(filterRow => filterRow
+                .Visible(true)
+                .ApplyFilter(GridApplyFilterMode.Auto)
+            )
+            .RepaintChangesOnly(true)
+            .Selection(s => s.Mode(SelectionMode.Single))
+            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+            .Editing(editing =>
+            {
+                editing.Mode(GridEditMode.Row);
+                editing.AllowAdding(true);
+                editing.AllowDeleting(true);
+                editing.AllowUpdating(true);
+            })
+            .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+            .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+            .Columns(columns =>
+            {
+                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                {
+                    btns.Add().Name(GridColumnButtonName.Edit);
+                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataPageLayout");
+                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletePageLayout");
+                });
+                columns.AddFor(m => m.PAG_ID).Width("10%").AllowEditing(false).Caption(_loc.GetLocalizedString("Page ID"));
+                columns.AddFor(m => m.PAG_KEY).Width("20%").Caption(_loc.GetLocalizedString("Page Key")).CellTemplate
+                (
+                    @<text>
+                        <a href="#" onclick="showPopupSettingRelationship(this)" data-pag-id="<%-data.PAG_ID%>"
+                            data-pag-key="<%-data.PAG_KEY%>">
+                            <%-data.PAG_KEY%>
+                        </a>
+                    </text>
+                );
+                columns.AddFor(m => m.PAG_TYPE).Width("20%").Lookup(lookup => lookup
+                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPAG_TYPE").Key("DTL_CD"))
+                    .DisplayExpr("COD_NM")
+                    .ValueExpr("DTL_CD")
+                    ).Caption(_loc.GetLocalizedString("Page Type"));
+                columns.AddFor(m => m.PAG_TITLE).Width("20%").Caption(_loc.GetLocalizedString("Page Title"));
+
+                columns.AddFor(m => m.PAG_WDT).Width("15%").DataType(GridColumnDataType.Number).Caption(_loc.GetLocalizedString("Page Width"));
+                columns.AddFor(m => m.PAG_HGT).Width("15%").DataType(GridColumnDataType.Number).Caption(_loc.GetLocalizedString("Page Height"));
+            })
+            .OnSelectionChanged("selectionChangedListPageDynamic")
+            .HeaderFilter(f => f.Visible(true))
+            .Paging(paging => paging.PageSize(10))
+            .Pager(pager =>
+            {
+                pager.ShowPageSizeSelector(false);
+                pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                pager.ShowInfo(true);
+            })
+        )
+    </div>
+</div>
+<br />
+<div class="row">
+    <div class="col-md-12"><h4>Controls Layout</h4></div>
+    <div class="col-md-12">
+        <div class="col-12 col-sm-12 col-lg-12">
+            <div class="card card-primary card-outline card-tabs">
+                <div class="card-header p-0 pt-1 border-bottom-0">
+                    <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="custom-tabs-page-element" data-toggle="pill" href="#page-element" role="tab" aria-controls="page-element" aria-selected="false">Page Element</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="custom-tabs-page-toolbar-action" data-toggle="pill" href="#toolbar-action" role="tab" aria-controls="toolbar-action" aria-selected="false">Page Toolbar Action</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="custom-tabs-two-tabContent">
+                        <div class="tab-pane fade active show" id="page-element" role="tabpanel" aria-labelledby="custom-tabs-page-element">
+                            @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageLayElements>()
+                                .ID("GridPageListControls")
+                                .DataSource(d => d.Mvc()
+                                    .Controller("Admin")
+                                    .LoadAction("GetDataGridPageElement")
+                                    .LoadParams(new { PAG_ID = new JS("getValuePagID") })
+                                    .Key("PAG_ID").Key("PEL_ID")
+                                )
+                                .Height("350")
+                                .ShowBorders(true)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                                .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                                .OnEditorPreparing("onEditorPreparingControlLayout")
+                                .Editing(editing =>
+                                {
+                                    editing.Mode(GridEditMode.Row);
+                                    editing.AllowAdding(true);
+                                    editing.AllowDeleting(true);
+                                    editing.AllowUpdating(true);
+                                })
+                                .Columns(columns =>
+                                {
+                                    columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                    {
+                                    btns.Add().Name(GridColumnButtonName.Edit);
+                                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataListControls");
+                                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteDataListControls");
+
+                                    });
+                                    columns.AddFor(m => m.PAG_ID).Visible(false);
+
+                                    columns.AddFor(m => m.PEL_ID).Width(250).Caption(_loc.GetLocalizedString("Page Element ID")).CellTemplate
+                                    (
+                                        @<text>
+                                            <a href="#" onclick="showPageSettingProperties(this)" data-pag-id="<%-data.PAG_ID%>" data-pel-id="<%-data.PEL_ID%>"
+                                                data-page-type="<%-data.PEL_TYP%>">
+                                                <%- value %>
+                                            </a>
+                                            <script>
+                                                function showPageSettingProperties(obj) {
+                                                    let dataPageID = $(obj).attr("data-pag-id").trim();
+                                                    let dataPageKey = $(obj).attr("data-pel-id").trim();
+                                                    let dataPageType = $(obj).attr("data-page-type").trim();
+
+                                                    let id = dataPageID + dataPageKey + dataPageType;
+                                                    let url = '/Admin/PageSettingProperties?pagID=' + dataPageID + '&pelID=' + dataPageKey + '&pagTp=' + dataPageType;
+
+                                                    GenerateTab("Page Setting Properties - " + dataPageID, url, id, true);
+                                                    //location.href = getLanguages() + '/Admin/PageSettingProperties?pagID=' + dataPageID + '&pelID=' + dataPageKey + '&pagTp=' + dataPageType;
+                                                };
+                                            </script>
+                                        </text>
+                                    );
+
+                                    columns.AddFor(m => m.PEL_LBL).Width(250).Caption(_loc.GetLocalizedString("Page Element Label"));
+                                    columns.AddFor(m => m.PEL_TYP).Width(250).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPEL_TYPE").LoadParams(new { type = "ParentLayout" }).Key("DTL_CD"))
+                                        .DisplayExpr("COD_NM")
+                                        .ValueExpr("DTL_CD")
+                                    ).Caption(_loc.GetLocalizedString("Page Type"));
+                                    //Quan add 2021-03-30
+                                    // Add Grid Paging type
+                                    columns.AddFor(m => m.PAGING_TYP).Lookup(lookup => lookup
+                                             .DataSource("hlboot.GRID_PAGING_TYPE")
+                                                 .DisplayExpr("Name")
+                                                 .ValueExpr("ID")
+                                                ).Width(250).Caption(_loc.GetLocalizedString("Page Type"));
+
+                                    columns.AddFor(m => m.GRID_MODE_EDIT).Width(250).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetGridModeType").Key("DTL_CD"))
+                                        .DisplayExpr("COD_NM")
+                                        .ValueExpr("DTL_CD")
+                                    ).Caption(_loc.GetLocalizedString("Grid Mode Edit Type"));
+
+
+                                    columns.AddFor(m => m.CUSTM_VIEW).Width(250).Caption(_loc.GetLocalizedString("Custom View"));
+                                    columns.AddFor(m => m.PEL_SEQ).Width(250).Caption(_loc.GetLocalizedString("Seq"));
+
+                                    columns.AddFor(m => m.PEL_COL).Caption(_loc.GetLocalizedString("Column CSS")).Width(50);
+                                    columns.AddFor(m => m.PEL_ROW).Caption(_loc.GetLocalizedString("Row CSS")).Width(50);
+
+                                    columns.AddFor(m => m.PEL_CLICK).Width(250).Caption(_loc.GetLocalizedString("Setting Grid Action Click Row")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("SelectActionMappingName").LoadParams(new { PAG_ID = new JS("getValuePagID") }).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID").AllowClearing(true)
+                                    );
+                                    columns.AddFor(m => m.PEL_DBLCLICK).Width(250).Caption(_loc.GetLocalizedString("Setting Grid Action Double Click Row")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("SelectActionMappingName").LoadParams(new { PAG_ID = new JS("getValuePagID") }).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID").AllowClearing(true)
+                                    );
+                                    columns.AddFor(m => m.IS_EDIT).Width(250).Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalse").Key("ID"))
+                                            .DisplayExpr("Name")
+                                            .ValueExpr("ID")
+                                            .AllowClearing(true)
+                                        );
+                                    // Quan add 2021-03-27                                  
+                                    columns.AddFor(m => m.IS_CREATE).Width(250).Lookup(lookup => lookup
+                                           .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalse").Key("ID"))
+                                           .DisplayExpr("Name")
+                                           .ValueExpr("ID")
+                                           .AllowClearing(true)
+                                       );
+                                    columns.AddFor(m => m.IS_UPDATE).Width(250).Lookup(lookup => lookup
+                                           .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalse").Key("ID"))
+                                           .DisplayExpr("Name")
+                                           .ValueExpr("ID")
+                                           .AllowClearing(true)
+                                       );
+                                    columns.AddFor(m => m.IS_DELETE).Width(250).Lookup(lookup => lookup
+                                           .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalse").Key("ID"))
+                                           .DisplayExpr("Name")
+                                           .ValueExpr("ID")
+                                           .AllowClearing(true)
+                                       );
+                                    // END
+                                    columns.AddFor(m => m.EDIT_TYPE).Width(250).Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetEditType").Key("DTL_CD"))
+                                            .DisplayExpr("COD_NM")
+                                            .ValueExpr("DTL_CD")
+                                            .AllowClearing(true)
+                                        );
+                                    columns.AddFor(m => m.PEL_HGT).Width(250).Caption(_loc.GetLocalizedString("Page Height"));
+                                })
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(10))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowPageSizeSelector(false);
+                                    pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                    pager.ShowInfo(true);
+                                })
+                            )
+                        </div>
+                        <div class="tab-pane fade" id="toolbar-action" role="tabpanel" aria-labelledby="custom-tabs-page-toolbar-action">
+                            @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYToolbarActions>()
+                                .ID("GridPageToolbarActions")
+                                .DataSource(d => d.Mvc()
+                                    .Controller("Admin")
+                                    .LoadAction("GetDataGridPageToolbarActions")
+                                    .LoadParams(new { PAG_ID = new JS("getValuePagID") })
+                                    .Key("ID")
+                                    .Key("PAG_ID")
+                                    .Key("ACT_ID")
+                                )
+                                .Height("350")
+                                .ShowBorders(true)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .RepaintChangesOnly(true)
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .Editing(editing =>
+                                {
+                                    editing.Mode(GridEditMode.Row);
+                                    editing.AllowAdding(true);
+                                    editing.AllowDeleting(true);
+                                    editing.AllowUpdating(true);
+                                })
+                                .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                                .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                                .OnRowUpdating(@<text> function(e) { LogPageEvent("RowUpdating"); } </text>)
+                                .OnRowUpdated(@<text> function(e) { LogPageEvent("RowUpdated"); } </text>)
+                                .OnRowRemoving(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                                .OnRowRemoved(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+                                .Columns(columns =>
+                                {
+                                    columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                    {
+                                        btns.Add().Name(GridColumnButtonName.Edit);
+                                        btns.Add().Name(GridColumnButtonName.Save).OnClick("SavedDataPageToolbarActionsLayout");
+                                        btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletedDataPageToolbarActionsLayout");
+                                    });
+                                    columns.AddFor(m => m.ID).Width(150).Visible(false);
+                                    columns.AddFor(m => m.PAG_ID).Width(150).Visible(false);
+                                    columns.AddFor(m => m.ACT_ID).Width("50%").Caption(_loc.GetLocalizedString("Action Name")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetMapPageAction").LoadParams(new { PAG_ID = new JS("getValuePagID") }).Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+
+                                    columns.AddFor(m => m.ACT_TYP).Width("50%").Caption(_loc.GetLocalizedString("Page Action Type")).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetToolbarType").Key("DTL_CD"))
+                                        .DisplayExpr("COD_NM")
+                                        .ValueExpr("DTL_CD")
+                                    );
+                                })
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(20))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowPageSizeSelector(false);
+                                    pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                    pager.ShowInfo(true);
+                                })
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

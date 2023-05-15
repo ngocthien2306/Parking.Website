@@ -1,0 +1,326 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using InfrastructureCore.Models.Menu
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = false;
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    string ProductLineName = "ProductLineName" + ViewBag.Thread;
+    string ProjectName = "ProjectName" + ViewBag.Thread;
+    string UserProjectCode = "UserProjectCode" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemName = "ItemName" + ViewBag.Thread;
+    string SalesClassification = "SalesClassification" + ViewBag.Thread;
+    string IdGrid = "GridWorkManagement" + ViewBag.Thread;
+    string projectOrderType = "projectOrderType" + ViewBag.Thread;
+    string saleOrderProjectName = "saleOrderProjectName" + ViewBag.Thread;
+}
+<script>
+    $(() => {
+        LoadingPage(1);
+
+        var projectOrderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        $("#@projectOrderType").dxSelectBox({
+            dataSource: projectOrderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        var SalesClassification = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "SCS000");
+        $("#SalesClassification@(ViewBag.Thread)").dxSelectBox({
+                dataSource: SalesClassification,
+                displayExpr: "BASE_NAME",
+                valueExpr: "BASE_CODE"
+        });
+
+        ResizePageWorkManagement();
+        LoadingPage(0);
+    });
+
+    function OpenProductionWorkDetail@(ViewBag.Thread)(projectCode) {
+       CheckSession();
+       $.ajax({
+            url: '@Url.Action("CheckDataDataWorkMagt", "MESProductionMagt")',
+            type: "GET",
+            data: {
+                projectCode: projectCode
+
+            },
+            dataType: 'json',
+           success: function (result)
+           {
+               debugger;
+               if (result.length>0)
+               {
+                    let url = `/MESProductionMagt/WorkDetailManagement?projectCode=${projectCode}&menuid=${@ViewBag.MenuID}`;
+                    GenerateTabConmonBoard('CBDetail', url, menuIDoTabActive, false)
+               }
+               else
+               {
+                   DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Project Status Have Changed, Can't view detail")", "Error");
+                   $("#btnSearch_@(ViewBag.Thread)").trigger("click");
+               }
+
+           }
+       });
+    }
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+
+     $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        var dataGrid = $("#@IdGrid");
+        ExportExcelCommon(dataGrid, "Work Management");
+        LoadingPage(0);
+    });
+
+
+    // Search function
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        //var ProductLineName = $('#@ProductLineName').dxSelectBox('instance').option('value');
+        var ProjectName = $('#@ProjectName').dxTextBox('instance').option('value');
+        var ItemCode = $('#@ItemCode').dxTextBox('instance').option('value');
+        var ItemName = $('#@ItemName').dxTextBox('instance').option('value');
+        var UserProjectCode = $('#@UserProjectCode').dxTextBox('instance').option('value');
+        var SalesClassification = $("#SalesClassification@(ViewBag.thread)").dxSelectBox('instance').option('value');
+        var ProjectOrderType = $('#@projectOrderType').dxSelectBox('instance').option('value');
+        var SaleOrderProjectName = $('#@saleOrderProjectName').dxTextBox('instance').option('value');
+
+        $.ajax({
+            //url: '@Url.Action("GetListDataWorkMagtNew", "MESProductionMagt")',
+            url: '@Url.Action("GetListDataWorkMagt", "MESProductionMagt")',
+            type: "GET",
+            data: {
+                projectOrderType: ProjectOrderType,
+                saleOrderProjectName: SaleOrderProjectName.trim(),
+                userProjectCode: UserProjectCode,
+                projectName: ProjectName,
+                productionCode: null,
+                itemCode: ItemCode,
+                itemName: ItemName,
+                SalesClassification: SalesClassification
+
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#@IdGrid").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+        LoadingPage(0);
+    });
+
+    function getParamsProductionCodeSearch() {
+        return $('@ProductLineName').dxSelectBox("option", "value");
+    }
+
+    function getParamsProjectNameSearch() {
+        return $('@ProjectName').dxTextBox("option", "value");
+    }
+
+    function getParamsItemCodeSearch() {
+        return $('@ItemName').dxSelectBox("option", "value");
+    }
+
+    function getParamsItemNameSearch() {
+        return $("#ItemNameSearch@(ViewBag.Thread)").val();
+    }
+
+    function getParamsUserProjectCodeSearch() {
+        return $("#UserProjectCode@(ViewBag.Thread)").val();
+    }
+
+    function getParamsSalesClassification() {
+        return $("#SalesClassification@(ViewBag.thread)").dxSelectBox('instance').option('value');
+
+    }
+     $(window).resize(function () {
+         ResizePageWorkManagement();
+
+    });
+    function ResizePageWorkManagement() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row">
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                        <label>@(_loc.GetLocalizedString("Project Order Type"))</label>
+
+                        @(Html.DevExtreme().SelectBox()
+                                .ID(projectOrderType)
+                                .DisplayExpr("Name")
+                                .ValueExpr("ID")
+                                .ShowClearButton(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                        )
+                    </div>
+
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                        <label>@(_loc.GetLocalizedString("Sales Order Project Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID(saleOrderProjectName).Value(""))
+                    </div>
+
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                        <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                        @(Html.DevExtreme().TextBox().ID(UserProjectCode).ShowClearButton(true))
+                    </div>
+
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                        <label>@(_loc.GetLocalizedString("Project Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ProjectName).ShowClearButton(true))
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ItemCode).ShowClearButton(true))
+                    </div>
+
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ItemName).ShowClearButton(true))
+                    </div>
+
+                    <div class="form-group col-md-3 col-xs-3 col-lg-3">
+                            <label>@(_loc.GetLocalizedString("Sales Classification"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                .ID(SalesClassification)
+                                .ShowClearButton(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                            )
+                    </div>
+                </div>
+
+                </div>
+                <div id="bodypage_@(ViewBag.Thread)" class="card-body p-0 pl-2 pr-2 pb-2">
+                    @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                        .ID(IdGrid)
+                        .DataSource(x => x.Mvc().Controller("MESProductionMagt")
+                            .LoadAction("GetListDataWorkMagt")
+                            //.LoadAction("GetListDataWorkMagtNew")
+                            .LoadParams(
+                                new
+                                {
+                                    userProjectCode = new JS("getParamsUserProjectCodeSearch"),
+                                    projectName = new JS("getParamsProjectNameSearch"),
+                                    productionCode = new JS("getParamsProductionCodeSearch"),
+                                    itemCode = new JS("getParamsItemCodeSearch"),
+                                    itemName = new JS("getParamsItemNameSearch"),
+                                    SalesClassification = new JS("getParamsSalesClassification")
+
+                                }
+                            )
+                        )
+                        .ShowBorders(true).Height("100%")
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .Columns(c =>
+                        {
+                        c.AddFor(x => x.No).Caption("No");
+                        c.AddFor(x => x.ProjectOrderType).Caption((_loc.GetLocalizedString("Project Order Type")));
+                        c.AddFor(x => x.SalesOrderProjectName).Caption((_loc.GetLocalizedString("Sales Order Project Name")));
+                            @*c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("Project Code")).CellTemplate(
+                                    @<text>
+                                    <a href="#" onclick="OpenProductionWorkDetail@(ViewBag.Thread)('<%-data.ProjectCode%>')" data-pag-id="<%-data.ProjectCode%>">
+                                        <%-data.ProjectCode%>
+                                    </a>
+                                    </text>
+                                    );*@
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).CellTemplate(
+                                @<text>
+                                    <a href="#" onclick="OpenProductionWorkDetail@(ViewBag.Thread)('<%-data.ProjectCode%>')" data-pag-id="<%-data.ProjectCode%>">
+                                        <%-data.UserProjectCode%>
+                                    </a>
+                                </text>
+                                );
+                            c.AddFor(x => x.ProjectName).Caption(_loc.GetLocalizedString("Project Name"));
+                            c.AddFor(x => x.ProductType).Caption(_loc.GetLocalizedString("Product Type"));
+                            c.AddFor(x => x.SalesClassificationName).Caption(_loc.GetLocalizedString("Sales Classification"));
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                            c.AddFor(x => x.ProjectStatusName).Caption("ProjectStatus").Visible(false);
+                            //c.AddFor(x => x.ProdcnCode).Caption("Production Code"); // Product Request Code
+                            c.AddFor(x => x.RequestDate).Caption(_loc.GetLocalizedString("Production Request Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd"); // Request Date
+                            c.AddFor(x => x.PlanDoneDate).Caption(_loc.GetLocalizedString("Planning Done Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd"); // PlanDoneDate
+                            //c.AddFor(x => x.ProductLineName).Caption(_loc.GetLocalizedString("Product Line Name"));
+                            //c.AddFor(x => x.ProductType).Caption("제품분류");
+                            //c.AddFor(x => x.PartnerName).Caption("거래처 코드");
+                            //c.AddFor(x => x.OrderNumber).Caption("고객주문번호");
+                            //c.AddFor(x => x.DomesticForeign).Caption("거래지역");
+                            //c.AddFor(x => x.AsignedQty).Caption(_loc.GetLocalizedString("Asigned Qty")).Format("#,##0");
+                            c.AddFor(x => x.OrderQuantity).Caption(_loc.GetLocalizedString("Order Quantity")).Format("#,##0");
+                            c.AddFor(x => x.ProdcnDoneQty).Caption(_loc.GetLocalizedString("Production Done Qty")).Format("#,##0");
+                            //c.AddFor(x => x.LineManager).Caption(_loc.GetLocalizedString("Line Manager"));
+                            //c.AddFor(x => x.AppliedExchRate).Caption("수주환산금액(KRW)");
+                            //c.AddFor(x => x.OrderTeamCode).Caption("수주부서");
+                            //c.AddFor(x => x.RequestUserId).Caption("작성자");
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            //pager.ShowPageSizeSelector(false);
+                            //pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        //.OnRowDblClick("ShowCreateSalesProjectPopup")
+                        // .OnRowClick("SelectRowSalesProject")
+                        )
+
+
+                </div>
+            </div>
+
+    </div>
+</div>

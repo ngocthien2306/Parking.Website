@@ -1,0 +1,888 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+
+@model MES_SaleProject
+@{
+    Layout = null;
+    var countItemRequest = Model.ListItemRequest != null ? Model.ListItemRequest.Count : 0;
+    var countItemPO = Model.ListItemPO != null ? Model.ListItemPO.Count : 0;
+}
+
+<script>
+    var dataSourceMaterial = [];
+    var listItemCodeSelected = [];
+    var listArrivalRequestDate = [];
+    var countItemRequest = 0;
+    var countItemPO = 0;
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        $.blockUI();
+
+        // Get list Item
+        $.ajax({
+            url: '@Url.Action("GetListMaterial", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function (result) {
+                dataSourceMaterial = result;
+            }
+        });
+
+        // Get list Request Type
+        $.ajax({
+            url: '@Url.Action("GetListCommonCode", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { groupCode: "RQTP00" },
+            dataType: 'json',
+            success: function (result) {
+                $("#ddlProdReq_RequestType").dxSelectBox("option", "dataSource", result);
+                $("#ddlProdReq_RequestType").dxSelectBox("option", "value", '@Model.RequestType');
+            }
+        });
+
+        // Render list Item Request and list Item PO
+        countItemRequest = '@countItemRequest';
+        countItemPO = '@countItemPO';
+        if (countItemRequest > 0) {
+            let listItemRequest = @Html.Raw(Json.Serialize(Model.ListItemRequest));
+            let listItemPO = [];
+
+            if (countItemPO > 0) {
+                listItemPO = @Html.Raw(Json.Serialize(Model.ListItemPO));
+            }
+            let countJ = 0;
+
+            for (var i = 0; i < countItemRequest; i++) {
+                listItemCodeSelected.push(listItemRequest[i].ItemCode);
+
+                let itemCode = listItemRequest[i].ItemCode;
+                let itemName = listItemRequest[i].ItemName;
+                let totalPOQty = 0;
+                let totalPOFnQty = 0;
+                let lstItemPO = listItemPO.filter(x => x.ItemCode == listItemRequest[i].ItemCode);
+
+                // Render list Item PO first to calculate Total PO Qty and Total Deliver Qty
+                if (lstItemPO.length > 0) {
+                    for (var j = 0; j < lstItemPO.length; j++) {
+                        let statusCode = lstItemPO[j].StatusCode;
+                        if (statusCode != "ORST03") {
+                            totalPOQty += lstItemPO[j].POQty;
+                            totalPOFnQty += lstItemPO[j].DeliverQty;
+                        }
+
+                        let htmlItemPO = '';
+                        htmlItemPO += '<tr id="' + countJ + '" class="' + itemCode + '" id-parent="' + i + '" tr-type="prod-req-item-po" partner-code="' + lstItemPO[j].PartnerCode + '">';
+                        htmlItemPO += '<td hidden><input hidden id="txtProdReq_ArrivalRequestDate" value="' + lstItemPO[j].ArrivalRequestDate + '" /></td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + itemName + '" readonly/></td>';
+                        htmlItemPO += '<td class="text-center"><div id="ddlPartner' + countJ + '"></div></td>';
+                        htmlItemPO += '<td class="text-center">';
+                        if (statusCode == "ORST01") {
+                            htmlItemPO += '<input class="form-control" value = "' + lstItemPO[j].POQty + '" id = "txtPOQty' + countJ + '" onchange = "CalculateTotalPrice(' + countJ + ');CalculateTotalPOQty(' + i + ',' + "'" + itemCode + "'" + ')" />'
+                        }
+                        else {
+                            htmlItemPO += '<input class="form-control" value = "' + lstItemPO[j].POQty + '" id = "txtPOQty' + countJ + '" readonly/>'
+                        }
+                        htmlItemPO += '</td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + lstItemPO[j].DeliverQty + '" id="txttxtDeliverQty' + countJ + '" readonly/></td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + lstItemPO[j].MonetaryUnit + '" id="txtMonetaryUnit' + countJ + '" readonly/></td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + lstItemPO[j].ItemPrice + '" id="txtItemPrice' + countJ + '" readonly/></td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + lstItemPO[j].TotalPrice + '" id="txtTotalPrice' + countJ + '" readonly/></td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + lstItemPO[j].Status + '" id="txtStatus' + countJ + '"/ readonly></td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + lstItemPO[j].PONumber + '" id="txtPONumber' + countJ + '" readonly/></td>';
+                        htmlItemPO += '<td class="text-center">';
+                        htmlItemPO += '<input class="form-control" value="' + (lstItemPO[j].PleigerRemark != null ? lstItemPO[j].PleigerRemark : '') + '" id="txtPleigerRemark' + countJ + '" ' + (statusCode != "ORST01" ? 'readonly' : '') + ' />';
+                        htmlItemPO += '</td>';
+                        htmlItemPO += '<td class="text-center"><input class="form-control" value="' + (lstItemPO[j].PORemark != null ? lstItemPO[j].PORemark : '') + '" id="txtPORemark' + countJ + '" readonly/></td>';
+                        htmlItemPO += '<td><div id="dtpProdReq_ArrivalRequestDate' + countJ + '"></div></td>';
+                        htmlItemPO += '<td><div id="dtpProdReq_PlanDeliverDate' + countJ + '"></div></td>';
+                        htmlItemPO += '<td class="text-center">' + (statusCode == "ORST01" ? '<button type="button" class="btn btn-danger btn-sm" onclick="DeleteItemPO(' + countJ + ',' + i + ',' + "'" + itemCode + "'" + ')">Delete</button' : '') + '</td>';
+                        htmlItemPO += '</tr>';
+
+                        $("#tblProdReq_ItemPO tbody").append(htmlItemPO);
+
+                        // Get list Supplier - Partner
+                        let listSupplierByItem = [];
+                        $.ajax({
+                            url: '@Url.Action("GetListPartnerByItemCode", "MESProductionRequest")',
+                            type: 'GET',
+                            async: false,
+                            data: { itemCode: itemCode },
+                            dataType: 'json',
+                            success: function (result) {
+                                listSupplierByItem = result;
+                            }
+                        });
+
+                        // Set selected Partner
+                        $("#ddlPartner" + countJ).dxSelectBox({
+                            dataSource: listSupplierByItem,
+                            displayExpr: "PartnerName",
+                            valueExpr: "PartnerCode",
+                            value: lstItemPO[j].PartnerCode,
+                            disabled: true,
+                            paging: {
+                                paginate: true,
+                                pageSize: 10
+                            }
+                        }).dxSelectBox("instance");
+
+                        $("#dtpProdReq_ArrivalRequestDate" + countJ).dxDateBox({
+                            displayFormat: "yyyy-MM-dd",
+                            value: lstItemPO[j].ArrivalRequestDate,
+                            disabled: lstItemPO[j].StatusCode != "ORST01" ? true : false,
+                            onValueChanged: function (data) {
+                                let stringId = data.element[0].id;
+                                let idDropDown = stringId.substr(29, stringId.length);
+                                let poNumber = $('#tblProdReq_ItemPO tbody tr[id="' + idDropDown + '"]').find("input#txtPONumber" + idDropDown).val();
+                                let partnerCode = $('#tblProdReq_ItemPO tbody tr[id="' + idDropDown + '"]').attr("partner-code");
+
+                                let listTr = $('#tblProdReq_ItemPO tbody tr[partner-code="' + partnerCode + '"]');
+                                for (var no = 0; no < listTr.length; no++) {
+                                    let idTr = $($(listTr[no])).attr("id");
+                                    let trPONumber = $(listTr[no]).find("input#txtPONumber" + idTr).val();
+                                    if (poNumber == trPONumber) {
+                                        $(listTr[no]).find("#dtpProdReq_ArrivalRequestDate" + idTr).dxDateBox("option", "value", data.value);
+                                    }
+                                }
+                            }
+                        });
+
+                        $("#dtpProdReq_PlanDeliverDate" + countJ).dxDateBox({
+                            displayFormat: "yyyy-MM-dd",
+                            value: lstItemPO[j].PlanDeliverDate,
+                            disabled: lstItemPO[j].StatusCode != "ORST01" ? true : false
+                        });
+
+                        countJ++;
+                    }
+                }
+
+                let html = '';
+                html += '<tr id="' + i + '">';
+                html += '<td class="text-center"><div id="ddlProdReq_ItemRequest' + i + '"></div></td>';
+                html += '<td class="text-center"><input class="form-control input-sm" value=' + listItemRequest[i].ReqQty + ' id="txtReqQty' + i + '" onblur="CheckRequestQuantity(' + i + ')" /></td>';
+                html += '<td class="text-center"><input class="form-control input-sm" value=' + listItemRequest[i].StkQty + ' id="txtStkQty' + i + '" readonly /></td>';
+                html += '<td class="text-center"><input class="form-control input-sm" value=' + totalPOQty + ' id="txtTotalPOQty' + i + '" readonly /></td>';
+                html += '<td class="text-center"><input class="form-control input-sm" value=' + totalPOFnQty + ' id="txtFnPOQty' + i + '" readonly /></td>';
+                html += '<td class="text-center"><button type="button" id="btnPO' + i + (totalPOQty + listItemRequest[i].StkQty < listItemRequest[i].ReqQty ? '' : 'disabled') + '" class="btn btn-primary btn-sm" onclick="AddItemPO(' + i + ')">PO</button> ';
+                html += '<button type="button" class="btn btn-danger btn-sm" onclick="DeleteItemRequest(' + i + ')">Delete</button></td>';
+                html += '</tr>';
+                $("#tblProdReq_ItemRequest tbody").append(html);
+
+                $("#ddlProdReq_ItemRequest" + i).dxSelectBox({
+                    dataSource: new DevExpress.data.DataSource({
+                        store: dataSourceMaterial,
+                        paginate: true,
+                        pageSize: 5
+                    }),
+                    displayExpr: "NameEng",
+                    valueExpr: "ItemCode",
+                    value: listItemRequest[i].ItemCode,
+                    disabled: true,
+                }).dxSelectBox("instance");
+            }
+        }
+        LoadingPage(0);
+        $.unblockUI();
+    });
+
+    // Add Item Request
+    function AddItemRequest() {
+        let html = '';
+        html += '<tr id="' + countItemRequest + '">';
+        html += '<td class="text-center"><div id="ddlProdReq_ItemRequest' + countItemRequest + '"></div></td>';
+        html += '<td class="text-center"><input class="form-control input-sm" id="txtReqQty' + countItemRequest + '" onblur="CheckRequestQuantity(' + countItemRequest + ')" readonly /></td>';
+        html += '<td class="text-center"><input class="form-control input-sm" id="txtStkQty' + countItemRequest +'" readonly /></td>';
+        html += '<td class="text-center"><input class="form-control input-sm" id="txtTotalPOQty' + countItemRequest + '" readonly /></td>';
+        html += '<td class="text-center"><input class="form-control input-sm" id="txtFnPOQty' + countItemRequest + '" readonly /></td>';
+        html += '<td class="text-center"><button type="button" id="btnPO' + countItemRequest + '" disabled class="btn btn-primary btn-sm" onclick="AddItemPO(' + countItemRequest + ')">PO</button> ';
+        html += '<button type="button" class="btn btn-danger btn-sm" onclick="DeleteItemRequest(' + countItemRequest + ')">Delete</button></td>';
+        html += '</tr>';
+        $("#tblProdReq_ItemRequest tbody").append(html);
+
+        $("#ddlProdReq_ItemRequest" + countItemRequest).dxSelectBox({
+            dataSource: new DevExpress.data.DataSource({
+                store: dataSourceMaterial,
+                paginate: true,
+                pageSize: 5
+            }),
+            displayExpr: "NameEng",
+            valueExpr: "ItemCode",
+            searchEnabled: true,
+            onValueChanged: function (data) {
+                let stringId = data.element[0].id;
+                let id = stringId.substr(22, stringId.length);
+                let oldValue = data.previousValue;
+                let newValue = data.value;
+
+                if (listItemCodeSelected.includes(newValue)) {
+                    let index = listItemCodeSelected.indexOf(oldValue);
+                    if (index > -1) {
+                        listItemCodeSelected.splice(index, 1);
+                    }
+
+                    DevExpress.ui.dialog.alert("This item is already exists!", "Error");
+                    return;
+                }
+                else {
+                    listItemCodeSelected.push(newValue);
+                    if (oldValue != null) {
+                        let index = listItemCodeSelected.indexOf(oldValue);
+                        if (index > -1) {
+                            listItemCodeSelected.splice(index, 1);
+                        }
+                    }
+                }
+
+                // Remove Item PO when change Item Request
+                if (oldValue != null && oldValue != newValue) {
+                    $("#tblProdReq_ItemPO tbody tr[class='" + oldValue + "'][id-parent='" + id + "']").remove();
+                }
+                SelectItemRequest(id, newValue);
+            }
+        }).dxSelectBox("instance");
+
+        countItemRequest++;
+    }
+
+    // Select Item Request
+    function SelectItemRequest(id, value) {
+        $("#tblProdReq_ItemRequest tbody tr").find("input#txtReqQty" + id).prop("readonly", false);
+        $("#tblProdReq_ItemRequest tbody tr").find("input#txtStkQty" + id).val(GetDetailItemMaterial(value));
+    }
+
+    // Get detail Item Material
+    function GetDetailItemMaterial(itemCode) {
+        CheckSession();
+        var quantityInStock = 0;
+
+        $.ajax({
+            url: '@Url.Action("GetDetailMaterial", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { itemCode: itemCode },
+            dataType: 'json',
+            success: function (result) {
+                quantityInStock = result.StkQty;
+            }
+        });
+
+        return quantityInStock;
+    }
+
+    // Check Request Quantity
+    function CheckRequestQuantity(id) {
+        let reqQty = $("#tblProdReq_ItemRequest tbody tr").find("input#txtReqQty" + id).val();
+        if (isNaN(reqQty)) {
+            DevExpress.ui.dialog.alert("Request Quantity is invalid!", "Error");
+            $("#btnPO" + id).prop("disabled", true);
+            return;
+        }
+        let stkQty = $("#tblProdReq_ItemRequest tbody tr").find("input#txtStkQty" + id).val();
+        if (parseInt(reqQty) > parseInt(stkQty)) {
+            $("#btnPO" + id).prop("disabled", false);
+        }
+        else {
+            $("#btnPO" + id).prop("disabled", true);
+        }
+    }
+
+    // Add subitem Material
+    function AddItemPO(id) {
+
+        let itemCode = $("#ddlProdReq_ItemRequest" + id).dxSelectBox("option", "value");
+        if (itemCode == undefined) {
+            DevExpress.ui.dialog.alert("Please select Item!", "Error");
+            return;
+        }
+        let itemName = $("#ddlProdReq_ItemRequest" + id).dxSelectBox("option", "text");
+
+        let html = '';
+        html += '<tr id="' + countItemPO + '" class="' + itemCode + '" id-parent="' + id + '" tr-type="prod-req-item-po" partner-code="" >';
+        html += '<td class="text-center"><input class="form-control" value="' + itemName + '" readonly/></td>';
+        html += '<td class="text-center"><div id="ddlPartner' + countItemPO + '"></div></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtPOQty' + countItemPO + '" onchange="CalculateTotalPrice(' + countItemPO + ');CalculateTotalPOQty(' + id + ',' + "'" + itemCode + "'" + ')" readonly/></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtDeliverQty' + countItemPO + '" readonly/></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtMonetaryUnit' + countItemPO + '" readonly/></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtItemPrice' + countItemPO + '" readonly/></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtTotalPrice' + countItemPO + '" readonly/></td>';
+        html += '<td class="text-center"><input class="form-control" value="Request" id="txtStatus' + countItemPO + '"/ readonly></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtPONumber' + countItemPO + '" readonly/></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtPleigerRemark' + countItemPO + '"/></td>';
+        html += '<td class="text-center"><input class="form-control" id="txtPORemark' + countItemPO + '" readonly/></td>';
+        html += '<td class="text-center"><div id="dtpProdReq_ArrivalRequestDate' + countItemPO + '"></div></td>';
+        html += '<td class="text-center"><div id="dtpProdReq_PlanDeliverDate' + countItemPO + '"></div></td>';
+        html += '<td class="text-center"><button type="button" class="btn btn-danger btn-sm" onclick="DeleteItemPO(' + countItemPO + ',' + id + ',' + "'" + itemCode + "'" + ')">Delete</button</td>';
+        html += '</tr>';
+
+        $("#tblProdReq_ItemPO tbody").append(html);
+
+        var listSupplierByItem = [];
+        $.ajax({
+            url: '@Url.Action("GetListPartnerByItemCode", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { itemCode: itemCode },
+            dataType: 'json',
+            success: function (result) {
+                listSupplierByItem = result;
+            }
+        });
+
+        $("#ddlPartner" + countItemPO).dxSelectBox({
+            dataSource: new DevExpress.data.DataSource({
+                store: listSupplierByItem,
+                paginate: true,
+                pageSize: 5
+            }),
+            displayExpr: "PartnerName",
+            valueExpr: "PartnerCode",
+            searchEnabled: true,
+            onValueChanged: function (data) {
+                let stringId = data.element[0].id;
+                let idDropDown = stringId.substr(10, stringId.length);
+
+                $('#tblProdReq_ItemPO tbody tr[id="' + idDropDown + '"]').attr("partner-code", data.value);
+                SelectSupplier(idDropDown, itemCode, data.value);
+            }
+        }).dxSelectBox("instance");
+
+        $("#dtpProdReq_ArrivalRequestDate" + countItemPO).dxDateBox({
+            displayFormat: "yyyy-MM-dd",
+            onValueChanged: function (data) {
+                let stringId = data.element[0].id;
+                let idDropDown = stringId.substr(29, stringId.length);
+                let poNumber = $('#tblProdReq_ItemPO tbody tr[id="' + idDropDown + '"]').find("input#txtPONumber" + idDropDown).val();
+                let partnerCode = $('#tblProdReq_ItemPO tbody tr[id="' + idDropDown + '"]').attr("partner-code");
+
+                let listTr = $('#tblProdReq_ItemPO tbody tr[partner-code="' + partnerCode + '"]');
+                for (var no = 0; no < listTr.length; no++) {
+                    let idTr = $($(listTr[no])).attr("id");
+                    let trPONumber = $(listTr[no]).find("input#txtPONumber" + idTr).val();
+                    if (poNumber == trPONumber) {
+                        $(listTr[no]).find("#dtpProdReq_ArrivalRequestDate" + idTr).dxDateBox("option", "value", data.value);
+                    }
+                }
+            }
+        });
+
+        $("#dtpProdReq_PlanDeliverDate" + countItemPO).dxDateBox({
+            displayFormat: "yyyy-MM-dd"
+        });
+
+        countItemPO++;
+    }
+
+    // Select Supplier
+    function SelectSupplier(id, itemCode, value) {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetDetailItemOfPartner", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { itemCode: itemCode, partnerCode: value },
+            dataType: 'json',
+            success: function (result) {
+                $("#tblProdReq_ItemPO tbody tr").find("input#txtPOQty" + id).val(null);
+                $("#tblProdReq_ItemPO tbody tr").find("input#txtPOQty" + id).prop("readonly", false);
+                $("#tblProdReq_ItemPO tbody tr").find("input#txtMonetaryUnit" + id).val(result.MonetaryUnit);
+                $("#tblProdReq_ItemPO tbody tr").find("input#txtItemPrice" + id).val(result.ItemPrice);
+                $("#tblProdReq_ItemPO tbody tr").find("input#txtTotalPrice" + id).val(null);
+            }
+        });
+    }
+
+    // Get detail Item of Partner
+    function GetDetailItemOfPartner(itemCode, partnerCode) {
+        CheckSession();
+        var quantityInStock = 0;
+
+        $.ajax({
+            url: '@Url.Action("GetDetailItemOfPartner", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { itemCode: itemCode, partnerCode: partnerCode },
+            dataType: 'json',
+            success: function (result) {
+                quantityInStock = result.SafetyQuantity;
+            }
+        });
+
+        return quantityInStock;
+    }
+
+    // Calculate total price
+    function CalculateTotalPrice(id) {
+        let quantity = $("#tblProdReq_ItemPO tbody tr").find("input#txtPOQty" + id).val();
+        let price = $("#tblProdReq_ItemPO tbody tr").find("input#txtItemPrice" + id).val();
+        totalPrice = parseFloat(quantity) * parseFloat(price);
+        $("#tblProdReq_ItemPO tbody tr").find("input#txtTotalPrice" + id).val(totalPrice);
+    }
+
+    // Calculate total PO Qty
+    function CalculateTotalPOQty(id, itemCode) {
+        let totalPOQty = 0;
+        $('#tblProdReq_ItemPO tbody tr[class="' + itemCode + '"]').each(function () {
+            let subId = $(this).attr("id");
+            let status = $(this).find("input#txtStatus" + subId).val();
+            if (status != "Reject") {
+                let value = $(this).find("input#txtPOQty" + subId).val();
+                if (value != "") {
+                    totalPOQty += parseInt(value);
+                }
+            }
+        });
+
+        $("#tblProdReq_ItemRequest tbody tr").find("input#txtTotalPOQty" + id).val(totalPOQty);
+        let stkQty = $("#tblProdReq_ItemRequest tbody tr").find("input#txtStkQty" + id).val();
+        let reqQty = $("#tblProdReq_ItemRequest tbody tr").find("input#txtReqQty" + id).val();
+        if (parseInt(reqQty) > parseInt(stkQty) + parseInt(totalPOQty)) {
+            $("#tblProdReq_ItemRequest tbody tr").find("#btnPO" + id).prop("disabled", false);
+        }
+    }
+
+    // Remove Item Material
+    function DeleteItemRequest(id) {
+        let itemCode = $("#tblProdReq_ItemRequest tbody tr").find("#ddlProdReq_ItemRequest" + id).dxSelectBox("option", "value");
+        let countItem = $('#tblProdReq_ItemPO tbody tr[class="' + itemCode + '"][id-parent="' + id + '"]').length;
+        if (countItem > 0) {
+            // Check ItemPO with Status!=Request => Can't delete
+            for (var i = 0; i < countItem; i++) {
+                let rowID = $($('#tblProdReq_ItemPO tbody tr[class="' + itemCode + '"][id-parent="' + id + '"]')[i]).attr("id");
+                let status = $($('#tblProdReq_ItemPO tbody tr[class="' + itemCode + '"]')[i]).find("input#txtStatus" + rowID).val();
+                if (status != "Request") {
+                    DevExpress.ui.dialog.alert("Exists 1 Item PO with status isn't Request. Can't delete this item!", "Error");
+                    return;
+                }
+            }
+
+            // Remove all ItemPO with ItemCode = itemCode
+            $("#tblProdReq_ItemPO tbody tr[class='" + itemCode + "']").remove();
+        }
+        $('#tblProdReq_ItemRequest tbody tr[id="' + id + '"]').remove();
+
+        let index = listItemCodeSelected.indexOf(itemCode);
+        if (index > -1) {
+            listItemCodeSelected.splice(index, 1);
+        }
+    }
+
+    // Remove Subitem Material
+    function DeleteItemPO(subId, id, itemCode) {
+        let status = $("#tblProdReq_ItemPO tbody tr").find("input#txtStatus" + subId).val();
+        if (status == 'Request') {
+            $('#tblProdReq_ItemPO tbody tr[id="' + subId + '"]').remove();
+            CalculateTotalPOQty(id, itemCode);
+        }
+        else {
+            DevExpress.ui.dialog.alert("Status isn't Request. Can't delete this Item!", "Error");
+            return;
+        }
+    }
+
+    // Save data Production Request
+    $("#btnSave_@("ProjectCode"+Model.ProjectCode)").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        let requestType = $("#ddlProdReq_RequestType").dxSelectBox("option", "value");
+        if (requestType == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select Request Type!", "Error");
+            return;
+        }
+        let requestDate = $("#ddlProdReq_RequestDate").dxDateBox("option", "value");
+        let requestMessage = $("#txtProdReq_RequestMessage").dxTextBox("option", "value");
+
+        let listItemRequest = [];
+        let countItemRequest = $("#tblProdReq_ItemRequest tbody tr").length;
+        if (countItemRequest == 0) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select Item Part!", "Error");
+            return;
+        }
+        else {
+            for (var i = 0; i < countItemRequest; i++) {
+                let trProdReq_ItemRequest = $("#tblProdReq_ItemRequest tbody tr")[i];
+                let id = $(trProdReq_ItemRequest).attr("id");
+                let itemCode = $(trProdReq_ItemRequest).find("#ddlProdReq_ItemRequest" + id).dxSelectBox("option", "value");
+                if (itemCode == undefined || itemCode == "") {
+                    $.unblockUI();
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("Please select Item Code!", "Error");
+                    return;
+                }
+
+                let reqQty = $(trProdReq_ItemRequest).find("#txtReqQty" + id).val();
+                let stkQty = $(trProdReq_ItemRequest).find("#txtStkQty" + id).val();
+                if (reqQty == "") {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("Please input Request Quantity!", "Error");
+                    return;
+                }
+
+                // Request Quantity > Quantity In Stock => Check any item row of Supplier
+                if (parseInt(reqQty) > parseInt(stkQty)) {
+                    let countSubItem = $('#tblProdReq_ItemPO tbody tr[tr-type="prod-req-item-po"][class="' + itemCode + '"]').length;
+                    if (countSubItem == 0) {
+                        DevExpress.ui.dialog.alert("Please select Item PO!", "Error");
+                        return;
+                    }
+
+                    for (var j = 0; j < countSubItem; j++) {
+                        let subId = $($('#tblProdReq_ItemPO tbody tr[class="' + itemCode + '"]')[j]).attr("id");
+                        let partnerCode = $("#ddlPartner" + subId).dxSelectBox("option", "value");
+                        if (partnerCode == undefined || partnerCode == "") {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert("Please select Supplier!", "Error");
+                            return;
+                        }
+
+                        let poQty = $("#tblProdReq_ItemPO tbody tr").find("input#txtPOQty" + subId).val();
+                        if (poQty == "") {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert("Please input Purchase Quantity!", "Error");
+                            return;
+                        }
+                    }
+                }
+
+                let totalPOQty = $(trProdReq_ItemRequest).find("input#txtTotalPOQty" + id).val();
+                if (parseInt(totalPOQty) + parseInt(stkQty) < parseInt(reqQty)) {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("Purchase Quantity is not enough!", "Error");
+                    return;
+                }
+
+                let itemRequest = {
+                    ItemCode: itemCode,
+                    ReqQty: reqQty,
+                    StkQty: stkQty,
+                    POQty: totalPOQty
+                };
+
+                listItemRequest.push(itemRequest);
+            }
+        }
+
+        let listItemPO = [];
+
+        $('#tblProdReq_ItemPO tbody tr[tr-type="prod-req-item-po"]').each(function () {
+
+            let itemCode = $(this).attr("class");
+            let id = $(this).attr("id");
+            let partnerCode = $(this).find("#ddlPartner" + id).dxSelectBox("option", "value");
+            let poQty = $(this).find("input#txtPOQty" + id).val();
+            let itemPrice = $(this).find("input#txtItemPrice" + id).val();
+            let totalPrice = $(this).find("input#txtTotalPrice" + id).val();
+            let status = $(this).find("input#txtStatus" + id).val();
+            let poNumber = $(this).find("input#txtPONumber" + id).val();
+            let remark = $(this).find("input#txtPleigerRemark" + id).val();
+            let arrivalRequestDate = $(this).find("#dtpProdReq_ArrivalRequestDate" + id).dxDateBox("option", "text");
+            let planDeliverDate = $(this).find("#dtpProdReq_PlanDeliverDate" + id).dxDateBox("option", "text");
+
+            let itemPO = {
+                ItemCode: itemCode,
+                PartnerCode: partnerCode,
+                POQty: poQty,
+                ItemPrice: itemPrice,
+                TotalPrice: totalPrice,
+                Status: status,
+                PONumber: poNumber,
+                PleigerRemark: remark,
+                ArrivalRequestDate: arrivalRequestDate,
+                PlanDeliverDate: planDeliverDate
+            }
+
+            listItemPO.push(itemPO);
+        });
+
+        let isSuccess = false;
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+
+                $.ajax({
+                    url: '@Url.Action("SaveDataProductionRequest", "MESProductionRequest")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@Model.ProjectCode', requestCode: '@Model.RequestCode', requestType: requestType, userIDRequest: '@Model.UserIDRequest',
+                        requestDate: requestDate, requestMessage: requestMessage, listItemRequest: JSON.stringify(listItemRequest), listItemPO: JSON.stringify(listItemPO)
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        debugger;
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                isSuccess = true;
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+                if (isSuccess) {
+                    $.unblockUI();
+                    LoadingPage(0);
+                    $("#divMainProductionRequest").prop("hidden", false);
+                    $("#divDetailProductionRequest").prop("hidden", true);
+                    $("#divDetailProductionRequest").html(null);
+                    ReloadTabProductionRequest();
+                }
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    // Refresh Production Request
+    $("#btnReFresh_@("ProjectCode"+Model.ProjectCode)").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshProductionRequest();
+        LoadingPage(0);
+    });
+
+    function RefreshProductionRequest() {
+        $.blockUI();
+        $.ajax({
+            url: '@Url.Action("ShowDetailProductionRequest", "MESProductionRequest")',
+            type: "GET",
+            data: { projectCode: '@Model.ProjectCode' },
+            dataType: "html",
+            success: function (result) {
+                $("#divDetailProductionRequest").html(null);
+                $("#divDetailProductionRequest").html(result);
+                $.unblockUI();
+            }
+        })
+    }
+
+    // Back to main Production Request
+    $("#btnBack_@("ProjectCode"+Model.ProjectCode)").on("click", function () {
+        CheckSession();
+        $("#divMainProductionRequest").prop("hidden", false);
+        $("#divDetailProductionRequest").prop("hidden", true);
+        $("#divDetailProductionRequest").html(null);
+    });
+
+    // Request Production
+    $("#btnRequestProduction_@("ProjectCode"+Model.ProjectCode)").on("click", function () {
+        CheckSession();
+        let isStkQtyEnough = false;
+        $.ajax({
+            url: '@Url.Action("CheckStkQtyIsEnough","MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { projectCode: '@Model.ProjectCode' },
+            dataType: 'json',
+            success: function (result) {
+                isStkQtyEnough = result;
+            }
+        });
+
+        if (isStkQtyEnough) {
+            let isSuccess = false;
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                     $.blockUI();
+
+                $.ajax({
+                    url: '@Url.Action("SendProductionRequest", "MESProductionRequest")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@Model.ProjectCode'
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                isSuccess = true;
+                            });
+                        }
+                        else {
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+
+                if (isSuccess) {
+                    $.unblockUI();
+                    RefreshProductionRequest();
+                }
+                } else {
+                    return;
+                }
+            });
+        } else {
+            DevExpress.ui.dialog.alert("Material isn't enough for send Request Production", "Error");
+            return;
+        }
+    });
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-sm btn-secondary btn-action" title="Back" id="btnBack_@("ProjectCode"+Model.ProjectCode)" style="margin-right:5px"><i class="fas fa-reply"></i> Back</button>
+                        <button class="btn btn-sm btn-secondary btn-action" title="Reload" id="btnReFresh_@("ProjectCode"+Model.ProjectCode)" style="margin-right:5px"><i class="fas fa-sync"></i> Reload</button>
+                        @if (Model.ProjectStatus == "PJST01" || Model.ProjectStatus == "PJST02")
+                        {
+                            <button class="btn btn-sm btn-secondary btn-action" title="Save" id="btnSave_@("ProjectCode"+Model.ProjectCode)" style="margin-right:5px"><i class="fa fa-save"></i> Save</button>
+                            <button class="btn btn-sm btn-secondary btn-action" title="Request Production" id="btnRequestProduction_@("ProjectCode"+Model.ProjectCode)" style="margin-right:5px"><i class="fa fa-save"></i> Request Production</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Project Code")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_ProjectCode").Value(Model.ProjectCode).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Partner Name")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_CustomerName").Value(Model.PartnerName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Project Status")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_ProjectStatus").Value(Model.ProjectStatusName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("User Request")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_UserRequest").Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Request Date")</label>
+                            @(Html.DevExtreme().DateBox()
+                                    .ID("ddlProdReq_RequestDate")
+                                    .DisplayFormat("yyyy-MM-dd")
+                                    .Value(Model.RequestDate != "" ? Model.RequestDate : DateTime.Now.ToString("yyyy-MM-dd"))
+                                    .Disabled(true)
+                                )
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Request Type")</label>
+                            @(Html.DevExtreme().SelectBox()
+                                    .ID("ddlProdReq_RequestType")
+                                    .DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE")
+                                )
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Item Order")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_ItemRequest").Value(Model.ItemName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Order Quantity")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_ItemQtyRequest").Value(Model.OrderQuantity.ToString())
+                            .Disabled(true))
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Request Message")</label>
+                            @(Html.DevExtreme().TextBox().ID("txtProdReq_RequestMessage").Value(Model.RequestMessage))
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>@_loc.GetLocalizedString("List Item Request")</label>
+                        <button class="btn btn-primary btn-sm float-right" type="button" onclick="AddItemRequest()">@_loc.GetLocalizedString("Add Item Material") <i class="fa fa-plus"></i></button>
+                        <div style="overflow-y:auto;  max-height:20vh; width:100%;">
+                            <table class="table table-bordered" id="tblProdReq_ItemRequest">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" width="30%">@_loc.GetLocalizedString("Item Name")</th>
+                                        <th class="text-center">@_loc.GetLocalizedString("Request Qty")</th>
+                                        <th class="text-center">@_loc.GetLocalizedString("Stock Qty")</th>
+                                        <th class="text-center">@_loc.GetLocalizedString("Total PO Qty")</th>
+                                        <th class="text-center">@_loc.GetLocalizedString("Total PO Final Qty")</th>
+                                        <th class="text-center" width="20%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-12 table-responsive">
+                        <label>@_loc.GetLocalizedString("List Item PO")</label>
+                        <div style="overflow:auto;  max-height:20vh; width:100%">
+                            <table class="table table-bordered" id="tblProdReq_ItemPO" style="width:100vw">
+                                <thead>
+                                    <tr>
+                                        <th hidden></th>
+                                        <th class="text-center" style="min-width:225px">@_loc.GetLocalizedString("Item Name")</th>
+                                        <th class="text-center" style="min-width:200px">@_loc.GetLocalizedString("Partner Name")</th>
+                                        <th class="text-center" style="min-width:100px">@_loc.GetLocalizedString("PO Qty")</th>
+                                        <th class="text-center" style="min-width:100px">@_loc.GetLocalizedString("Deliver Qty")</th>
+                                        <th class="text-center" style="min-width:140px">@_loc.GetLocalizedString("Monetary Unit")</th>
+                                        <th class="text-center" style="min-width:200px">@_loc.GetLocalizedString("Unit Price")</th>
+                                        <th class="text-center" style="min-width:200px">@_loc.GetLocalizedString("Total Item Price")</th>
+                                        <th class="text-center" style="min-width:120px">@_loc.GetLocalizedString("Item Status")</th>
+                                        <th class="text-center" style="min-width:150px">@_loc.GetLocalizedString("PO Number")</th>
+                                        <th class="text-center" style="min-width:500px">@_loc.GetLocalizedString("Pleiger Remark")</th>
+                                        <th class="text-center" style="min-width:500px">@_loc.GetLocalizedString("PO Remark")</th>
+                                        <th class="text-center" style="min-width:150px">Arrival Request Date</th>
+                                        <th class="text-center" style="min-width:150px">Plan Deliver Date</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

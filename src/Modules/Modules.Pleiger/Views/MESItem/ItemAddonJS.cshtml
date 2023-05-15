@@ -1,0 +1,209 @@
+﻿@{
+    Layout = null;
+    var pageId = Model.PAG_ID;
+}
+<script>
+    debugger;
+    var selectedRowItemsMST = undefined;
+    var categorySelected = [];
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+
+        $("#ddlCategory").dxSelectBox({
+            dataSource: category,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    })
+
+    //debugger;
+    //console.log("menuObject: ", menuObject);
+    //var pageId = menuObject.ProgramID;
+
+
+    function PassingItemCodeMST(selectedRow) {
+        debugger;
+        selectedRow = JSON.parse(selectedRow);
+        selectedRowItemsMST = selectedRow;
+        return selectedRow;
+    }
+    
+
+
+    function FN_GetItemCodeMst() {
+        debugger;
+        if (selectedRowItemsMST === undefined) {
+            var result = DevExpress.ui.dialog.alert("Please select itemcode master first to insert.", "Error");
+            result.done(function (dialogResult) {
+                return;
+            });
+        }
+        return typeof selectedRowItemsMST !== 'undefined' ? selectedRowItemsMST.ItemCode : undefined;
+    }
+
+    function clearddlItemClassSub2Input() {
+        $('#ddlItemClassSub2').dxSelectBox('instance').reset();
+        var ddlItemClassSub2 = $('#ddlItemClassSub2').dxSelectBox('instance');
+        ddlItemClassSub2.option("dataSource", null);
+    }
+
+    function clearddlItemClassSub1Input() {
+        $('#ddlItemClassSub1').dxSelectBox('instance').reset();
+        var ddlItemClassSub1 = $('#ddlItemClassSub1').dxSelectBox('instance');
+        ddlItemClassSub1.option("dataSource", null);
+    }
+
+    function clearddlddlItemClassInput() {
+        $('#ddlItemClass').dxSelectBox('instance').reset();
+        var ddlItemClass = $('#ddlItemClass').dxSelectBox('instance');
+        ddlItemClass.option("dataSource", null);
+    }
+
+    function onddlCategoryChange(data) {
+        LoadingPage(1);
+        debugger;
+        //let categorySelected = data.value;
+        categorySelected = data.value;
+
+        eval('setValue_txt_Category_' +@pageId+'("' + categorySelected + '")'); // set to hidden field txt_Category to post Server
+        if (categorySelected == null) {
+            // clear input ddl ItemClass
+            clearddlddlItemClassInput();
+            // clear input ddl ddlItemClassSub1
+            clearddlItemClassSub1Input();
+            // clear input ddl ddlItemClassSub2
+            clearddlItemClassSub2Input();
+            LoadingPage(0);
+            return;
+        }
+        // clear input ddl ItemClass
+        clearddlddlItemClassInput();
+        // clear input ddl ddlItemClassSub1
+        clearddlItemClassSub1Input();
+        // clear input ddl ddlItemClassSub2
+        clearddlItemClassSub2Input();
+        // Query to find Item Class
+        $.ajax({
+            url: '@Url.Action("GetListItemClassByCategory", "MESItemClass")',
+            type: "GET",
+            data: { categorySelected: categorySelected },
+            dataType: 'json',
+            success: function (result) {
+                var ddl =  $('#ddlItemClass').dxSelectBox('instance');
+                ddl.option("dataSource", result.data);
+                LoadingPage(0);
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function onddlItemClassChange(data) {
+        let itemClassSelected = data.value;
+        eval('setValue_txt_ItemClass_' +@pageId+'("' + itemClassSelected + '")'); // set to hidden field txt_ItemClass to post Server
+        if (itemClassSelected == null) {
+            // clear input ddl ddlItemClassSub1
+            clearddlItemClassSub1Input();
+            // clear input ddl ddlItemClassSub2
+            clearddlItemClassSub2Input();
+            return;
+        }
+        // clear input ddl ddlItemClassSub1
+        clearddlItemClassSub1Input();
+        // clear input ddl ddlItemClassSub2
+        clearddlItemClassSub2Input();
+        // Query to find Item Class(Sub1)
+        $.ajax({
+            url: '@Url.Action("GetListItemClassSub1ByItemClass", "MESItemClass")',
+            type: "GET",
+            data: { categorySelected : categorySelected, itemClassSelected : itemClassSelected },
+            dataType: 'json',
+            success: function (result) {
+                var ddl = $('#ddlItemClassSub1').dxSelectBox('instance');
+                ddl.option("dataSource", result.data);
+            }
+        });
+    }
+
+    function onddlItemClassSub1Change(data) {
+        let itemClassSub1Selected = data.value;
+        eval('setValue_txt_ItemClassSub1_' +@pageId+'("' + itemClassSub1Selected + '")'); // set to hidden field txt_ItemClassSub1 to post Server
+        if (itemClassSub1Selected == null) {
+            // clear input ddl ddlItemClassSub2
+            clearddlItemClassSub2Input();
+            return;
+        }
+        clearddlItemClassSub2Input();
+        // Query to find Item Class(Sub1)
+        $.ajax({
+            url: '@Url.Action("GetListItemClassSub2ByItemClassSub1", "MESItemClass")',
+            type: "GET",
+            data: { categorySelected: categorySelected, itemClassSub1Selected: itemClassSub1Selected },
+            dataType: 'json',
+            success: function (result) {
+                var ddl = $('#ddlItemClassSub2').dxSelectBox('instance');
+                ddl.option("dataSource", result.data);
+            }
+        });
+    }
+
+    function onddlItemClassSub2Change(data) {
+        let itemClassSub2Selected = data.value;
+        eval('setValue_txt_ItemClassSub2_' +@pageId+'("' + itemClassSub2Selected + '")'); // set to hidden field txt_ItemClassSub2 to post Server
+    }
+
+    </script>
+<div class="col-6">
+    <div class="form-group row">
+        <div class="form-group col-lg-3 col-md-3 col-sm-3 col-xs-3">
+            <label for="Category">@_loc.GetLocalizedString("Category")</label>
+            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlCategory")
+                                //.DataSource(d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTLAll").LoadParams(new { groupCD = "IMTP00" }))
+                                //.DisplayExpr("BASE_NAME1")
+                                //.ValueExpr("BASE_CODE")
+                                .SearchEnabled(true).ShowClearButton(true)
+                                .OnValueChanged("onddlCategoryChange")
+                            )
+        </div>
+        <div class="form-group col-lg-3 col-md-3 col-sm-3 col-xs-3">
+            <label for="ItemClass">@_loc.GetLocalizedString("Item Class")</label>
+            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlItemClass")
+                                .DisplayExpr("ItemClassCode")
+                                .ValueExpr("ItemClassCode")
+                                .OnValueChanged("onddlItemClassChange")
+                                .SearchEnabled(true).ShowClearButton(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            )
+        </div>
+        <div class="form-group col-lg-3 col-md-3 col-sm-3 col-xs-3">
+            <label for="ItemClass(Sub1)">@_loc.GetLocalizedString("Item Class(Sub1)")</label>
+            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlItemClassSub1")
+                                .DisplayExpr("ItemClassCode")
+                                .ValueExpr("ItemClassCode")
+                                .OnValueChanged("onddlItemClassSub1Change")
+                                .SearchEnabled(true).ShowClearButton(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            )
+        </div>
+        <div class="form-group col-lg-3 col-md-3 col-sm-3 col-xs-3">
+            <label for="Item Class(Sub2)">@_loc.GetLocalizedString("Item Class(Sub2)")</label>
+            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlItemClassSub2")
+                                .DisplayExpr("ItemClassCode")
+                                .ValueExpr("ItemClassCode")
+                                .OnValueChanged("onddlItemClassSub2Change")
+                                .SearchEnabled(true).ShowClearButton(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            )
+        </div>
+    </div>
+</div>

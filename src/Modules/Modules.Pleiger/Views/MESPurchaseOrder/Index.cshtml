@@ -1,0 +1,680 @@
+﻿
+@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    var viewbagId = ViewBag.Thread;
+    string gridPurchaseId = "GridPurchase" + ViewBag.Thread;
+    var UserRole = ViewBag.URole;
+    var PartnerCode = ViewBag.PartnerCode;
+    if (UserRole.Equals("Admin"))
+    {
+        pageSetting.SAVE_YN = false;
+    }
+    else
+    {
+        pageSetting.SAVE_YN = true;
+    }
+    //add reload button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+
+    lstNewToolbar.Add(info);
+
+    string ddlItemCode = "ddlItemCode" + ViewBag.Thread;
+    string ddlItemName = "ddlItemName" + ViewBag.Thread;
+}
+
+<script>
+    var flagCRUD = null;
+    $(document).ready(function () {
+        debugger;
+        if ('@(ViewBag.CheckUserType)' === "G000C005" || '@(ViewBag.CheckUserType)' === "G000C007") {
+
+            $("#USRProjectPurchaseOrder").attr("hidden", true);
+        }
+        LoadingPage(1);
+        //console.log(@ViewBag.CheckUserType);
+        ResizePurchaseOrder();
+        //setHeightAutoResize();
+        ReloadGrid();
+        LoadingPage(0);
+    });
+    //function setHeightAutoResize() {
+    //    var divTabLinkHeight = $("#divTabLink").height();
+    //    var divToolbarHeight = divTabLinkHeight;
+
+    //    var divSearchRegionHeight = $("#divTabContent .region-search").height();
+    //    var divFooterHeight = $(".main-footer").height();
+    //    var total = $(window).height() - (divTabLinkHeight + divToolbarHeight + divSearchRegionHeight + divFooterHeight );
+    //    var regionGridHeight = $(".region-grid").height(total);
+    //}
+        debugger;
+    var listItemPO ;
+    function ReloadGrid() {
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetDataAndSearch", "MESPurchaseOrder")',
+            type: "GET",
+            data:  {
+                StartPurchaseDate: getParamsStartDateSearch(),
+                EndPurchaseDate: getParamsEndDateSearch(),
+                ItemCode: getParamsItemCodeSearch(),
+                ItemName: getParamsItemNameSearch(),
+                ProjectCode: getParamsProjectCodeSearch(),
+                PONumber: getParamsPONumberSearch(),
+                PartnerCode: '@(PartnerCode)',
+                UserProjectCode: getParamsUserProjectCodeSearch(),
+                UserPONumber: getParamsUserPONumberSearch()
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+                debugger;
+                listItemPO = result;
+                var grid = $("#GridPurchase@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+        LoadingPage(0);
+    }
+
+    //duy add
+    $(window).resize(function () {
+        ResizePurchaseOrder();
+    });
+    //setInterval(function () {
+    //    //console.log("setInterval production request change");
+    //    ResizePurchaseOrder();
+    //}, 1500);
+    function ResizePurchaseOrder() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        getParamsSearch();
+        if (ValidateRangeDate(getParamsStartDateSearch(), getParamsEndDateSearch())) {
+            SearchAllData();
+        }
+        LoadingPage(0);
+    });
+        var ArrObjectEdit = [];
+        function onRowUpdated(e) {
+            var obj = e.data;
+            e.data.State = "UPDATED";
+            if (ArrObjectEdit.length > 0) {
+                for (let i = 0; i < ArrObjectEdit.length; ++i) {
+                    if (ArrObjectEdit[i].ItemCode === obj.ItemCode && ArrObjectEdit[i].PONumber === obj.PONumber) {
+                        ArrObjectEdit.splice(i, 1);
+                        break;
+                    }
+                  }
+            }
+            ArrObjectEdit.push(obj);
+        }
+        $('#btnSave_@ViewBag.Thread').on("click", function () {
+            CheckSession();
+            flagCRUD = "UPDATED";
+            SaveAllData();
+        });
+        $('#btnExcel_@ViewBag.Thread').on("click", function () {
+            CheckSession();
+            debugger;
+            var dataGrid = $("#@(gridPurchaseId)");
+            ExportExcelCommon(dataGrid, "PurchaseOrder");
+         });
+
+        function SaveAllData() {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                      $.ajax({
+                        url: '@Url.Action("SaveDataPurchaseOrder", "MESPurchaseOrder")',
+                        type: 'PUT',
+                        data: {
+                            flag: flagCRUD,
+                            itemPurchaseOrder: JSON.stringify(ArrObjectEdit)
+                        },
+                        dataType: 'json',
+                          success: function (result) {
+                              debugger
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    $.unblockUI();
+                                    isSuccess = true;
+                                   // pageStart();
+                                    var grid = $("#GridPurchase@(ViewBag.Thread)").dxDataGrid("instance");
+                                    $('#btnSave_@ViewBag.Thread').attr("disabled", true);
+                                     grid.refresh();
+                                });
+                            } else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                      });
+                } else {
+                    return;
+                }
+            });
+         }
+        function pageStart() {
+             $('#StartPurchaseDate@(viewbagId)').dxDateBox('instance').option('value','');
+             $('#EndPurchaseDate@(viewbagId)').dxDateBox('instance').option('value','');
+             $('#ItemCode@(viewbagId)').val();
+             $('#PONumber@(viewbagId)').val();
+             $('#ProjectCode@(viewbagId)').val();
+             $("#ItemName@(viewbagId)").val();
+             $("#UserProjectCode@(viewbagId)").val();
+             $("#UserPONumber@(viewbagId)").val();
+        }
+        function getParamsStartDateSearch() {
+            debugger;
+            var value = $('#StartPurchaseDate@(viewbagId)').dxDateBox('instance').option('value');
+            if (value !== "" && value !== null) {
+                value = ParsingDateyyyyMMdd(value);
+            } else {
+                value = "";
+            }
+            return value;
+        }
+        function getParamsEndDateSearch() {
+            var value = $('#EndPurchaseDate@(viewbagId)').dxDateBox('instance').option('value');
+            if (value !== "" && value !== null) {
+                value = ParsingDateyyyyMMdd(value);
+            } else {
+                value = "";
+            }
+            return value;
+        }
+        function getParamsItemCodeSearch() {
+             //return $("#ddlItemCode@(ViewBag.Thread)").val();
+            return $("#ddlItemCode@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        }
+        function getParamsPONumberSearch() {
+             return $("#PONumber@(ViewBag.Thread)").val();
+        }
+        function getParamsProjectCodeSearch() {
+             return $("#ProjectCode@(ViewBag.Thread)").val();
+        }
+        function getParamsItemNameSearch() {
+             return $("#ddlItemName@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        }
+        function getPartnerCode() {
+                return "@(PartnerCode)";
+        }
+        function getParamsPartnerCodeSearch() {
+                return "@(PartnerCode)";
+        }
+        function getParamsUserProjectCodeSearch() {
+            return   $("#UserProjectCode@(viewbagId)").val();
+        }
+        function getParamsUserPONumberSearch() {
+           return  $("#UserPONumber@(viewbagId)").val();
+        }
+        function SearchAllData() {
+            CheckSession();
+            debugger;
+            $.ajax({
+                url: '@Url.Action("GetDataAndSearch", "MESPurchaseOrder")',
+                type: "GET",
+                data: {
+                    StartPurchaseDate: getParamsStartDateSearch(),
+                    EndPurchaseDate: getParamsEndDateSearch(),
+                    ItemCode: getParamsItemCodeSearch(),
+                    ItemName: getParamsItemNameSearch(),
+                    //ItemName: getParamsItemNameSearch(),
+                    ProjectCode: getParamsProjectCodeSearch(),
+                    PONumber: getParamsPONumberSearch(),
+                    PartnerCode: '@(PartnerCode)',
+                    UserProjectCode: getParamsUserProjectCodeSearch(),
+                    UserPONumber: getParamsUserPONumberSearch()
+                },
+                dataType: 'json',
+                success: function (result) {
+                    console.log(result);
+
+                    var grid = $("#GridPurchase@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                }
+            });
+        }
+        function getParamsSearch() {
+            var startdate = $('#StartPurchaseDate@(viewbagId)').dxDateBox('instance').option('value');
+            var enddate = $('#EndPurchaseDate@(viewbagId)').dxDateBox('instance').option('value');
+            var StartPurchaseDate = startdate !== ""? ParsingDateyyyyMMdd(startdate):"";
+            var EndPurchaseDate = enddate!== ""? ParsingDateyyyyMMdd(enddate):"" ;
+            //var ItemCode = $('#ItemCode@(viewbagId)').val();
+            var ItemCode = $("#ddlItemCode@(ViewBag.Thread)").dxTextBox("instance").option("value");
+            var ItemName = $("#ddlItemName@(ViewBag.Thread)").dxTextBox("instance").option("value");
+            var PONumber = $('#PONumber@(viewbagId)').val();
+            var ProjectCode = $('#ProjectCode@(viewbagId)').val();
+            //var ItemName = $("#ItemName@(viewbagId)").val();
+            var PartnerCode = '@(PartnerCode)';
+            var UserProjectCode = $('#UserProjectCode@(viewbagId)').val();
+            var UserPONumber =$('#UserPONumber@(viewbagId)').val();
+        }
+        function ColorTheFieldOfPartner(e) {
+                if (e.rowType == "data" && e.column.dataField == "LeadTimeType") {
+                    e.cellElement.css("background-color", "yellow");
+                }
+                if (e.rowType == "data" && e.column.dataField == "LeadTime") {
+                    e.cellElement.css("background-color", "yellow");
+                }
+                if (e.rowType == "data" && e.column.dataField == "PlanCompleteDate") {
+                    e.cellElement.css("background-color", "yellow");
+                }
+        }
+        function validateLeadTimeInput(e) {
+            var number = e.data.LeadTime;
+            if (number > 0 && number < 100) {
+                var count = 0;
+                for (let i = 0; i < number.toString().length; i++) {
+                    count++;
+                    if (count > 3) {
+                        e.rule.message = "Number must be have 3 digits.";
+                        return false;
+                    }
+                }
+            }
+            if (e.data.LeadTime <= 0) {
+                $('#btnSave_@ViewBag.Thread').attr("disabled", true);
+                e.rule.message = "Please input number higher from zero.";
+                return false;
+            }
+            if (e.data.LeadTime >= 100) {
+                $('#btnSave_@ViewBag.Thread').attr("disabled", true);
+                e.rule.message = "Number not higher from 100.";
+                return false;
+            }
+            //check so ki tu cua
+
+             $('#btnSave_@ViewBag.Thread').attr("disabled", false);
+            return true;
+        }
+
+    // Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        RefreshTab(this);
+    });
+</script>
+
+
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+
+<div class="card region-search" id="divindex_@(ViewBag.Thread)">
+    <div class="card-body p-2" style="width:100%;height:100%;">
+        <div class="row" id="headerpage_@(ViewBag.Thread)">
+            <div class="col-xs-12 col-md-4">
+                <label>@(_loc.GetLocalizedString("Purchase Date"))</label>
+                <div class="form-group row">
+                    <div class="col-sm-5 col-xs-5">
+                        @(Html.DevExtreme().DateBox()
+                                        .ID("StartPurchaseDate"+ viewbagId)
+                                        .Type(DateBoxType.Date)
+                                        .Value("")
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                    )
+                    </div>
+                    <div style="align-self: center;">~</div>
+                    <div class="col-sm-5 col-xs-5">
+                        @(Html.DevExtreme().DateBox()
+                            .ID("EndPurchaseDate"+ viewbagId)
+                            .Type(DateBoxType.Date)
+                            .Value("")
+                            .DisplayFormat("yyyy-MM-dd")
+                            .MaxLength(10)
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-2">
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("UserPONumber"))</label>
+                    <input type="text" class="form-control" id="UserPONumber@(viewbagId)" value="">
+                </div>
+            </div>
+
+            <div class="col-xs-12 col-md-2" id="USRProjectPurchaseOrder">
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                    <input type="text" class="form-control" id="UserProjectCode@(viewbagId)" value="">
+                </div>
+            </div>
+
+            <div class="col-xs-12 col-md-2" hidden>
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("Project Code"))</label>
+                    <input type="text" class="form-control" id="ProjectCode@(viewbagId)" value="">
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-2" hidden>
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("PO Number"))</label>
+                    <input type="text" class="form-control" id="PONumber@(viewbagId)" value="">
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-2">
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("Item Code"))</label>
+                    @*<input type="text" class="form-control" id="ItemCode@(viewbagId)" value="">*@
+                    @(Html.DevExtreme().TextBox()
+                                    .ID(ddlItemCode).ShowClearButton(true))
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-2">
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("Item Name"))</label>
+                    @*<input type="text" class="form-control" id="ItemCode@(viewbagId)" value="">*@
+                    @(Html.DevExtreme().TextBox()
+                                    .ID(ddlItemName).ShowClearButton(true))
+                </div>
+            </div>
+            @*<div class="col-xs-12 col-md-6">
+            <div class="row">
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Purchase Date"))</label>
+                    <div class="form-group row">
+                        <div class="col-sm-5 col-xs-5">
+                            @(Html.DevExtreme().DateBox()
+                                    .ID("StartPurchaseDate"+ viewbagId)
+                                    .Type(DateBoxType.Date)
+                                    .Value("")
+                                    .DisplayFormat("yyyy-MM-dd")
+                                    .MaxLength(10)
+                                )
+                        </div>
+                        <div style="align-self: center;">~</div>
+                        <div class="col-sm-5 col-xs-5">
+                            @(Html.DevExtreme().DateBox()
+                                    .ID("EndPurchaseDate"+ viewbagId)
+                                    .Type(DateBoxType.Date)
+                                    .Value("")
+                                    .DisplayFormat("yyyy-MM-dd")
+                                    .MaxLength(10)
+                                )
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-3">
+                    <div class="form-group">
+                        <label for="">@(_loc.GetLocalizedString("UserPONumber"))</label>
+                        <input type="text" class="form-control" id="UserPONumber@(viewbagId)" value="">
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-3" id="USRProjectPurchaseOrder">
+                    <div class="form-group">
+                        <label for="">@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                        <input type="text" class="form-control" id="UserProjectCode@(viewbagId)" value="">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>*@
+            <!--<div class="col-xs-12 col-md-6">
+        <div class="row">
+            <div class="col-xs-12 col-md-3" hidden>
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("Project Code"))</label>
+                    <input type="text" class="form-control" id="ProjectCode@(viewbagId)" value="">
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-3" hidden>
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("PO Number"))</label>
+                    <input type="text" class="form-control" id="PONumber@(viewbagId)" value="">
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-6">
+                <div class="form-group">
+                    <label for="">@(_loc.GetLocalizedString("Item Code"))</label>-->
+            @*<input type="text" class="form-control" id="ItemCode@(viewbagId)" value="">*@
+            <!--@(Html.DevExtreme().TextBox()
+                    .ID(ddlItemCode).ShowClearButton(true))
+        </div>
+    </div>
+    <div class="col-xs-12 col-md-6">
+        <div class="form-group">
+            <label for="">@(_loc.GetLocalizedString("Item Name"))</label>-->
+            @*<input type="text" class="form-control" id="ItemCode@(viewbagId)" value="">*@
+            <!--@(Html.DevExtreme().TextBox()
+                            .ID(ddlItemName).ShowClearButton(true))
+                </div>
+            </div>
+
+        </div>
+    </div>-->
+        </div>
+        <div class="row" id="bodypage_@(ViewBag.Thread)">
+            <div class="col-md-12 pb-2" style="width:100%;height:100%;">
+                @(Html.DevExtreme().DataGrid<MES_Purchase>()
+                        .ID(gridPurchaseId)
+                        .KeyExpr(new string[] { "PONumber", "ItemCode" })
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .OnCellPrepared("ColorTheFieldOfPartner")
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto))
+                        .OnRowUpdated("onRowUpdated")
+                        .Height("100%")
+                        .Editing(editing =>
+                        {
+                            editing.Mode(GridEditMode.Cell);
+                            editing.UseIcons(true);
+                            editing.AllowUpdating(true);
+                        })
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false).Fixed(true);
+                            //c.AddFor(x => x.PONumber).Caption(_loc.GetLocalizedString("PO Number")).AllowEditing(false);
+                            c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("UserPONumber")).AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).AllowEditing(false).Fixed(true).Visible(ViewBag.CheckUserType == "G000C005" || ViewBag.CheckUserType == "G000C007" ? false : true);
+                            c.AddFor(x => x.Status).Caption(_loc.GetLocalizedString("Status")).AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name")).AllowEditing(false);
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                            //c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("Project Code")).AllowEditing(false);
+                            c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("POQty")).AllowEditing(false).Format("#,##0");
+                            if (UserRole.Equals("Partner"))
+                            {
+                                c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).Format("#,##0.#0").AllowEditing(true).ValidationRules(vr =>
+                                {
+                                    vr.AddRequired().Message("Required");
+                                    vr.AddCustom().ValidationCallback("validateLeadTimeInput").Message("");
+                                });
+                                c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type"))
+                                .AllowEditing(true)
+                                .Lookup(lookup => lookup.DataSource(
+                                    d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                                    .LoadParams(new { groupCD = "LDTM00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE")
+                                );
+
+                                c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date")).Format("yyyy-MM-dd").AllowEditing(true);
+                            }
+                            else if (UserRole.Equals("Customer")) {
+                                c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).AllowEditing(false).Format("#,##0.#0");
+                                c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type")).AllowEditing(false).Lookup(lookup => lookup.DataSource(
+                                   d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                                   .LoadParams(new { groupCD = "LDTM00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                                   .ValueExpr("BASE_CODE")
+                                );
+
+                                c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            }
+                            else
+                            {
+                                c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).AllowEditing(false).Format("#,##0.#0");
+                                c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type")).AllowEditing(false)
+                                 .Lookup(lookup => lookup.DataSource(
+                                    d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                                    .LoadParams(new { groupCD = "LDTM00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE")
+                                );
+
+
+                                c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            }
+                            c.AddFor(x => x.PurchaseDate).Caption(_loc.GetLocalizedString("Purchase Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            c.AddFor(x => x.ArrivalRequestDate).Caption(_loc.GetLocalizedString("Arrival Request Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            c.AddFor(x => x.PurchaseUserName).Caption(_loc.GetLocalizedString("User Purchase")).AllowEditing(false);
+                            c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date")).Format("yyyy-MM-dd").AllowEditing(false);
+
+                            c.AddFor(x => x.PartnerAcceptor).Caption(_loc.GetLocalizedString("Partner Acceptor")).AllowEditing(false);
+                            c.AddFor(x => x.PrintingStatus).Caption(_loc.GetLocalizedString("Printing Status")).AllowEditing(false).Visible(@ViewBag.VisibledPrintingStatusCol);
+                        })
+
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            //pager.ShowPageSizeSelector(false);
+                            //pager.AllowedPageSizes(new[] { 5, 20, 100 });
+                            pager.Visible(true);
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                    )
+            </div>
+        </div>
+    </div>
+
+</div>
+@* datagrid *@
+@*<div class=" region-grid p-2">
+    <div class="row">
+        <div class="col-md-12">
+            @(Html.DevExtreme().DataGrid<MES_Purchase>()
+                        .ID(gridPurchaseId)
+                        .KeyExpr(new string[] { "PONumber", "ItemCode" })
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .OnCellPrepared("ColorTheFieldOfPartner")
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto))
+                        .OnRowUpdated("onRowUpdated")
+                        .Height("70vh")
+                        .Editing(editing =>
+                        {
+                            editing.Mode(GridEditMode.Cell);
+                            editing.UseIcons(true);
+                            editing.AllowUpdating(true);
+                        })
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false).Fixed(true);
+                            //c.AddFor(x => x.PONumber).Caption(_loc.GetLocalizedString("PO Number")).AllowEditing(false);
+                            c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("UserPONumber")).AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name")).AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                            //c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("Project Code")).AllowEditing(false);
+                            c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("POQty")).AllowEditing(false).Format("#,##0");
+                            if (UserRole.Equals("Partner"))
+                            {
+                                c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type"))
+                                .AllowEditing(true)
+                                .Lookup(lookup => lookup.DataSource(
+                                    d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                                    .LoadParams(new { groupCD = "LDTM00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE")
+                                );
+                                c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).Format("#,##0.#0").AllowEditing(true).ValidationRules(vr =>
+                                {
+                                    vr.AddRequired().Message("Required");
+                                    vr.AddCustom().ValidationCallback("validateLeadTimeInput").Message("");
+                                });
+                                c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date")).Format("yyyy-MM-dd").AllowEditing(true);
+                            }
+                            else if (UserRole.Equals("Customer")) {
+                                c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type")).AllowEditing(false).Lookup(lookup => lookup.DataSource(
+                                   d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                                   .LoadParams(new { groupCD = "LDTM00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                                   .ValueExpr("BASE_CODE")
+                                );
+
+
+                                c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).AllowEditing(false).Format("#,##0.#0");
+                                c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            }
+                            else
+                            {
+                                c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type")).AllowEditing(false)
+                                 .Lookup(lookup => lookup.DataSource(
+                                    d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL")
+                                    .LoadParams(new { groupCD = "LDTM00" }).Key("BASE_CODE")).DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE")
+                                );
+
+                                c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).AllowEditing(false).Format("#,##0.#0");
+                                c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            }
+                            c.AddFor(x => x.PurchaseDate).Caption(_loc.GetLocalizedString("Purchase Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            c.AddFor(x => x.ArrivalRequestDate).Caption(_loc.GetLocalizedString("Arrival Request Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            c.AddFor(x => x.PurchaseUserName).Caption(_loc.GetLocalizedString("User Purchase")).AllowEditing(false);
+                            c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date")).Format("yyyy-MM-dd").AllowEditing(false);
+                            c.AddFor(x => x.Status).Caption(_loc.GetLocalizedString("Status")).AllowEditing(false);
+                            c.AddFor(x => x.PartnerAcceptor).Caption(_loc.GetLocalizedString("Partner Acceptor")).AllowEditing(false);
+                            c.AddFor(x => x.PrintingStatus).Caption(_loc.GetLocalizedString("Printing Status")).AllowEditing(false).Visible(@ViewBag.VisibledPrintingStatusCol);
+                        })
+
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            //pager.ShowPageSizeSelector(false);
+                            //pager.AllowedPageSizes(new[] { 5, 20, 100 });
+                            pager.Visible(true);
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                    )
+        </div>
+    </div>
+</div>*@

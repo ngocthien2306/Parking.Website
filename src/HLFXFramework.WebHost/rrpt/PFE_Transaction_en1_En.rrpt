@@ -1,0 +1,177 @@
+{
+  version: 0,
+  monospaced_fonts: [
+    {bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}},
+    {name:"gothic",bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}}
+  ],
+  paper: {
+    landscape: true,
+    margin: {bottom:20.0,left:20.0,right:20.0,top:20.0},
+    scale_unit: "point",
+    type: "a4"
+  },
+  caption: "納品書",
+  font: {size:12.0},
+  custom_fields: [
+    {key:"kingaku",exp:"(* .tanka .suryo)"}
+  ],
+  group: {
+    caption: "部門グループ",
+    keys: ["bumonCd"],
+    page_break: true,
+    layout: {
+      size: 802.0,
+      x: 0.0,
+      y: 0.0
+    },
+    contents: [
+      {
+        size: {
+          initial: 240.0
+        },
+        caption: "ヘッダー",
+        elements: [
+          {type:"text",layout:{x1:305.0,y1:25.0,x2:505.0,y2:50.0},color:"#1C1C1C",distribute:true,font:{name:"malgun",bold:true,size:16.0},halign:"center",text:"거      래      명      세      표",valign:"center"},
+          {type:"text",layout:{x1:345.0,y1:55.0,x2:470.0,y2:70.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"(공급받는자용)",valign:"center"},
+          {type:"line",layout:{x1:175.0,y1:195.0,x2:180.0,y2:45.0,rev_y1:true,rev_x2:true},color:"black",line_style:"solid",line_width:1.0,start_cap:"flat",xls_line_style:"none"},
+          {type:"text",layout:{x1:0.0,y1:100.0,x2:30.0,y2:180.0},font:{name:"malgun",size:11.0},halign:"center",text:"공 급 자",valign:"center",vertical:true},
+          {type:"field",layout:{x1:130.0,y1:140.0,x2:365.0,y2:160.0},background:true,exp:".PartnerAddress",font:{name:"malgun",size:7.0},halign:"center",valign:"center"},
+          {type:"field",layout:{x1:130.0,y1:120.0,x2:240.0,y2:140.0},customize:[{}],exp:".PartnerName",font:{name:"malgun",size:7.0},halign:"center",valign:"center",wrap:true},
+          {type:"text",layout:{x1:30.0,y1:100.0,x2:130.0,y2:120.0},font:{name:"malgun",size:10.0},halign:"center",text:"사업자등록번호",valign:"center"},
+          {type:"text",layout:{x1:30.0,y1:120.0,x2:130.0,y2:140.0},font:{name:"malgun",size:10.0},halign:"center",text:"상호법인명",valign:"center"},
+          {type:"text",layout:{x1:30.0,y1:140.0,x2:130.0,y2:160.0},font:{name:"malgun",size:10.0},halign:"center",text:"사업장주소",valign:"center"},
+          {type:"text",layout:{x1:30.0,y1:160.0,x2:130.0,y2:180.0},font:{name:"malgun",size:10.0},halign:"center",text:"업태",valign:"center"},
+          {type:"text",layout:{x1:240.0,y1:120.0,x2:255.0,y2:140.0},font:{name:"malgun",size:8.0},halign:"center",text:"성\r\n명",valign:"center"},
+          {type:"field",layout:{x1:255.0,y1:120.0,x2:365.0,y2:140.0},customize:[{}],exp:".Ceo",font:{name:"malgun",size:7.0},halign:"center",valign:"center",wrap:true},
+          {type:"text",layout:{x1:130.0,y1:160.0,x2:240.0,y2:180.0},font:{name:"malgun",size:7.0},halign:"center",valign:"center",wrap:true},
+          {type:"text",layout:{x1:240.0,y1:160.0,x2:255.0,y2:180.0},font:{name:"malgun",size:8.0},halign:"center",text:"성\r\n명",valign:"center"},
+          {type:"text",layout:{x1:255.0,y1:160.0,x2:365.0,y2:180.0},font:{name:"malgun",size:7.0},halign:"center",valign:"center",wrap:true},
+          {type:"field",layout:{x1:130.0,y1:100.0,x2:365.0,y2:120.0},color:"black",exp:".RegistNumber",font:{bold:true,size:10.0},formatter:{type:"default"},halign:"center",margin:{},valign:"center"},
+          {type:"barcode",layout:{x1:455.0,y1:100.0,x2:550.0,y2:180.0},barcode_type:"qrcode",exp:".QrCode"},
+          {type:"rect",layout:{x1:30.0,y1:100.0,x2:130.0,y2:120.0},background:true},
+          {type:"rect",layout:{x1:130.0,y1:100.0,x2:365.0,y2:120.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:120.0,x2:130.0,y2:140.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:140.0,x2:130.0,y2:160.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:160.0,x2:130.0,y2:180.0},background:true},
+          {type:"rect",layout:{x1:130.0,y1:160.0,x2:240.0,y2:180.0},background:true},
+          {type:"rect",layout:{x1:255.0,y1:160.0,x2:365.0,y2:180.0},background:true},
+          {type:"rect",layout:{x1:240.0,y1:160.0,x2:255.0,y2:180.0},background:true},
+          {type:"rect",layout:{x1:255.0,y1:120.0,x2:365.0,y2:140.0},background:true},
+          {type:"rect",layout:{x1:240.0,y1:120.0,x2:255.0,y2:140.0},background:true},
+          {type:"rect",layout:{x1:0.0,y1:100.0,x2:30.0,y2:180.0},background:true},
+          {type:"rect",layout:{x1:455.0,y1:100.0,x2:550.0,y2:180.0},background:true},
+          {type:"text",layout:{x1:0.0,y1:215.0,x2:25.0,y2:240.0},color:"#363636",font:{name:"malgun",size:8.0},halign:"center",text:"순 번",valign:"center"},
+          {type:"text",layout:{x1:25.0,y1:215.0,x2:120.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"입고전표번호",valign:"center"},
+          {type:"text",layout:{x1:120.0,y1:215.0,x2:220.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"품번",valign:"center"},
+          {type:"text",layout:{x1:220.0,y1:215.0,x2:400.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"품명및규격",valign:"center"},
+          {type:"text",layout:{x1:395.0,y1:215.0,x2:450.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"발주수량",valign:"center"},
+          {type:"text",layout:{x1:450.0,y1:215.0,x2:510.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"납품수량",valign:"center"},
+          {type:"text",layout:{x1:585.0,y1:215.0,x2:660.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"금액",valign:"center"},
+          {type:"text",layout:{x1:510.0,y1:215.0,x2:585.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"단가",valign:"center"},
+          {type:"rect",layout:{x1:25.0,y1:215.0,x2:120.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:120.0,y1:215.0,x2:220.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:220.0,y1:215.0,x2:395.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:395.0,y1:215.0,x2:450.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:450.0,y1:215.0,x2:510.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:510.0,y1:215.0,x2:585.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:585.0,y1:215.0,x2:660.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:0.0,y1:215.0,x2:25.0,y2:240.0},background:true},
+          {type:"field",layout:{x1:50.0,y1:195.0,x2:365.0,y2:215.0},color:"black",exp:".UserPONumber",font:{size:10.0},formatter:{type:"default"},halign:"left",margin:{},valign:"center"},
+          {type:"text",layout:{x1:0.0,y1:195.0,x2:50.0,y2:215.0},color:"black",font:{name:"mincho",bold:true,size:8.0},formatter:{type:"default"},halign:"left",text:"PFE PO No:",valign:"center"},
+          {type:"text",layout:{x1:660.0,y1:215.0,x2:802.0,y2:240.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"PFE Remark1",valign:"center"},
+          {type:"rect",layout:{x1:660.0,y1:215.0,x2:802.0,y2:240.0},background:true},
+          {type:"rect",layout:{x1:130.0,y1:140.0,x2:365.0,y2:160.0},background:true},
+        ]
+      },
+      {
+        size: {
+          initial: 20.0
+        },
+        aggregate_src: true,
+        caption: "ボディ",
+        group: {
+          caption: "明細グループ",
+          detail: true,
+          layout: {
+            size: 802.0,
+            x: 0.0,
+            y: 0.0
+          },
+          contents: [
+            {
+              size: {
+                initial: 30.0
+              },
+              aggregate_src: true,
+              caption: "明細",
+              elements: [
+                {type:"field",layout:{x1:450.0,y1:0.0,x2:510.0,y2:30.0},exp:".Qty",font:{name:"malgun",size:7.0},formatter:{format:"#,###",type:"default"},halign:"center",valign:"center",xls_format:"#,##0.##"},
+                {type:"field",layout:{x1:0.0,y1:0.0,x2:25.0,y2:30.0},exp:".No",font:{name:"malgun",size:7.0},halign:"center",valign:"center"},
+                {type:"field",layout:{x1:395.0,y1:0.0,x2:450.0,y2:30.0},exp:".TotalPOQty",font:{name:"malgun",size:7.0},formatter:{format:"#,###",type:"default"},halign:"center",valign:"center",xls_format:"#,###"},
+                {type:"field",layout:{x1:585.0,y1:0.0,x2:660.0,y2:30.0},exp:".Total",font:{name:"malgun",size:7.0},formatter:{format:"#,###",type:"default"},halign:"center",valign:"center"},
+                {type:"field",layout:{x1:30.0,y1:0.0,x2:115.0,y2:30.0},exp:".RelNumber",font:{name:"malgun",size:7.0},halign:"center",valign:"center",wrap:true},
+                {type:"field",layout:{x1:125.0,y1:0.0,x2:215.0,y2:30.0},exp:".ItemCode",font:{name:"malgun",size:7.0},formatter:{format:"#,##0",type:"default"},halign:"center",valign:"center"},
+                {type:"field",layout:{x1:510.0,y1:0.0,x2:585.0,y2:30.0},exp:".Cost",font:{name:"malgun",size:7.0},formatter:{format:"#,###",type:"default"},halign:"center",valign:"center"},
+                {type:"field",layout:{x1:225.0,y1:0.0,x2:390.0,y2:30.0},exp:".ItemName",font:{name:"malgun",size:7.0},formatter:{format:"#,##0",type:"default"},halign:"left",valign:"center",wrap:true},
+                {type:"rect",layout:{x1:25.0,y1:0.0,x2:120.0,y2:30.0},background:true},
+                {type:"rect",layout:{x1:120.0,y1:0.0,x2:220.0,y2:30.0},background:true},
+                {type:"rect",layout:{x1:220.0,y1:0.0,x2:395.0,y2:30.0},background:true},
+                {type:"rect",layout:{x1:395.0,y1:0.0,x2:450.0,y2:30.0},background:true},
+                {type:"rect",layout:{x1:450.0,y1:0.0,x2:510.0,y2:30.0},background:true,xls_line_style:"thin"},
+                {type:"rect",layout:{x1:510.0,y1:0.0,x2:585.0,y2:30.0},background:true},
+                {type:"rect",layout:{x1:585.0,y1:0.0,x2:660.0,y2:30.0},background:true},
+                {type:"field",layout:{x1:0.0,y1:0.0,x2:25.0,y2:30.0},font:{name:"malgun",size:7.0},halign:"center",valign:"center"},
+                {type:"rect",layout:{x1:0.0,y1:0.0,x2:25.0,y2:30.0},background:true},
+                {type:"field",layout:{x1:665.0,y1:0.0,x2:800.0,y2:30.0},exp:".PleigerRemark",font:{name:"malgun",size:7.0},formatter:{format:"#,###.00",type:"default"},halign:"left",valign:"center",wrap:true},
+                {type:"rect",layout:{x1:660.0,y1:0.0,x2:802.0,y2:30.0},background:true}
+              ]
+            }
+          ]
+        }
+      },
+      {
+        size: {
+          initial: 120.0
+        },
+        elements: [
+          {type:"field",layout:{x1:590.0,y1:0.0,x2:655.0,y2:15.0},color:"#363636",exp:".TotalPrice",font:{name:"magun",bold:true,size:7.0},formatter:{format:"#,###",type:"default"},halign:"right",valign:"center",xls_format:"#,###.##"},
+          {type:"field",layout:{x1:590.0,y1:15.0,x2:655.0,y2:30.0},color:"#363636",exp:".Vat",font:{name:"magun",bold:true,size:7.0},formatter:{format:"#,###",type:"default"},halign:"right",valign:"center",xls_format:"#,###.##"},
+          {type:"field",layout:{x1:590.0,y1:30.0,x2:655.0,y2:50.0},color:"#363636",exp:".SumVat",font:{name:"magun",bold:true,size:7.0},formatter:{format:"#,###",type:"default"},halign:"right",valign:"center",xls_format:"#,###.##"},
+          {type:"text",layout:{x1:510.0,y1:0.0,x2:585.0,y2:15.0},color:"#363636",font:{name:"magun",size:8.0},formatter:{format:"#,###.00",type:"default"},halign:"center",text:"계",valign:"center"},
+          {type:"text",layout:{x1:510.0,y1:15.0,x2:585.0,y2:30.0},color:"#363636",font:{name:"magun",size:8.0},formatter:{format:"#,###.00",type:"default"},halign:"center",text:"VAT",valign:"center"},
+          {type:"text",layout:{x1:510.0,y1:30.0,x2:585.0,y2:50.0},color:"#363636",font:{name:"malgun",size:8.0},formatter:{format:"#,###.00",type:"default"},halign:"center",text:"합계금액",valign:"center"},
+          {type:"text",layout:{x1:0.0,y1:55.0,x2:30.0,y2:115.0},font:{name:"malgun",size:10.0},halign:"center",text:"인 수 자",valign:"center",vertical:true},
+          {type:"text",layout:{x1:30.0,y1:55.0,x2:150.0,y2:75.0},font:{size:10.0},halign:"center",valign:"center"},
+          {type:"text",layout:{x1:30.0,y1:75.0,x2:150.0,y2:95.0},font:{size:10.0},halign:"center",valign:"center"},
+          {type:"text",layout:{x1:30.0,y1:95.0,x2:150.0,y2:115.0},font:{size:10.0},halign:"center",valign:"center"},
+          {type:"text",layout:{x1:165.0,y1:55.0,x2:190.0,y2:115.0},font:{name:"malgun",size:10.0},halign:"center",text:"검 사",valign:"center",vertical:true},
+          {type:"text",layout:{x1:190.0,y1:55.0,x2:245.0,y2:115.0},font:{size:10.0},halign:"center",valign:"center",vertical:true},
+          {type:"text",layout:{x1:265.0,y1:55.0,x2:290.0,y2:115.0},font:{name:"malgun",size:10.0},halign:"center",text:"검 사",valign:"center",vertical:true},
+          {type:"text",layout:{x1:290.0,y1:75.0,x2:345.0,y2:115.0},font:{size:10.0},halign:"center",valign:"center",vertical:true},
+          {type:"rect",layout:{x1:585.0,y1:15.0,x2:660.0,y2:30.0},background:true},
+          {type:"rect",layout:{x1:585.0,y1:0.0,x2:660.0,y2:15.0},background:true},
+          {type:"rect",layout:{x1:585.0,y1:30.0,x2:660.0,y2:50.0},background:true},
+          {type:"rect",layout:{x1:510.0,y1:30.0,x2:585.0,y2:50.0},background:true},
+          {type:"rect",layout:{x1:510.0,y1:15.0,x2:585.0,y2:30.0},background:true},
+          {type:"rect",layout:{x1:510.0,y1:0.0,x2:585.0,y2:15.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:55.0,x2:150.0,y2:75.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:75.0,x2:150.0,y2:95.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:95.0,x2:150.0,y2:115.0},background:true},
+          {type:"rect",layout:{x1:190.0,y1:55.0,x2:245.0,y2:115.0},background:true},
+          {type:"rect",layout:{x1:290.0,y1:75.0,x2:345.0,y2:115.0},background:true},
+          {type:"rect",layout:{x1:0.0,y1:55.0,x2:30.0,y2:115.0},background:true},
+          {type:"rect",layout:{x1:165.0,y1:55.0,x2:190.0,y2:115.0},background:true},
+          {type:"rect",layout:{x1:265.0,y1:55.0,x2:290.0,y2:115.0},background:true},
+          {type:"text",layout:{x1:290.0,y1:55.0,x2:345.0,y2:75.0},font:{name:"malgun",size:10.0},halign:"center",text:"외관및수량",valign:"center"},
+          {type:"rect",layout:{x1:290.0,y1:55.0,x2:345.0,y2:75.0},background:true},
+          {type:"rect",layout:{x1:30.0,y1:55.0,x2:150.0,y2:75.0},background:true},
+          {type:"text",layout:{x1:30.0,y1:55.0,x2:150.0,y2:75.0},font:{name:"malgun",size:10.0},halign:"center",text:"상기 자재를 정히 인수함.",valign:"center"},
+          {type:"text",layout:{x1:30.0,y1:75.0,x2:150.0,y2:95.0},font:{name:"malgun",size:10.0},halign:"right",text:"  년     월     일\t",valign:"center"},
+          {type:"text",layout:{x1:35.0,y1:95.0,x2:150.0,y2:115.0},font:{name:"malgun",size:10.0},halign:"left",text:"서명     (인)",valign:"center"},
+          {type:"text",layout:{x1:0.0,y1:35.0,x2:40.0,y2:55.0},font:{name:"malgun",size:10.0},halign:"left",text:"배송일:",valign:"center"},
+          {type:"field",layout:{x1:40.0,y1:35.0,x2:150.0,y2:55.0},exp:".DeliveryDate",font:{name:"malgun",size:10.0},halign:"left",valign:"center"}
+        ]
+      }
+    ]
+  }
+}

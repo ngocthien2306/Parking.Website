@@ -1,0 +1,255 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.CREATE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    var statusAdLocationEntities = new[] {
+        new {id = false, name = _loc.GetLocalizedString("Middle")},
+        new {id = true, name = _loc.GetLocalizedString("Top")}
+    };
+    var statusAdEntities = new[] {
+        new {id =  (bool?)null , name = "All"},
+        new {id = (bool?)false, name ="False" },
+        new {id = (bool?)true, name = "True"}
+    };
+
+    var adEntities = new[] {
+        new {id = (bool?)false, name ="False" },
+        new {id = (bool?)true, name = "True"}
+    };
+
+    string periodStartDate = "periodStartDate" + ViewBag.Thread;
+    string periodEndDate = "periodEndDate" + ViewBag.Thread;
+    string adType = "adType" + ViewBag.Thread;
+    string adName = "adName" + ViewBag.Thread;
+    string adStatus = "adStatus" + ViewBag.Thread;
+
+    string gridAdMgt = "gridAdMgt" + ViewBag.Thread;
+    
+}
+
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        GetDataAdMgt();
+        LoadCommboAdStatus("#@adType");
+        SetDataElement("#@adType", null);
+        LoadingPage(0);
+    })
+
+    function LoadCommboAdStatus(elementId, intial=false) {
+        debugger;
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("AD0000", url, elementId, intial);
+    }
+
+    function GetGridAdMgtIntance() {
+        return $("#@gridAdMgt").dxDataGrid("instance");
+    }
+    // Region: btn click event
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        GetDataAdMgt();
+        LoadingPage(0);
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $('#btnCreate_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        CheckSession(); 
+        ShowPopupAdvertisement(null);
+        LoadingPage(0);
+    });
+    // End Region: btn click event
+
+
+    // Region: Get Data
+    function SearchAdvertisement(e) {
+        LoadingPage(1);
+        GetDataAdMgt();
+        LoadingPage(0);
+    }
+    function GetDataAdMgt() {
+  
+        var obj = {
+            adNo: null,
+            adType: GetDataElement("#@adType"),
+            adName: GetDataElement("#@adName"),
+            periodStartDate: GetDataElement("#@periodStartDate"),
+            periodEndDate: GetDataElement("#@periodEndDate"),
+            adStatus: GetDataElement("#@adStatus")
+        }
+        var url = '@Url.Action("GetAdMgt", "AdMgt")';
+        LoadGridData(url, obj, "#@gridAdMgt", METHOD.POST);
+    }
+    // Show popup member detail
+    function ShowMemberDetailMgt(e) {
+
+        CheckSession();
+        LoadingPage(1);
+        ShowPopupAdvertisement(e.data.adNo);
+    }
+
+    function ShowPopupAdvertisement(adNo) {
+
+        var url = '@Url.Action("ShowDetailAdMgt", "AdMgt")';
+        var obj = {
+            adNo: adNo,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+
+    
+    // End Region: Get Data
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row mt-1">
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Ad Type"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                            .ID(adType)
+                            .Value(null)
+                            .ShowClearButton(true)
+                            .OnSelectionChanged("SearchAdvertisement")
+                            )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Ad Name"))</label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID(adName)
+                            )
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>@(_loc.GetLocalizedString("Period Date"))</label>
+                        <div class="row"> 
+                            <div class="col-md-5">
+                                @(Html.DevExtreme().DateBox()
+                                    .ID(periodStartDate)
+                                    .ShowClearButton(true)
+                                    )
+                            </div>
+                            <span class="mt-2">~</span>
+                            <div class="col-md-5">
+                                @(Html.DevExtreme().DateBox()
+                                    .ID(periodEndDate)
+                                    .ShowClearButton(true)
+                                    )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Ad Status"))</label>
+                        @(
+                            Html.DevExtreme().RadioGroup()
+                            .DataSource(statusAdEntities)
+                            .ValueExpr("id")
+                            .DisplayExpr("name")
+                            .Layout(Orientation.Horizontal)
+                           
+                            .ID(adStatus)
+                            .OnValueChanged("SearchAdvertisement")
+                            )
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-12">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_AdMgt>()
+                            .ID(gridAdMgt)
+                            .Height("70vh")
+                           
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .HeaderFilter(f => f.Visible(true))
+                            .FilterRow(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                c.AddFor(x => x.adNo).Caption(_loc.GetLocalizedString("Ad No"));
+                                c.Add().Caption(_loc.GetLocalizedString("Ad Location")).CellTemplate(@<text>
+                                    @(
+                                        Html.DevExtreme().RadioGroup()
+                                        .DataSource(statusAdLocationEntities)
+                                        .ValueExpr("id")
+                                        .DisplayExpr("name")
+                                        .Value(new JS("data.adLocation"))
+                                        .Layout(Orientation.Horizontal)
+                                        .ReadOnly(true)
+                                        )
+                                    </text>);
+                                c.AddFor(x => x.adTypeName).Caption(_loc.GetLocalizedString("Ad Type"));
+                                c.AddFor(x => x.adName).Caption(_loc.GetLocalizedString("Ad Name"));
+                                c.AddFor(x => x.period).Caption(_loc.GetLocalizedString("Period Date")).Alignment(0);
+                                c.AddFor(x => x.dayTime).Caption(_loc.GetLocalizedString("Day Time"));
+                                c.Add().Caption(_loc.GetLocalizedString("Ad Status")).CellTemplate(@<text>
+                                    @(
+                                        Html.DevExtreme().RadioGroup()
+                                        .DataSource(adEntities)
+                                        .ValueExpr("id")
+                                        .DisplayExpr("name")
+                                        .Value(new JS("data.adStatus"))
+                                        .Layout(Orientation.Horizontal)
+                                        .ReadOnly(true)
+                                     )
+                                    </text>);
+                                c.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd").Alignment(0);
+                                //c.AddFor(x => x.UnitPrice).Caption(_loc.GetLocalizedStringUnit Price")).Format("#,##0");
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("ShowMemberDetailMgt")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

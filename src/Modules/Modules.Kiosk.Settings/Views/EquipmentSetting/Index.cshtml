@@ -1,0 +1,451 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string StartDateCheckIn = "StartDateCheckIn" + ViewBag.Thread;
+    string EndDateCheckIn = "EndDateCheckIn" + ViewBag.Thread;
+    string GridStore = "GridStore" + ViewBag.Thread;
+    string GridDevice = "GridDevice" + ViewBag.Thread;
+    string radioStatusDevice = "radioStatusDevice" + ViewBag.Thread;
+    var statusDeviceEntities = new[] {
+        new {id = false, name ="False" },
+        new {id = true, name = "True"}
+    };
+}
+
+<script>
+    var currentStatusDevice;
+    $(document).ready(function () {
+        LoadingPage(1);
+        LoadStoreMaster(null, null, null, "#@GridStore");
+        LoadingPage(0);
+    })
+    function GetGridStoreIntance() {
+        return $("#@GridStore").dxDataGrid("instance");
+    }
+    function GetGridDeviceIntance() {
+        return $("#@GridDevice").dxDataGrid("instance");
+    }
+
+    // Region: click event
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+
+        LoadingPage(0);
+    });
+
+    function onItemGridSelectionChanged(e) {
+        var store = GetGridStoreIntance();
+        var device = GetGridDeviceIntance();
+        if(store.getSelectedRowsData().length < 1) {
+            device.option("dataSource", null);
+        }
+    }
+    function RequestBlockKiosk(storeNo, storeDeviceNo, status) {
+        $.ajax({
+            url: '@Url.Action("RequestBlockKiosk", "StoreMgt")',
+            type: "POST",
+            data: {
+                storeNo: storeNo,
+                storeDeviceNo: storeDeviceNo,
+                status: status
+            },
+            dataType: 'json',
+            async: false,
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk Devices successfully!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'success',
+                            6000
+                        );
+                    }, 5000);
+                }
+                else {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk Devices fairly!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'error',
+                            6000
+                        );
+                        $.ajax({
+                            url: '@Url.Action("UpdateStatusDevice", "EquipmentSetting")',
+                            type: "POST",
+                            data: {
+                                storeNo: storeNo,
+                                storeDeviceNo: storeDeviceNo,
+                                status: true
+                            },
+                            dataType: 'json',
+                            async: false,
+                            success: function (result) {
+                                debugger;
+                                if (result.Success) {
+
+                                    setTimeout(function () {
+                                        LoadStoreDevice(storeNo, null, null, null, null);
+                                    }, 500);
+                                }
+                                LoadingPage(0);
+                            },
+                            error: function () {
+                                LoadingPage(0);
+                            }
+                        });
+                    }, 5000);
+
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+    function UpdateStatusDevice(e) {
+        currentStatusDevice = e.value;
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0020))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            var gridStore = GetGridStoreIntance().getSelectedRowsData()[0];
+            if (dialogResult) {
+                debugger;
+                var gridDevice = GetGridDeviceIntance().getSelectedRowsData()[0];
+                var url = '@Url.Action("UpdateStatusDevice", "EquipmentSetting")';
+                var obj = {
+                    storeNo: gridStore.storeNo,
+                    storeDeviceNo: gridDevice.storeDeviceNo,
+                    status: e.value
+                }
+
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: obj,
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        debugger;
+                        if (result.Success) {
+
+                            DevExpress.ui.notify(
+                                {
+                                    message: '@_loc.GetLocalizedString("Update the status of device successfully!")',
+                                    position: {
+                                        my: 'bottom right',
+                                        at: 'bottom right'
+                                    },
+                                    width: '30%'
+                                },
+                                'info',
+                                6000
+                            );
+                            if(e.value == false) {
+                                RequestBlockKiosk(gridStore.storeNo, gridDevice.storeDeviceNo, e.value);
+                            }
+
+                            //setTimeout(function () {
+                            //    LoadStoreDevice(gridStore.storeNo, null, null, null, null);
+                            //}, 500);
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+                //CRUDData(url, obj, METHOD.POST);
+
+                setTimeout(function () {
+                    LoadStoreDevice(gridStore.storeNo, null, null, null, null);
+                }, 500);
+            }
+            else {
+                debugger;
+                GetGridDeviceIntance().refresh();
+
+                //setTimeout(function () {
+                //    LoadStoreDevice(gridStore.storeNo, null, null, null, null);
+                //}, 1000);
+            }
+        })
+
+    }
+    function GetPathDownloadRemoteProgram(rdpPath) {
+        $.ajax({
+            url: '@Url.Action("GetPathDownloadRemoteProgram", "EquipmentSetting")',
+            type: METHOD.POST,
+            data: {
+                rdpPath: rdpPath
+            },
+            dataType: 'json',
+            async: false,
+            success: function (result) {
+                debugger;
+                var files = [];
+                var link = $("<a href='" + getLanguages() + "/EquipmentSetting/DownloadRemoteProgram?fileLink=" + result.downloadRemotePath + "&fileName=" + result.fileName + "'></a>");
+                files.push(link[0].href);
+                for (var i = 0; i < files.length; i++) {
+                    downloadURL(files[i]);
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+    // End Region: click event
+
+
+    // Region: Get Data
+
+    var count = 0;
+    var downloadURL = function downloadURL(url) {
+        var hiddenIFrameID = 'hiddenDownloader' + count++;
+        var iframe = document.createElement('iframe');
+        iframe.id = hiddenIFrameID;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        iframe.src = url;
+    }
+    // Show popup member detail
+    function LoadStoreMaster@(ViewBag.Thread)(no, location, storeName) {
+        var obj = searchStoreData(no, location, storeName)
+        var url = '@Url.Action("GetStoreMasters", "StoreMgt")';
+        LoadGridData(url, obj, "#@GridStore", METHOD.POST);
+    }
+
+    function LoadStoreDevice(storeNo, type, name, key, ip) {
+        debugger;
+        GetGridDeviceIntance().selectRows();
+        var obj = {
+            storeNo: storeNo,
+            type: type,
+            deviceName: name,
+            key: key,
+            ip: ip
+        }
+        var url = '@Url.Action("GetStoreDevices", "StoreMgt")';
+        LoadGridData(url, obj, "#@GridDevice", METHOD.POST);
+
+    }
+
+    function ShowDeviceDetailOnGrid(e) {
+        LoadingPage(1);
+        LoadStoreDevice(e.data.storeNo, null, null, null, null);
+    }
+
+    function ShowStoreDeviceDetail(e) {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        OpenCreateOrDetailDevice(e.data.storeDeviceNo);
+        LoadingPage(0);
+    }
+    function OpenCreateOrDetailDevice(storeDeviceNo) {
+
+        debugger;
+        var url = '@Url.Action("ShowStoreDeviceDetail", "EquipmentSetting")';
+        var obj = {
+            storeDeviceNo: storeDeviceNo,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+
+    function onItemGridToolbarPreparing(e) {
+        debugger;
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Detail")",
+                    onClick: function () {
+                        debugger;
+                        var gridStore = GetGridStoreIntance();
+                        if (gridStore.getSelectedRowsData().length < 1) {
+                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0001))', '@(_loc.GetLocalizedString("Message"))');
+                            return;
+                        }
+                        var gridDevice = GetGridDeviceIntance().getSelectedRowsData();
+
+                        if (gridDevice.length == 1) {
+                            OpenCreateOrDetailDevice(gridDevice[0].storeDeviceNo);
+                            return;
+                        }
+                        else if(gridDevice.length > 1) {
+                            OpenCreateOrDetailDevice(gridDevice[gridDevice.length - 1].storeDeviceNo);
+                            return;
+                        }
+
+                        OpenCreateOrDetailDevice(null);   
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+    }
+    // End Region: Get Data
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2 mt-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-3">
+
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                            .ID(GridStore)
+                            .Height("69vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .HeaderFilter(f => f.Visible(true))
+                            .FilterRow(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            .OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("ShowDeviceDetailOnGrid")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+                    <div class="col-md-9">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Face Recognizer Settings")</legend>
+                            @(
+                                Html.DevExtreme().DataGrid<KIO_StoreDevice>()
+                                .ID(GridDevice)
+                                .Height("63vh")
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .RemoteOperations(true)
+                                .ColumnAutoWidth(true)
+                                .ColumnFixing(c => c.Enabled(true))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .Columns(c =>
+                                {
+                                    c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                    c.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd hh:mm").Alignment(0);
+                                    c.AddFor(x => x.deviceTypeName).Caption(_loc.GetLocalizedString("Device Type"));
+                                    c.AddFor(x => x.deviceName).Caption(_loc.GetLocalizedString("Device Name"));
+                                    c.AddFor(x => x.deviceKeyNo).Caption(_loc.GetLocalizedString("Key No"));
+                                    //c.AddFor(x => x.deviceKeyNo).Caption(_loc.GetLocalizedString("Device Key"));
+                                    c.AddFor(x => x.devicePublicIp).Caption(_loc.GetLocalizedString("Public IP"));
+                                    c.AddFor(x => x.deviceUsePort).Caption(_loc.GetLocalizedString("Port"));
+                                    c.AddFor(x => x.registUserId).Caption(_loc.GetLocalizedString("User ID"));
+                                    c.Add().Caption(_loc.GetLocalizedString("Status")).CellTemplate(@<text>
+                                        @(
+                                        Html.DevExtreme().RadioGroup()
+                                        .DataSource(statusDeviceEntities)
+                                        .ValueExpr("id")
+                                        .DisplayExpr("name")
+                                        .Value(new JS("data.deviceStatus"))
+                                        .Layout(Orientation.Horizontal)
+                                        .OnValueChanged("UpdateStatusDevice")
+        
+                                        )
+                                    </text>);
+                                    //  onclick="GetPathDownloadRemoteProgram('<%-data.rdpPath%>')"
+                                    c.AddFor(x => x.rdpPath).Caption(_loc.GetLocalizedString("RDP")).AllowEditing(false).CellTemplate(
+                                    @<text>
+                                    <a target="_blank" href="http://<%-data.rdpPath%>" data-pag-id="<%-data.rdpPath%>"> 
+                                        <span><%-data.rdpPath%></span>
+                                    </a>
+                                    </text>
+                                    );
+
+                                    c.AddFor(x => x.storeDeviceNo).Caption(_loc.GetLocalizedString("DeviceNo")).Visible(false);
+
+                                    //c.AddFor(x => x.UnitPrice).Caption(_loc.GetLocalizedStringUnit Price")).Format("#,##0");
+                                })
+
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                //.OnSelectionChanged("onItemGridSelectionChanged")
+                                .OnRowDblClick("ShowStoreDeviceDetail")
+                                .OnToolbarPreparing("onItemGridToolbarPreparing")
+
+                                .Paging(paging => paging.PageSize(100))
+                                )
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

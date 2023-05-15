@@ -1,0 +1,578 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+   
+    string gridWHInventory = "gridWHInventory" + ViewBag.Thread;
+    string warehouseName = "warehouseName" + ViewBag.Thread;
+    string categoryName = "categoryName" + ViewBag.Thread;
+    string ItemName = "ItemName" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+}
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        ResizePageMesInventoryStatus();
+        debugger;
+        var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        var All = {};
+        All['BASE_NAME'] = "All";
+        category.unshift(All);
+        $("#@(categoryName)").dxSelectBox({
+            dataSource: category,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        Search();
+        LoadingPage(0);
+    })
+
+
+    //setInterval(function () { ResizePageMesInventoryStatus(); }, 1500);
+    var categorySelected;
+     //Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+     //test detect ajax call
+
+
+    //pageStart
+    @*$(document).ready(function () {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar", "height");
+        RecalculateResize(0.1, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+        RecalculateResize(0.85, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+        LoadingPage(1);
+        Search();
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });*@
+
+    function getParamsSearch() {
+        var WarehouseCode = $("#warehouseName@(ViewBag.Thread)").dxSelectBox('instance').option('value');
+        var Category = $("#categoryName@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var ItemName = $('#ItemName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+    }
+
+    function Search() {
+        var WarehouseCode = $("#warehouseName@(ViewBag.Thread)").dxSelectBox('instance').option('value');
+        var Category = $("#categoryName@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var ItemName = $('#ItemName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var ItemCode = $('#ItemCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        var store = new DevExpress.data.CustomStore({
+            key: "ItemCode",
+            load: function (loadOptions) {
+                var deferred = $.Deferred(),
+                    args = {
+                        WarehouseCode: WarehouseCode,
+                        Category: Category,
+                        ItemName: ItemName,
+                        ItemCode: ItemCode
+                    };
+                debugger;
+                var params = [];
+
+                //Getting filter options
+                if (loadOptions.filter) {
+                    //params.filter = JSON.stringify(loadOptions.filter);
+                    $.each(loadOptions.filter, function (index, item) {
+                        debugger;
+                        var obj = {};
+                        //if (item.length > 4 && !Array.isArray(item)) {
+                        if (!Array.isArray(item)) {
+                            if (params.filter(m => m.Key == loadOptions.filter[0]).length == 0 && !Array.isArray(loadOptions.filter[0])) {
+                                obj.Key = loadOptions.filter[0];
+                                obj.Value = loadOptions.filter[2];
+                                params.push(obj);
+                            }
+                        }
+                        else {
+                            if (index % 2 == 0) {
+                                obj.Key = item[0];
+                                obj.Value = item[2];
+                                params.push(obj);
+                            }
+                        }
+                    })
+                    //params.filter = loadOptions.filter;
+                }
+
+                [
+                    "skip",
+                    "take",
+                    "requireTotalCount",
+                    "requireGroupCount",
+                    "sort",
+                    "filter",
+                    "totalSummary",
+                    "group",
+                    "groupSummary"
+                ].forEach(function (i) {
+                    debugger;
+                    if (i in loadOptions && isNotEmpty(loadOptions[i]) && i !== "filter")
+                        args[i] = JSON.stringify(loadOptions[i]);
+
+                    if (i in loadOptions && i === "filter" && params.filter != null) {
+                        debugger;
+                        $.each(params, function (index, item) {
+                            debugger;
+                            eval("args." + item.Key + "= item.Value");
+                            //if (params.filter.length > 1 && index !== "filter") {
+                            //    if (item[index].length > 1) {
+                            //        eval("args." + item[index][0] + "= item[index][2]");
+                            //    }
+                            //}
+                            //else {
+                            //    debugger;
+                            //    eval("args." + item[0] + "= item[2]");
+                            //}
+                        })
+                    }
+
+                    if (i in loadOptions && i === "sort" && params.filter != null) {
+                        debugger;
+                    }
+                });
+                $.ajax({
+                    url: '@Url.Action("GetAllWHInventory", "MESWHInventoryStatus")',
+                    dataType: "json",
+                    data: args,
+                    success: function (result) {
+                        debugger;
+                        deferred.resolve(result.data, {
+                            totalCount: result.totalCount
+                        });
+                    },
+                    error: function () {
+                        deferred.reject("Data Loading Error");
+                    }
+                    //,
+                    //timeout: 5000
+                });
+
+                return deferred.promise();
+            }
+        });
+
+        $("#gridWHInventory@(ViewBag.Thread)").dxDataGrid({
+            dataSource: store
+        }).dxDataGrid("instance");
+        //$.blockUI();
+        @*$.ajax({
+            url: '@Url.Action("GetAllWHInventory", "MESWHInventoryStatus")',
+            type: 'GET',
+            async: true,
+            data: {
+                WarehouseCode: WarehouseCode,
+                Category: Category,
+                ItemCode: ItemCode,
+            },
+            dataType: 'json',
+            success: function (result) {
+                setTimeout(function () {
+                    var grid = $("#gridWHInventory@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                    //$.unblockUI();
+                }, 3000);
+                var grid = $("#gridWHInventory@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+
+            }
+        });*@
+    }
+
+    function isNotEmpty(value) {
+        return value !== undefined && value !== null && value !== "";
+    }
+
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        Search();
+    });
+
+    // Export excel
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        debugger;
+        @*if (CheckSession()) {
+            var WarehouseCode = $("#warehouseName@(ViewBag.Thread)").dxSelectBox('instance').option('value');
+            var Category = $("#categoryName@(ViewBag.Thread)").dxSelectBox("option", "value");
+            var ItemName = $('#ItemName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+            var link = $("<a href='" + getLanguages() +
+               "/MESWHInventoryStatus/ExportExcelServer/?WarehouseCode=" + WarehouseCode + "&Category=" + Category + "&ItemName=" + ItemName+"'></a>");
+            window.open(link[0].href);
+        }*@
+
+        //ExportExcelCommon(dataGrid, "Warehouse Inventory")
+        CheckSession();
+        var WarehouseCode = $("#warehouseName@(ViewBag.Thread)").dxSelectBox('instance').option('value');
+        var Category = $("#categoryName@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var ItemName = $('#ItemName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        $.ajax({
+                url: '@Url.Action("ExportExcelServer", "MESWHInventoryStatus")',
+                type: "GET",
+                data: {
+                    WarehouseCode: WarehouseCode,
+                    Category: Category,
+                    ItemName: ItemName
+                },
+                dataType: 'json',
+                success: function (result) {
+                    if (result.Result) {//success
+                        var link = $("<a href='" + getLanguages() + "/MESWHInventoryStatus/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                        location.href = link[0].href;
+                    } else {//fail
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                        return;
+                    }
+
+                }
+            });
+    });
+
+    function onddlCategoryChange(data) {
+        CheckSession();
+        debugger;
+        //let categorySelected = data.value;
+        categorySelected = data.value;
+
+        if (categorySelected == null) {
+            // clear input ddl Item
+            clearddlddlItemInput();
+            return;
+        }
+        // clear input ddl ItemC
+        clearddlddlItemInput();
+
+        $.ajax({
+            url: '@Url.Action("GetItemsByCategoryCode", "MESItem")',
+            type: "GET",
+            data: { categoryCode: categorySelected },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                @*var ddl = $('#itemCode@(ViewBag.Thread)').dxSelectBox('instance');
+                ddl.option("dataSource", result.data);
+                ddl.option("dataSourceOptions", "paginate", 100);*@
+
+                $('#itemCode@(ViewBag.Thread)').dxSelectBox({
+                    dataSource: new DevExpress.data.DataSource({
+                        store: result.data,
+                        paginate: true,
+                        pageSize: 50
+                    }),
+                    displayExpr: "NameKor",
+                    valueExpr: "ItemCode",
+                    disabled: false
+                    //value: listItemPOREquest[i].LeadTimeType
+                }).dxSelectBox("instance");
+
+            }
+        });
+    }
+
+    function categorySelected() {
+        return categorySelected;
+    }
+
+    function clearddlddlItemInput() {
+        $('#itemCode@(ViewBag.Thread)').dxSelectBox('instance').reset();
+        $('#itemCode@(ViewBag.Thread)').dxSelectBox({
+            disabled: true
+        }).dxSelectBox("instance");
+        //var ddlItemClass = $('#ddlItemClass').dxSelectBox('instance');
+        //ddlItemClass.option("dataSource", null);
+    }
+
+    @*$(function () {
+        function isNotEmpty(value) {
+            return value !== undefined && value !== null && value !== "";
+        }
+        var store = new DevExpress.data.CustomStore({
+            key: "ItemCode",
+            load: function (loadOptions) {
+                var deferred = $.Deferred(),
+                    args = {};
+                [
+                    "skip",
+                    "take",
+                    "requireTotalCount",
+                    "requireGroupCount",
+                    "sort",
+                    "filter",
+                    "totalSummary",
+                    "group",
+                    "groupSummary"
+                ].forEach(function (i) {
+                    if (i in loadOptions && isNotEmpty(loadOptions[i]))
+                        args[i] = JSON.stringify(loadOptions[i]);
+                });
+                $.ajax({
+                    url: '@Url.Action("GetAllWHInventory", "MESWHInventoryStatus")',
+                    dataType: "json",
+                    data: args,
+                    success: function (result) {
+                        deferred.resolve(result.data, {
+                            totalCount: result.totalCount
+                        });
+                    },
+                    error: function () {
+                        deferred.reject("Data Loading Error");
+                    },
+                    timeout: 5000
+                });
+
+                return deferred.promise();
+            }
+        });
+
+        $("#gridWHInventory@(ViewBag.Thread)").dxDataGrid({
+            dataSource: store,
+            showBorders: true,
+            columnsAutoWidth: true,
+            remoteOperations: true,
+            filterRow: {
+                visible: true,
+                applyFilter: "auto"
+            },
+            headerFilter: {
+                visible: true
+            },
+            height: 500,
+            paging: {
+                pageSize: 100
+            },
+            pager: {
+                showInfo: true,
+                showNavigationButtons: true
+            },
+            columns: [{
+                dataField: "NO",
+                dataType: "number",
+                caption : "No"
+            }, {
+                dataField: "WarehouseName",
+                dataType: "string",
+                caption : "@_loc.GetLocalizedString("Warehouse Name")"
+            }, {
+                dataField: "Category",
+                dataType: "string",
+                caption: "@_loc.GetLocalizedString("Category")"
+            }, {
+                dataField: "ItemCode",
+                dataType: "string",
+                caption: "@_loc.GetLocalizedString("Item Code")"
+            }, {
+                dataField: "ItemName",
+                dataType: "string",
+                caption: "@_loc.GetLocalizedString("Item Name")"
+            }, {
+                dataField: "StockQty",
+                dataType: "number",
+                format: "#,##0",
+                caption: "@_loc.GetLocalizedString("Current Stock Qty")"
+            }]
+        }).dxDataGrid("instance");
+    });*@
+
+    function OnOptionChanged(e) {
+        debugger;
+        if (e.fullName === "paging.pageIndex") {
+            console.log("new page index is " + e.value);
+        }
+    }
+
+    function testloadingdata() {
+
+    }
+
+    $(window).resize(function () {
+        //function recalculate resize height
+        ResizePageMesInventoryStatus();
+
+    });
+    function ResizePageMesInventoryStatus() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            @*RecalculateResize(0.4, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+            RecalculateResize(0.6, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //RecalculateResize(0.55, "height", "topbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+                //RecalculateResize(0.4, "height", "contentbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+            }
+        }
+    }
+    function gridWHInventoryOnCellPrepared(e)
+    {
+        debugger;
+        if (e.rowType == 'data' && e.column.dataField == 'StockQty')
+        {
+            if (e.data.StockQty < 0) {
+                e.cellElement.css("color", "red");
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card"style="width:100%;height:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row">
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Warehouse Name"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                                     .ID(warehouseName)
+                                    .DisplayExpr("Name").ValueExpr("ID")
+                                    .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                        .LoadAction("GetAllPleigerWarehouse")
+                                        .Key("ID")
+                                    )
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+
+                              )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Category"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                                     .ID(categoryName)
+                                    //.DisplayExpr("BASE_NAME1")
+                                    //.ValueExpr("BASE_CODE")
+                                    // .DataSource(d => d.Mvc().Controller("MESComCode")
+                                    //    .LoadAction("GetListComCodeDTLAll")
+                                    //    .LoadParams(new { groupCD = "IMTP00" })
+                                    //    .Key("BASE_CODE")
+                                    @*)
+                                    //.OnValueChanged("onddlCategoryChange")
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)*@
+                                     )
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ItemCode))
+                        @*@(Html.DevExtreme().SelectBox().ID(itemCode)
+                                    .DisplayExpr("NameKor")
+                                    .ValueExpr("ItemCode")
+                                    // .DataSource(d => d.Mvc().Controller("MESItem")
+                                    //    .LoadAction("GetItemsByCategoryCode")
+                                    //    .LoadParams(new { categoryCode = new JS("categorySelected") })
+                                    //    .Key("ItemCode")
+                                    //)
+                                    .Disabled(true)
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+                              )*@
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ItemName))
+                        @*@(Html.DevExtreme().SelectBox().ID(itemCode)
+                                    .DisplayExpr("NameKor")
+                                    .ValueExpr("ItemCode")
+                                    // .DataSource(d => d.Mvc().Controller("MESItem")
+                                    //    .LoadAction("GetItemsByCategoryCode")
+                                    //    .LoadParams(new { categoryCode = new JS("categorySelected") })
+                                    //    .Key("ItemCode")
+                                    //)
+                                    .Disabled(true)
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+                              )*@
+                    </div>
+
+                    @*<div class="form-group col-md-2">
+                            <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                    .ID(itemName)
+                                    .Value("")
+                              )
+                    </div>*@
+                    
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="card-body p-0 pl-2 pr-2 pb-2">
+                @*<div id="gridWHInventory@(ViewBag.Thread)"></div>*@
+                @*@(Html.DevExtreme().LoadIndicator()
+                    .ID("button-indicator")
+                    .Visible(false)
+                )*@
+                <div id="gridWHInventory" style="width:100%;height:100%;">
+                    @(Html.DevExtreme().DataGrid<MES_WHInventoryStatus>()
+                        .ID(gridWHInventory)
+
+                        .RemoteOperations(true)
+                        //.RemoteOperations(rm => rm.Paging(true))
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .Selection(s => s.Mode(SelectionMode.None))
+                        .Height("100%")
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .OnCellPrepared("gridWHInventoryOnCellPrepared")
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.NO).Caption("No").Width("5%");
+                            c.AddFor(x => x.WarehouseName).Caption((_loc.GetLocalizedString("Warehouse Name"))).Width("10%");
+                            c.AddFor(x => x.Category).Caption((_loc.GetLocalizedString("Category"))).Width("10%");
+                            c.AddFor(x => x.ItemCode).Caption((_loc.GetLocalizedString("Item Code"))).Width("15%");
+                            c.AddFor(x => x.ItemName).Caption((_loc.GetLocalizedString("Item Name"))).Width("45%");//Item Name
+                            c.AddFor(x => x.StockQty).Caption((_loc.GetLocalizedString("Current Stock Qty"))).Width("15%").Format("#,##0");
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        //.HeaderFilter(f => f.Visible(true))
+                        //.OnContentReady("tests")
+                        //.OnCellPrepared("checkrowcount")
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+
+                    )
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

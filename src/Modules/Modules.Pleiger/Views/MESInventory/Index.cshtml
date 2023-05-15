@@ -1,0 +1,693 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    if (ViewBag.UserType == "G000C001" || ViewBag.UserType == "G000C002" || ViewBag.InventoryYN==true)
+    {
+        pageSetting.SAVE_YN = true;
+        pageSetting.EXCEL_YN = true;// export
+        pageSetting.IMPORT_EXCEL_YN = true;// import
+
+        ToolbarInfo closeMonth = new ToolbarInfo();
+        closeMonth.Name = _loc.GetLocalizedString("Inventory Closed");
+        closeMonth.ID = "btnCloseMonth";
+        closeMonth.Icon = "<i class='fas fa-copy'></i>";
+        closeMonth.Sort = 13;
+        lstNewToolbar.Add(closeMonth);
+
+        ToolbarInfo unCloseMonth = new ToolbarInfo();
+        unCloseMonth.Name = _loc.GetLocalizedString("Inventory Opened");
+        unCloseMonth.ID = "btnUnCloseMonth";
+        unCloseMonth.Icon = "<i class='fas fa-copy'></i>";
+        unCloseMonth.Sort = 14;
+        lstNewToolbar.Add(unCloseMonth);
+    }
+}
+<script>
+    var selectedRowsData;
+    function getParamsStartDateSearch() {
+        var value = $("#startDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        return ParsingDateyyyyMMdd(value);
+    }
+
+    function getParamsEndDateSearch() {
+        var value = $("#endDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        return ParsingDateyyyyMMdd(value);
+    }
+
+    // Page start
+        $(document).ready(function () {
+            LoadingPage(1);
+            ResizePageMesInventory();
+            GetTransClosingMst();
+            LoadingPage(0);
+        });
+
+    function GetTransClosingMst() {
+        CheckSession();
+        var StartDay = getParamsStartDateSearch();
+        var EndDay = getParamsEndDateSearch();
+        debugger;
+        if (StartDay == null && EndDay == null) {
+            $.ajax({
+                url: '@Url.Action("GetTransClosingMst", "MESInventory")',
+                type: "GET",
+                data: {
+                    startDate: getParamsStartDateSearch(),
+                    endDate: getParamsEndDateSearch()
+                },
+                dataType: 'json',
+                success: function (result) {
+                    var grid = $("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+                    LoadingPage(0);
+                }, error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+        else {
+            if (ValidateRangeDate(StartDay, EndDay)) {
+                $.ajax({
+                    url: '@Url.Action("GetTransClosingMst", "MESInventory")',
+                    type: "GET",
+                    data: {
+                        startDate: getParamsStartDateSearch(),
+                        endDate: getParamsEndDateSearch()
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        var grid = $("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid("instance");
+                        grid.option("dataSource", result.data);
+                        grid.refresh();
+                        LoadingPage(0);
+                    }, error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+                LoadingPage(0);
+            }
+        }
+    }
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        selectedRowsData = null;
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // Download excel
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        // show popup download
+        $.ajax({
+            url: '@Url.Action("InventoryCheckPopupDownloadExcel", "MESInventory")',
+            type: "GET",
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+                LoadingPage(0);
+            },
+            error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    //Import excel
+    $("#btnImportExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        // show popup Import
+        $.ajax({
+            url: '@Url.Action("InventoryCheckPopupImportExcel", "MESInventory")',
+            type: "GET",
+            dataType: "html",
+            data: {
+                pageParentThread: '@(ViewBag.Thread)'
+            },
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+                LoadingPage(0);
+            },error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    // btnCloseMonth
+    $("#btnCloseMonth_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+            @*$("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid({
+                    editing: {
+                        allowUpdating: true,
+                        mode: 'cell' // 'batch' | 'cell' | 'form' | 'popup'
+                    }
+                });*@
+
+        debugger;
+        if (selectedRowsData === null || selectedRowsData === undefined) {
+            //DevExpress.ui.dialog.alert("Please select row at grid Inventory Closing Master.", "Error");
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Please select row at grid Inventory Closing Master."))', "Error");
+        }
+        else {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("CloseMonth", "MESInventory")',
+                        type: "POST",
+                        data: {
+                            selectedRowsData: selectedRowsData[0]
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                                var grid = $("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid("instance");
+                                grid.refresh();
+                                $('#btnSearch_@ViewBag.Thread').trigger('click');
+                                LoadingPage(0);
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                $('#btnSearch_@ViewBag.Thread').trigger('click');
+                                LoadingPage(0);
+                            }
+                        },
+                        error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+        LoadingPage(0);
+    });
+
+    // btnUnCloseMonth
+    $("#btnUnCloseMonth_@ViewBag.Thread").on("click", function () {
+            CheckSession();
+            $("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid({
+                editing: {
+                    allowUpdating: true,
+                    mode: 'cell' // 'batch' | 'cell' | 'form' | 'popup'
+                }
+            });
+        });
+
+    // Search button
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        GetTransClosingMst();
+        LoadingPage(0);
+    });
+
+    // Save button
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        var dataInventoryCheck = $('#gridTransClosingMst@(ViewBag.Thread)').dxDataGrid('instance');
+        if (dataInventoryCheck.getDataSource() == null) {
+            DevExpress.ui.dialog.alert("Don't have data, cannot update data.", "Error");
+            return;
+        }
+        else {
+            var data = dataInventoryCheck.getDataSource().items();
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("UnCloseMonth", "MESInventory")',
+                        type: "POST",
+                        data: {
+                            data: data
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                                var grid = $("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid("instance");
+                                grid.refresh();
+
+                                $("#gridTransClosingMst@(ViewBag.Thread)").dxDataGrid({
+                                    editing: {
+                                        allowUpdating: false
+                                    }
+                                });
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }, error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+    });
+
+
+    function GridTransClosingMstSelectionChanged(selectedItems) {
+        CheckSession();
+        var data = selectedItems.selectedRowsData;
+        selectedRowsData = data;
+    }
+
+    function GridTransClosingMstOnRowClick(e) {
+        CheckSession();
+        let data = e.data;
+        $.ajax({
+            url: '@Url.Action("GetTransClosingDtl", "MESInventory")',
+            type: "GET",
+            data: {
+                TransMonth: data.TransMonth
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridTransClosingDtls@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+
+                $('#gridTransClosingItems@(ViewBag.Thread)').dxDataGrid('instance').option('dataSource', []);
+            }
+        });
+    }
+
+    function GridTransClosingDtlsOnRowClick(e) {
+        CheckSession();
+        let data = e.data;
+        $.ajax({
+            url: '@Url.Action("GetTransClosingItems", "MESInventory")',
+            type: "GET",
+            data: {
+                TransCloseNo: data.TransCloseNo
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridTransClosingItems@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    function gridTransClosingMstOnRowUpdated(e) {
+        debugger;
+        e.data.State = "UPDATED";
+    }
+
+    function SetColorCheckQty(e) {
+        debugger;
+        if (e.rowType == 'data') {
+            if (e.data.DifferenceQty > 0) {
+                e.cells[7].cellElement.css('color', 'blue');
+                e.cells[7].cellElement.css('background-color', 'yellow');
+            }
+            else {
+                e.cells[7].cellElement.css('color', 'red');
+                e.cells[7].cellElement.css('background-color', 'yellow');
+            }
+            console.log(e);
+        }
+    }
+
+    //duy add
+    $(window).resize(function () {
+        //$("#headerpage_@(ViewBag.Thread)").resizeddiv();
+        ResizePageMesInventory();
+
+    });
+    var setintervalMesInventory = setInterval(IntervalMesInventory, 25);
+    var demMesInventory = 0;
+    //setInterval(function () {
+    //    //console.log("setInterval mess inventory");
+    //    ResizePageMesInventory();
+    //}, 1500);
+    function IntervalMesInventory() {
+        ++demMesInventory;
+        //console.log("demMesInventory ", demMesInventory);
+        if (demMesInventory < 100) {
+            ResizePageMesInventory();
+        }
+        else {
+            clearInterval(setintervalMesInventory);
+        }
+    }
+    function ResizePageMesInventory() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            @*RecalculateResize(0.4, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+            RecalculateResize(0.6, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //ReCalResize("contentbody_@(ViewBag.Thread)", "ID", "divindexs_@(ViewBag.Thread)", "topbody_@(ViewBag.Thread)", "height");
+
+            }
+        }
+    }
+</script>
+@{
+    string gridTransClosingDtls = "gridTransClosingDtls" + ViewBag.Thread;
+    string gridTransClosingMst = "gridTransClosingMst" + ViewBag.Thread;
+    string gridTransClosingItems = "gridTransClosingItems" + ViewBag.Thread;
+    string startDate = "startDate" + ViewBag.Thread;
+    string endDate = "endDate" + ViewBag.Thread;
+}
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div class="card" id="divindex_@(ViewBag.Thread)">
+    <div class="card-header" id="headerpage_@(ViewBag.Thread)">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>
+                                @(_loc.GetLocalizedString("TransMonth"))
+                            </label>
+                            <div class="form-group row">
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID(startDate)
+                                        .Type(DateBoxType.Date)
+                                       
+                                        //.Value(DateTime.Now)
+                                        .CalendarOptions(opt =>
+                                            opt.MaxZoomLevel(CalendarZoomLevel.Year)
+                                            .MinZoomLevel(CalendarZoomLevel.Decade)
+                                            .ZoomLevel(CalendarZoomLevel.Year)
+                                            )
+                                        .DisplayFormat("yyyy-MM")
+                                        .MaxLength(10)
+                                    )
+                                </div>
+                                <div style="align-self: center;">~</div>
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID(endDate)
+                                    .Type(DateBoxType.Date)
+                                    //.Value(DateTime.Now)
+                                    .CalendarOptions(opt =>
+                                            opt.MaxZoomLevel(CalendarZoomLevel.Year)
+                                            .MinZoomLevel(CalendarZoomLevel.Decade)
+                                            .ZoomLevel(CalendarZoomLevel.Year)
+                                            )
+                                    .DisplayFormat("yyyy-MM")
+                                    .MaxLength(10)
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>  
+            </div>
+        </div>
+    </div>
+        
+    <div class="card-body p-0 pl-2 pr-2 pt-2" style="width:100%;" id="bodypage_@(ViewBag.Thread)">
+        <div class="row"  style="height:100%;">
+            <div class="col-md-12" style="height:100%;">
+                <div class="row" style="height:100%;">
+                    <div class="col-sm-12 col-xs-12" id="divindexs_@(ViewBag.Thread)" style="height:100%;">
+                        <div class="row" id="topbody_@(ViewBag.Thread)" style="height:50%;">
+                            <div class="col-6" style="height:100%;">
+                                <fieldset class="customFieldset" style="height:100%;">
+                                    <legend class="customLegend">@(_loc.GetLocalizedString("InventoryClosingMaster"))</legend>
+                                    @(Html.DevExtreme().DataGrid<Modules.Pleiger.Models.MES_TransClosingMst>()
+                                    .ID(gridTransClosingMst)
+                                    
+                                    //.DataSource(x => x.Mvc().Controller("MESInventory")
+                                    //    .LoadAction("GetTransClosingMst").LoadParams(new
+                                    //    {
+                                    //        startDate = new JS("getParamsStartDateSearch"),
+                                    //        endDate = new JS("getParamsEndDateSearch")
+                                    //    })
+                                    ////.Key("TransMonth")
+                                    //)
+                                    .KeyExpr("No")
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .ColumnAutoWidth(true).Height("100%")
+                                    .RepaintChangesOnly(false)
+                                    .OnRowUpdated("gridTransClosingMstOnRowUpdated")
+                                    //.OnCellPrepared("gridTransClosingMstOnCellPrepared")
+                                    //.OnRowRemoved("gridTransClosingMstOnRowRemoved")
+                                    //.FilterRow(filterRow => filterRow
+                                    //    .Visible(true)
+                                    //    .ApplyFilter(GridApplyFilterMode.Auto)
+                                    //)
+                                    //.HeaderFilter(f => f.Visible(true))
+                                    .Selection(s => s.Mode(SelectionMode.Single)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                        //c.Add().Caption("생산의뢰 코드");
+                                        c.AddFor(x => x.TransMonth).Caption(_loc.GetLocalizedString("Trans Month")).AllowEditing(false);
+                                        c.AddFor(x => x.POTrans).Caption(_loc.GetLocalizedString("PO Trans")).DataType(GridColumnDataType.Boolean).AllowEditing(true);
+                                        c.AddFor(x => x.PJTrans).Caption(_loc.GetLocalizedString("PJ Trans")).DataType(GridColumnDataType.Boolean).AllowEditing(true);
+                                        c.AddFor(x => x.ItemSlipTrans).Caption(_loc.GetLocalizedString("Item Slip Trans")).DataType(GridColumnDataType.Boolean).AllowEditing(true);
+                                        c.AddFor(x => x.InventoryClosedYN).Caption(_loc.GetLocalizedString("Inventory Closed")).DataType(GridColumnDataType.Boolean).AllowEditing(true);
+                                        //c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                        //{
+                                        //    b.Add().Text("Close").Hint("Close Month").OnClick("OnCloseMonth" + ViewBag.Thread);
+                                        //    b.Add().Text("UnClose").Hint("UnClose Month").OnClick("OnUnCloseMonth" + ViewBag.Thread);
+                                        //});
+                                    })
+                                    .RemoteOperations(true)
+                                    .Scrolling(s => s
+                                        .Mode(GridScrollingMode.Standard)
+                                    )
+                                    //.Editing(e => e.Mode(GridEditMode.Row)
+                                    //    //.Texts()
+                                    //    .AllowUpdating(true).UseIcons(true)
+                                    //)
+                                    .Paging(p => p.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                    .OnRowClick("GridTransClosingMstOnRowClick")
+                                    .OnSelectionChanged("GridTransClosingMstSelectionChanged")
+
+                                )
+                                </fieldset>
+                            </div>
+                            <div class="col-6" style="height:100%;">
+                                <fieldset class="customFieldset" style="height:100%;">
+                                    <legend class="customLegend">@(_loc.GetLocalizedString("InventoryClosingDetail"))</legend>
+                                    @(Html.DevExtreme().DataGrid<Modules.Pleiger.Models.MES_TransClosingDtls>()
+                                    .ID(gridTransClosingDtls).KeyExpr("TransCloseNo")
+                                    //.DataSource(x => x.Mvc().Controller("MESItemSlip")
+                                    //    .LoadAction("GetListMESItemSlipDetailForRelease").LoadParams(new
+                                    //    {
+                                    //        slipNumber = new JS("getParamsSlipNumberSlt"),
+                                    //        poNumber =  new JS("getParamsPoNumberSlt")
+                                    //    })
+                                    //    .Key("ItemCode")
+                                    //)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .ColumnAutoWidth(true).Height("100%")
+                                    .RepaintChangesOnly(false)
+                                    //.OnCellPrepared("gridItemSlipDtlOnCellPrepared")
+                                    //.OnRowRemoved("gridItemSlipDtlOnRowRemoved")
+                                    //.FilterRow(filterRow => filterRow
+                                    //    .Visible(true)
+                                    //    .ApplyFilter(GridApplyFilterMode.Auto)
+                                    //)
+                                    //.HeaderFilter(f => f.Visible(true))
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                        //c.Add().Caption("생산의뢰 코드");
+                                        c.AddFor(x => x.TransCloseNo).Caption(_loc.GetLocalizedString("Trans Close No")).AllowEditing(false);
+                                        c.AddFor(x => x.Created_By).Caption(_loc.GetLocalizedString("UserCreated")).AllowEditing(false);
+                                        c.AddFor(x => x.TransMonth).Caption(_loc.GetLocalizedString("Trans Month")).AllowEditing(false);
+                                        c.AddFor(x => x.ItemCount).Caption(_loc.GetLocalizedString("Item Count")).Format("#,##0").AllowEditing(false);
+                                        c.AddFor(x => x.TransCloseDate).Caption(_loc.GetLocalizedString("Trans Close Date")).AllowEditing(false).DataType(GridColumnDataType.DateTime).Format("yyyy-MM-dd HH:mm:ss");
+                                        c.AddFor(x => x.DownloadDate).Caption(_loc.GetLocalizedString("Download Date")).AllowEditing(false).DataType(GridColumnDataType.DateTime).Format("yyyy-MM-dd HH:mm:ss");
+                                        c.AddFor(x => x.UploadDate).Caption(_loc.GetLocalizedString("Upload Date")).AllowEditing(false).DataType(GridColumnDataType.DateTime).Format("yyyy-MM-dd HH:mm:ss");
+                                        c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark")).AllowEditing(true);
+                                    })
+                                    .RemoteOperations(true)
+                                    .Scrolling(s => s
+                                        .Mode(GridScrollingMode.Standard)
+                                    )
+                                    //.Editing(e => e
+                                    //     .Mode(GridEditMode.Row)
+                                    //    .AllowUpdating(true).UseIcons(true)
+                                    //)
+                                    .Paging(p => p.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                    .OnRowClick("GridTransClosingDtlsOnRowClick")
+                                )
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="row" id="contentbody_@(ViewBag.Thread)" style="height:47%;">
+                            <div class="col-12" style="height:100%;">
+                                <fieldset class="customFieldset" style="height:100%;">
+                                    <legend class="customLegend">@(_loc.GetLocalizedString("InventoryClosingItems"))</legend>
+                                    @(Html.DevExtreme().DataGrid<Modules.Pleiger.Models.MES_TransClosingItems>()
+                                .ID(gridTransClosingItems).KeyExpr("TransCloseNo").KeyExpr("SeqNo")
+                                //.DataSource(x => x.Mvc().Controller("MESItemSlip")
+                                //    .LoadAction("GetListMESItemSlipDetailForRelease").LoadParams(new
+                                //    {
+                                //        slipNumber = new JS("getParamsSlipNumberSlt"),
+                                //        poNumber =  new JS("getParamsPoNumberSlt")
+                                //    })
+                                //    .Key("ItemCode")
+                                //)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .ColumnAutoWidth(true).Height("100%")
+                                .RepaintChangesOnly(false)
+                                //.OnCellPrepared("gridItemSlipDtlOnCellPrepared")
+                                //.OnRowRemoved("gridItemSlipDtlOnRowRemoved")
+                                .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .HeaderFilter(f => f.Visible(true))
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .Columns(c=> {
+                                    //c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                    c.AddFor(x => x.TransCloseNo).Caption(_loc.GetLocalizedString("Trans Close No")).Visible(false).AllowEditing(false);
+                                    //c.Add().Caption("생산의뢰 코드");
+                                    c.AddFor(x => x.SeqNo).Caption(_loc.GetLocalizedString("Seq No")).AllowEditing(false);
+                                    c.AddFor(x => x.WHCode).Caption(_loc.GetLocalizedString("Warehouse Code")).AllowEditing(false);
+                                    c.AddFor(x => x.WHName).Caption(_loc.GetLocalizedString("Warehouse Name")).AllowEditing(false);
+                                    c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                                    c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                                    c.AddFor(x => x.StockQty).Caption(_loc.GetLocalizedString("Before Qty")).Format("#,##0").AllowEditing(false);// Stock Qty
+                                    c.AddFor(x => x.CheckQty).Caption(_loc.GetLocalizedString("Check Qty")).Format("#,##0").AllowEditing(false);
+                                    c.AddFor(x => x.DifferenceQty).Caption(_loc.GetLocalizedString("Difference Qty")).Format("#,##0").AllowEditing(false);
+                                    //.CellTemplate(@<script>
+                                    //    function SetColor(e)
+                                    //    {
+                                    //        console.log(e);
+                                    //    }
+                                    //    @*@if(<%-value%> > 0)
+                                    //    {
+                                    //        <div style="color:green">
+                                    //            <%- value %>
+                                    //        </div>
+                                    //    }
+                                    //    else
+                                    //    {
+                                    //        <div style="color:red">
+                                    //            <%- value %>
+                                    //        </div>
+                                    //    }*@
+                                    //
+                                    //
+                                    //</script>);
+                                    c.AddFor(x => x.StockDate).Caption(_loc.GetLocalizedString("Stock Date")).AllowEditing(false).DataType(GridColumnDataType.DateTime).Format("yyyy-MM-dd HH:mm:ss");
+                                    c.AddFor(x => x.CheckDate).Caption(_loc.GetLocalizedString("Check Date")).AllowEditing(false).DataType(GridColumnDataType.DateTime).Format("yyyy-MM-dd HH:mm:ss");
+                                    c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark")).AllowEditing(true);
+                                })
+                                .OnRowPrepared("SetColorCheckQty")
+                                .RemoteOperations(true)
+                                .Scrolling(s => s
+                                    .Mode(GridScrollingMode.Standard)
+                                )
+                                .Paging(p => p.PageSize(100))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                            //.OnSelectionChanged("GridItemSlipDtlSelectionChanged")
+                            //.Summary(s => s
+                            //    .RecalculateWhileEditing(true)
+                            //    .TotalItems(items => {
+                            //        items.AddFor(x => x.Qty).SummaryType(SummaryType.Sum);
+
+                            //    })
+                            //)
+                            )
+                                </fieldset>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        
+</div>

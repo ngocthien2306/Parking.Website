@@ -1,0 +1,1479 @@
+﻿@using InfrastructureCore.Http.Extensions;
+@using InfrastructureCore.Models.Identity;
+@using InfrastructureCore.Models.Site;
+@using InfrastructureCore.Extensions;
+@using Microsoft.AspNetCore.Mvc.Localization
+
+@inject IViewLocalizer Localizer
+@inject Microsoft.AspNetCore.Mvc.ViewComponents.IViewComponentSelector selector
+@*@inject ISessionService _sessionService;*@
+<!DOCTYPE html>
+@{
+    var listStartupPage = new List<InfrastructureCore.Models.Menu.SYMenu>();
+    var siteSetting = Context.Session.Get<SYSite>("SiteInfo");
+    var currentUser = Context.Session.Get<SYLoggedUser>("UserInfo");
+    int flag = 0;
+    var varlang = "";
+    @Html.Hidden("tesstlang","");
+    if (currentUser != null)
+    {
+        listStartupPage = currentUser.AuthorizedMenus.Where(x => x.StartupPageUse == "Y" || (Context.Request.IsMobileBrowser() && x.StartupPageUse == "Y")).ToList();
+        foreach (var item in listStartupPage)
+        {
+            item.MenuName = _loc.GetLocalizedString(item.MenuName);
+        }
+    }
+    else
+    {
+        flag = 1;
+    }
+
+
+    int sessionTimeoutNum = _sessionService.GetSessionTimeoutFromSite();
+  
+}
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Deep Parking Server</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Font Awesome -->
+    <!--<link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">-->
+    <!-- Ionicons -->
+    <!--<link rel="stylesheet" href="~/css/ionicons.min.css">-->
+    <!-- Tempusdominus Bbootstrap 4 -->
+    <!--<link rel="stylesheet" href="~/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">-->
+    <!-- iCheck -->
+    <!--<link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css">-->
+    <!-- JQVMap -->
+    <!--<link rel="stylesheet" href="~/plugins/jqvmap/jqvmap.min.css">-->
+    <!--<!-- Theme style -->
+    <!--<link rel="stylesheet" href="~/dist/css/adminlte.min.css">-->
+    <!-- overlayScrollbars -->
+    <!--<link rel="stylesheet" href="~/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">-->
+    <!-- Daterange picker -->
+    <!--<link rel="stylesheet" href="~/plugins/daterangepicker/daterangepicker.css">-->
+    <!-- summernote -->
+    <!--<link rel="stylesheet" href="~/plugins/summernote/summernote-bs4.css">-->
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="~/css/vendor.css">
+    @*<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">*@
+    <link href="~/css/ionicons/ionicons.min.css" rel="stylesheet" />
+    @*<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">*@
+    <script src="~/js/vendor.js"></script>
+    @*<link href="~/css/dx.softblue-compact-light.css" rel="stylesheet" />*@
+    @*<link href="~/css/dx.generic-orange.css" rel="stylesheet" />*@
+    @*<script src="~/js/devextreme/quill.min.js"></script>
+                <script src="~/js/turndown.js"></script>
+                <script src="~/js/showdown.min.js"></script>
+
+        <script src="D:\Phong\FrameworkHLFX\HLFXFrameworkModular\src\Modules\Modules.UIRender\wwwroot\js\WarehouseDynamic.js"></script>
+
+                <link href="~/css/devextreme/dx.common.css" rel="stylesheet" />
+                <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />*@
+    <!-- jQuery -->
+    @*<script src="~/plugins/jquery/jquery.min.js"></script>
+        <script src="~/js/devextreme/jquery.js"></script>
+
+        <script src="~/js/devextreme/cldr.js"></script>
+        <script src="~/js/devextreme/cldr/event.js"></script>
+        <script src="~/js/devextreme/cldr/supplemental.js"></script>
+        <script src="~/js/devextreme/cldr/unresolved.js"></script>
+
+        <script src="~/js/devextreme/jszip.js"></script>
+        <script src="~/js/devextreme/globalize.js"></script>
+        <script src="~/js/devextreme/globalize/message.js"></script>
+        <script src="~/js/devextreme/globalize/number.js"></script>
+        <script src="~/js/devextreme/globalize/currency.js"></script>
+        <script src="~/js/devextreme/globalize/date.js"></script>
+        <script src="~/js/devextreme/dx.all.js"></script>*@
+
+    <!-- Bootstrap 4 -->
+    @*<script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+
+        <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
+        <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>*@
+    <!-- Block UI -->
+    @*<script src="~/js/jquery.blockUI.js"></script>
+        <script src="~/js/commonjs/tabpanel/tabpaneljs.js"></script>
+        <script src="~/js/commonjs/popup/popupjs.js"></script>
+        <script src="~/js/commonjs/acton/actionjs.js"></script>
+        <script src="~/js/commonjs/menu/menujs.js"></script>*@
+    <!-- DevExtreme export excel -->
+    @*<script src="https:// cdnjs.cloudflare.com/ajax/libs/exceljs/3.3.1/exceljs.min.js"></script>*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.4.0/polyfill.min.js"></script>
+    @if (siteSetting != null)
+    {
+        <style>
+            /* Logo background */
+            .brand-link {
+                background-color: @(siteSetting.LogoBackgroundColor != null ? siteSetting.LogoBackgroundColor : (siteSetting.SideBarType == "Dark" ? "#343a40" : "#fff"));
+            }
+
+            /* Top bar Background */
+            .main-header {
+                background-color: @(siteSetting.TopBackgroundColor != null ? siteSetting.TopBackgroundColor : "#fff");
+                position:sticky;
+                top:0;
+            }
+            /*.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused, .sidebar-mini.sidebar-collapse .main-sidebar:not() :hover{
+                width: 73px;
+                background-color:red;
+            }*/
+            /* Top menu text - background color */
+            .navbar-nav .nav-link {
+                color: @(siteSetting.TopTextColor != null? siteSetting.TopTextColor : "rgba(0,0,0,.5)")!important;
+                background-color:@siteSetting.TopBackgroundColor;
+            }
+
+                .navbar-nav .nav-link:hover {
+                    color: @siteSetting.TopTextHoverColor !important;
+                    background-color: @siteSetting.TopBackgroundHoverColor;
+                }
+
+                .navbar-nav .nav-link.active {
+                    color: @siteSetting.TopTextActiveColor !important;
+                    background-color: @siteSetting.TopBackgroundActiveColor;
+                }
+
+                    .navbar-nav .nav-link.active:hover {
+                        color: @siteSetting.TopTextActiveHoverColor !important;
+                        background-color: @siteSetting.TopBackgroundActiveHoverColor;
+                    }
+
+            /* Left Menu */
+            .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active, .sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active {
+                background-color: @siteSetting.SideActiveBackgroundColor;
+            }
+
+            .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link:not(:active):hover, .sidebar-light-primary .nav-sidebar > .nav-item > .nav-link:not(:active):hover {
+                background-color: @siteSetting.SideHoverBackgroundColor;
+            }
+
+            .sidebar-dark-primary .nav-treeview > .nav-item > .nav-link:hover, .sidebar-light-primary .nav-treeview > .nav-item > .nav-link:hover {
+                background-color:@siteSetting.SideHoverBackgroundColor;
+            }
+
+            .sidebar-dark-primary .nav-treeview > .nav-item > .nav-link.active, .sidebar-light-primary .nav-treeview > .nav-item > .nav-link.active {
+                background-color: @siteSetting.SideActiveBackgroundColor;
+            }
+
+            #divLeftMenu {
+                height: @(siteSetting.ShowLeftMenuBottom == "True" ? "80%" : "100%");
+            }
+
+            /* Footer */
+            .main-footer {
+                background-color: @siteSetting.FooterBackgroundColor;
+                /*position:sticky;*/
+                bottom:0;
+                z-index:9999;
+            }
+            .tab-menu-pane{
+                /*overflow: hidden;*/
+            }
+            .dropdown-menu {
+                padding: 0;
+                min-width: 0;
+            }
+            #divTabLink li {
+                box-sizing: border-box;
+            }
+            #divTabLink li .tab-template > .tab-icon {
+                padding: 3px 4px;
+                background-color: transparent;
+            }
+            #divTabLink li.active .tab-template > .tab-icon:hover {
+                padding: 3px 4px;
+                background-color: slategrey;
+                border-radius: 50%;
+                cursor: pointer;
+                color: white;
+            }
+            #divTabLink li .tab-template > .tab-icon:hover {
+                padding: 3px 4px;
+                background-color: slategrey;
+                border-radius: 50%;
+                pointer: cursor;
+                color: white;
+            }
+            .custom-loading-image {
+                background-color: transparent;
+                background-repeat: no-repeat;
+                background-position: center center;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                z-index: 2;
+                background-size:unset;
+                /*background-image: url("../BackgroundImage/search-background.PNG"));*/
+                background-image: url(../images/loadinggift.gif);
+            }
+            .k-loading-mask {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                background-color: #4635354f;
+                z-index: 10000;
+                display: none;
+            }
+            #divTabLink li .tab-template > .tab-icon:hover {
+                padding: 3px 4px;
+                background-color: slategrey;
+                border-radius: 50%;
+                cursor: pointer;
+                color: white;
+            }
+
+            .star:before {
+                content: "* ";
+                color: red;
+            }
+
+
+
+        </style>
+    }
+    @if (Context.Request.IsMobileBrowser() == true)
+    {
+        <style>
+            .blockMsg {
+                width: 70% !important;
+                left: 15% !important;
+            }
+        </style>
+    }
+    <style>
+
+        .customFieldset {
+            padding: 1em;
+            border: 0.5px groove #ffffff !important;
+            box-shadow: 0px 0px 0px 0px #ffffff;
+        }
+
+        .customLegend {
+            width: auto;
+            padding: 0 10px;
+            border-bottom: none;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .custom-dropdown .dropdown-menu {
+            min-width: 300px;
+            right: 0 !important;
+            left: -194px !important
+        }
+    </style>
+
+    <style>
+        /*top menu*/
+        .navbar {
+            padding: 0rem 0rem;
+        }
+
+        .nav-tabs > li {
+            float: left;
+            margin-bottom: -1px;
+        }
+
+        .tab-icon {
+            margin-left: 5px;
+        }
+
+        .nav-tabs > li.active > .tab-template, .nav-tabs > li.active > .tab-template:focus, .nav-tabs > li.active > .tab-template:hover {
+            color: #fff;
+            cursor: default;
+            background-color: #009fe3;
+            border: 1px solid #ddd;
+            border-bottom-color: transparent;
+        }
+
+        .nav-tabs > li > .tab-template {
+            margin-right: 2px;
+            line-height: 1.42857143;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+        }
+
+            .nav-tabs > li > .tab-template:hover {
+                border-color: #eee #eee #ddd;
+            }
+
+        .nav > li > .tab-template:focus, .nav > li > .tab-template:hover {
+            text-decoration: none;
+            background-color: #eee;
+        }
+
+        .nav > li > .tab-template {
+            position: relative;
+            display: block;
+            padding: 10px 15px;
+        }
+    </style>
+    <script>
+        function CheckMobi() {
+            if (@(Context.Request.IsMobileBrowser().ToString().ToLower()) === true) {
+                //$.each($(".os-content").find("li").toArray(), function (i,item) {
+                //    console.log($(this));
+                      //});
+                $(".item-child").click();
+                return true;
+            }
+        }
+
+    </script>
+    <style>
+        .sticky {
+            position: absolute;
+            top: 7px;
+            right: 10px;
+            z-index: 99;
+        }
+
+            .sticky > a {
+                background-color: transparent !important;
+            }
+    </style>
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div id="loading2" class="k-loading-mask">
+        <div class="custom-loading-image">
+            <div class="k-loading-color"></div>
+        </div>
+    </div>
+    <div class="wrapper">
+        @if (siteSetting != null)
+        {
+            if (Context.Request.IsMobileBrowser() || siteSetting.MenuType == "TreeView")
+            {
+
+                <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+                    <ul class="navbar-nav" style="width:10%">
+                        <li class="nav-item">
+                            <a class="nav-link item-child" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                        </li>
+                    </ul>
+
+                    @*<form class="form-inline ml-3">
+                            <div class="input-group input-group-sm">
+                                <input class="form-control form-control-navbar" type="search" placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search">
+                                <div class="input-group-append">
+                                    <button class="btn btn-navbar navbar-light" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>*@
+
+                    <ul class="navbar-nav ml-0" style="width:90%">
+                        <li style="width:90%">
+                            <form class="form-inline">
+                                <div class="input-group input-group-sm p-2">
+                                    <input class="form-control form-control-navbar" type="search" placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search" onkeyup="searchFunction()">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-navbar navbar-light" type="button">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </li>
+                        @*<div class="dropdown">
+                                <a  class="nav-link btn-secondary dropdown-toggle" data-toggle="dropdown">EN</a>
+                                <ul class="dropdown-menu" id="dropdownmenu">
+                                    <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
+                                    <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>
+                                </ul>
+                            </div>*@
+
+                        @*@if (siteSetting.AccountComponentName != null)
+                            {
+                                if (selector.SelectComponent(siteSetting.AccountComponentName) != null)
+                                {
+                                    @await Component.InvokeAsync(siteSetting.AccountComponentName)
+                                }
+                                else
+                                {
+                                    @await Component.InvokeAsync("UserLogin")
+                                }
+                            }
+                            else
+                            {
+                                @await Component.InvokeAsync("UserLogin")
+                            }*@
+                        @* duy comand ngay 06/10/2020 *@
+                        @*<li class="nav-item">
+                                <a class="nav-link" href="#" hidden="hidden">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                                </a>
+                            </li>*@
+                        <div class="nav-item dropdown custom-dropdown w-10">
+                            <a class="nav-link btn-secondary dropdown-toggle text-center" style="padding: .8rem 1rem;" data-toggle="dropdown">
+                                <i class="fa fa-cog" aria-hidden="true"></i>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="border-bottom"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
+                                <li class="border-bottom"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>
+
+                                <li>
+                                    @if (siteSetting.AccountComponentName != null)
+                                    {
+                                        if (selector.SelectComponent(siteSetting.AccountComponentName) != null)
+                                        {
+                                            @await Component.InvokeAsync(siteSetting.AccountComponentName)
+                                        }
+                                        else
+                                        {
+                                            @await Component.InvokeAsync("UserLogin")
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @await Component.InvokeAsync("UserLogin")
+                                    }
+                                </li>
+                                <li>
+                                    <a class="nav-link" href="@Url.Action("Logout", "Login")"><i class="fas fa-sign-out-alt"></i></a>
+                                </li>
+                            </ul>
+                        </div>
+                        @* duy comand ngay 06/10/2020 *@
+                        @*<li class="nav-item" hidden="hidden">
+                                <a class="nav-link" href="@Url.Action("Logout", "Login")"><i class="fas fa-sign-out-alt"></i></a>
+                            </li>*@
+                    </ul>
+                </nav>
+                <aside class='main-sidebar elevation-4 @(siteSetting.SideBarType == "Dark" ? "sidebar-dark-primary" : "sidebar-light-primary")'>
+                    @if (siteSetting.LogoComponentName != null)
+                    {
+                        if (selector.SelectComponent(siteSetting.LogoComponentName) != null)
+                        {
+                            @await Component.InvokeAsync(siteSetting.LogoComponentName)
+                        }
+                        else
+                        {
+                            @await Component.InvokeAsync("Logo")
+                        }
+                    }
+                    else
+                    {
+                        @await Component.InvokeAsync("Logo")
+                    }
+
+                    <!-- Sidebar -->
+                    <div class="sidebar">
+                        <div class="user-panel mt-2 pb-2 mb-2 d-flex">
+                            @*<form class="form-inline ml-3">
+                                    <div class="input-group input-group-sm">
+                                        <input class="form-control menu-lv2" type="search" placeholder="@_loc.GetLocalizedString("Menu search")" aria-label="Search" id="myInput" onkeyup="searchFunction()">
+                                    </div>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-navbar navbar-light" type="submit">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </form>*@
+                            @*asd*@
+                            <form class="form-inline ml-3">
+                                <div class="input-group mb-1">
+                                    <input class="form-control" type="search" placeholder="@_loc.GetLocalizedString("Menu search")" aria-label="Search" id="myInput" onkeyup="searchFunction()">
+                                    <div class="input-group-append">
+                                            <button class="btn btn-navbar navbar-light" type="button">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        @await Component.InvokeAsync("TreeMenu")
+                    </div>
+                </aside>
+            }
+            else //desktop máy tính
+            {
+                <nav class="main-header navbar navbar-expand">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                        </li>
+                        @await Component.InvokeAsync("TopMenu")
+                    </ul>
+
+                    @*<form class="form-inline ml-3">
+                        <div class="input-group input-group-sm">
+                            <input class="form-control form-control-navbar" type="text"  id="myInputSystem" onkeyup="SearchSystem()"
+                                   placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search">
+                            <div class="input-group-append">
+                                <button class="btn btn-navbar navbar-light" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="AreaSystemSearch">
+                            <div class="header-search-system d-flex justify-content-between" >
+                                <button class="btn btn-xs mx-2 my-2 btn-warning"><i class="fas fa-angle-down mr-2"></i>Mục</button>
+                                <button class="btn btn-xs mx-2 my-2 btn-danger"><i class="fas fa-angle-close mr-2"></i>Close</button>
+                            </div>
+                            <div class="content-category-search">
+                                <ul class="pl-1" >
+                                    <li><input type="checkbox" class="system-search mr-1" value="mes" name="mes" />MES</li>
+                                    <li><input type="checkbox" class="system-search mr-1" value="scm" name="scm"/>SCM</li>
+                                    <li><input type="checkbox" class="system-search mr-1" value="system-management" name="system-management" />System Management</li>
+                                    <li><input type="checkbox" class="system-search mr-1" value="management-site" name="management-site" />Management Site</li>
+                                </ul>
+                            </div>
+                            <div class="content-search-show">
+                                 <div class="item-content-search-show">
+                                      <div class="card">
+                                          <div class="card-header"><h5>MES</h5></div>
+                                          <div class="card-body p-1">
+                                              <ul class="pl-1">
+                                                  <li><a></a></li>
+                                                  <li>dada</li>
+                                                  <li>dada</li>
+                                                  <li>dada</li>
+                                              </ul>
+                                          </div>
+                                      </div>
+                                 </div>
+                            </div>
+                        </div>
+                    </form>*@
+
+                    <ul class="navbar-nav ml-auto">
+                        <form class="form-inline ml-3">
+                            <div class="input-group input-group-sm">
+                                @*<input class="form-control form-control-navbar" type="text" id="myInputSystem" onkeyup="SearchSystem()"*@
+                                <input class="form-control form-control-navbar" type="text" id="myInputSystem"
+                                       placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search">
+                                <div class="input-group-append">
+                                    <button class="btn btn-navbar navbar-light" type="button">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            @*<div id="AreaSystemSearch">
+                                <div class="header-search-system d-flex justify-content-between">
+                                    <button class="btn btn-xs mx-2 my-2 btn-warning" type="button" id="btnCategorySearch"><i class="fas fa-angle-down mr-2"></i>Mục</button>
+                                    <button class="btn btn-xs mx-2 my-2 btn-danger" type="button" id="btnCloseSearch"><i class="fas fa-angle-close mr-2"></i>Close</button>
+                                </div>
+                                <div class="content-category-search">
+                                    <ul class="pl-1" >
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="masterdata" />MasterData</li>
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="inventory" />Inventory</li>
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="production" />Production</li>
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="purchaseorder" />PurchaseOrder</li>
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="salesproject" />SalesProject</li>
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="systemmanagement" />SystemManagement</li>
+                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="transaction" />Transaction</li>
+                                    </ul>
+                                </div>
+                                <div class="content-search-show" id="content-search-show">
+                                    <div class="item-content-search-show"  id="masterdata" name="masterdata">
+                                        <div class="card">
+                                            <div class="card-header"><h5>MasterData</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a>asdas</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item-content-search-show"  id="inventory"  name="inventory">
+                                        <div class="card">
+                                            <div class="card-header"><h5>Inventory</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a></a></li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item-content-search-show" id="production" name="production">
+                                        <div class="card">
+                                            <div class="card-header"><h5>Production</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a></a></li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item-content-search-show"  id="purchaseorder" name="purchaseorder">
+                                        <div class="card">
+                                            <div class="card-header"><h5>PurchaseOrder</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a></a></li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item-content-search-show"  id="salesproject" name="salesproject">
+                                        <div class="card">
+                                            <div class="card-header"><h5>SalesProject</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a></a></li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item-content-search-show" id="systemmanagement" name="systemmanagement">
+                                        <div class="card">
+                                            <div class="card-header"><h5>SystemManagement</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a></a></li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>  
+                                    <div class="item-content-search-show" id="transaction"  name="transaction">
+                                        <div class="card">
+                                            <div class="card-header"><h5>Transaction</h5></div>
+                                            <div class="card-body p-1">
+                                                <ul class="pl-1">
+                                                    <li><a></a></li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                    <li>dada</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>*@
+                        </form>
+                        @*<li class="nav-item"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
+        <li class="nav-item"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>*@
+                        <div class="dropdown">
+                            <a id="btnlanguage" class="nav-link btn-secondary dropdown-toggle" data-toggle="dropdown">KR</a>
+                            <ul class="dropdown-menu" id="dropdownmenu">
+                                <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
+                                @*<li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>*@
+                            </ul>
+                        </div>
+                        @if (siteSetting.AccountComponentName != null)
+                        {
+                            if (selector.SelectComponent(siteSetting.AccountComponentName) != null)
+                            {
+                                @await Component.InvokeAsync(siteSetting.AccountComponentName)
+                            }
+                            else
+                            {
+                                @await Component.InvokeAsync("UserLogin")
+                            }
+                        }
+                        else
+                        {
+                            @await Component.InvokeAsync("UserLogin")
+                        }
+                        <li class="nav-item" hidden="hidden">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                            </a>
+                        </li>
+
+                        <li class="nav-item" hidden="hidden">
+                            <a class="nav-link  btn-secondary" href="#" id="favoritemenu">
+                                <i class="fa fa-cog" aria-hidden="true"></i>
+                            </a>
+                            @*<ul class="dropdown-menu">
+                <li><a class="nav-link">AA</a></li>
+                <li><a class="nav-link">BB</a></li>
+            </ul>*@
+                        </li>
+                        @*<div class="dropdown">
+            <a id="btnlanguage" class="nav-link btn-secondary dropdown-toggle" data-toggle="dropdown">EN</a>
+            <ul class="dropdown-menu" id="dropdownmenu">
+                <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
+                <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>
+            </ul>
+        </div>*@
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Logout", "Login")"><i class="fas fa-sign-out-alt mr-2"></i>@_loc.GetLocalizedString("Logout") </a>
+                        </li>
+                    </ul>
+                </nav>
+                <aside class='main-sidebar elevation-4 @(siteSetting.SideBarType == "Dark" ? "sidebar-dark-primary" : "sidebar-light-primary")'>
+                    @if (siteSetting.LogoComponentName != null & currentUser != null)
+                    {
+                        if (selector.SelectComponent(siteSetting.LogoComponentName) != null)
+                        {
+                            @await Component.InvokeAsync(siteSetting.LogoComponentName)
+                        }
+                        else
+                        {
+                            @await Component.InvokeAsync("Logo")
+                        }
+                    }
+                    else
+                    {
+                        @await Component.InvokeAsync("Logo")
+                    }
+
+                    <div class="sidebar">
+                        <div class="user-panel mt-2 pb-2 mb-2 d-flex">
+                            <form class="form-inline ml-3">
+                                <div class="input-group input-group-sm">
+                                    <input id="myInput"  class="form-control" type="search" placeholder="@_loc.GetLocalizedString("Menu search")" aria-label="Search" onkeyup="searchFunction()">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-navbar navbar-light" type="button">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <nav class="mt-2" id="divLeftMenu">
+                            @if (siteSetting.SideMenuComponentName != null)
+                            {
+                                if (selector.SelectComponent(siteSetting.SideMenuComponentName) != null)
+                                {
+                                    @await Component.InvokeAsync(siteSetting.SideMenuComponentName)
+                                }
+                                else
+                                {
+                                    @await Component.InvokeAsync("LeftMenu")
+                                }
+                            }
+                            else
+                            {
+                                @await Component.InvokeAsync("LeftMenu")
+                            }
+                        </nav>
+
+                        @if (siteSetting.ShowLeftMenuBottom == "True")
+                        {
+                            <nav class="mt-2" id="divLeftMenuBottom">
+                                @if (siteSetting.SideMenuBottomComponentName != null)
+                                {
+                                    if (selector.SelectComponent(siteSetting.SideMenuBottomComponentName) != null)
+                                    {
+                                        @await Component.InvokeAsync(siteSetting.SideMenuBottomComponentName)
+                                    }
+                                    else
+                                    {
+                                        @*<p>Left Menu Bottom Component not found</p>*@
+                                    }
+                                }
+                                else
+                                {
+                                    @*<p>Left Menu Bottom Component not found</p>*@
+                                }
+                            </nav>
+                        }
+                    </div>
+                </aside>
+            }
+        }
+        else
+        {
+            <!-- Navbar -->
+            <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link item-child" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                    </li>
+                    @await Component.InvokeAsync("TopMenu")
+                </ul>
+
+                <!-- SEARCH FORM -->
+                <form class="form-inline ml-3">
+                    <div class="input-group input-group-sm">
+                        <input class="form-control form-control-navbar" type="search" placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search">
+                        <div class="input-group-append">
+                            <button class="btn btn-navbar navbar-light" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <ul class="navbar-nav ml-auto">
+                    @await Component.InvokeAsync("UserLogin")
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-envelope" aria-hidden="true"></i></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fa fa-cog" aria-hidden="true"></i></a>
+
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Logout", "Login")"><i class="fas fa-sign-out-alt"></i></a>
+                    </li>
+                </ul>
+
+                <!-- Right navbar links -->
+                @*<ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#">
+                                <i class="fas fa-th-large"></i>
+                            </a>
+                        </li>
+                    </ul>*@
+            </nav>
+            <!-- Main Sidebar Container -->
+            <aside class="main-sidebar sidebar-dark-primary elevation-4">
+                <!-- Brand Logo -->
+                @await Component.InvokeAsync("Logo")
+                @*<a href="@Url.Action("Index","Home")" class="brand-link">
+                        <img src="/dist/img/AdminLTELogo.png" alt="Site Logo" class="brand-image img-circle elevation-3"
+                             style="opacity: .8">
+                        <span class="brand-text font-weight-light">Site Name</span>
+                    </a>*@
+
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <div class="user-panel mt-2 pb-2 mb-2 d-flex">
+                        @*<div class="image">
+                                <img src="/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
+                            </div>
+                            <div class="info">
+                                <a href="#" class="d-block">@loginInfor.UserName</a>
+                            </div>*@
+                        <form class="form-inline ml-3">
+                            <div class="input-group input-group-sm">
+                                <input class="form-control" type="search" placeholder="@_loc.GetLocalizedString("Menu search")" aria-label="Search" id="myInput" onkeyup="searchFunction()">
+                                <div class="input-group-append">
+                                    @*<button class="btn btn-navbar navbar-light" onclick="searchFunction()">*@
+                                        <button class="btn btn-navbar navbar-light" type="button">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    @await Component.InvokeAsync("LeftMenu")
+                </div>
+            </aside>
+        }
+
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            <!-- Main content -->
+            <div class="content" style="padding: 0; height:100%;">
+                <div class="container-fluid pl-0 pr-0" id="divTab" style="display:none">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="sticky">
+                                <a href="#" class="small-box-footer" id="btn-close-all-tab" style="background-color: #343a40" title='@(_loc.GetLocalizedString("CloseAllTabsLink"))'>
+                                    <i class="fas fa-times"></i>
+                                </a>
+
+                            </div>
+                            <ul class="tabbarlink nav nav-tabs" id="divTabLink">
+                            </ul>
+                            <div class="tab-menu-content" id="divTabContent">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @RenderBody()
+            </div>
+        </div>
+
+        <!-- Footer -->
+        @if (siteSetting != null)
+        {
+            if (siteSetting.FooterVisible == "True")
+            {
+                @if (siteSetting.FooterComponentName != null)
+                {
+                    if (selector.SelectComponent(siteSetting.LogoComponentName) != null)
+                    {
+                        @await Component.InvokeAsync(siteSetting.LogoComponentName)
+                    }
+                    else
+                    {
+                        @await Component.InvokeAsync("Footer")
+                    }
+                }
+                else
+                {
+                    @await Component.InvokeAsync("Footer")
+                }
+            }
+        }
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+    </div>
+
+    <div id="divModal">
+        <div class="modal fade" id="modalUserControl" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog" id="modalUserContent">
+            </div>
+        </div>
+        <div class="modal fade" id="modalControl" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog" id="modalContent">
+            </div>
+        </div>
+        <div class="modal fade" id="modalControlChild" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog" id="modalContentChild">
+            </div>
+        </div>
+    </div>
+
+    @* dialog alert session expire for user *@
+    <div class="modal" id="modalSessionTimeout">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <h5>@(_loc.GetLocalizedString("The session has expired"))</h5>
+                    <h5>@(_loc.GetLocalizedString("Please log-in again"))</h5>
+                </div>
+                <div class="modal-footer d-flex justify-content-center">
+                    <button type="button" class="btn btn-danger btn-sm" id="btnSessionTimeOut" data-dismiss="modal"> @(_loc.GetLocalizedString("OK"))</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="getmenufavorite">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <h5>@(_loc.GetLocalizedString("The session has expired"))</h5>
+                    <h5>@(_loc.GetLocalizedString("Please log-in again"))</h5>
+                </div>
+                <div class="modal-footer d-flex justify-content-center">
+                    <button type="button" class="btn btn-danger btn-sm" id="btnSessionTimeOut" data-dismiss="modal"> @(_loc.GetLocalizedString("OK"))</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var siteSettingObject;
+        var tabPanel;
+        var tabItem, tabDataSource;
+        var idMenuActive;
+        var menuObject, listMenuObject, listLeftMenu;
+        var parentMenuID;
+        let windowwidth = window.innerWidth;
+        let windowheight = window.innerHeight;
+     
+        function CheckMobiNew() {
+            if (@(Context.Request.IsMobileBrowser().ToString().ToLower()) === true && window.innerWidth < 768) {
+                return true;
+            }
+        }
+        $(window).resize(function () {
+
+            windowwidth = window.innerWidth;
+            windowheight = window.innerHeight;
+
+            CheckResize(windowwidth, windowheight);
+
+            if (@(Context.Request.IsMobileBrowser().ToString().ToLower()) === false) {
+                $(".os-content").find(".user-panel").removeClass("d-none");
+                $(".os-content").find(".user-panel").addClass("d-flex");
+            }
+
+        });
+
+        function CheckResize(winwidth, winheight) {
+            var heightmainheader = $('.main-header').outerHeight();
+
+            var divtab = $("#divTab").outerHeight();
+
+            var heightmainfooter = $('.main-footer').outerHeight();
+
+            let gettablink = $("#divTabLink").outerHeight();
+
+            let menutoolbar = $("#menutoolbar").outerHeight();
+
+            if (gettablink == 0) {
+                gettablink = heightmainheader;
+            }
+
+            let heighttabcontent = 0;
+            if (heightmainfooter != undefined)
+            {
+                heighttabcontent = winheight - (heightmainheader + heightmainfooter + gettablink);
+
+            }
+            else
+            {
+                heighttabcontent = winheight - (heightmainheader + gettablink);
+
+            }
+
+             
+            $('.tab-menu-pane').height(heighttabcontent);
+            $('.tab-menu-content').height(heighttabcontent);
+        }
+
+        $('.os-content').mouseover(function (e) {
+            var x = e.clientX, y = e.clientY,
+                elementOnMouseOver = document.elementFromPoint(x, y);
+            elementClass = $(elementOnMouseOver).attr('class');
+            alert(elementClass);
+        });
+
+        //function SessionTime() {
+        //    if (CheckTimeOut < 24) {
+        //        $.ajax({
+        //            url: '@Url.Action("check", "MESSaleProject")',
+        //            type: "GET",
+        //            data: {
+
+        //            },
+        //            dataType: 'json',
+        //            success: function (result)
+        //            {
+        //                CheckTimeOut = CheckTimeOut + 1;
+
+        //            }, error: function (result) {
+
+        //                return;
+        //            }
+        //        });
+        //    }
+
+        //}
+        var CheckTimeOut = 0;
+        $(document).ready(function ()
+        {
+            setInterval("SessionTime()", 1000 * 300); // 30s gửi request một lần
+            //$('.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused, .sidebar-mini.sidebar-collapse .main-sidebar').removeClass('hover');
+            $('.sidebar-mini.layout-fixed.sidebar-collapse aside').unbind('hover');
+            CheckResize(windowwidth, windowheight);
+
+            var href = "@Url.Action("OnGetSetCultureCookie","Home")";
+            var langhref = href.substr(1, 2);
+            $.ajax({
+                url: '@Url.Action("OnGetSetCultureCookie", "Home")',
+                type: "GET",
+                data: { cltr: langhref },
+                dataType: "html",
+                success: function (result) {
+                }
+            });
+
+            $('[is-active-color="true"]').addClass('active');
+            $('[is-active-show="true"]').parent().addClass("menu-open");
+            $('[is-active-show="true"]').parent().find(".parent-link").first().addClass("active");
+
+            CheckSession();
+            siteSettingObject = @Html.Raw(Json.Serialize(siteSetting));
+            listMenuObject = @Html.Raw(Json.Serialize(currentUser.AuthorizedMenus));
+
+            // Quan add 2020-12-04
+            // load tab default
+            $.ajax({
+                url: getLanguages() + '/MenuLogin/GetTabActiveDefault',
+                type: 'GET',
+                async: false,
+                dataType: "json",
+                success: function (result) {
+                    if (result.length > 0)
+                    {
+                        GenerateTab(result[0].MenuNameActivefirst, result[0].MenuPathActivefirst, result[0].MenuIDActivefirst, false);
+                    }
+                }
+            });
+
+             
+            var url = window.location.href;
+            var check = url.substr(url.length - 2, 2)
+            if (check == 'po') {
+                GenerateTab('Purchase Order', '/MESPORequest', '69', false);
+            }
+
+            $.blockUI();
+            $.unblockUI();
+        });
+
+
+
+
+        $('#favoritemenu').on('click', function () {
+            $('#getmenufavorite').show();
+        });
+
+        function CheckSession() {
+               return $.ajax({
+                        url: '@Url.Action("CheckSessionUser","Login")',
+                        type: 'GET',
+                        dataType: 'json',
+                        async: false,
+                        success: function (result) {
+                            if (result) {
+
+                            } else {
+                                var result = DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("The session has expired"))", "Warning");
+                                result.done(function (dialogresult) {
+                                    if (dialogresult) {
+                                        window.location.href = '/';
+                                    }
+                                });
+                                return;
+                            }
+                        }
+                   });
+        }
+        //search system
+            //render view
+            var ViewItem = [];
+            var listCategoryLi = $(".content-category-search ul").find("li");
+
+            $.each(listCategoryLi, function (index, element) {
+
+            })
+            //render view
+        var ArrCategorySearch = [];
+        $("body").delegate(".system-search", "change", function () {
+            var value = $(this).val();
+            if (this.checked) {
+                $(`#${value}`).show();
+            } else {
+                $(`#${value}`).hide();
+            }
+        });
+
+        function showAreaSearch() {
+            //id = "btnCategorySearch
+            //id = "btnCloseSearch" ><
+        }
+        function SearchSystem() {
+
+        }
+        $("#myInputSystem").focus(function () {
+            $("#AreaSystemSearch").css("display", 'block');
+        })
+        $("#btnCloseSearch").on("click",function () {
+           $("#AreaSystemSearch").css("display", 'none');
+        })
+
+        //end search system
+
+        //khong dc để cái này ở tren
+        $("body").on("click", "#btnSessionTimeOut", function () {
+            $("#modalSessionTimeout").hide();
+            window.location.href = '/';
+        })
+
+    </script>
+
+    <!-- jQuery UI 1.11.4 -->
+    <script src="~/plugins/jquery-ui/jquery-ui.min.js"></script>
+    <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+    <script>$.widget.bridge('uibutton', $.ui.button)</script>
+    @*<script src="~/js/devextreme/quill.min.js"></script>*@
+    <!-- ChartJS -->
+    <script src="~/plugins/chart.js/Chart.min.js"></script>
+    <!-- Sparkline -->
+    <script src="~/plugins/sparklines/sparkline.js"></script>
+    <!-- JQVMap -->
+    <script src="~/plugins/jqvmap/jquery.vmap.min.js"></script>
+    <script src="~/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+    <!-- jQuery Knob Chart -->
+    <script src="~/plugins/jquery-knob/jquery.knob.min.js"></script>
+    <!-- daterangepicker -->
+    <script src="~/plugins/moment/moment.min.js"></script>
+    <script src="~/plugins/daterangepicker/daterangepicker.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Summernote -->
+    <script src="~/plugins/summernote/summernote-bs4.min.js"></script>
+    <!-- overlayScrollbars -->
+    <script src="~/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="~/dist/js/adminlte.js"></script>
+    <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+    @*<script src="~/dist/js/pages/dashboard.js"></script>*@
+    <!-- AdminLTE for demo purposes -->
+    @*<script src="~/dist/js/demo.js"></script>*@
+<script>
+  
+        document.getElementById("myInput").addEventListener("search", function (event) {
+            searchFunction();
+        });
+        function searchFunction() {
+            var idmenuactive = $('ul.navbar-nav > li.nav-item > a.active').attr("menu-id");
+            var idmenuactivetablink = $('ul.tabbarlink li.active').attr('menu-id');
+            var nametablink, urltablink;
+            menutablink = listMenuObject.filter(function (v, i) {
+                if (v.MenuID == idmenuactivetablink) {
+                    if (v.MenuPath != "") {
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            });
+             
+            var input, filter, ul, li, a, i, txtValue,menu;
+            input = document.getElementById('myInput');
+            filter = input.value.toUpperCase();
+           
+            var lang = getLanguages();
+            if (input.value != null && input.value != '' && input.value != undefined) {
+                if (lang == "/en") {
+                    nametablink = menutablink.MenuNameEng;
+                    urltablink = menutablink.MenuPath;
+                    menu = listMenuObject.filter(function (v, i) {
+                        if (v.MenuNameEng.toLowerCase().indexOf(input.value.toLowerCase()) >= 0 || v.MenuDesc.toLowerCase().indexOf(input.value.toLowerCase()) >= 0) {
+                            if (v.MenuPath) {
+                                return true;
+                            }
+                        } else {
+                            return false;
+                        }
+                    });
+                    if (menu.length > 0) {
+                        $('ul.nav-sidebar').html(null);
+                        var html = "";
+
+                        for (var i = 0; i < menu.length; i++) {
+                            html += `<li class='nav-item menu-lv2'>
+                                    <a is-active-color onclick= "GenerateTab('${menu[i].MenuNameEng}','${menu[i].MenuPath}','${menu[i].MenuID}','false')"  class= 'nav-link' menu-id='${menu[i].MenuID}'>
+                                    <i class='nav-icon ${menu[i].MenuIconCode}'></i>
+                                    <p>${menu[i].MenuNameEng}</p>
+                                            </a>
+                                        </li>`;
+                        }
+                        $('ul.nav-sidebar').append(html);
+                    } else {
+                        $('ul.nav-sidebar').html(null);
+                    }
+                }
+                else {
+                    nametablink = menutablink.MenuName;
+                    urltablink = menutablink.MenuPath;
+                    menu = listMenuObject.filter(function (v, i) {
+                        if (v.MenuName.toLowerCase().indexOf(input.value.toLowerCase()) >= 0 || v.MenuDesc.toLowerCase().indexOf(input.value.toLowerCase()) >= 0) {
+                            if (v.MenuPath) {
+                                return true;
+                            }
+                        } else {
+                            return false;
+                        }
+                    });
+                    if (menu.length > 0) {
+                        $('ul.nav-sidebar').html(null);
+                        var html = "";
+
+                        for (var i = 0; i < menu.length; i++) {
+
+                            html += `<li class='nav-item menu-lv2'>
+                                <a is-active-color onclick= "GenerateTab('${menu[i].MenuName}','${menu[i].MenuPath}','${menu[i].MenuID}','false')"  class= 'nav-link' menu-id='${menu[i].MenuID}'>
+                                <i class='nav-icon ${menu[i].MenuIconCode}'></i>
+                                <p>${menu[i].MenuName}</p>
+                                        </a>
+                                    </li>`;
+                        }
+                        $('ul.nav-sidebar').append(html);
+                    }
+                    else { $('ul.nav-sidebar').html(null);}
+                }
+                console.log(menu)
+            }
+            else {
+                 
+                GetListLeftMenu(idmenuactive, 1);
+                GenerateTab(nametablink, urltablink, idmenuactivetablink, false);
+            }
+
+            //end
+
+
+
+            /*li = $("ul.nav-sidebar ").find('li');
+                        //li = ul.getElementsByTagName('li');
+                        for (i = 0; i < li.length; i++) {
+                            a = li[i].getElementsByTagName("a")[0];
+                            if (a != undefined) {
+                                txtValue = a.textContent || a.innerText;
+                                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                                    li[i].style.display = "";
+                                } else {
+                                    li[i].style.display = "none";
+                                }
+                            }
+                        }
+
+
+                        // Loop through all list items, and hide those who don't match the search query
+                        //for (i = 0; i < li.length; i++) {
+                        //    a = li[i].getElementsByTagName("a")[0];
+                        //    if (a != undefined) {
+                        //        txtValue = a.textContent || a.innerText;
+                        //        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        //            li[i].style.display = "";
+                        //        } else {
+                        //            li[i].style.display = "none";
+                        //        }
+                        //    }
+                        //}
+                        // check child menu
+                        var liChild = $("ul.nav-sidebar").find("li.has-treeview");
+                        // var liChild = ul.getElementsByClassName('has-treeview');
+                        for (i = 0; i < liChild.length; i++) {
+                            $(liChild[i]).addClass('menu-open');
+                            // $(liChild[i].getElementsByTagName("ul")[0]).style.display ="block";
+                            li = liChild[i].getElementsByTagName("ul")[0].getElementsByTagName('li');
+                            var icount = 0;
+                            for (j = 0; j < li.length; j++) {
+                                a = li[j].getElementsByTagName("a")[0];
+                                if (a != undefined) {
+                                    txtValue = a.textContent || a.innerText;
+                                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                                        li[j].style.display = "";
+                                        icount++;
+                                    } else {
+                                        li[j].style.display = "none";
+                                    }
+                                }
+                            }
+                            if (icount > 0) {
+                                liChild[i].style.display = "";
+                            }
+                            else {
+                                liChild[i].style.display = "none";
+                            }
+                        }*/
+        }
+        @*// bao add to fix tab when window scroll
+        $(window).scroll(function () {
+            if (@(Context.Request.IsMobileBrowser().ToString().ToLower()) === true) {
+                //dont do anything
+            } else {
+                var currentStyle = $("#divTabLink").css();
+                 
+                var divTabLink = $("#divTabLink");
+                var tabLinkId = $(divTabLink).find("li.active > .tab-template >.tab-link").attr("menu-id");
+                var divTabMenu = $("#divTabContent").find(".tab-menu-pane:gt(0) > .row .card");
+                var tabMenuId = $("#divTabContent").find(`.tab-menu-pane:gt(0)[menu-id=${tabLinkId}][style*='display: block']`).attr("menu-id");
+                var mainMenu = $(".main-header.navbar.navbar-expand");
+                 
+                //tab dashboard
+                var tabDasboardId = '93';
+                var siteSettingTabID = '56';
+                var tabDasboard = $(divTabLink).find("li.active > .tab-template > .tab-link").attr("menu-id");
+                if (tabDasboard != null && tabDasboard === tabDasboardId) {
+                    //dont show on dashboard tab..
+                } else if (tabDasboard != null && tabDasboard === siteSettingTabID) {
+                    //dont do
+                } else {
+                    var targetAttrValue = {
+                        "position": "relative",
+                        "width": "100%",
+                        "background-color": "#fff",
+                        "box-shadow": "none",
+                        "z-index": "999"
+                    };
+                //
+                    var  MainMenuAttrValue = {
+                        "position": "fixed",
+                        "width": "100%",
+                        "background-color": "white",
+                        "top": "0",
+                        "z-index": "1000",
+                        "box-shadow": "0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)",
+                        "transition": "linear .2s"
+                    };
+                    var mainMenuHeight = $(mainMenu).height();
+                    var tablinkAttrValue = {
+                        "position": "fixed",
+                        "width": "100%",
+                        "background-color": "white",
+                        "top": `${mainMenuHeight}px`,
+                        "z-index": "1001",
+                        "box-shadow": "0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)",
+                        "transition": "linear .2s"
+                    };
+                    var tablinkHeight = $(divTabLink).height();
+                    var tabcontentHeight = mainMenuHeight + tablinkHeight;
+                    var tabContentAttrValue = {
+                        "position": "fixed",
+                        "width": "100%",
+                        "background-color": "white",
+                        "top": `${tabcontentHeight}`,
+                        "z-index": "1002",
+                        "box-shadow": "0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)",
+                        "transition": "linear .2s"
+                    };
+                    if ($(this).scrollTop() > 150) {
+                        $(mainMenu).css(MainMenuAttrValue);
+                        $(divTabLink).css(tablinkAttrValue);
+                        $(divTabLink).parent().addClass("p-0");
+                        if (tabLinkId === tabMenuId) {
+                            $(divTabMenu).css(tabContentAttrValue);
+                            console.log("ok");
+                        }
+                    }
+                    else if ($(this).scrollTop() < 150) {
+                        $(mainMenu).css(targetAttrValue);
+                        $(divTabLink).css(targetAttrValue);
+                        $(divTabMenu).css(targetAttrValue);
+                    }
+                }
+            }
+        });*@
+        //end
+    // hide search when colappse tree-menu :)))
+    var flagMenuSearch = 1;
+    $(".wrapper a.nav-link[data-widget=pushmenu]").on("click", function () {
+        if (flagMenuSearch == 1) {
+            $(".os-content").find(".user-panel").removeClass("d-flex");
+            $(".os-content").find(".user-panel").addClass("d-none");
+            flagMenuSearch = 2;
+            //alert("flagMenuSearch " + flagMenuSearch);
+        } else {
+            $(".os-content").find(".user-panel").removeClass("d-none");
+            $(".os-content").find(".user-panel").addClass("d-flex");
+            flagMenuSearch = 1;
+            //alert("flagMenuSearch " + flagMenuSearch);
+        }
+    });
+    //handle btn hide show
+
+
+    // handle btn close all tab
+    $("#btn-close-all-tab").on("click", function () {
+        var dashBoardTab = $("#divTabLink li").first();
+        var listTab = $("#divTabLink li").not($(dashBoardTab));
+        var listbtn = $(listTab).find(".tab-template i");
+        $.each(listbtn, function (idx, ele) {
+            $(this).trigger("click");
+        });
+    })
+
+   
+</script>
+
+</body>
+</html>
+

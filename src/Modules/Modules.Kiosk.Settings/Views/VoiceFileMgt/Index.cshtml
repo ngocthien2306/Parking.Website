@@ -1,0 +1,418 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.CREATE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+
+
+    string audioId = "audioId" + ViewBag.Thread;
+    string audioName = "audioName" + ViewBag.Thread;
+    string gridFileAudio = "gridFileAudio" + ViewBag.Thread;
+
+
+}
+<style>
+    .btn-play-blue {
+        color: #fff;
+        background-color: #0e75e5;
+        border-color: #0374ed;
+        box-shadow: none;
+    }
+    .btn-play {
+        display: inline-block;
+        font-weight: 400;
+        border: 1px solid transparent;
+        font-size: 1rem;
+        border-radius: 0.25rem;
+        vertical-align: middle;
+    }
+</style>
+<script>
+   
+    var count = 0;
+    var currentPlayAudio = null;
+    $(document).ready(function() {
+        LoadingPage(1);
+        GetListAudioFile(GetDataElement("#@audioId"), GetDataElement("#@audioName"));
+        LoadingPage(0);
+    })
+    function GetGridAudioIntance() {
+        return $("#@gridFileAudio").dxDataGrid("instance");
+    }
+
+    // Region: Button click event
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        GetListAudioFile(GetDataElement("#@audioId"), GetDataElement("#@audioName"));
+        LoadingPage(0);
+    });
+
+    $('#btnCreate_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        CreateClientSound();
+        LoadingPage(0);
+    });
+    $('#btnDelete_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+
+            if (dialogResult) {
+                debugger;
+                var soundDto = [];
+                var audios = GetGridAudioIntance().getSelectedRowsData();
+                var url = '@Url.Action("DeleteListAudioFile", "VoiceFileMgt")';
+                audios.forEach(a => {
+                    soundDto.push({ soundNo : a.soundNo})
+                });
+                var obj = {
+                    soundIds: JSON.stringify(soundDto)
+                }
+                CRUDData(url, obj, METHOD.DELETE);
+                setTimeout(function () {
+                    GetListAudioFile(GetDataElement("#@audioId"), GetDataElement("#@audioName"));
+                }, 1000);
+            }
+        })
+        LoadingPage(0);
+    });
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+    // End Region: Button click event
+
+
+    // Region: Get data
+    function GetListAudioFile(audioId, audioName) {
+        debugger;
+        LoadingPage(1);
+        GetGridAudioIntance().selectRows();
+        var url = '@Url.Action("GetListAudioFile", "VoiceFileMgt")';
+        var obj = {
+            audioId: audioId,
+            audioName: audioName
+        }
+        LoadGridData(url, obj, "#@gridFileAudio", METHOD.GET);
+    }
+    // End Region: Get data 
+
+    // Region: Update - Delete - Create data
+
+    // End Region: Update - Delete - Create data
+    function PauseAudioFile(soundNo) {
+        debugger;
+    }
+
+    function PlayAudioFile(soundNo) {
+        LoadingPage(1);
+        var grid = GetGridAudioIntance();
+        if(currentPlayAudio !== soundNo && currentPlayAudio !== null) {
+            debugger;
+            document.querySelector("#btnPlay" + currentPlayAudio.toString() + " i").className = "fas fa-play";
+        }
+        currentPlayAudio = soundNo;
+        $.ajax({
+            url: '@Url.Action("PlayAudio", "VoiceFileMgt")',
+            type: "GET",
+            data:
+            {
+                path: grid.option("dataSource").filter(d => d.soundNo == soundNo)[0].localFileLocation
+            },
+            dataType: false,
+            success: function (result) {
+                debugger;
+                if(result.Data == null) {
+                    DevExpress.ui.notify(
+                        {
+                            message: '@_loc.GetLocalizedString("Not found file on the server!")',
+                            position: {
+                                my: 'bottom right',
+                                at: 'bottom right'
+                            },
+                            width: '20%'
+                        },
+                        'warning'
+                    );
+                    var audioSite = document.getElementById("audio-play-site1");
+                    var audio = "<audio controls autoplay id='audio_file1' preload='auto' ><source src='" + result.Message + "'/></audio>";
+                    audioSite.innerHTML = audio;
+                    document.querySelector("#btnPlay" + soundNo.toString() + " i").className = "fas fa-play";
+                    count = 0;
+                }
+                else {
+                    var audioSite = document.getElementById("audio-play-site1");
+                    var audio = "<audio controls autoplay id='audio_file1' preload='auto' ><source src='" + result.Data + "'/></audio>";
+                    audioSite.innerHTML = audio;              
+                    document.querySelector("#btnPlay" + soundNo.toString() + " i").className = "fas fa-pause";
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function ShowHistoryDeployAudio(e) {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        var url = '@Url.Action("ShowHistoryDeployAudio", "VoiceFileMgt")';
+        var obj = {
+            soundId: e.row.data.soundNo,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+
+    function CreateClientSound() {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        var url = '@Url.Action("ShowAudioFileDetail", "VoiceFileMgt")';
+        var obj = {
+            soundId: null,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+
+    function DeployAudios() {
+
+        var listAudio = GetGridAudioIntance().getSelectedRowsData();
+        if (listAudio.length < 1) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please choose the audio you want to deploy!")", "Error")
+            return;
+        }
+        LoadingPage(1);
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.DEPLOYAUDIO))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+
+            if (dialogResult) {
+                debugger;
+                var soundDto = []
+                listAudio.forEach(audio => {
+                    soundDto.push({ soundNo: audio.soundNo, soundName: audio.soundName, localFileLocation: audio.localFileLocation, soundType: audio.soundType});
+                })
+
+                
+                $.ajax({
+                    url: '@Url.Action("DeployAudiosNew", "VoiceFileMgt")',
+                    type: METHOD.POST,
+                    data: {
+                        soundDtoJson: JSON.stringify(soundDto)
+                    },
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        debugger;
+                        //DevExpress.ui.dialog.alert(result.Message, "Notice");
+                        LoadingPage(1);
+                        if(result.Success) {
+                            DevExpress.ui.notify(
+                                {
+                                    message: '@_loc.GetLocalizedString("Deploying audios to all devices, please wait some minute!")',
+                                    position: { my: 'bottom right', at: 'bottom right' }, width: '30%'
+                                }, 'info', 7000
+                            );
+                        }
+                        else {
+                            DevExpress.ui.notify(
+                                {
+                                    message: result.Message,
+                                    position: { my: 'bottom right', at: 'bottom right' }, width: '30%'
+                                }, 'warning', 7000
+                            );
+                        }
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+            }
+        })
+        LoadingPage(0);
+    }
+
+    function ShowAudioFileDetail(e) {
+        LoadingPage(1);
+        CheckSession();
+        if(count > 0) {
+            $('#audio_file1').hide();
+            document.querySelector("#btnPlay" + e.data.soundNo + " i").className = "fas fa-play";
+            var player = document.getElementById('audio_file1');
+            player.pause();
+            player.src = "";
+        }
+
+        debugger;
+        var url = '@Url.Action("ShowAudioFileDetail", "VoiceFileMgt")';
+        var obj = {
+            soundId: e.data.soundNo,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+    
+    function onItemGridToolbarPreparing(e) {
+        debugger;
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Deploy")",
+                    onClick: function () {
+                        DeployAudios();
+                    },
+                    icon: "fa fa-print"
+                },
+                location: "after"
+            }
+        )
+    }
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row mt-1">
+                    <div class="form-group col-md-3">
+                        <label>@(_loc.GetLocalizedString("Voice File ID"))</label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID(audioId)
+                            )
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>@(_loc.GetLocalizedString("Audio File Name"))</label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID(audioName)
+                            )
+                    </div>
+                    <div id="audio-play-site" style="display: none">
+
+                    </div>
+                    <div id="audio-play-site1" style="display: none">
+
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-12">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Audio Information")</legend>                     
+                            @(
+                                Html.DevExtreme().DataGrid<KIO_ClientSoundMgt>()
+                                    .ID(gridFileAudio)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .Height("69vh")
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .RemoteOperations(true)
+                                    .ColumnAutoWidth(true)
+                                    .ColumnFixing(c => c.Enabled(true))
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Multiple))
+                                    .Columns(c => {
+                                        c.AddFor(x => x.soundNo).Caption(_loc.GetLocalizedString("Sound ID"));
+                                        c.AddFor(x => x.soundName).Caption(_loc.GetLocalizedString("Sound Name"));
+                                        c.Add().Caption(_loc.GetLocalizedString("Play Sound")).CellTemplate(@<text>
+                                            <button type="button" id="btnPlay<%-data.soundNo%>"  onpause="PauseAudioFile(<%-data.soundNo%>)" class="btn-play btn-play-blue">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                            <script>
+                                                $("#btnPlay<%-data.soundNo%>").click(function() {
+                                                    
+                                                    if(count == 0) {
+                                                        PlayAudioFile(<%-data.soundNo%>)
+                                                        count++;
+                                                    }
+                                                    else {
+                                                        var audioSite = document.getElementById("audio-play-site1");
+                                                        var audio = "<audio controls autoplay id='audio_file1' preload='auto' ><source src=''/></audio>";
+                                                        audioSite.innerHTML = audio;
+                                                        document.querySelector("#btnPlay" + "<%-data.soundNo%>" + " i").className = "fas fa-play";
+                                                        count = 0;
+                                                    }
+                                   
+                                                });
+                                            </script>
+@*                                            @(
+                                                Html.DevExtreme().Button()
+                                                .Icon("fas fa-play")
+                                                .ID("btnPlay" + new JS("data.soundNo"))
+                                                .Text(new JS("data.soundId"))
+                                                .Type(ButtonType.Default)
+                                                .OnClick("PlayAudioFile")
+                                            )*@
+                                        </text>).Alignment(0);
+                                        c.AddFor(x => x.typeName).Caption(_loc.GetLocalizedString("Sound Type"));
+                                        
+                                        c.AddFor(x => x.statusName).Caption(_loc.GetLocalizedString("Deploy Status"));
+                                        c.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd").Alignment(0);
+                                        c.Add().Type(GridCommandColumnType.Buttons)
+                                        .Alignment(HorizontalAlignment.Center)
+                                        .Buttons(b => {
+                                            b.Add().Icon("fa fa-bars")
+                                            .Hint("Click to open history search")
+                                            
+                                            .OnClick("ShowHistoryDeployAudio");
+                                            
+                                            
+                                    }).Caption(_loc.GetLocalizedString("Distribution History"));
+                                    //c.AddFor(x => x.UnitPrice).Caption(_loc.GetLocalizedString("Unit Price")).Format("#,##0");
+
+
+                                })
+
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                //.OnSelectionChanged("onItemGridSelectionChanged")
+                                .OnRowDblClick("ShowAudioFileDetail")
+                                .OnToolbarPreparing("onItemGridToolbarPreparing")
+                                .Paging(paging => paging.PageSize(100))
+                                )
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/checkin.js"></script>

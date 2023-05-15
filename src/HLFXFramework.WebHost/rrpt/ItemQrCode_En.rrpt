@@ -1,0 +1,91 @@
+{
+  version: 0,
+  monospaced_fonts: [
+    {bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}},
+    {name:"gothic",bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}}
+  ],
+  paper: {
+    landscape: true,
+    margin: {bottom:20.0,left:20.0,right:20.0,top:20.0},
+    scale_unit: "point",
+    type: "a4"
+  },
+  caption: "納品書",
+  font: {size:12.0},
+  custom_fields: [
+    {key:"kingaku",exp:"(* .tanka .suryo)"}
+  ],
+  group: {
+    caption: "部門グループ",
+    keys: ["bumonCd"],
+    page_break: true,
+    layout: {
+      x: 2.0,
+      y: 0.0
+    },
+    contents: [
+      {
+        size: {
+          initial: 25.0
+        },
+        caption: "ヘッダー",
+        elements: [
+          {type:"text",layout:{x1:0.0,y1:0.0,x2:25.0,y2:25.0},color:"#363636",font:{name:"malgun",size:8.0},halign:"center",text:"No.",valign:"center"},
+          {type:"text",layout:{x1:140.0,y1:0.0,x2:255.0,y2:25.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"품목구분",valign:"center"},
+          {type:"text",layout:{x1:255.0,y1:0.0,x2:425.0,y2:25.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"품목코드",valign:"center"},
+          {type:"text",layout:{x1:425.0,y1:0.0,x2:800.0,y2:25.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"품목명",valign:"center"},
+          {type:"rect",layout:{x1:25.0,y1:0.0,x2:140.0,y2:25.0},background:true},
+          {type:"rect",layout:{x1:140.0,y1:0.0,x2:255.0,y2:25.0},background:true},
+          {type:"rect",layout:{x1:255.0,y1:0.0,x2:425.0,y2:25.0},background:true},
+          {type:"rect",layout:{x1:425.0,y1:0.0,x2:800.0,y2:25.0},background:true},
+          {type:"rect",layout:{x1:0.0,y1:0.0,x2:25.0,y2:25.0},background:true},
+          {type:"text",layout:{x1:25.0,y1:0.0,x2:140.0,y2:25.0},color:"#363636",font:{name:"malgun",size:10.0},halign:"center",text:"QR코드",valign:"center"},
+        ]
+      },
+      {
+        size: {
+          initial: 20.0
+        },
+        aggregate_src: true,
+        caption: "ボディ",
+        group: {
+          caption: "明細グループ",
+          detail: true,
+          layout: {
+            size: 800.0,
+            x: 0.0,
+            y: 0.0
+          },
+          contents: [
+            {
+              size: {
+                initial: 60.0
+              },
+              aggregate_src: true,
+              caption: "明細",
+              elements: [
+                {type:"field",layout:{x1:0.0,y1:0.0,x2:25.0,y2:30.0},exp:".No",font:{name:"malgun",size:7.0},halign:"center",valign:"center"},
+                {type:"field",layout:{x1:0.0,y1:0.0,x2:25.0,y2:60.0},font:{name:"malgun",size:7.0},halign:"center",valign:"center"},
+                {type:"rect",layout:{x1:0.0,y1:0.0,x2:25.0,y2:60.0},background:true},
+                {type:"barcode",layout:{x1:50.0,y1:0.0,x2:120.0,y2:60.0},barcode_type:"qrcode",exp:".ItemCode"},
+                {type:"field",layout:{x1:145.0,y1:0.0,x2:260.0,y2:60.0},exp:".ItemClassCode",font:{name:"malgun",size:7.0},formatter:{format:"#,##0",type:"default"},halign:"left",valign:"center"},
+                {type:"field",layout:{x1:430.0,y1:0.0,x2:800.0,y2:60.0},exp:".NameKor",font:{name:"malgun",size:7.0},formatter:{format:"#,###",type:"default"},halign:"left",valign:"center",xls_format:"#,###"},
+                {type:"field",layout:{x1:260.0,y1:0.0,x2:425.0,y2:60.0},exp:".ItemCode",font:{name:"malgun",size:7.0},formatter:{format:"#,##0",type:"default"},halign:"left",valign:"center"},
+                {type:"line",layout:{x1:0.0,y1:60.0,x2:800.0,y2:60.0}},
+                {type:"rect",layout:{x1:25.0,y1:0.0,x2:140.0,y2:60.0},background:true},
+                {type:"rect",layout:{x1:140.0,y1:0.0,x2:255.0,y2:60.0},background:true},
+                {type:"rect",layout:{x1:255.0,y1:0.0,x2:425.0,y2:60.0},background:true},
+                {type:"rect",layout:{x1:425.0,y1:0.0,x2:800.0,y2:60.0},background:true}
+              ]
+            }
+          ]
+        }
+      },
+      {
+        size: {
+          initial: 35.0
+        }
+      }
+    ]
+  }
+}

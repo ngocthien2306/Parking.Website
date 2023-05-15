@@ -1,0 +1,193 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Identity
+
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+
+
+    string gridSalesOrderProject = "gridSalesOrderProject" + ViewBag.Thread;
+    string btnSave = "btnSave" + ViewBag.Thread;
+
+
+    string UserPoNumber = "UserPoNumber" + ViewBag.Thread;
+    string PartnerRemark = "PartnerRemark" + ViewBag.Thread;
+}
+
+
+
+<script>
+    var listPo =  @Html.Raw(Json.Serialize(ViewBag.ListPo));
+    var listItem =  @Html.Raw(Json.Serialize(ViewData["ListItem0"]));
+    $(document).ready(function () {
+
+    });
+    function LoadItem() {
+         
+        $('#@gridSalesOrderProject').dxDataGrid({
+            dataSource: listItem
+        })
+    }
+    function LoadItemRemarkByPartnerUser() {
+
+        CheckSession();
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GetItemRemarkByPartnerUser", "MESHome")',
+            type: 'GET',
+            data:
+            {
+
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+                 
+                setTimeout(function () {
+                    $('#@gridSalesOrderProject').dxDataGrid({
+                    dataSource: result.Data
+                })
+                }, 1000);
+
+
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+
+
+        LoadingPage(0);
+    }
+
+    function gridOrderItemOnToolbarPreparing@(ViewBag.Thread)(e) {
+        let toolbarItems = e.toolbarOptions.items;
+         toolbarItems.forEach(function (item, index) {
+             if (item.name == "saveButton" || item.name == "revertButton" || item.name == "addRowButton") { //|| item.name == "addRowButton"
+                 item.options.visible = false;
+             }
+         });
+    };
+
+    $('#btnClose_Notife_Remark').on("click", function () {
+        var result = DevExpress.ui.dialog.confirm("<i>Are you sure to close this notify</i>", "Confirm");
+        result.done(function (dialogResult)
+        {
+            if (dialogResult) {
+
+                $.ajax({
+                    url: '@Url.Action("UpdateStatusPartnerToClosePopup", "MESPORequest")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        flag: "remark",
+                        PoNumber: JSON.stringify(listPo)
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            $('#modalControlChild').modal('hide');
+                            $.unblockUI();
+
+                        }
+                        else {
+                            LoadingPage(0);
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            }
+            else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+
+    });
+    function RefreshGridData(e) {
+        e.component.refresh();
+    }
+
+</script>
+
+<div class="modal-content" style="overflow:scroll; max-width:70%; max-height:95vh; margin: 0 auto">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("A PO message was entered by the customer."))</h5>@*--영업 수주 프로젝트 세부내역*@
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+        </div>
+        <form id="frm-SaleSetting2">
+            @for (int i = 0; i < ViewBag.NumberOfPoItem; i++)
+            {
+                <div class="modal-body pt-2 pb-2">
+                    <div class="row pt-2 pb-2">
+                        <div class="col-md-12">
+                            <label>@(_loc.GetLocalizedString("User PO Number"))</label>
+                            @(Html.DevExtreme().TextBox().Disabled(true).Value(ViewData["ListPo" + i.ToString()].ToString())
+                                    .ID(UserPoNumber + i.ToString())
+                             )
+                        </div>
+                    </div>
+                    <div class="row" id="bodypage_@(ViewBag.Thread)">
+                        <div class="card-body  p-0 pl-2 pr-2 pb-2" style="height:100%;width:100%">
+                            @(Html.DevExtreme().DataGrid<MES_ItemPO>()
+                                .ID(gridSalesOrderProject + i.ToString())
+                                .DataSource(d => d.Array().Data(ViewData["ListItem" + i.ToString()] as List<MES_ItemPO>))
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .ColumnAutoWidth(true)
+                                .Height("30vh")
+                                .Width("100%")
+                                .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+
+                                )
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Columns(c => {
+                                      c.AddFor(z => z.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                      c.AddFor(z => z.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                                      c.AddFor(z => z.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                                      c.AddFor(z => z.POQty).Caption(_loc.GetLocalizedString("PO Quantity")).AllowEditing(false);
+                                      c.AddFor(z => z.PORemark).Caption(_loc.GetLocalizedString("Partner Remark")).AllowEditing(false);
+
+
+                                })
+                                .HeaderFilter(f => f.Visible(true))
+                                .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                .Paging(paging => paging.Enabled(false))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                .OnContentReady("RefreshGridData")
+                                .OnToolbarPreparing("gridOrderItemOnToolbarPreparing" + ViewBag.Thread)
+                             )
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </form>
+        <div class="modal-footer">
+            <button type="button" id="btnClose_Notife_Remark" class="btn btn-sm btn-secondary">@(_loc.GetLocalizedString("No more reading"))</button>
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,91 @@
+﻿@model List<InfrastructureCore.Models.Menu.SYMenu>
+    <style>
+        .nav.nav-treeview {
+            padding-left: 15px;
+            word-wrap: break-word;
+        }
+
+        .nav-item {
+            word-wrap: break-word;
+        }
+
+        .nav-link {
+            word-wrap: break-word;
+        }
+    </style>
+
+    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false" id="myUL">
+        @if (Model != null)
+        {
+            var menuRoute = Model.Where(x => x.MenuLevel == 1).FirstOrDefault();
+            var menuLevel2 = Model.Where(x => x.MenuLevel == 2).ToList();
+
+            <li class="nav-header"><h6>@_loc.GetLocalizedString(@menuRoute.MenuName)</h6></li>
+            @foreach (var item in menuLevel2)
+            {
+                var checkSubMenu = Model.Find(x => x.MenuParentID == item.MenuID);
+                if (checkSubMenu == null)
+                {
+                    if (item.MenuPath != null && item.MenuPath != "")
+                    {
+                        <li class="nav-item menu-lv2">
+                            <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@item.MenuName)', '@item.MenuPath', '@item.MenuID', false)" class="nav-link" menu-id="@item.MenuID">
+                                <i class='nav-icon @(item.MenuIconCode)'></i>
+                                <p>@_loc.GetLocalizedString(@item.MenuName)</p>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item menu-lv2">
+                            <a is-active-color href="javascript:;" class="nav-link" menu-id="@item.MenuID">
+                                <i class='nav-icon @(item.MenuIconCode)'></i>
+                                <p>@_loc.GetLocalizedString(@item.MenuName)</p>
+                            </a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    var listSubMenu = Model.Where(x => x.MenuParentID == item.MenuID);
+
+                    <li class="nav-item has-treeview">
+                        <a href="#Menu_@item.MenuID" class="nav-link parent-link" menu-id="@item.MenuID">
+                            <i class='nav-icon @(item.MenuIconCode)'></i>
+                            <p>
+                                @_loc.GetLocalizedString(@item.MenuName)
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        @if (listSubMenu != null)
+                        {
+                            <ul is-active-route class="nav nav-treeview" id="Menu_@item.MenuID" parent-menu-id="@item.MenuID">
+                                @foreach (var subItem in listSubMenu)
+                                {
+                                    if (subItem.MenuPath != null && subItem.MenuPath != "")
+                                    {
+                                        <li class="nav-item">
+                                            <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(@subItem.MenuName)', '@subItem.MenuPath', '@subItem.MenuID', false)" class="nav-link" menu-id="@subItem.MenuID">
+                                                <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                <p>@_loc.GetLocalizedString(@subItem.MenuName)</p>
+                                            </a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="nav-item">
+                                            <a is-active-color href="javascript:;" class="nav-link" menu-id="@subItem.MenuID">
+                                                <i class='nav-icon @(subItem.MenuIconCode)'></i>
+                                                <p>@_loc.GetLocalizedString(@subItem.MenuName)</p>
+                                            </a>
+                                        </li>
+                                    }
+
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            }
+        }
+    </ul>

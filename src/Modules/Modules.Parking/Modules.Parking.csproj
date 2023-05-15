@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<ApplicationIcon />
+		<OutputType>Library</OutputType>
+		<StartupObject />
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Areas\**" />
+		<Compile Remove="Models\**" />
+		<Compile Remove="Utils\**" />
+		<Compile Remove="ViewComponents\**" />
+		<Content Remove="Areas\**" />
+		<Content Remove="Models\**" />
+		<Content Remove="Utils\**" />
+		<Content Remove="ViewComponents\**" />
+		<EmbeddedResource Remove="Areas\**" />
+		<EmbeddedResource Remove="Models\**" />
+		<EmbeddedResource Remove="Utils\**" />
+		<EmbeddedResource Remove="ViewComponents\**" />
+		<None Remove="Areas\**" />
+		<None Remove="Models\**" />
+		<None Remove="Utils\**" />
+		<None Remove="ViewComponents\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="FreeSpire.XLS" Version="10.1.0" />
+		<PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DevExtreme.AspNet.Core" Version="20.1.4" />
+		<PackageReference Include="DevExtreme.AspNet.Data" Version="2.5.1" />
+		<PackageReference Include="Serilog" Version="2.9.0" />
+		<PackageReference Include="System.Management" Version="4.7.0" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" Version="4.7.0" />
+		<PackageReference Include="ClosedXML" Version="0.95.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\InfrastructureCore.Web\InfrastructureCore.Web.csproj" />
+		<ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+		<ProjectReference Include="..\Modules.Admin\Modules.Admin.csproj" />
+		<ProjectReference Include="..\Modules.Kiosk.Management\Modules.Kiosk.Management.csproj" />
+		<ProjectReference Include="..\Modules.Kiosk.Monitoring\Modules.Kiosk.Monitoring.csproj" />
+		<ProjectReference Include="..\Modules.Pleiger.CommonModels\Modules.Pleiger.CommonModels.csproj" />
+		<ProjectReference Include="..\Modules.Pleiger.MasterData\Modules.Pleiger.MasterData.csproj" />
+		<ProjectReference Include="..\Modules.Pleiger.SystemMgt\Modules.Pleiger.SystemMgt.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Properties\" />
+	</ItemGroup>
+
+</Project>

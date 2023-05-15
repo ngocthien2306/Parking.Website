@@ -1,0 +1,432 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Pleiger.CommonModels;
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+@{
+    string gridItemPoMst = "gridItemPoMst" + ViewBag.Thread;
+    string UserPONumber = "UserPONumber" + ViewBag.Thread;
+    string PartnerName = "PartnerName" + ViewBag.Thread;
+    string btnChoosePO = "btnChoosePO" + ViewBag.Thread;
+    string gridItemSlipDtl = "gridItemSlipDtl" + ViewBag.Thread;
+
+}
+<script>
+        $(document).ready(function () {
+            LoadingPage(1);
+            $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("GetPOAllNumberSearch", "MESItemSlip")',
+                type: 'GET',
+                async: false,
+                data:
+                {
+                    UserPONumber: "",
+                    PartnerCode: "",
+                },
+                dataType: 'json',
+                success: function (result) {
+                    debugger;
+                    var grid = $("#gridItemPoMst@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    LoadingPage(0);
+
+                }, error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        });
+
+        function SearchItemPoMst() {
+            LoadingPage(1);
+            CheckSession();
+            debugger;
+            var UserPONumber = $('#@UserPONumber').dxTextBox('option', 'value');
+            var PartnerName = $('#@PartnerName').dxTextBox('option', 'value');
+
+            $.ajax({
+                url: '@Url.Action("GetPOAllNumberSearch", "MESItemSlip")',
+                type: 'GET',
+                async: false,
+                data:
+                {
+                    UserPONumber: UserPONumber,
+                    PartnerName: PartnerName
+                },
+                dataType: 'json',
+                success: function (result) {
+                    debugger;
+                    var grid = $("#gridItemPoMst@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    LoadingPage(0);
+                }, error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+
+        function ItemPoPopupSelectionChanged(e) {
+            CheckSession();
+
+            var rowdata = e.data;
+            //Set data from Popup to Index
+            //clear in form
+            clearFormWhenChangePONumber();
+            //
+            $('#PONumberPopup@(ViewBag.Index)').val(rowdata.PONumber);
+            $('#UserPONumberPopup@(ViewBag.Index)').val(rowdata.UserPONumber);
+            $('#PartnerCode@(ViewBag.Index)').val(rowdata.PartnerCode);
+            $('#PartnerName@(ViewBag.Index)').val(rowdata.PartnerName);
+            $('#ProjectCode@(ViewBag.Index)').val(rowdata.ProjectCode);
+            $('#UserProjectCode@(ViewBag.Index)').val(rowdata.UserProjectCode);
+
+            // set auto warehouse raw to partner
+            $("#WHPartnerCode@(ViewBag.Index)").dxSelectBox("instance").option("value", rowdata.WHFromCode);
+            partnerCodeSlt = rowdata.PartnerCode;
+
+            //select Podetail
+            $.ajax({
+                url: '@Url.Action("CreateGridItemSlipDtlByPONumber", "MESItemSlip")',
+                type: "GET",
+                data: { PONumber: rowdata.PONumber },
+                dataType: 'json',
+                success: function (result) {
+                    debugger;
+                    var gridItemSlipDetail = $("#gridItemSlipDtl@(ViewBag.Index)").dxDataGrid("instance");
+                    gridItemSlipDetail.option("dataSource", result.data);
+                }
+            });
+            //close popup
+            $('#modalControl').modal('hide');
+    }
+
+    function ItemPoPopupOnRowClick(e) {
+        var rowdata = e.data;
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetItemSlipDetailInPopupSearchPO", "MESItemSlip")',
+            type: "GET",
+            data: {
+                poNumber: rowdata.PONumber
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+    }
+
+
+        $('#btnChoosePO@(ViewBag.Thread)').on("click", function () {
+            debugger;
+            var dataGrid = $('#@gridItemPoMst').dxDataGrid('instance');
+            var rowdata = dataGrid.getSelectedRowsData();
+            // var listItemSelect = dataGrid.getSelectedRowsData();
+            if (rowdata.length == 0) {
+                DevExpress.ui.dialog.alert("Please select row!", "Error");
+                return;
+            }
+            else
+            {
+                $('#PONumberPopup@(ViewBag.Index)').val(rowdata[0].PONumber);
+                $('#UserPONumberPopup@(ViewBag.Index)').val(rowdata[0].UserPONumber);
+                $('#PartnerCode@(ViewBag.Index)').val(rowdata[0].PartnerCode);
+                $('#PartnerName@(ViewBag.Index)').val(rowdata[0].PartnerName);
+                $('#ProjectCode@(ViewBag.Index)').val(rowdata[0].ProjectCode);
+                $('#UserProjectCode@(ViewBag.Index)').val(rowdata[0].UserProjectCode);
+
+                // set auto warehouse raw to partner
+                $("#WHPartnerCode@(ViewBag.Index)").dxSelectBox("instance").option("value", rowdata[0].WHFromCode);
+
+                partnerCodeSlt = rowdata[0].PartnerCode;
+                //select Podetail
+                $.ajax({
+                    url: '@Url.Action("CreateGridItemSlipDtlByPONumber", "MESItemSlip")',
+                    type: "GET",
+                    data: { PONumber: rowdata[0].PONumber },
+                    dataType: 'json',
+                    success: function (result) {
+                        debugger;
+                        var gridItemSlipDetail = $("#gridItemSlipDtl@(ViewBag.Index)").dxDataGrid("instance");
+                        gridItemSlipDetail.option("dataSource", result.data);
+                    }
+                });
+                //close popup
+                $('#modalControl').modal('hide');
+            }
+        });
+
+    var SlipNumberSlt = null;
+    var PONumberSlt = null;
+    function getParamsSlipNumberSlt() {
+        return SlipNumberSlt;
+    }
+
+    function getParamsPoNumberSlt() {
+        return PONumberSlt;
+    }
+    function onItemSlipDetailCellPrepared(e) {
+        //
+        if (e.rowType == 'data' && e.column.dataField == 'Qty') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+        }
+    }
+
+    function onCellPreparedGridDetail(e) {
+        if (e.rowType == 'data' && e.column.dataField == 'POQty') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+       }
+       if (e.rowType == 'data' && e.column.dataField == 'ItemStatusName') {
+                e.cellElement.css("color", "white");
+                e.cellElement.css("fontWeight", "bold");
+                e.cellElement.css('backgroundColor', "#46a0f0");
+       }
+
+    }
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Purchase Order List"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body pt-0">
+            <div class="card py-1 mb-0">
+                <div class="row">
+                    <div class="col-xs-12 col-md-12">
+                        <button class="btn btn-sm btn-primary btn-action" type="button" onclick="SearchItemPoMst()" style="margin-right:5px"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                        <button class="btn btn-sm btn-primary btn-action" type="button" id="@(btnChoosePO)" style="margin-right:5px"><i class="fa fa-check"></i> @_loc.GetLocalizedString("Choose")</button>
+                        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("Order Information")</legend>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("GoodsReceiptNumber"))</label>
+                                    @(Html.DevExtreme().TextBox().ID(UserPONumber))
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                                    @(Html.DevExtreme().TextBox().ID(PartnerName))
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="row">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("Purchase Order List")</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemSlipMaster>()
+                                .ID(gridItemPoMst)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true).Height(250)
+                                .ShowRowLines(true)
+                                .ColumnAutoWidth(true)
+                                .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single)
+                                .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                .SelectAllMode(SelectAllMode.AllPages))
+                                .Columns(c=>
+                                {
+
+                                    c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                                    c.AddFor(x => x.PONumber).Caption(_loc.GetLocalizedString("PONumber")).Visible(false);//PO NUMBER
+                                    c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("GoodsReceiptNumber"));
+                                    c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).Visible(false);
+                                    c.AddFor(x => x.TotalReceivedQty).Caption(_loc.GetLocalizedString("Total Qty Received")).Format("#,##0");//total
+                                    c.AddFor(x => x.TotalPOQty).Caption(_loc.GetLocalizedString("Total PO Qty")).Format("#,##0");
+                                    c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code"));//PARNERT CODE
+                                    c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));//PARTNER NAME
+                                    c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("Project Code")).Visible(false);//PROJECT CODE
+
+
+                                })
+                                .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                .HeaderFilter(f => f.Visible(true))
+                                .Paging(paging => paging.PageSize(100))
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                .OnRowDblClick("ItemPoPopupSelectionChanged")
+                                .OnRowClick("ItemPoPopupOnRowClick")
+
+                     )
+                </fieldset>
+            </div>
+            <div class="row">
+                <fieldset class="customFieldset" style="height:100%">
+                    <legend class="customLegend">@(_loc.GetLocalizedString("ItemSlipDetail"))</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemPO>()
+                        .ID(gridItemSlipDtl)
+                        .Height("250")
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto))
+                        .Columns(c =>
+                        {
+                            c.AddFor(x => x.No).Caption("No").AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false).Fixed(true);
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                            c.AddFor(x => x.ItemPrice).Caption(_loc.GetLocalizedString("Item Price")).AllowEditing(false).Format("#,##0.##");
+                            //c.AddFor(x => x.RealQty).Caption(_loc.GetLocalizedString("Stock Qty")).AllowEditing(false).Format("#,##0.##").Visible(isVisibleRealQty);
+                            c.AddFor(x => x.RealQty).Caption(_loc.GetLocalizedString("Stock Qty")).AllowEditing(false).Format("#,##0.##").Visible(false);
+                            c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("POQty")).DataType(GridColumnDataType.Number).Format("#,##0");
+                            c.AddFor(x => x.TotalPrice).Caption(_loc.GetLocalizedString("Total Price")).Format("#,##0.#0")
+                                        .CalculateCellValue
+                                        (
+                                        @<text>
+                                                function(data) {
+                                                        let defaultQty = (data.POQty === null || data.POQty ==="" || data.POQty === undefined ) ? 0 : data.POQty;
+                                                        return data.TotalPrice = data.ItemPrice * defaultQty;
+                                                }
+                                        </text>
+                                        );
+                            c.AddFor(x => x.MonetaryUnit).Caption(_loc.GetLocalizedString("Monetary Unit")).AllowEditing(false);
+                            c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).AllowEditing(false).Format("#,##0").Visible(false);
+                            c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type")).Visible(false).AllowEditing(false).Lookup(lookup => lookup
+                                        .DataSource(d => d.Mvc().Controller("MESPORequest")
+                                        .LoadAction("GetListLeadTimeType")
+                                        .Key("BASE_CODE")).DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                                        .DisplayExpr("BASE_NAME1")
+                                        .ValueExpr("BASE_CODE"));
+                            // Quan add Arrival Request Date task order 2021-03-12
+                            c.AddFor(x => x.ArrivalRequestDate).Caption(_loc.GetLocalizedString("Arrival Request Date"))
+                                        .DataType(GridColumnDataType.Date)
+                                        .Format("yyyy-MM-dd");
+
+                            c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date"))
+                                        .DataType(GridColumnDataType.Date)
+                                        .Format("yyyy-MM-dd");
+
+                            // planCompleteDate
+                            c.AddFor(x => x.PlanCompleteDate).Caption(_loc.GetLocalizedString("Plan Complete Date"))
+                                        .DataType(GridColumnDataType.Date)
+                                        .Format("yyyy-MM-dd"); ;
+                            c.AddFor(x => x.PleigerRemark).Caption(_loc.GetLocalizedString("Pleiger Remark"));
+                            c.AddFor(x => x.PleigerRemark2).Caption(_loc.GetLocalizedString("Pleiger Remark2"));
+                            c.AddFor(x => x.PORemark).Caption(_loc.GetLocalizedString("Partner Remark"));
+                            c.AddFor(x => x.ItemStatus).Caption("StatusCode").Visible(false);
+                            c.AddFor(x => x.ItemStatusName).Caption(_loc.GetLocalizedString("Status"));
+                            //pleiger vo thi ko có .partner vo thì có PlanDeliverDate
+
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .OnCellPrepared("onCellPreparedGridDetail")
+                        )
+                    @*@(Html.DevExtreme().DataGrid<MES_ItemSlipDetail>()
+                            .ID(gridItemSlipDtl)
+                            .KeyExpr("ItemCode")
+                            .DataSource(x => x.Mvc().Controller("MESItemSlip")
+                                .LoadAction("GetListMESItemSlipDetailForRelease").LoadParams(new
+                                {
+                                    slipNumber = new JS("getParamsSlipNumberSlt"),
+                                    poNumber =  new JS("getParamsPoNumberSlt")
+                                })
+                                .Key("ItemCode")
+                            )
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .ColumnAutoWidth(true).Height("250")
+                            .RepaintChangesOnly(false)
+                            .Columns(c=> {
+                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                                c.AddFor(x => x.Unit).Caption(_loc.GetLocalizedString("Unit")).AllowEditing(false);
+                                c.AddFor(x => x.Qty).Caption((_loc.GetLocalizedString("Receive Qty")))
+                                .DataType(GridColumnDataType.Number).Format("#,##0").SetCellValue("SetCellValueQty").AllowEditing(false);
+                                c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("PO Qty Remaining")).Format("#,##0").AllowEditing(false);
+                                c.AddFor(x => x.TotalPOQty).Caption(_loc.GetLocalizedString("Total PO Qty")).Format("#,##0").AllowEditing(false);
+                                c.AddFor(x => x.Cost).Caption(_loc.GetLocalizedString("Item Cost")).Format("#,##0.#0").AllowEditing(false).Visible(false);
+                                c.AddFor(x => x.POStatus).Caption(_loc.GetLocalizedString("POStatus")).AllowEditing(false).Visible(false);
+                                c.AddFor(x => x.Amt).Caption(_loc.GetLocalizedString("Amt")).Format("#,##0.#0").AllowEditing(false).Visible(false)
+                                .CalculateCellValue(
+                                    @<text>
+                                            function(data) {
+                                                return data.Amt = data.Qty * data.Cost;
+                                            }
+                                    </text>
+                                );
+                            c.AddFor(x => x.Tax).Caption(_loc.GetLocalizedString("Tax")).Format("#,##0.#0").AllowEditing(false).CalculateCellValue(
+                                    @<text>
+                                            function(data) {
+                                                return data.Tax = data.Amt * 0.1;
+                                            }
+                                    </text>
+                                ).Visible(false);
+                            c.AddFor(x => x.TaxAmt).Caption(_loc.GetLocalizedString("TaxAmt")).Format("#,##0.#0").AllowEditing(false).CalculateCellValue  (
+                                    @<text>
+                                            function(data) {
+                                                return data.TaxAmt = data.Amt + data.Tax;
+                                            }
+                                    </text>
+                                ).Visible(false);
+                                c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark"));
+                                c.AddFor(x => x.PleigerRemark).Caption(_loc.GetLocalizedString("Pleiger Remark")).AllowEditing(false);
+                                c.AddFor(x => x.PleigerRemark2).Caption(_loc.GetLocalizedString("Pleiger Remark2")).AllowEditing(false);
+
+                            })
+                            .RemoteOperations(true)
+                            .Scrolling(s => s
+                                .Mode(GridScrollingMode.Standard)
+                            )
+                            .Editing(e => e
+                                .Mode(GridEditMode.Cell)
+                                .AllowUpdating(false).UseIcons(true)
+                                .AllowDeleting(false).UseIcons(true)
+                                )
+                            .Paging(p => p.PageSize(100))
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            .OnCellPrepared("onItemSlipDetailCellPrepared")
+                        )*@
+                </fieldset>
+            </div>
+        </div>
+    </form>
+</div>

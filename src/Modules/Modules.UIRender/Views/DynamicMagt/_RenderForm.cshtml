@@ -1,0 +1,160 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@{
+    var rows = Model.listElementChild.Select(m => m.PEL_ROW).Distinct();
+}
+
+<script>
+    var objPagEleData_@(Model.PEL_ID) = {
+        MapId: '',
+        PelId: '',
+        MapType: 'FORM',
+        PostData: {
+            FormAction: '',
+            FormFields: []
+        }
+    }
+</script>
+
+@if (Model.listDataMap.Count > 0)
+{
+    foreach (var item in Model.listDataMap)
+    {
+        if (item.MAP_SPTYPE == "G006C005") // map data from grid to pop
+        {
+            <script>
+                var listMapDetails_@(item.MAP_ID) = @Html.Raw(Json.Serialize(item.lstMapDetail));
+
+                function bindFormData_@(item.MAP_PEL_ID)_@(item.MAP_ID)(dataObject) {
+                    mappingObjectData(dataObject, listMapDetails_@(item.MAP_ID))
+                }
+            </script>
+        }
+        if (item.MAP_SPTYPE == "G006C006") // map data from pop gird to page
+        {
+            <script>
+                var listMapDetails_@(item.MAP_ID) = @Html.Raw(Json.Serialize(item.lstMapDetail));
+
+                function bindFormData_@(item.MAP_PEL_ID)_@(item.MAP_ID)(dataObject) {
+                    mappingObjectData(dataObject, listMapDetails_@(item.MAP_ID))
+                }
+            </script>
+        }
+        if (item.MAP_SPTYPE == "G006C007") // map data from form page to form pop
+        {
+            <script>
+                var listMapDetails_@(item.MAP_ID) = @Html.Raw(Json.Serialize(item.lstMapDetail));
+
+                function bindFormData_@(item.MAP_PEL_ID)_@(item.MAP_ID)(dataObject) {
+                    mappingObjectData(dataObject, listMapDetails_@(item.MAP_ID))
+                }
+            </script>
+        }
+    }
+}
+
+<div id="@Model.PAG_ID-@Model.PEL_LBL" class=" col-@Model.PEL_COL">
+    @foreach (var row in rows)
+    {
+    <div class="row">
+        @foreach (var item in Model.listElementChild.Where(m => m.PEL_ROW == row).OrderBy(m => m.PEL_SEQ).ToList())
+        {
+            if (item.PEL_TYP == "G002C003")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderSelectBox.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C004")
+            {
+                item.listAction = Model.listAction;
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderCalendar.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C005")
+            {
+                item.listAction = Model.listAction;
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderPopTextBox.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C006")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderTextBox.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C007")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderNumberBox.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C008")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderDate.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C009")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderCheckBox.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C011")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderEditor.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C012")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderFileUpload.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C013")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderTextArea.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C014")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderButton.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C015")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderRadioCheckbox.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C016")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderTextBoxAutocomplete.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C019")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderHiddenTextField.cshtml", item)
+            }
+            else if (item.PEL_TYP == "G002C021")
+            {
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderDateFromTo.cshtml", item)
+            }
+        }
+        <div class="col-md-8">
+            @*@await Html.PartialAsync("~/Views/DynamicMagt/_RenderDate.cshtml")*@
+            @*@await Html.PartialAsync("~/Views/DynamicMagt/_RenderCalendar.cshtml")*@
+        </div>
+    </div>
+    }
+</div>
+
+@if (Model.listReference != null)
+{
+    foreach (var item in Model.listReference)
+    {
+        if (item.REF_TYPE == "G012C001")
+        {
+            // mapping from form to grid Reference Form -> Grid
+            string functionName = "reference_valueChanged_" + item.SOURCE_COL_NM;
+            <script>
+                function reference_valueChanged_@(item.SOURCE_COL_NM)_@(item.PAG_ID)() {
+                    // get value of element
+                    let getValueForm = eval("getValue_@(item.SOURCE_COL_NM)_@(item.PAG_ID)();");
+
+                    // get instane of Grid
+                    var gridID = $('#@(item.PEL_ID_TO)' + '_@(item.PAG_ID)');
+                    var gridData_@(item.PEL_ID_TO)_@(item.PAG_ID) = gridID.dxDataGrid('instance');
+
+                    // get all data of Grid
+                    var allData = gridData_@(item.PEL_ID_TO)_@(item.PAG_ID).option("dataSource");
+
+                    $.each(allData, function (index1, item1) {
+                        // set value to all grid row data
+                        gridID.dxDataGrid("cellValue", index1, "@(item.TARGET_COL_NM)", getValueForm);
+                    });
+                }
+            </script>
+        }
+    }
+}

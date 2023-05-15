@@ -1,0 +1,41 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@*<div class="form-group col-@Model.PEL_COL" hidden="@Model.PEL_VIS">*@
+
+<script>
+    function getValue_@(Model.PEL_ID)() {
+        return $("#@(Model.PEL_ID)").dxTextArea("instance").option("value");
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(Model.PEL_ID)").dxTextArea("instance").option("value",value);
+    }
+</script>
+@{if (Model.PEL_DFVALUE != null && Model.PEL_DFVALUE != "")
+    {
+        <script>
+            $( document ).ready(function() {
+                setValue_@(Model.PEL_ID)("@Model.PEL_DFVALUE");
+            });
+
+        </script>
+
+    }
+}
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+    @(Html.DevExtreme().TextArea().ID(Model.PEL_ID)
+                .Disabled(Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .MaxLength(Model.PEL_LEN) // Data length can input
+                .Height(90)
+            )
+    @*<div class="dx-field">
+        <div class="dx-field-label">@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().TextArea().ID(Model.PEL_ID)
+                .Disabled(Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .MaxLength(Model.PEL_LEN) // Data length can input
+                .Height(90)
+            )
+        </div>
+    </div>*@
+</div>

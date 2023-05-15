@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+	  <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+	<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="3.1.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="3.1.8" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Areas\" />
+    <Folder Include="Utils\" />
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+  <ItemGroup>
+  	<PackageReference Include="DevExtreme.AspNet.Core" Version="20.1.4" />
+  	<PackageReference Include="DevExtreme.AspNet.Data" Version="2.5.1" />
+  	<PackageReference Include="System.Management" Version="4.7.0" />
+  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\InfrastructureCore.Web\InfrastructureCore.Web.csproj" />
+		<ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+		<ProjectReference Include="..\Modules.Admin\Modules.Admin.csproj" />
+		<ProjectReference Include="..\Modules.Pleiger.CommonModels\Modules.Pleiger.CommonModels.csproj" />
+		<ProjectReference Include="..\Modules.Pleiger.MasterData\Modules.Pleiger.MasterData.csproj" />
+	</ItemGroup>
+</Project>

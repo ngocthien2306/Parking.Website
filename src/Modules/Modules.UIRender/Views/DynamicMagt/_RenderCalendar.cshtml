@@ -1,0 +1,194 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+<style>
+    .dx-calendar-cell:not(.dx-calendar-other-month) .haveData,
+    .dx-calendar-cell:not(.dx-calendar-other-month) .weekend,
+    .dx-calendar-cell:not(.dx-calendar-other-month) .holyday {
+        text-shadow: none;
+        font-weight: bold;
+    }
+
+    .dx-calendar-cell.haveData {
+        color: red;
+        font-weight: bold;
+    }
+
+    .dx-state-disabled.dx-calendar .dx-calendar-cell.haveData {
+        color: red;
+        font-weight: bold;
+    }
+
+    .dx-calendar-cell:not(.dx-calendar-other-month) .weekend {
+        color: #3030FF;
+    }
+
+    .dx-state-disabled.dx-calendar .dx-calendar-cell:not(.dx-calendar-other-month) .weekend {
+        color: #8080FF;
+    }
+
+    .dx-calendar-cell:not(.dx-calendar-other-month) .holyday {
+        color: #FF3030;
+    }
+
+    .dx-state-disabled.dx-calendar .dx-calendar-cell:not(.dx-calendar-other-month) .holyday {
+        color: #FF8080;
+    }
+</style>
+
+<script type="text/javascript">
+    var date = new Date().getTime();
+
+    function getValue_@(Model.PEL_ID)() {
+        var value = $("#@(Model.PEL_ID)").dxCalendar("instance").option("value");
+        var dateFormat = new Date(value).toISOString().slice(0, 10);
+        return dateFormat;
+    }
+
+    function calendar_valueChanged(data) {
+        // $("#selected-date").dxDateBox("instance").option("value", data.value);
+    }
+
+    function useCustomTemplate(data) {
+        var selectedDay = $("#@(Model.PEL_ID)").dxCalendar("instance").option("value");
+        getCellData(selectedDay);
+    }
+
+    function onOptionChanged(data) {
+        var selectedDay = $("#@(Model.PEL_ID)").dxCalendar("instance").option("value");
+        getCellData(selectedDay);
+    }
+
+    function onInitialized(data) {
+        var selectedDay = $("#@(Model.PEL_ID)").dxCalendar("instance").option("value");
+        getCellData(selectedDay);
+    }
+
+    function getCellData(data) {
+        var cssClass = "";
+        var receivedDate = new Date(data);
+        var day = new Date(receivedDate.getTime() - (receivedDate.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+        let lstParam = [];
+        let param = {
+            Key: "sDt",
+            Value: day
+        }
+        var checkFlag = false;
+        lstParam.push(param);
+
+        if (checkFlag == false) {
+            checkFlag = true;
+            $.ajax({
+                url: '@Url.Action("CallSPSelect", "DynamicMagt")',
+                async: true,
+                type: "POST",
+                data: { lstParam: lstParam, spname: "SY_GET_DAY_COUNT_ORDER_MASTER", connectionType: "C000" },// fix code, not sure
+                success: function (res) {
+                    checkFlag = true;
+                    var responseData = res.data;
+                    var cssClass = "";
+                    $.each(responseData, function (index, item) {
+                        //day === item.OrdDt.substring(0, 10)
+                        if (item.Cnt >= 1) {
+                            cssClass = "haveData";
+                            var responeDate = new Date(item.OrdDt);
+
+                            if (receivedDate.getMonth() == responeDate.getMonth()) {
+                                var data1 = item.OrdDt.substring(8, 10);
+                                var temp = "<span class='" + cssClass + "'>" + data1 + "</span>";
+                                let tableCalendar1 = $('#@(Model.PEL_ID)')[0].children[1].children[0].children[0].children[0].children[1].children;
+                                let tableCalendar2 = $('#@(Model.PEL_ID)')[0].children[1].children[0].children[1].children[0].children[1].children;
+                                let tableCalendar3 = $('#@(Model.PEL_ID)')[0].children[1].children[0].children[2].children[0].children[1].children;
+
+                                $.each(tableCalendar1, function (index, item1) {
+                                    $.each(item1.children, function (index, item2) {
+                                        // check date in month which seleted
+                                        let dateInview = new Date($(item2).attr('data-value'));
+                                        if (receivedDate.getMonth() == dateInview.getMonth()) {
+                                            let date = $(item2).attr('data-value').substring(8, 10);
+                                            if (date == data1) {
+                                                let idCount = '#' + $(item2).attr('data-value');
+                                                $('' + idCount.split('/').join('') + '').remove();
+                                                $(item2).addClass("haveData");
+                                            }
+                                        }
+                                    });
+                                });
+
+                                $.each(tableCalendar2, function (index, item1) {
+                                    $.each(item1.children, function (index, item2) {
+                                        // check date in month which seleted
+                                        let dateInview = new Date($(item2).attr('data-value'));
+                                        if (receivedDate.getMonth() == dateInview.getMonth()) {
+                                            let date = $(item2).attr('data-value').substring(8, 10);
+                                            if (date == data1) {
+                                                $(item2).attr('style', 'color:red; font-weight: bold;');
+                                            }
+                                        }
+                                    });
+                                });
+
+                                $.each(tableCalendar3, function (index, item1) {
+                                    $.each(item1.children, function (index, item2) {
+                                        // check date in month which seleted
+                                        let dateInview = new Date($(item2).attr('data-value'));
+                                        if (receivedDate.getMonth() == dateInview.getMonth()) {
+                                            let date = $(item2).attr('data-value').substring(8, 10);
+                                            if (date == data1) {
+                                                $(item2).attr('style', 'color:red; font-weight: bold;');
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        }
+                        else {
+                            return false;
+                        }
+                    });
+                }
+            });
+        }
+    }
+</script>
+
+@{
+    if (Model.PEL_CLICK != 0 && Model.PEL_CLICK != null)
+    {
+        var actionEL = Model.listAction.Where(m => m.ACT_ID == Model.PEL_CLICK).FirstOrDefault();
+        if (actionEL != null)
+        {
+            @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", actionEL)
+        }
+    }
+    if (Model.PEL_DBLCLICK != 0 && Model.PEL_DBLCLICK != null)
+    {
+        var actionEL = Model.listAction.Where(m => m.ACT_ID == Model.PEL_DBLCLICK).FirstOrDefault();
+        if (actionEL != null)
+        {
+            @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", actionEL)
+        }
+    }
+}
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS==true?"display:block":"display:none")">
+    @{
+        var tmp = Html.DevExtreme().Calendar()
+            .ID(Model.PEL_ID)
+            .Value(DateTime.Now)
+            .Disabled(false)
+            .ZoomLevel(CalendarZoomLevel.Month)
+            .OnValueChanged("calendar_valueChanged")
+            .OnInitialized("onInitialized")
+            .OnOptionChanged("onOptionChanged");
+
+        if (Model.PEL_CLICK != 0 && Model.PEL_CLICK != null)
+        {
+            tmp.OnValueChanged("RUN_" + Model.PEL_CLICK + "_" + Model.PAG_ID);
+        }
+        if (Model.PEL_DBLCLICK != 0 && Model.PEL_DBLCLICK != null)
+        {
+            tmp.OnValueChanged("RUN_" + Model.PEL_DBLCLICK + "_" + Model.PAG_ID);
+        }
+        tmp.Render();
+    }
+</div>

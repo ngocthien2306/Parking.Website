@@ -1,0 +1,1251 @@
+﻿Edit<=>Edit
+Create<=>Create
+Update<=>Update
+Recall<=>Recall
+<i class="fas fa-download"></i> Downloading sales information<=><i class="fas fa-download"></i> Downloading sales information
+<i class="fa fa-save"></i> 저장<=><i class="fa fa-save"></i> Save
+<i class="fas fa-sync"></i> Reload<=><i class="fas fa-sync"></i> Reload
+<i class='fas fa-undo'></i> Back<=><i class='fas fa-undo'></i> Back
+<i class='fas fa-cubes'></i> Completed Work<=><i class='fas fa-cubes'></i> Completed Work
+<i class='fas fa-cubes'></i> Start Work<=><i class='fas fa-cubes'></i> Start Work
+<i class='fas fa-share-square'></i> Request<=><i class='fas fa-share-square'></i> Request
+<i class='fas fa-times'></i> Project Return<=><i class='fas fa-times'></i> Project Return
+<i class='fas fa-check-circle'></i> Complete<=><i fas fa-check-circle'></i> Complete
+
+<i class='far fa-window-close'></i> Project Close<=><i class='far fa-window-close'></i> Project Close
+<i class='fas fa-arrow-left'></i> Project Return<=><i class='fas fa-arrow-left'></i> Project Return
+Complete<=>Complete
+Search<=>Search
+Duplicate check<=>Duplicate check
+Redirect<=>Redirect
+Delete<=>Delete
+Reload<=>Reload
+Add row<=>Add row
+Common code<=>Common Codes
+Etc<=>Etc
+Excel<=>Excel
+Item Category<=>CategoryDelivery Period
+ItemClassNameKor<=>Korea Name
+Item Classification Code<=>Item Classification Code
+ItemComCode<=>Item Common Code
+ItemClassNameEng<=>English Name
+List Menu Data<=>Menu List
+List User Data<=>User Data List
+List User Group<=>User Groups List
+User Groups<=>User Groups
+User Group Selected:<=>User Group Selected:
+The session has expired<=>The session has expired. Please log in again.
+Please log-in again<=>Please log-in again.
+Login<=>Login
+GroupName<=>Group Name
+Description<=>Description
+
+Plan Delivery Date<=>Partner Plan Delivery Date
+Pleiger<=>Pleiger
+MenuList<=>Menu List
+MenuDetail<=>Menu Information
+MenuName<=>Menu Name Kor
+MenuNameEng<=>Menu Name Eng
+MenuLevel<=>Menu Level
+MenuParent<=>Menu Parent
+AdminLevel<=>Admin Level
+IsDynamic<=>Is Dynamic
+Program<=>Program
+IsMobile<=>Is Mobile
+IntranetUse<=>Intranet Use
+MenuIcon<=>Menu Icon
+IsStartupPage<=>Is Startup Page
+IsCanClose<=>Is Can Close
+Information<=>Information
+
+
+UserList<=>User List
+MenusSelected<=>Menus Selected
+Permissions<=>Permissions
+
+Print<=>Print
+Test<=>Test
+this is title<=>this is title
+Parent Classification Code<=>Parent Classification Code
+User Management<=>User Management
+Welcome
+
+Test999999<=>Korean
+Do you want to delete this item?<=>이 항목을 삭제 하시겠습니까?
+
+필수<=>Required
+파트너 이름<=>Partner Name
+품목분류<=>Category
+품목분류(대)<=>Item Class
+품목분류(중)<=>Item Class(Sub1)
+품목분류(소)<=>Item Class(Sub2)
+
+현재 재고 수량<=>Current Stock Qty
+품목코드<=>Item Code
+품목구분<=>Item Class
+Item Class<=>품목구분
+품목명<=>Item Name
+품목명(한글)<=>Name Kor
+품목명(영문)<=>DWG.No
+사용여부<=>Use Status
+안전재고수량<=>Safety Quantity
+검사방법<=>Inspection Method
+품목단위<=>Unit
+제품 사양 구분<=>Specify Type
+제품사양 값<=>Value
+거래처코드<=>Partner Code
+파트너코드<=>Partner Code
+파트너 명<=>Partner Name
+거래처의 품번<=>Code Of Partner
+리드 타임 구분<=>Lead Time Type
+리드 타임<=>Lead Time
+화폐단위<=>Monetary Unit
+매입단가<=>Item Cost
+거래처코드<=>Partner Code
+변경일시분<=>Change Date
+변경전 매입단가<=>Before Cost
+입력한 매입단가<=>Input Cost
+입력자<=>UserId
+파일 ID<=>FileId
+파일<=>File
+파일 이름<=>Org File Name
+파일 타입<=>File Type
+파일 사이즈<=>File Size
+파일 위치<=>File Location
+
+창고코드<=>Warehouse Code
+창고구분<=>Warehouse Type
+창고명<=>Warehouse Name
+내부외부 구분<=>Internal or External
+창고담당자<=>Manager
+사용 여부<=>Status
+
+생산라인 코드<=>Production Line Code
+생산라인명<=>Production Line Name(Kor)
+생산라인 영문명<=>Production Line Name(Eng)
+자재창고<=>Material Warehouse Code
+완제품창고<=>Finish Product Warehouse
+내부외부 구분<=>Internal External
+생산라인 담당자<=>Manager
+사용 여부<=>Status
+
+상태 PORequest를 업데이트하시겠습니까?<=>Are you want to update status PORequest ?
+
+
+
+고객명<=>Partner Name
+수주상태<=>Project Status
+의뢰담당자<=>User Request
+PO작성일<=>PO Created Date
+의뢰유형<=>Request Type
+품목명<=>Item Name
+받은 주문수량<=>Item Quantity Order
+전달내용<=>Request Message
+Request Message<=>Request Message
+Request Production<=>Request Production
+Get Item Project<=>Get Item Another Project
+목록 항목 부품 요청<=>Item Part Request List
+품목 코드 자재<=>Item Code Material
+아이템 재료 추가<=>Add Item Material
+요청 수량<=>Request Quantity
+재고 수량<=>Quantity In Stock
+구매 수량<=>Purchase Quantity
+최종 구매 수량<=>Final Purchase Quantity
+협력사<=>Supplier Name
+구매발주코드<=>PO Number
+진척상태<=>Item PO Status
+배송 수량<=>Delivery Quantity
+화폐단위<=>Monetary Unit
+단가<=>Unit Price
+Pleiger 말<=>Pleiger Remark
+PO 말<=>Partners Remark
+총 가격<=>Total Price
+
+
+PO Number<=> PO Number
+PO Status<=> PO Status
+생산요청일<=>Requested Date
+PO Create date<=>PO Create date
+Accept Date<=> Accept Date
+Reject Date<=> Reject Date
+User Request<=> Request User
+User Accept<=> Accept User
+Arrival Request Date<=> Arrival Request Date
+Total Price<=> Total Price
+Pleiger Remark<=> Pleiger Remark
+PFE Remark<=>PFE Remark
+PFE Remark2<=>PFE Remark2
+PO Remark<=> PO Remark
+Plan deliver date<=> Plan deliver date
+Item Name<=> Item Name
+Project Code<=> Project Code
+Request Type<=> Request Type
+Customer Name<=> Customer Name
+Project Status<=> Project Status
+No<=> No
+Item Code<=> Item Code
+ItemCode<=> Item Code
+Order Quantity<=> Order Quantity
+List Item Request<=> List Item Request
+List Item PO<=> List Item PO
+Request Qty<=>Request Qty
+Stock Qty<=> Current Inventory Quantity
+Total PO Qty<=> Total PO Qty
+Total PO Final Qty<=> Final PO total Qty
+Partner Name<=>Partner Name
+PO Qty<=> PO Qty
+Deliver Qty<=> Delivery Qty
+Monetary Unit<=> Monetary Unit
+Item Price<=> Item Price
+Total Item Price<=> Total Item Price
+Item Status<=> Item Status
+Request<=> Request
+Accept<=> Accept
+Reject<=> Reject
+Deliver<=> Deliver
+Complete<=> Complete
+On Progess<=> On Progess
+PO<=> PO
+POQty<=>PO Qty
+ProjectList<=>Project List
+Total Qty Received<=>Total Qty Received
+Remaining Qty<=>Remaining Qty
+
+--Over sea-
+ConnectionToDemand<=>Connection To Demand
+Yard<=>Yard
+RequestShipMode<=>Request ShipMode
+FinalShipmentMode<=>Final ShipmentMode
+Packing<=>Packing
+TermDelivery<=>Term Delivery
+TermPayment<=>Term Payment
+RealArrivalReqDate<=>Real Arrival ReqDate
+OrderConfirmNumber<=>Order Confirm Number
+Schedule<=>Schedule
+Invoice<=>Invoice
+
+
+Order Information<=>Order Information
+GoodsReceiptNumber<=>Goods Receipt Number
+GoodReceiptSlipNumber<=>Goods Receipt SlipNumber
+GoodReturnSlipNumber<=>Goods Return SlipNumber
+Remember Me<=>Remember Me
+I forgot my password<=>I forgot my password
+Sign In<=>Sign In
+Menu search<=>Menu search
+Request Date From<=>Request Date From
+Request Date To<=>Request Date To
+UserPurchaseOrderNumber<=>User Purchase Order Number
+PurchaseOrderNumber<=>Purchase Order Number
+TotalPrice<=>Total Price
+Plan Complete Date<=>Plan Complete Date
+Printing Status<=>Printing Status
+Partner Acceptor<=>Partner Acceptor
+Delivery Date<=>Delivery Date
+User Purchase<=>User Purchase
+Purchase Date<=>Purchase Date
+Back<=>Back
+Save<=>Save
+UserProjectCode<=>Production Code
+PODate<=>Purchase Order Date
+PFE PO Number <=>PFE PO Number
+PONumber<=>PO Number
+Date<=>Date
+Status<=>Status
+ProjectNo<=>Project No
+Partner Code<=>Partner Code
+WHPartnerCode<=>WH PartnerCode
+Qty<=>Qty
+Tax<=>Tax
+AddNewItemPurchaseOrder<=>Add New Item PurchaseOrder
+Search<=>Search
+Partner Remark<=>Partner Remark
+
+
+Common statistics<=>Common statistics
+New Orders<=>New Orders
+More info<=>More info
+Bounce Rate<=>Bounce Rate
+User Registrations<=>User Registrations
+Unique Visitors<=>Unique Visitors
+Chart<=>Chart
+News<=>News
+공지사항<=>Notice
+커뮤니티<=>Community
+
+프레임워관리<=>Framework Management
+사이트 관리<=>Management Site
+SCM<=>SCM
+MES<=>MES
+시스템설정<=>System Settings
+시스템관리<=>System Management
+메뉴관리<=>Menu Management
+사용자관리<=>User Management
+기타설정<=>Others Settings
+마스터관리<=>Master Management
+품목 관리<=>Product/Items
+Product/Items<=>Product/Item
+품목 상세<=>Item Details
+창고관리<=>Warehouse
+생산라인관리<=>Production Lines
+영업관리<=>Sales Management
+설계관리<=>Design Management
+구매관리<=>Purchase Management
+현황관리<=>Status View
+생산관리<=>Production Management
+자재관리<=>Materials Management
+재고관리<=>Inventory Management
+라인상태<=>Production Status
+대쉬보드<=>Dashboard
+검색<=>Search on top
+메뉴검색<=>Menu search
+언어설정<=>Change language
+개인정보수정<=>Change user information
+사이트관리<=>Sites
+모듈관리<=>Modules
+디비관리<=>DB Management
+동적페이지관리<=>Dynamic Page
+메뉴관리<=>Menu Management
+사용자등록<=>User Management
+사용자그룹<=>User Group
+그룹별권한설정<=>Group Permissions
+사용자별권한설정<=>User Permissions
+사이트설정<=>Site Settings
+첨부파일현황<=>Attach Files
+공통코드관리<=>Common Codes
+게시판관리<=>Board Management
+거래처관리<=>Customer Management
+회원관리<=>Customer Employees
+품목분류관리<=>Item Class
+품목관리<=>Item Management
+창고관리<=>Warehouses
+가상창고<=>Virtual Warehouse
+생산라인등록<=>Production Lines
+프로젝트관리<=>Sales Projects
+작업도관리<=>Task Drawing
+생산의뢰<=>Production Request
+구매발주등록<=>Purchase Order
+구매발주현황<=>Purchase Order List
+프로젝트현황<=>Project Status
+생산현황<=>Production Status
+자재현황<=>Inventory Status
+생산계획<=>Production Planning
+작업관리<=>Work management
+출하관리<=>Goods Issue
+자재현황<=>Materials Status
+자재입고<=>Good Receipts PO
+재고관리<=>Inventory Management
+창고별자재현황<=>Warehouse Inventory
+상품 반품<=>Goods Return
+
+품명사양<=>Item Specify
+품목 제조회사<=>Item Partner
+품목 매입단가 변경 기록<=>Item Cost Hist
+
+
+
+
+재고이력관리<=>Inventory history
+마감관리<=>Inventory management
+
+생산실적등록<=>Production Status
+Production Status<=>Production Status
+생산실적조회<=>Production Results Search
+
+
+출고<=>Release PO
+
+Projectname<=>Production Name
+ProductType<=>Product Type
+UserProjectCode<=>Production Code
+OrderTeamCode<=>Order Team
+OrderTeamCodeName<=>Order Team Name
+OrderTeam<=>Order Team
+InCharge<=>In Charge
+OrderNumber<=>Order Number
+DomesticForeign<=>Domestic Foreign
+StatusName<=>Status Name
+PlanDeliveryDate<=>Plan Delivery Date
+Plan Delivery Date<=>Plan Delivery Date
+Product<=>Product
+Custommer<=>Customer
+OrderPrice<=>Order Price
+VatType<=>Vat Type
+VatRate<=>Vat Rate
+ExchangeRate<=>Exchange Rate
+ExchangeRateDate<=>Exchange Rate Date
+Close<=>Close
+Save<=>Save
+Salesprojectdetail<=>Project Detail
+
+
+CustomerCode<=>Customer Code
+DownloadAllFile<=>Download All
+FileName<=>File Name
+FileSize<=>File Size(byte)
+FileType<=>File Type
+TransMonth<=>Target Month
+InventoryClosingMaster<=>Inventory Closing Master
+InventoryClosingDetail<=>Inventory Closing Detail
+InventoryClosingItems<=>Inventory Closing Items
+FileType<=>File Type
+OrderConfirmNumber<=>Order Confirm Number
+BusinessType<=>Business Type
+ConnectionDemand<=>Connection To Demand
+Yard<=>Yard
+Schedule<=>Schedule
+Mon<=>Mon
+ProjectStatus<=>Project Status
+RealArrivalReqDate<=>Real Arrival ReqDate
+
+--Form Project Status--
+
+User Project Code<=>Production Code
+날짜<=>Date
+상태<=>Project Status
+제품분류<=>Product Type
+프로젝트명<=>Project Name
+사용자 프로젝트 코드<=>Production Code
+담당자<=>In Charge
+납기예정일<=>Plan Delivery Date
+Plan Delivery Date<=>Plan Delivery Date
+제품코드<=>Item Code
+제품명<=>Item Name
+고객주문번호<=>Order Number
+주문수량<=>Order Quantity
+수주부서<=>Order Team Name
+
+-----------------------
+
+--Form Production Status--
+
+제품 코드<=>Product Code
+지정된 수량<=>Assigned Quantity
+제품 완료 수량<=>Product Completed Quantity
+생산 라인 시작일<=>Product Line Start Date
+생산 라인 종료일<=>Product Line End Date
+
+--------------------------
+
+--Form Materials Status--
+
+프로젝트 코드<=>Project Code
+구매발주번호<=>PO Number
+품명<=>Item Name
+투입된 생산라인<=>Input Production Line
+유형<=>Type
+유형 이름<=>Type
+품번코드<=>Item Code
+품명<=>Item Name
+현 재고수량<=>Real Quantity
+입고수량<=>Input / Output Quantity
+입고 일자<=>Warehousing Date
+입고 담당자<=>Receipt Manager
+품목분류 <=>Category
+투입된 생산라인<=>Input Production Line
+작업지시 코드<=>Production Code
+CategoryName<=>Category Name
+대상위치<=>Target Location
+
+--------------------------
+
+Trans Month<=>Inventory closed month
+PO Trans<=>PO Transaction
+PJ Trans<=>Project Transaction
+Item Slip Trans<=>Item Slip Transaction
+Inventory Closed<=>Inventory Closed
+Inventory Opened<=>Reopen Deadline
+Trans Close No<=>Inventory Case No
+Item Count<=>Item Count
+Trans Close Date<=>Inventory Close Date
+Download Date<=>Download Date
+Upload Date<=>Upload Date
+Remark<=>Remark
+Seq No<=>Seq No.
+Warehouse Code<=>Warehouse Code
+Warehouse Name<=>Warehouse Name
+Warehouse<=>Warehouse
+Item Code<=>Item Code
+Item Name<=>Item Name
+Stock Qty<=>Real Inventory Qty
+Stock Date<=>Current Inventory Date
+Check Qty<=>Check Qty
+Check Date<=>Inventory Check Date
+Inventory Check<=>Inventory Check
+Stock Items<=>Inventory Items
+Current Stock Qty<=>Current Inventory Qty
+Inventory Check Upload<=>Inventory Check Upload
+Stock Qty Uploaded<=>Inventory Qty Uploaded
+Different Qty<=>Different Qty
+
+Upload<=>Upload
+Select file<=>Select file
+Scheduled production completion date<=>Scheduled production completion date
+Production classification<=>Production classification
+Import other project parts list<=>Import other project parts list
+
+
+--------------------------
+--Form user management--
+UserCode<=>User Code
+UserName<=>User Name
+FirstName<=>First Name
+UserType<=>User Type
+IsBlock<=>Is Block
+UseYN<=>Use YN
+LastName<=>Last Name
+Email<=>Email
+LastBlock<=>Last Block
+Site<=>Site
+LoginId<=>Login Id
+Logout<=>Logout
+
+Please select row at grid Inventory Closing Master.<=>Please select row at grid Inventory Closing Master.
+Add Item Material<=>Add Item Material
+Files<=>Files
+
+Task Drawing Management<=>Task Drawing Management
+Custommer Name<=>Customer Name
+User Information<=>User Information
+First Name<=>First Name
+Last Name<=>Last Name
+User type<=>User type
+Old Password<=>Old Password
+New Password<=>New Password
+Confirm New Password<=>Confirm New Password
+Partner upload file<=>Partner upload file
+
+입/출고일<=>In / Out Date
+입고 수량<=>Warehousing Date
+---------------
+Common Code Master<=>Common Code Master
+Common Code Detail<=>Common Code Detail
+Group Code<=>Group Code
+GroupName1<=>Group Name1
+GroupName2<=>Group Name2
+Base Code<=> Base Code
+BaseCode Name1<=>Base Code Name1
+BaseCode Name2<=>Base Code Name2
+BaseCode Name3<=>Base Code Name3
+Sort<=>Sort 
+Use Y/N<=>Use Y/N
+Employee Number<=>Employee Number
+Name Kr<=>Name Kr
+Name En<=>DWG.No
+EmployeeNameKr<=>Employee Name Kr
+EmployeeNameEng<=>Employee Name Eng
+Level<=>Level
+Company<=>Company
+Birthday<=>Birthday
+Address<=>Address
+MobileNumber<=>Mobile Number
+Employee Detail<=>Employee Detail
+Partner Type<=>Partner Type
+Tel<=>Tel
+RegistNumber<=>Regist Number
+CountryType<=>Country Type
+Ceo<=>CEO
+Homepage<=>Home page
+CloseAllTabsLink<=>Close All Tabs Link
+User Reject<=>User Reject
+
+
+--Form Customer Managerment--
+
+Transaction Disposition<=>거래처 구분
+Transaction status<=>거래 상태
+Customer name<=>거래처명
+
+-----------------------
+Planning Done Date<=>Planning Done Date
+Material Warehouse<=>Material Warehouse
+Production Message<=>Production Message
+Production Lines<=>Production Lines
+Production Done Qty<=>Production Done Qty
+List Files<=>List Files
+Production Line Name<=>Production Line Name
+Assigned Qty<=>Assigned Qty
+Production Line State<=>Production Line State
+Sum<=>Sum
+Work Processing<=>Work Processing
+Worker<=>Worker
+Production Req Code<=>Production Req Code
+Request Quantity<=>Request Quantity
+Real Product Quantity<=>Real Product Quantity
+Production Line Selected<=>Production Line Selected
+Finish WareHouse<=>Finish WareHouse
+Start Date<=>Start Date
+Completed<=>Completed
+Start<=>Start
+Close<=>Close
+Worker Authentication<=>Worker Authentication
+RFID card reader<=>Tag your (certified) RFID Card on the reader. If you do not have an RFID Card, please enter your ID and Password below.
+RFID card IDPW<=>If there is no RFID Card, enter ID and Password.
+
+SlipNumber<=>Slip Number
+Slip Date<=>Slip Date
+Total Tax Amt<=>Total Tax Amt
+Remark<=>Remark
+UserCreated<=>User Created
+UserCreation<=>User Creation
+TotalAmt<=>Total Amt
+TaxAmt<=>Tax Amt
+Amt<=>Amt
+Tax<=>Tax
+
+ItemSlipMaster<=>Item Slip Master
+ItemSlipDetail<=>Item Slip Detail
+WHPartnerName<=>Warehouse From
+WHPleigerName<=>Warehouse To
+checkindate<=>Check-In Date
+
+--Page Stock Moving Item--
+재고 이전<=>Inventory Transfer
+WarehouseFrom<=>Warehouse From
+WarehouseTo<=>Warehouse To
+WHPleigerName<=>Warehouse To
+WHPleiger<=>Warehouse Pleiger
+
+Warehouse From<=>Warehouse From
+Warehouse To<=>Warehouse To
+Warehouse<=>Warehouse
+Request Start Date<=>Request Start Date
+User Project<=>Production Code
+
+ProductionCode<=>Production Code
+ProjectList<=>Project List
+Unit<=>Unit
+ProjectCode<=>Project Code
+Production of project<=>Production of project
+ProductLineManager<=>Production Line Manager
+ProductLineName<=>Production Line Name
+ProdcnStartDate<=>Production Start Date
+ProdcnDoneDate<=>Production Done Date
+ProdLineStartDate<=>Production Line Start Date
+ProdLineDoneDate<=>Production Line Done Date
+ProdcnDoneQty<=>Production Done Qty
+DeliverProductList<=>Deliver Product List
+Cost<=>Cost
+Remark Item<=>Remark Item
+
+Please make sure data are changed.<=>Please make sure data are changed.
+Please input positive number or different zero.<=>Please input positive number or different zero.
+Please select the project first to make a transaction.<=>Please select the project first to make a transaction.
+Total Production Qty of project '<=>Total Production Qty of project '
+' isn't enough. Cannot make a transaction.<=>' isn't enough. Cannot make a transaction.
+
+Warehouse From In Stock<=>In Stock
+User Moving Stock<=>User Moving Stock
+User Moving Stock<=>User Moving Stock
+Search Item Request<=>Search Item Request
+List Partner Request<=>List Part Request
+' isn't enough. Cannot make a transaction.<=>' isn't enough. Cannot make a transaction.
+
+HullNo<=>Hull No
+BusinessType<=>Business Type
+ConnectionDemand<=>Connection Demand
+Schedule<=>Schedule
+Mon<=>Mon
+SPPriceRef<=>SP Price Ref
+RequestShipMode<=>Request Shipment Mode
+FinalShipmentMode<=>Final Shipment Mode
+BLCode<=>BL Code
+Invoice<=>Invoice
+InvoiceIssuedDate<=>Invoice Issued Date
+PartnerUser<=>Partner User
+Packing<=>Packing
+RefNumber<=>Ref Number
+
+Production Request Date<=>Production Request Date
+User Moving Stock<=>User Moving Stock
+Search Item Request<=>Search Item Request
+List Partner Request<=>List Part Request
+Item Partner Request<=>Item Part Request
+Part List<=>Part List
+Supplier Code<=>Supplier Code
+Supplier Name<=>Supplier Name
+Item Part List<=>Item Part List
+Are you sure you want to delete this record?<=>Are you sure you want to delete this record?
+
+Purchase Order List<=>Purchase Order List
+Purchase Order<=>Purchase Order
+
+생산 코드<=>Production Code
+자재명<=>Item Name
+프로젝트 그리드<=>Project List
+
+프로젝트 생산 라인 그리드<=>Project Production Lines
+생산 라인 그리드 결과<=>Production line results
+프로젝트 이름<=>Project Name
+자재코드<=>Item Code
+자재명<=>Item Name
+생산 라인 이름<=>Production Line Name
+할당 수량<=>Assigned Qty
+생산 완료 수량<=>Production Done Qty
+생산 상태<=>Production State
+매니저<=>Manager
+생산 라인 코드<=>Production Line Code
+작업 완료 수량<=>Work Done Qty
+작업 완료 시간<=>Work Done Time
+
+Production Line Name<=>Production Line Name
+Assigned Qty<=>Assigned Qty
+Production Done Qty<=>Production Done Qty
+Production State<=>Production State
+Manager<=>Manager
+Production Line Code<=>Production Line Code
+Work Done Qty<=>Work Done Qty
+Work Done Time<=>Work Done Time
+
+GoodsReturn<=>Goods Return
+Before Qty<=>Before Qty
+
+생산정보<=>Project List
+생산라인<=>Production Line Results
+생산내역<=>Work History
+
+Work History<=>Work History
+Delivery Information<=>Delivery Information
+Production Line Results<=>Production Line Results
+Project List<=>Project List
+
+all<=>All
+거래처구분<=>Partner Type
+거래상태<=>Status
+생산라인(작업장)<=> Production Line
+전체<=>All
+차단<=>False
+사용<=>True
+
+inquiryperiod<=>The maximum inquiry period is one year!
+ErrorItemCode<=>Please select product!
+ErrorUserProjectCode<=>Please input Production Code.
+ErrorProjectName<=>Please input Production project name!
+ErrorInCharge<=>Please input in charge!
+ErrorPlanDeliveryDate<=>Please select plan delivery date!
+ErrorProductType<=>Please select product type!
+ErrorCustommer<=>Please select Customer!
+ErrorOrderQuantity<=>Please input order quantity!
+ErrorDomesticForeign<=>Please select domestic foreign!
+ErrorMonetaryUnit<=>Please select monetary unit!
+ErrorOrderQuantity<=>Please input order quantity!
+Please Input Order Number<=>Please Input Order Number
+ErrorOrderPrice<=>Please input order price!
+ErrorItemPrice<=>Please input item price!
+ErrorConversionAmount<=>Please input Conversion Amount!
+
+Return Qty<=>Return Qty
+Delivered Qty<=>Delivered Qty
+Register Items<=>Register Items
+ItemPartList<=>Item Part List
+
+Request End Date<=>Request End Date
+
+Finished product summary<=>Finished product summary
+InputQty<=>Input Qty
+OutputQty<=>Output Qty
+DileverStatusOrders<=>Delivery status - orders
+DeliveryQty<=>Delivery quantity
+OrderQty<=>Order quantity
+MonthlyProductionPerformance<=>Monthly production performance
+Planned quantity<=>Planned quantity
+Performance<=>Performance
+MonthlyMaterialInOut<=>Monthly Material Input / Output
+Warehousing<=>Warehousing
+ShipmentCount<=>Shipment Count
+
+BoardName<=>Board Name
+OwnerID<=>Owner ID
+OwnerName<=>Owner Name
+InsertDT<=>Create Date
+InsertID<=>Author
+BoardStatus<=>Status
+BoardTitle<=>Board Title
+
+Start Work<=>Start Work
+
+Board Information<=>Board Information
+게시판 ID<=>Board ID
+BoardID<=>Board ID
+LastModifiedDate<=>Last Modified Date
+BoardSetting<=>Board Setting
+boardType1<=>Allow Reply
+boardType2<=>Use of document
+boardType3<=>Only Administrator
+boardType4<=>Use Related URL
+boardType5<=>Use Expired Period
+boardType6<=>Use browse range
+boardType7<=>Allow Comment
+boardType8<=>Use Category
+BoardBranchID<=>Board Branch ID
+BoardBranchName<=>Board Branch Name
+BoardBranchInformation<=>Board Branch Information
+DefineCategory<=>Category
+제목<=>Subject
+BranchName<=>Category Name
+DocDT<=>Registration Date
+ViewsCount<=>Views
+번호<=>Number
+BoardDocID<=>Board Doc ID
+Writer<=>Writer
+InternalPhone<=>Internal Phone
+ExpiredPeriod<=>Expired Period
+Previous<=>Previous
+Next<=>Next
+Comment<=>Comment
+Day<=>Days
+Is Board<=>Is Board
+ErrorSubject<=>Please select Subject
+Please select EmployeeNumber!<=>Please select employee number!
+Please select EmployeeNameKr!<=>Please select employee name Kroea!
+Please input EmployeeNameKr!<=>Please input employee name Kroea!
+The allowed character number is 20!<=>The allowed character number is 20!
+Subject<=>Subject
+Attachment<=>Attachment
+
+Add Item<=>Add Item
+Creator<=>Creator
+Difference Qty<=>Difference Qty
+Quantity Requested<=>Quantity Requested
+Choose<=>Choose
+Please select QTy<=>Please select QTy
+Insufficient material quantity. Please ask the purchasing team. The process continues.<=>Insufficient material quantity. Please ask the purchasing team. The process continues.
+Attach file<=>Attach file
+Notice<=>Notice
+Login ID<=>Login ID
+Company<=>Company
+Partner Management<=>Partner Management
+Account code<=>Account code
+거래처 관리<=>Partner Management
+Company 1<=>Company 1
+Company 2<=>Company 2
+
+
+Notice<=>Notice
+
+Cannot delete project with status<=>Cannot delete project with status!
+Please input user name<=>Please input user name!
+Please input pass word<=>Please input pass word!
+Password is nearly expired<=>Password is nearly expired! Please change the password.
+User is Block 15 Minute<=>This account has been blocked. Please contact the administrator.
+Password is NotValid<=>Password is not valid!
+Password is expired<=>Password is expired! Please contact the administrator.
+User not found<=>User is not found!
+Add new item<=>Add new item part list
+Item Class Code<=>Item Class Code
+
+OutOfStockWarehouse<=>The selected warehouse is out of stock. Please select another warehouse, move the stock in the warehouse, or purchase insufficient stock. The item code below is not included in the warehouse.
+ProductionQuantityHigher0<=>Production quantity should be higher than 0.
+ImpossibleProductionQuantity<=>It is not possible to enter the production quantity more than the requested quantity.
+AllRequestedQuantities<=>All requested quantities have been produced. Would you like to complete all the work?
+프로젝트 현황<=>Project Status
+
+Lead Time Type<=>Lead Time Type
+Lead Time<=>Lead Time
+Receive Qty<=>Receive Qty
+CustomerWarehouse<=>Customer Warehouse
+DeliveryQtyCheck<=>Production Qty is 0. Can not make transaction delivery.
+Please input Login ID<=>Please input Login ID
+고객에게 제품 배송<=>Delivered Product To Customer
+
+거래처별 매출현황<=>Sales Status By Customer
+Sales Status<=>Sales Status
+Order Item Name<=>Order Item Name
+Order Qty<=>Order Qty
+Product Start Date<=>Product Start Date
+Order Price<=>Order Price
+Order Team<=>Order Team
+Product Complete Date<=>Product Complete Date
+Period<=>Period
+----------Chart ----------------------
+Production status this year<=>Production status this year
+Production status of the month<=>Production status of the month
+Production status of the this week<=>Production status of the this week
+Production status of today<=>Production status of today
+Produced Qty<=>Produced Qty
+Planned Qty<=>Planned Qty
+Please select Warehouse.<=>Please select Warehouse.
+Please select Customer Warehouse.<=>Please select Customer Warehouse.
+Receive Qty<=>Receive Qty
+PO Qty Remaining<=>PO Qty Remaining
+Maximum return Qty<=>Maximum return Qty
+Position<=>Position
+Team<=>Team
+Company Type<=>Company Type
+Quantity before update<=>Quantity Before Deliver
+Quantity after update<=>Quantity After Deliver
+
+TotalProductionQty<=>Total Production Qty
+TotalDeliveredQty<=>Total Delivered Qty
+GoodsIssuesNumber<=>Goods Issues Number
+ListofDeliveries<=>List of Deliveries
+ProjectOrder<=>Project Order
+The production request has been cancelled<=>The production request has been cancelled
+Please add production lines<=>Please add production lines
+The total product delivery quantity must be equal to the order quantity<=>The total product delivery quantity must be equal to the order quantity
+
+Each Add Item<=>Add Item
+Batch Add Item<=>Get Other
+가공구분<=>Processing Classification
+규격<=>Standard
+Downloading sales information<=>Downloading sales information
+거래<=>True
+중지<=>False
+OtherCode<=>OtherCode
+LastLogin<=>Last Login
+Only select Project Status Completed to Downloading sales information!<=>Only select Project Status Completed to Downloading sales information!
+
+AuditLog ID<=>AuditLog ID
+Action Type<=>Action Type
+Password<=>Password
+Source IP<=>Source IP
+Message<=>Message
+Audit Log<=>Audit Log
+Date Log<=>Date Log
+Item Class Name<=>Item Class Name
+Please select the row to delete <=>Please select the row to delete
+Sales Classification<=>Sales Classification
+ETC<=>ETC
+Copy Project<=>Copy Project
+
+Please select the row to delete <=>Please select the row to delete
+항목 파트너 정보<=>ITEM PARTNER INFO
+Sales Project<=>Sales Project
+The delivered quantity must not exceed the produced quantity.<=>The delivered quantity must not exceed the produced quantity.
+The delivered quantity must not exceed the order quantity.<=>The delivered quantity must not exceed the order quantity.
+Create Date<=>Create Date
+Group Permissions<=>Group Permissions
+
+Customer<=>Customer
+Search Product<=>Search Product
+Product Code<=>Product Code
+Product Name<=>Product Name
+Product List<=>Product List
+Choose Item<=>Choose Item
+Choose Customer<=>Choose Customer
+
+Search Customer<=>Search Customer
+Customer Type<=>Customer Type
+Customer List<=>Customer List
+Customer Code<=>Customer Code
+
+Delivery quantity must not be more than Ordered Quantity<=>Delivery quantity must not be more than Ordered Quantity.
+Product delivery quantity must not be more than Product in stock quantity<=>Product delivery quantity must not be more than Product in stock quantity
+The Product quantity in stock is not enough need to purchase or production more<=>There is not enough stock. Please check the inventory and ship again.
+Item WareHouse<=>Item WareHouse
+Pleiger Remark2<=>Pleiger Remark2
+
+사용자발주번호<=>User PO Number
+PurchaseDate<=>Purchase Date
+프로젝트코드<=>Production Code
+거래처명<=>Partner Name
+입고일자<=>Slip Date
+단위<=>Item Unit
+입하수량<=>Receive Qty
+통화<=>Monetary Unit
+거래금액<=>Transaction amount
+입고창고<=>Warehouse To
+발주현황<=>Order status
+자재입고현황<=>Material receiving status
+품번<=>Item Name
+ArrivalRequestDate<=>Arrival Request Date
+PO Status has changed<=>PO Status has changed
+Data Changed. Please Reload Grid.<=>Data Changed. Please Reload Grid.
+SalesClassification<=>Sales Classification
+The status has changed. Can not delete rows<=>상태가 변경되었습니다. 행을 삭제할 수 없습니다.
+The status has changed. Can't delete rows.<=>The status has changed. Can't delete rows.
+The status has changed. Can't Close PO.<=>The status has changed. Can't Close PO.
+You must add an item Warehouse to use it.<=>You must add an item Warehouse to use it.
+No data changed, cannot be saved.<=>No data changed, cannot be saved.
+Item Details<=>Item Details
+
+
+Please select Warehouse Code!<=>Please select Warehouse Code!
+Please select Item Class!<=>Please select Item Class!
+Please select Processing Classification!<=>Please select Processing Classification!
+Please input Item Code!<=>Please input Item Code!
+Please input Item Name kor!<=>Please input Item Name kor!
+Please input Item Name Eng!<=>Please input Item DWG.No!
+Please select Specify Type!<=>Please select Specify Type!
+Please input Value!<=>Please input Value!
+Please select Itemcode master first to insert.<=>Please select Itemcode master first to insert.
+
+Total Cost<=>Total Cost
+Cost Of Item<=>Cost Of Item
+
+
+PFE Order<=>PFE Order
+Project<=>Project
+Remark Project<=>Remark Project
+PO Create Date<=>PO Create Date
+Goods Receipt Date<=>Goods Receipt Date
+Delay Days<=>Delay Days
+Goods Receipt Qty<=>Goods Receipt Qty
+Qty left<=>Qty left
+Receipt Price<=>Receipt Price
+Remark2<=>Remark2
+Category Item<=>Category
+Arrival Request Date PO<=>Arrival Request Date
+Item Code PO<=>Item Code
+Item Name PO<=>Item Name
+PO List Qty<=>PO Qty
+Qty Left<=>Qty Left
+Unit PO<=>Unit
+Cost PO<=>Cost 
+Total Price PO<=>Total Price
+Pleiger Remark2 PO<=>Remark2
+Do you really want to return the project?<=>Do you really want to return the project?
+Total Order Price<=>Total Order Price
+ItemPrice<=>Item Price
+Delete data successful.<=>Delete data successful.
+The status has changed. Can not delete data.<=>The status has changed. Can not delete data.
+Delete data fail.<=>Delete data fail.
+The project status has changes that you need to return to the previous page.<=>The project status has changes that you need to return to the previous page.
+
+Select Delete<=>Select Delete
+Delete selected row<=>Delete selected row
+
+WareHouse<=>WareHouse
+Conversion Amount<=>Conversion Amount
+
+Confirm<=>Confirm
+Confirm Date<=>Confirm Date
+Confirm User<=>Confirm User
+Confirm Shipment Mode<=>Confirm Shipment Mode
+PO Request Date<=> PO Request Date
+PFE Delivery Date<=> Delivery Date
+Material Issue No<=>Material Delivery No
+Material Issue Period<=>Material delivery Period
+Use Team<=>Production  Line
+Production Project Code<=>Production Code
+Production Project<=>Production Name
+Material Issue Status<=>Material Delivery Status
+Material Issue Date<=>Material Delivery Date
+Item Code<=>Item Code
+
+Batch registration of material disbursement<=>Batch registration of material disbursement
+Refrain from Payment Excel Download<=>Refrain from Payment Excel Download
+Creator Username<=>Creator Username
+Items that have been paid cannot be added or modified<=>Items that have been paid cannot be added or modified
+It must not be possible to register or modify it<=>It must not be possible to register or modify it
+Items that have been disbursed cannot be printed<=>Items that have been disbursed cannot be printed
+
+Note<=>Note
+Are you sure you want to complete the disbursement? No further registrations or modifications can be made after completion<=>Are you sure you want to complete the disbursement? No further registrations or modifications can be made after completion
+A completed disbursement cannot be completed again<=>A completed disbursement cannot be completed again
+PFE PO Number<=>PFE PO Number
+A completed disbursement cannot be completed again<=>A completed disbursement cannot be completed again
+Part List have no data to print<=>Part List have no data to print
+Project Order Type<=>Project Order Type
+Sales Order Project Code<=>Sales Order Project Code
+Order Team Name<=>Order Team Name
+Delivery Total Qty<=>Delivery Total Qty
+Sales Amount<=>Sales Amounts
+Sales Order Project Detail View<=>Sales Order Project Detail View
+Sales Order Project Name<=>Sales Order Project Name
+Sales Order Project<=>Sales Order Project
+Create User<=>Create User
+Edit User<=>Edit User
+
+Please Input Sales Order Project Code<=>Please Input User Sales Order Project Code
+Please Input Sales Order Project Name<=>Please Input Sales Order Project Name
+Please Input In Charge<=>Please Input In Charge
+Please Input In Charge<=>Please Input In Charge
+Please Select Order Team<=>Please Select Order Team
+Please Select Project Order Type<=>Please Select Project Order Type
+Please Choose Customer<=>Please Choose Customer
+
+Please select Use Team<=>Please Select Production Line
+Please select Item<=>Please select Item
+Please select Issue Date<=>Please select Issue Date
+Please select Production Project<=>Please select Production Project
+Data has been printed successfully<=>Data has been printed successfully
+Disbursement completed<=>Disbursement completed
+Success<=>Success
+Message<=>Message
+
+User Sales Order Project Code<=>User Sales Order Project Code
+Order Department<=>Order Department
+Please Choose Customer<=>Please Choose Customer
+Storage Warehouse<=>Storage Warehouse
+Production Message<=>Production Message
+
+Production Project Detail<=>Production Project Detail
+ErrorSalesOrderProjectCode<=>Please choose  Sales Order Project
+User Sales Order Project Code already exist<=>User Sales Order Project Code already exist.
+Are you sure to delete data?<=>Are you sure to delete data?
+Are you sure to save data?<=>Are you sure to save data?
+Please choose Item<=>Please choose Item
+User Project Code is exists<=>Production Code is exists
+Are you sure delete data?<=>Are you sure delete data?
+UserPONumber<=>User PO Number
+The production line has reached a maximum<=>The production line has reached a maximum
+Line Order<=>Line Order
+Partner Delivery Date<=>Partner Delivery Date
+Please choose PFE PO Number<=>Please choose PFE PO Number
+Request Date<=>Request Date
+카테고리 이름<=>Category Name
+입출력 수량<=>Input/Output Quantity
+실제 수량<=>Real Quantity
+품목 비용<=>Cost Of Item
+초기 코드<=>Initial Code
+품목 단위<=>Item Unit
+파일 업로드<=>Upload File
+유형<=>Type
+인/아웃 날짜<=>In / Out Date
+URL 파일<=>URL File
+관리<=>Management
+영수증 관리자<=>Receipt Manager
+아이템 관리<=>Item Management
+
+할당된 수량<=>Assigned Quantity
+성공적으로 요청<=>Request Successfully
+데이터를 요청하시겠습니까 ?<=>Are you sure to request data ?
+
+총 생산 수량<=>Total Production Qty
+총 배송 수량<=>Total Delivered Qty
+현재 재고 총 수량<=>Current Inventory Total Qty
+프로젝트창고별 실적현황<=>Project Warehouse Inventory
+
+GoodsReceiptNumber<=>Goods Receipt Number
+
+
+제품 라인 시작 날짜<=>Product Line Start Date
+제품 라인 종료 날짜<=>Product Line End Date
+Production Project Name<=>Production Name
+Please select the data line to request first<=>Please select the data line to request first
+Are you sure to start work?<=>Are you sure to start work?
+Please add the production line before start work!<=>Please add the production line before start work!
+Save data successfully.<=>Save data successfully.
+Add Planned Production Line<=>Add Planned Production Line
+Remove Line<=>Remove Line
+Plan Start Date<=>Plan Start Date
+Plan End Date<=>Plan End Date
+Plan Line 1<=>Plan Line 1
+Plan Line 2<=>Plan Line 2
+Plan Line 3<=>Plan Line 3
+OutSource<=>OutSource
+외주여부<=>OutSource
+
+Cumulative production quantity<=>Cumulative production quantity
+Production messsage<=>Production messsage
+Work Event<=>Work Event
+Production Line 1<=>Production Line 1
+Production Line 2<=>Production Line 2
+Production Line 3<=>Production Line 3
+Please Select Warehouse<=>Please Select Warehouse
+The number of completions must not exceed the limit<=>The number of completions must not exceed the limit
+Do you really want to close the project?<=>Do you really want to close the project?
+Plan Delivery Date should not be less than the current date<=>Plan Delivery Date should not be less than the current date
+Are you sure to confirm this purchase order?<=>Are you sure to confirm this purchase order?
+Please Update PO Remark<=>Please Update PO Remark
+Please Update DeliveryDate<=>Please Update DeliveryDate
+PO confirmed<=>PO confirmed
+Are you sure to reject this purchase order<=>Are you sure to reject this purchase order
+PO Reject Successfully<=>PO Reject Successfully
+Your Purchase Order has been printed<=>Your Purchase Order has been printed
+You can only cancel PO's whose status is Complete and Canceled<=>You can only cancel PO's whose status is Complete and Canceled
+Are you sure to Close PO?<=>Are you sure to Close PO?
+PO has been closed<=>PO has been closed
+Please input positive number or different zero<=>Please input positive number or different zero
+PO Quantity not greater than 100000<=>PO Quantity not greater than 100000
+PO Quantity must be an Integer<=>PO Quantity must be an Integer
+Are you sure update remark?<=>Are you sure update remark?
+Update Remark successfully<=>Update Remark successfully
+You can only cancel a PO whose status is different from completed and Created<=>You can only cancel a PO whose status is different from completed and Created
+Address Mail Don't Exist<=>Address Mail Don't Exist
+Send Mail is failed!<=>Send Mail is failed!
+Please choose the file to upload first<=>Please choose the file to upload first
+Please input Partner Remark in Grid<=>Please input Partner Remark in Grid
+Please Update Plan Delivery Date in Grid<=>Please Update Plan Delivery Date in Grid
+The customer has started shipping<=>The customer has started shipping
+
+The status has changed. Can't delete rows<=>The status has changed. Can't delete rows
+Please make sure data are changed<=>Please make sure data are changed
+Receive Qty cannot higher than Total PO Qty or PO Qty Remainning.<=>Receive Qty cannot higher than Total PO Qty or PO Qty Remainning.
+Please input positive number or different zero.<=>Please input positive number or different zero.
+Order Type<=>Order Type
+Please select the data line before performing the operation<=>Please select the data line before performing the operation
+This order has already been disbursed<=>This order has already been disbursed
+Plan Production Qty<=>Plan Production Qty
+Please select End Date<=>Please select End Date
+Please select StartDate<=>Please select StartDate
+Start Date cannot higher than End Date<=>Start Date cannot higher than End Date
+Limit the inquiry period to less than one year<=>Limit the inquiry period to less than one year
+Send Email<=>Send Email
+PO를 저장하고 Email을 전달하였습니다. <br/> 만약 Email을 받지 못하였다면 Email 재발송 버튼을 클릭하십시오. <br />그래도 발송이 안될 경우 관리자에게 문의하여 주십시오<=>Saved PO and delivered Email./n If you do not receive the email, please click the Resend Email button. /n If you still can't send, please contact the administrator.
+Are you sure you want to Purchase Request?<=>Are you sure you want to Purchase Request?
+Are you sure you want to resend the mail?<=>Are you sure you want to resend the mail?
+Send mail<=>Send mail
+The PO person in charge will confirm the contents and make a PO request again.<=>Select Yes to re-request the Save PO with this content. Selecting No will only save.
+PO상태<=>PO Status
+Delivery Start Date<=>Delivery Start Date
+DelayDelivery<=>Delivery
+The delivery date has been modified by the customer.<=>The delivery date has been modified by the customer.
+A PO message was entered by the customer.<=>A PO message was entered by the customer.
+Changed delivery date<=>Changed delivery date
+User PO Number<=>User PO Number
+No more reading<=>No more reading
+Materials Status<=>Materials Status
+Production Line Results<=>Production Line Results
+Deliveried Qty<=>Deliveried Qty
+Are you sure you want to complete the Production Quantity?<=>Are you sure you want to complete the Production Quantity?
+Production Line<=>Production Line
+The Production line name cannot be the same, please choose again.<=>The Production line name cannot be the same, please choose again.
+자재 창고<=>Material Warehouse
+Item Slip Detail<=>Item Slip Detail
+Export Excel<=>Export Excel
+Item Part List Import Excel<=>Item Part List Import Excel
+Import Excel<=>Import Excel
+Scanner QR Code<=>Scanner QR Code
+Receipt code does not exist, please check your QR Code.<=>Receipt code does not exist, please check your QR Code.
+Produced Quantity<=>Produced Quantity
+Reject PO<=>Reject
+Accept PO<=>Accept
+Please input Plan Delivery Date in Grid<=>Please input Plan Delivery Date in Grid
+Update ETA<=>Update ETA
+Are you sure you want to change the ETA?<=>Are you sure you want to change the ETA?
+The data has been changed before, please reload the data first.<=>The data has been changed before, please reload the data first.
+List Item Duplicate<=>List item duplicate
+Count<=>Count
+Check duplicate Itemcode<=>Check duplicate Itemcode
+Item Class<=>Item Class
+NameKor<=>Name Kor
+ProcessingClassification<=>Processing Classification
+Please input Slip Date<=>Please input Slip Date
+DWG. No<=>DWG. No
+Delivery Period<=>Delivery Period
+Production Line<=>Production Line
+Production Code<=>Production Code
+Login User Name<=>Login UserName
+Production Name<=>Production Name
+Production Create Date<=>Production Create Date
+Production Name work<=>Production Name
+Production Done Date<=>Production Done Date
+List item has been printed<=>List item has been printed+
+Production Name Planning<=>Production Name
+
+Plan Delivery Date 2<=>Plan Delivery Date
+Customer Pro<=>Customer
+Order Number Pro<=>Order Number
+Production Code Pro<=>Production Code
+Production Name Pro<=>Production Name
+Plan Delivery Date Pro<=>Plan Delivery Date
+ProductType Pro<=>Product Type
+ErrorOrderDepartment<=>Please enter the department name.
+ErrorCustomer<=>Enter your customer information.
+ErrorOrderNumber<=>Please input order number!
+Line Manager<=>Line Manager
+End Date<=>End Date
+Group Line<=>Group Line
+Production Line Name(En)<=>Production Line Name(En)
+Production Line Name(Kor)<=>Production Line Name(Kor)
+Production Information<=>Production Information
+WarehouseFrom must not be the same WarehouseTo!<=>WarehouseFrom must not be the same WarehouseTo!
+Purchase Order List Grid<=>Purchase Order List
+
+Member mgt<=>Member Management
+Settings<=>Settings Management
+Ad Mgt<=>Advertisement
+
+Create 1<=>Create

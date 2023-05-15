@@ -1,0 +1,298 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@model List<MES_SaleProject>
+@{
+    Layout = null;
+    string gridItemByPartner = "gridItemByPartner" + ViewBag.Thread;
+    string txtItemName = "txtItemName" + ViewBag.Thread;
+    string txtItemCode = "txtItemCode" + ViewBag.Thread;
+    string gridProjectCode = "gridProjectCode" + ViewBag.Thread;
+}
+
+<script>
+        $(document).ready(function () {
+            var listProject = @Html.Raw(Json.Serialize(Model));
+            var grid = $('#@(gridProjectCode)').dxDataGrid("instance");
+            grid.option("dataSource", listProject);
+            grid.refresh();
+        });
+
+        function SelectRowProject@(ViewBag.Thread)(e) {
+            CheckSession();
+            console.log(e);
+            debugger;
+            var projectdata = e.data;
+            var ProjectCode = projectdata.ProjectCode;
+            // var ItemCode = projectdata.ItemCode;
+            // var ItemName = projectdata.ItemName;
+
+            // Quan add onvaluechange cbb PartNerName
+            var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+            btnRegisterItem.option("disabled", true);
+            var GridDetailItemPO = $("#GridDetailItemPO").dxDataGrid("instance");
+            GridDetailItemPO.option("dataSource", null);
+            GridDetailItemPO.refresh();
+            // Set visible button Register Items
+
+            $('#modalControl').modal('hide');
+            $("#ProjectCode").val(ProjectCode);
+            $("#areaPartnerOverSea@(ViewBag.Thread)").html(null);
+            $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+            CreateInstance_Partner_ByProject(ProjectCode);
+        }
+
+        function CreateInstance_Partner_ByProject(ProjectCode) {
+            CheckSession();
+            debugger;
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("disabled", false);
+
+            $.ajax({
+                url: '@Url.Action("GetListPartner", "MESPORequest")',
+                type: "GET",
+                async: false,
+                data: { projectCode: ProjectCode },
+                dataType: "json"
+                }).done(function (result){
+                    //filter result => distinct items .
+                    debugger;
+                    var listFullPartner = result.listFullPartner;
+                    var listDistinctPartner = result.listDistinctPartner;
+                    var gridItemPartner = $("#GridDetailItemPO").dxDataGrid("instance");
+                    debugger;
+                    $("#txtPartnerCode").dxSelectBox({
+                        dataSource: new DevExpress.data.DataSource({
+                            store: listDistinctPartner ,
+                            paginate: true,
+                            pageSize: 100
+                        }),
+                        displayExpr: "PartnerName",
+                        valueExpr: "PartnerCode",
+                        onValueChanged: function (data) {
+                            debugger;
+                            // Quan add onvaluechange cbb PartNerName
+                            var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+                            btnRegisterItem.option("disabled", false);
+                            // Set display button Register Items
+                             $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid({
+                                //disabled: true,
+                                editing: {
+                                    mode: "batch",
+                                    allowUpdating: false,
+                                    allowAdding: false,
+                                    allowDeleting: false,
+                                },
+                                onToolbarPreparing: function (e) {
+                                    debugger;
+                                    let toolbarItems = e.toolbarOptions.items;
+                                    //e.toolbarOptions.items[1].visible = false;
+                                    toolbarItems.forEach(function (item, index) {
+                                        if (item.name == "saveButton") {
+                                            toolbarItems.splice(index, 1);
+                                        }
+                                        if (item.name == "addRowButton") {
+                                            item.options.disabled = true;
+                                        }
+                                    })
+                                }
+                            });
+                            //
+                            var partnerCode = data.value;
+                            //if partner over sea => render more field
+
+                            if (partnerCode === null || partnerCode === '' || partnerCode === undefined) {
+                                //Quan add refresh GridDetailItemPO if select change partnerCode
+                                var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+                                btnRegisterItem.option("disabled", true);
+                                var GridDetailItemPO = $("#GridDetailItemPO").dxDataGrid("instance");
+                                GridDetailItemPO.option("dataSource", null);
+                                GridDetailItemPO.refresh();
+                                // End
+                                return;
+                            }
+                            RenderPartnerOverSeaField(partnerCode);
+                            debugger;
+                            var arr = listFullPartner.filter(function (el) {
+                                return el.PartnerCode === partnerCode ;
+                            });
+
+                        $.ajax({
+                            url: '@Url.Action("CheckOverSeaByPartnerCode", "MESPORequest")',
+                            type: "GET",
+                            async: false,
+                            data: {
+                                partnerCode: partnerCode
+                            },
+                            dataType: "json"
+                        }).done(function (resp) {
+                            console.log(resp);
+                            debugger;
+
+                        });
+                        debugger;
+                        gridItemPartner.option("dataSource", arr);
+                        $("#btn_SaveDataPORequest").attr("disabled", false);
+                    }
+                }).dxSelectBox("instance");
+            });
+
+            function RenderPartnerOverSeaField(partnerCode) {
+                CheckSession();
+                debugger;
+                if (partnerCode !== null || partnerCode !== "" || partnerCode !== undefined) {
+                    $.ajax({
+                        url: '@Url.Action("CheckPartnerOverSea", "MESPORequest")',
+                        type: "GET",
+                        async: false,
+                        data: {
+                            threadId: '@(ViewBag.Thread)',
+                            partnerCode: partnerCode
+                        },
+                        dataType: "json"
+                    }).done(function (resp) {
+                        debugger;
+                        console.log(resp);
+                        if (resp === null || resp.CountryType === null) {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                        } else if (resp.CountryType === 'CTTP02') {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").removeClass('d-none');
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").show();
+                        } else {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                        }
+
+                    });
+                }
+            }
+        }
+
+        $("#btnSearchPJCode").on("click", function () {
+            CheckSession();
+            var projectCode = $("#txtProjectCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+            var itemCode = $("#@(txtItemCode)").dxTextBox("option","value");
+            var itemName = $("#@(txtItemName)").dxTextBox("option", "value");
+
+            debugger;
+               $.ajax({
+                type: "GET",
+                url: '@Url.Action("SearchProjectCode", "MESPORequest")',
+                   data: {
+                       projectCode: projectCode,
+                       itemCode: itemCode,
+                       itemName: itemName,
+                   },
+                dataType: "json"
+               }).done(function (resp) {
+                   var grid = $("#@(gridProjectCode)").dxDataGrid("instance");
+                   grid.option("dataSource", resp);
+                   grid.refresh();
+            });
+        });
+
+</script>
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title">@_loc.GetLocalizedString("ProjectList")</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-xs-12 col-md-3">
+                    <label>@_loc.GetLocalizedString("User Project Code")</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID($"txtProjectCode{ViewBag.Thread}")
+                        .DisplayExpr("UserProjectCode").ValueExpr("ProjectCode")
+                        .DataSource(d => d.Mvc().Controller("MESPORequest")
+                            .LoadAction("GetProjectCodeByStatus")
+                            .Key("ProjectCode")
+                        )
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                      )
+                </div>
+                @* lấy những item trong pj đó *@
+                <div class="col-xs-12 col-md-2">
+                    <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                    @(Html.DevExtreme().TextBox().ID(txtItemCode)
+                          )
+                    @*@(Html.DevExtreme().SelectBox()
+                          .ID(txtItemCode)
+                          .DisplayExpr("ItemCode").ValueExpr("ItemCode")
+                          .DataSource(d => d.Mvc().Controller("MESPORequest")
+                              .LoadAction("GetProjectCodeByStatus")
+                              .Key("ItemCode")
+                          )
+                          .ShowClearButton(true)
+                          .SearchEnabled(true)
+                          .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                        )*@
+                </div>
+                <div class="col-xs-12 col-md-2">
+                    <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                    @(Html.DevExtreme().TextBox().ID(txtItemName))
+                </div>
+                <div class="col-xs-12 offset-md-3 col-md-2 ">
+                    <div class="d-flex flex-column justify-content-end align-items-end">
+                        <label style="color:transparent!important">a</label>
+                        @(Html.DevExtreme().Button()
+                            .ID("btnSearchPJCode")
+                            .Icon("search")
+                            .Text($"{_loc.GetLocalizedString("Search")}")
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-xs-12 col-md-12">
+                    @{ 
+                        string SelectRowProject = "SelectRowProject" + ViewBag.Thread;
+                    }
+                    @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                        .ID(gridProjectCode)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .OnRowDblClick(SelectRowProject)
+                        .Editing(editing =>
+                        {
+                            editing.AllowUpdating(false);
+                        })
+                        .ColumnAutoWidth(true).Height(600)
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .Columns(c =>
+                        {
+
+                            c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).Width("8%");
+                            c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).Width("20%");
+                            c.AddFor(x => x.ProjectName).Caption(_loc.GetLocalizedString("Project Name")).Width("22%");
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).Width("25%");
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).Width("25%");
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            //pager.ShowPageSizeSelector(false);
+                            //pager.AllowedPageSizes(new[] { 10, 20, 100 });
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                      )
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,341 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@{
+    string dropdownPartner = "dropdownPartner" + ViewBag.Thread;
+    string gridRegisterItemPartner = "gridRegisterItemPartner" + ViewBag.Thread;
+    string btnSaveItems = "btnSaveItems" + ViewBag.Thread;
+    string partnerCode = ViewBag.PartnerCode;
+    string partnerName = ViewBag.PartnerName;
+}
+@model List<MES_ItemPartner>
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        var partnerCode = '@(ViewBag.PartnerCode)';
+        //render ra textbox để xem
+
+
+        if (partnerCode !== null || partnerCode !== "") {
+               $.ajax({
+                url: '@Url.Action("getListItemByPartner", "MESPORequest")',
+                type: "GET",
+                async: false,
+                   data: {
+                    flag:'getListItems',
+                    partnerCode: partnerCode
+                },
+                dataType: "json"
+               }).done(function (result) {
+                   console.log("item part list ", result.data);
+                   LoadingPage(0);
+                    debugger;
+                    var gridRegisterItemPartner = $("#gridRegisterItemPartner@(ViewBag.Thread)").dxDataGrid("instance");
+                    gridRegisterItemPartner.option("dataSource", result.data);
+                });
+        }
+        LoadingPage(0);
+    });
+    var arrItemsSelected = [];
+    function ItemRegisterPopupSelectionChanged(selectedItems) {
+        console.log(selectedItems);
+        debugger;
+         arrItemsSelected = selectedItems.selectedRowsData;
+    }
+    var count = 1;
+    $("#@(btnSaveItems)").on("click", function () {
+        LoadingPage(1);
+        debugger;
+
+        var dataGrid = $('#@gridRegisterItemPartner').dxDataGrid('instance');
+        var flagselectItem =  dataGrid.getSelectedRowsData();
+        var listItemSelect = dataGrid.getSelectedRowsData();
+
+        var GridDetailItemPO = $("#GridDetailItemPO").dxDataGrid("instance");
+        if (GridDetailItemPO == null) {
+            GridDetailItemPO = [];
+        }
+        var ItemListRequest = GridDetailItemPO.getDataSource().items();
+
+        $.each(ItemListRequest, function (index, item) {
+            console.log(item)
+            listItemSelect.push(item)
+        });
+
+        //Check remove row dublicate
+        var ListItemFinal = {};
+        var Cell = {};
+      
+        listItemSelect.forEach(function (item,index) {
+            Cell = ListItemFinal[item.ItemCode] = ListItemFinal[item.ItemCode] || {};
+            //grade[item.Domain] = true;
+            //Cell["No"] = item.No;
+            //Cell["No"] = count++;
+            Cell["ItemCode"] = item.ItemCode;
+            Cell["ItemName"] = item.ItemName;
+            Cell["ItemPrice"] = item.ItemPrice;
+            Cell["POQty"] = item.POQty;
+            Cell["RealQty"] = item.RealQty;
+            Cell["LeadTime"] = item.LeadTime;
+            Cell["LeadTimeType"] = item.LeadTimeType;
+            Cell["LeadTimeTypeName"] = item.LeadTimeTypeName;
+            Cell["MonetaryUnit"] = item.MonetaryUnit;
+            Cell["MonetaryUnitName"] = item.MonetaryUnitName;
+            Cell["PartnerCode"] = item.PartnerCode;
+            Cell["PartnerName"] = item.PartnerName;
+            Cell["TotalPrice"] = item.TotalPrice;
+            Cell["ItemStatus"] = item.ItemStatus;
+            Cell["ItemStatusName"] = item.ItemStatusName;
+            Cell["PleigerRemark"] = item.PleigerRemark;
+            Cell["PORemark"] = item.PORemark;
+           
+        });
+
+        let listItemFinish = [];
+        //hiển thị số của item thêm vô grid
+        $.each(ListItemFinal, function (index, item) {
+            item.No = count++;
+            listItemFinish.push(item);
+        });
+        if (count == listItemFinish.length +1) {
+            count = 1;
+        }
+
+        debugger;
+
+        // Set dataSource to GridDetailItemPO in index
+        var mainGridItems = $("#GridDetailItemPO").dxDataGrid("instance");
+        // Check if select item
+        if (flagselectItem.length == 0)
+        {
+            DevExpress.ui.dialog.alert("Please select an item!", "Error");
+        }
+        else
+        {
+             mainGridItems = mainGridItems.option("dataSource", listItemFinish);
+            //$('#modalControl').modal('hide');
+        }
+        LoadingPage(0);
+        // End
+
+        //if (arrItemsSelected !== null && arrItemsSelected.length > 0) {
+        //    var mainGridItems = $("#GridDetailItemPO").dxDataGrid("instance");
+        //    mainGridItems = mainGridItems.option("dataSource", arrItemsSelected);
+        //    $('#modalControl').modal('hide');
+        //    $("#btn_SaveDataPORequest").attr("disabled", false);
+        //} else {
+        //    DevExpress.ui.dialog.alert("Please choose Item or close !", "Warning");
+        //}
+    });
+    //search item
+    $("#btnSearchItem").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        var itemName = $("#txtItem_Name").dxTextBox("option", "value");
+        var itemCode= $("#txtItem_Code").dxTextBox("option", "value");
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("getListItemByPartner", "MESPORequest")',
+                data: {
+                flag: 'search',
+                itemName: itemName,
+                itemCode: itemCode,
+                partnerCode: '@(ViewBag.PartnerCode)'
+            },
+            dataType: "json"
+        }).done(function (resp) {
+            LoadingPage(0);
+                var grid = $("#@(gridRegisterItemPartner)").dxDataGrid("instance");
+                grid.option("dataSource", resp.data);
+                //grid.refresh();
+        });
+        LoadingPage(0);
+    });
+
+</script>
+
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("ItemPartList"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-xs-12 col-md-3 d-flex flex-row pb-0 ">
+                    <button type="button" class="btn btn-sm btn-secondary" id="btnSearchItem" style="border-radius:5px;float:left;"><i class="fa fa fa-search"></i> @(_loc.GetLocalizedString("Search"))</button>
+                    <button type="button" class="btn btn-sm btn-primary btn-action" id="@btnSaveItems" style="margin-left:10px; border-radius:5px"><i class="fa fa fa-plus"></i>  @(_loc.GetLocalizedString("Add Item"))</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <form id="frm-SaleSetting2">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                                @(Html.DevExtreme().TextBox().ID("txtPO_Partner")
+                            .Value(partnerName).Disabled(true))
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                                @(Html.DevExtreme().TextBox()
+                        .ID("txtItem_Code")
+                        )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                                @(Html.DevExtreme().TextBox()
+                        .ID("txtItem_Name")
+                        )
+                            </div>
+                        </div>
+
+                        @*<div class="col-xs-12 col-md-3 d-flex flex-row justify-content-center align-items-end pb-0 ">
+                            <div class="form-group mr-2">
+                                @(Html.DevExtreme().Button()
+                            .ID("btnSearchItem")
+                            .Icon("search")
+                            .Text($"{_loc.GetLocalizedString("Search")}")
+                        )
+                            </div>
+                            <div class="form-group">
+                                @(Html.DevExtreme().Button()
+                            .ID(btnSaveItems).Type(ButtonType.Default)
+                            .Text($"{_loc.GetLocalizedString("Add Item")}")
+                        )
+                            </div>
+                        </div>*@
+                    </div>
+                    <div class="form-group">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("List Item Request")</legend>
+                            @(Html.DevExtreme().DataGrid<MES_ItemPartner>()
+                                    .ID(gridRegisterItemPartner)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true).Height(450)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .FilterRow(filterRow => filterRow
+                                        .Visible(true)
+                                        .ApplyFilter(GridApplyFilterMode.Auto))
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Multiple)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.No).Caption("No").Width("5%");
+                                        c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code"))).Width("15%");
+                                        c.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name"))).Width("30%");
+                                        c.AddFor(x => x.ItemPrice).Caption((@_loc.GetLocalizedString("Item Price"))).Format("#,##0.#0").Width("15%");
+                                        c.AddFor(x => x.LeadTimeType).Caption((@_loc.GetLocalizedString("Lead Time Type"))).Visible(false);
+                                        c.AddFor(x => x.LeadTime).Caption((@_loc.GetLocalizedString("Lead Time"))).Width("15%");
+                                        c.AddFor(x => x.LeadTimeTypeName).Caption((@_loc.GetLocalizedString("Lead Time Type"))).Width("15%");
+                                        c.AddFor(x => x.MonetaryUnit).Caption((@_loc.GetLocalizedString("Monetary Unit"))).Visible(false);
+                                        c.AddFor(x => x.MonetaryUnitName).Caption((@_loc.GetLocalizedString("Monetary Unit"))).Width("15%");
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .OnSelectionChanged("ItemRegisterPopupSelectionChanged")
+                                )
+                        </fieldset>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+    @*<form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-xs-12 col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID("txtPO_Partner")
+                            .Value(partnerName).Disabled(true))
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().TextBox()
+                        .ID("txtItem_Code")
+                        )
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox()
+                        .ID("txtItem_Name")
+                        )
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-md-3 d-flex flex-row justify-content-center align-items-end pb-0 ">
+                    <div class="form-group mr-2">
+                        @(Html.DevExtreme().Button()
+                            .ID("btnSearchItem")
+                            .Icon("search")
+                            .Text($"{_loc.GetLocalizedString("Search")}")
+                        )
+                    </div>
+                    <div class="form-group">
+                        @(Html.DevExtreme().Button()
+                            .ID(btnSaveItems).Type(ButtonType.Default)
+                            .Text($"{_loc.GetLocalizedString("Add Item")}")
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("List Item Request")</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemPartner>()
+                                    .ID(gridRegisterItemPartner)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true).Height(450)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto))
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Multiple)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.No).Caption("No");
+                                        c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code")));
+                                        c.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name")));
+                                        c.AddFor(x => x.ItemPrice).Caption((@_loc.GetLocalizedString("Item Price"))).Format("#,##0.#0");
+                                        c.AddFor(x => x.LeadTimeType).Caption((@_loc.GetLocalizedString("Lead Time Type"))).Visible(false);
+                                        c.AddFor(x => x.LeadTimeTypeName).Caption((@_loc.GetLocalizedString("Lead Time Type")));
+                                        c.AddFor(x => x.LeadTime).Caption((@_loc.GetLocalizedString("Lead Time")));
+                                        c.AddFor(x => x.MonetaryUnit).Caption((@_loc.GetLocalizedString("Monetary Unit"))).Visible(false);
+                                        c.AddFor(x => x.MonetaryUnitName).Caption((@_loc.GetLocalizedString("Monetary Unit")));
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .OnSelectionChanged("ItemRegisterPopupSelectionChanged")
+                                )
+                </fieldset>
+            </div>
+        </div>
+    </form>*@
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

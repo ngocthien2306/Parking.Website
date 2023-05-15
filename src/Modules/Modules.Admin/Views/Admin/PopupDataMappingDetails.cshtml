@@ -1,0 +1,117 @@
+﻿@using Modules.Common.Models;
+@{
+    Layout = null;
+}
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Setting Data Mapping Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYDataMapDetails>()
+            .ID("GetDataGridDataMappingDetails")
+            .DataSource(d => d.Mvc()
+                .Controller("Admin")
+                .LoadAction("GetDataGridDataMappingDetails")
+                .LoadParams(new { MAP_ID = ViewBag.MAP_ID, PAG_ID = ViewBag.PAG_ID, PEL_ID = ViewBag.PEL_ID })
+                .Key("MAP_ID")
+                .Key("MDTL_ID")
+            )
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .AllowColumnResizing(true)
+            .FilterRow(filterRow => filterRow
+                .Visible(true)
+                .ApplyFilter(GridApplyFilterMode.Auto)
+            )
+            .RepaintChangesOnly(true)
+            .Selection(s => s.Mode(SelectionMode.Single))
+            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+            .Editing(editing =>
+            {
+                editing.Mode(GridEditMode.Row);
+                editing.AllowAdding(true);
+                editing.AllowDeleting(true);
+                editing.AllowUpdating(true);
+            })
+            .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+            .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+            .OnRowRemoving(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+            .OnRowRemoved(@<text> function(e) { LogPageEvent("Delete"); } </text>)
+            .Columns(columns =>
+            {
+                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                {
+                    btns.Add().Name(GridColumnButtonName.Edit);
+                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataMappingDetailLayout");
+                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteDataMappingDetailLayout");
+                });
+                columns.AddFor(m => m.MAP_ID).Width(150).Visible(false);
+                columns.AddFor(m => m.MDTL_ID).Width(150).Visible(false);
+                columns.AddFor(m => m.PAG_ID).Width(150).Visible(false);
+                columns.Add().Caption(_loc.GetLocalizedString("Mapping Field")).Alignment(HorizontalAlignment.Center)
+                .Columns(c =>
+                {
+                    if (ViewBag.datasourceType == "C008")
+                    {
+                        c.AddFor(m => m.MAP_FROM).Caption(_loc.GetLocalizedString("MAP FROM")).Width("20%");
+                    }
+                    else
+                    {
+                        c.AddFor(m => m.MAP_FROM).Caption(_loc.GetLocalizedString("MAP FROM")).Width("20%").Lookup(lookup => lookup
+                        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetMapFieldOnGridType").LoadParams(new { PAG_ID = ViewBag.PAG_ID }).Key("ID"))
+                        .DisplayExpr("Name")
+                        .ValueExpr("ID")
+                    );
+                    }
+                });
+                columns.Add().Caption(_loc.GetLocalizedString("Page Element Field Mapping")).Alignment(HorizontalAlignment.Center)
+                .Columns(c =>
+                {
+                    //Show element belong Grid Item, type = Mapping from Grid - Popup
+                    if (ViewBag.datasourceType == "C005")
+                    {
+                        c.AddFor(m => m.MAP_TO).Caption(_loc.GetLocalizedString("Mapping field")).Width("20%").Lookup(lookup => lookup
+                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetMapFieldOnGridType").LoadParams(new { PAG_ID = ViewBag.PAG_ID }).Key("ID"))
+                            .DisplayExpr("Name")
+                            .ValueExpr("ID")
+                            );
+                    }
+                    else
+                    {
+                        // Type input parameter Store Proceduce
+                        c.AddFor(m => m.MAP_TO).Width("20%");
+                    }
+                });
+                columns.AddFor(m => m.FLD_IO_CONVERT).Width("20%").Caption(_loc.GetLocalizedString("Param Input/Output")).Lookup(lookup => lookup
+                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetFieldIOParamInput").Key("ID"))
+                    .DisplayExpr("Name")
+                    .ValueExpr("ID")
+                );
+                columns.AddFor(m => m.MDTL_DTYPE).Width("20%").Caption(_loc.GetLocalizedString("Mapping detail data type")).Lookup(lookup => lookup
+                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPEL_DATA_TYPE").Key("DTL_CD"))
+                    .DisplayExpr("COD_NM")
+                    .ValueExpr("DTL_CD")
+                );
+                columns.AddFor(m => m.FLD_TYPE).Caption(_loc.GetLocalizedString("Field mapping type")).Width("20%").Lookup(lookup => lookup
+                    .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetParamMappingInput").Key("DTL_CD"))
+                    .DisplayExpr("COD_NM")
+                    .ValueExpr("DTL_CD")
+                );
+            })
+            .HeaderFilter(f => f.Visible(true))
+            .Paging(paging => paging.PageSize(10))
+            .Pager(pager =>
+            {
+                pager.ShowPageSizeSelector(false);
+                pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                pager.ShowInfo(true);
+            })
+          )
+    </div>
+    <div class="modal-footer">
+    </div>
+</div>

@@ -1,0 +1,306 @@
+﻿@using Modules.Pleiger.Production.Model
+@using InfrastructureCore.Models.Menu
+@using Modules.Pleiger.CommonModels
+@using Modules.Admin.Models
+@model ProductLineGroup;
+@{
+    string lb_groupLabel = "lb_groupLabel" + ViewBag.ChildThread;
+    string btn_RemoveGroup = "btn_RemoveGroup" + ViewBag.ChildThread;
+    string tb_PlanRequestQty = "tb_PlanRequestQty" + ViewBag.ChildThread;
+    string gridLine = "gridLine" + ViewBag.ChildThread;
+    string groupId = "group" + ViewBag.ChildThread;
+}
+<div class="m-2 border-top" id="@groupId">
+    <script>
+        var currentOutSource@(ViewBag.ChildThread) = null;
+
+        function removeListLine@(ViewBag.ChildThread)(lineCode) {
+            var index = listSelectedLine@(ViewBag.Thread).indexOf(lineCode);
+            if (index > -1) {
+                listSelectedLine@(ViewBag.Thread).splice(index, 1);
+            }
+        }
+        function setLineManagerValue@(ViewBag.ChildThread)(newData, value) {
+            CheckSession();
+            if (value == null) {
+                newData.ProdcnLineCode = null;
+                newData.LineManager = null;
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetDataProdLinesMaster", "MESProductionMagtNew")',
+                type: 'GET',
+                async: false,
+                data: { prodlineCode: value },
+                dataType: 'json',
+                success: function (result) {
+                    debugger;
+                    newData.ProdcnLineCode = result.ProductLineCode;
+                    newData.LineManager = result.Manager;
+                }
+            });
+        };
+        function onCustomToolbarGridPreparing@(ViewBag.ChildThread)(e) {
+            let toolbarItems = e.toolbarOptions.items;
+            toolbarItems.forEach(function (item, index) {
+                if (item.name == "saveButton") {
+                    item.visible = false;
+                };
+            });
+        };
+        function onContentReady@(ViewBag.ChildThread)(e) {
+            var rows = e.component.getVisibleRows();
+            if (rows.length < 3) {
+                e.component.option('editing.allowAdding', true);
+            }
+        };
+        function onInitNewRow@(ViewBag.ChildThread)(e) {
+            e.data.ProdcnLineState = "PJLN01";
+            e.data.OutSource = "INEX01";
+            currentOutSource@(ViewBag.ChildThread) = "INEX01";
+            var rows = e.component.getVisibleRows();
+            if (rows.length >= 2) {
+                $("#@gridLine" + " .dx-datagrid-addrow-button").hide();
+            }
+        };
+        function onRowInserting@(ViewBag.ChildThread)(e) {
+            debugger;
+            listSelectedLine@(ViewBag.Thread).push(e.data.ProdcnLineCode);
+            var datasource = e.component.getDataSource();
+            datasource._store._array.unshift(e.data);
+
+            e.component.option("editing.confirmDelete", false);
+            e.component.deleteRow(0);
+            e.component.option("editing.confirmDelete", true);
+
+            if (datasource._store._array.length >= 3) {
+                e.component.option("editing", {
+                    allowAdding: false
+                });
+            }
+            currentOutSource@(ViewBag.ChildThread) = null;
+
+            e.component.refresh();
+            e.cancel = true;
+        };
+        function onRowRemoved@(ViewBag.ChildThread)(e) {
+            debugger;
+            var currentCount = e.component.totalCount();
+            if (currentCount <= 3) {
+                e.component.option("editing", {
+                    allowAdding: true
+                });
+            }
+
+            removeListLine@(ViewBag.ChildThread)(e.data.ProdcnLineCode);
+
+            var isLastLine = false;
+            if (currentCount < 1) {
+                isLastLine = true;
+            }
+            if (e.data.GroupLine == undefined) {
+                return;
+            }
+            deleteLine@(ViewBag.Thread)(e.data.ProdcnLineCode, "@groupId", isLastLine, e.data.GroupLine);
+        };
+        function onCellClick@(ViewBag.ChildThread)(e) {
+            debugger;
+            if (!e.hasOwnProperty('data')) {
+                return;
+            }
+            if (!(e.data.OutSource == undefined || e.data.OutSource == null)) {
+                currentOutSource@(ViewBag.ChildThread) = e.data.OutSource;
+            }
+        };
+        function onReorder@(ViewBag.ChildThread)(e) {
+            var dataSource = e.component.option("dataSource").store._array;
+            debugger;
+
+            const visibleRows = e.component.getVisibleRows();
+            const toIndex = dataSource.indexOf(visibleRows[e.toIndex].data);
+            const fromIndex = dataSource.indexOf(e.itemData);
+
+            dataSource.splice(fromIndex, 1);
+            dataSource.splice(toIndex, 0, e.itemData);
+
+            e.component.refresh();
+        };
+        function onEditorPreparing@(ViewBag.ChildThread)(e) {
+            if (e.dataField == "OutSource") {
+                e.editorElement.dxSelectBox('instance').option('onValueChanged', args => {
+                    debugger;
+                    currentOutSource@(ViewBag.ChildThread) = args.value;
+
+                    var isNewRow = true;
+                    var dataSource = e.component.getDataSource();
+                    dataSource._store._array.forEach(row => {
+                        if (row.ProdcnLineCode == e.row.data.ProdcnLineCode) {
+                            removeListLine@(ViewBag.ChildThread)(e.row.data.ProdcnLineCode);
+                            row.ProdcnLineCode = null;
+                            row.LineManager = null;
+                            isNewRow = false;
+                        }
+                    });
+                    if (isNewRow) {
+                        debugger;
+                        var lineCode = e.component.cellValue(0, 2);
+                        removeListLine@(ViewBag.ChildThread)(lineCode);
+                        e.component.cellValue(0, 2, null);
+                        e.component.cellValue(0, 3, null);
+                    }
+                    e.setValue(args.value);
+                    e.component.refresh();
+                });
+            } else if (e.dataField == "ProdcnLineCode") {
+                e.editorElement.dxSelectBox('instance').option('onValueChanged', args => {
+                    debugger;
+
+                    listSelectedLine@(ViewBag.Thread).push(args.value);
+                    if (args.previousValue != undefined) {
+                        removeListLine@(ViewBag.ChildThread)(args.previousValue);
+                    }
+
+                    e.setValue(args.value);
+                });
+            }
+        };
+        function lineEditorTemplate@(ViewBag.ChildThread)(itemData, itemIndex, itemElement) {
+            debugger;
+            $("<span>").text(itemData.ProductLineName).appendTo(itemElement);
+
+            if (itemData.InternalExternal != currentOutSource@(ViewBag.ChildThread)) {
+                $(itemElement).remove();
+            } else {
+                var index = listSelectedLine@(ViewBag.Thread).indexOf(itemData.ProductLineCode);
+                if (index > -1) {
+                  
+                }
+            }
+        }
+        function onInitialized@(ViewBag.ChildThread)(e) {
+            debugger;
+            var rows = e.component.option("dataSource").store._array;
+            rows.forEach(row => {
+                listSelectedLine@(ViewBag.Thread).push(row.ProdcnLineCode);
+            });
+        }
+
+        $("#@btn_RemoveGroup").click(function () {
+            debugger;
+            var rows = $("#@gridLine").dxDataGrid("instance").getVisibleRows();
+            rows.forEach(row => {
+                removeListLine@(ViewBag.ChildThread)(row.data.ProdcnLineCode);
+            });
+
+            removeGroupLine@(ViewBag.Thread)("@groupId");
+        });
+    </script>
+
+    <div class="row align-items-center m-0">
+        <label id="@lb_groupLabel" class="col-sm-2 col-form-label pl-0">@_loc.GetLocalizedString("Plan Line 1")</label>
+    </div>
+    <div class="row align-items-center">
+        <label class="col-sm-2 col-form-label">@_loc.GetLocalizedString("Plan Production Qty")</label>
+        <div class="col-sm-2">
+            @(Html.DevExtreme().NumberBox().ID(tb_PlanRequestQty).ShowSpinButtons(true).Format("#,##0").Value(Model.PlanRequestQty))
+        </div>
+        <button id="@btn_RemoveGroup" type="button" class="btn btn-primary ">@_loc.GetLocalizedString("Remove Line")</button>
+    </div>
+    <div class="row w-100 m-0">
+        @(Html.DevExtreme().DataGrid<MES_ProjectProdcnLines>()
+            .ID(gridLine)
+            .KeyExpr("ProdcnLineCode")
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .AllowColumnResizing(true)
+            .ColumnAutoWidth(true)
+            .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Standard))
+            .DataSource(Model.ProdcnLines)
+            .Height(225)
+            .Paging(paging =>
+            {
+                paging.Enabled(true);
+                paging.PageSize(10);
+            })
+            .Pager(p => p
+                .ShowPageSizeSelector(true)
+                .AllowedPageSizes(new[] { 10, 25, 50, 100 })
+            )
+            .Editing(editing =>
+            {
+                editing.Mode(GridEditMode.Cell);
+                editing.UseIcons(true);
+                editing.AllowAdding(false);
+                editing.AllowDeleting(true);
+                editing.AllowUpdating(true);
+            })
+            .RepaintChangesOnly(false)
+            .RowDragging(r => r.AllowReordering(true).OnReorder("onReorder" + ViewBag.ChildThread))
+            .Columns(columns =>
+            {
+                //columns.AddFor(m => m.LineOrder).Caption(_loc.GetLocalizedString("Order"))
+                //    .Alignment(HorizontalAlignment.Center)
+                //    .AllowEditing(false);
+                columns.AddFor(m => m.OutSource).Caption(_loc.GetLocalizedString("외주여부")).
+                    Width("15%")
+                    .Alignment(HorizontalAlignment.Center)
+                    .Lookup(lookup => lookup
+                        .DataSource("getListInternalExternal" + ViewBag.Thread)
+                        .DisplayExpr("BASE_NAME2")
+                        .ValueExpr("BASE_CODE")
+                    )
+                    .AllowSorting(false);
+                columns.AddFor(m => m.ProdcnLineCode).Caption(_loc.GetLocalizedString("Production Line Name"))
+                    .Width("20%")
+                    .Lookup(lookup => lookup
+                        .DataSource("getListProdLines" + ViewBag.Thread)
+                        .DisplayExpr("ProductLineName")
+                        .ValueExpr("ProductLineCode")
+                    )
+                    .EditorOptions(new
+                    {
+                        itemTemplate = new JS("lineEditorTemplate" + ViewBag.ChildThread)
+                    })
+                    .AllowSorting(false)
+                    .SetCellValue("setLineManagerValue" + ViewBag.ChildThread);
+                columns.AddFor(m => m.LineManager).Caption(_loc.GetLocalizedString("Line Manager")).Width("20%")
+                    .Lookup(lookup => lookup
+                        .DataSource(d => d.Mvc()
+                            .Controller("MESProductionMagtNew")
+                            .LoadAction("GetListEmployees")
+                            .Key("ID")
+                        )
+                        .DisplayExpr("Name")
+                        .ValueExpr("ID")
+                     )
+                    .AllowEditing(false)
+                    .AllowSorting(false);
+                columns.AddFor(m => m.ProdcnLineState).AllowEditing(false).Caption(_loc.GetLocalizedString("Production Line State")).Width("15%")
+                    .Alignment(HorizontalAlignment.Center)
+                    .Lookup(lookup => lookup
+                        .DataSource("getListStatusProdLines" + ViewBag.Thread)
+                        .DisplayExpr("BASE_NAME1")
+                        .ValueExpr("BASE_CODE")
+                    )
+                    .AllowSorting(false);
+                columns.AddFor(m => m.PlanStartDate).Caption(_loc.GetLocalizedString("Plan Start Date")).Width("15%")
+                    .DataType(GridColumnDataType.Date)
+                    .Format("yyyy-MM-dd")
+                    .AllowSorting(false);
+                columns.AddFor(m => m.PlanEndDate).Caption(_loc.GetLocalizedString("Plan End Date")).Width("15%")
+                    .DataType(GridColumnDataType.Date)
+                    .Format("yyyy-MM-dd")
+                    .AllowSorting(false);
+            })
+            .OnRowInserting("onRowInserting" + ViewBag.ChildThread)
+            .OnInitialized("onInitialized" + ViewBag.ChildThread)
+            .OnEditorPrepared("onEditorPreparing" + ViewBag.ChildThread)
+            .OnCellClick("onCellClick" + ViewBag.ChildThread)
+            .OnInitNewRow("onInitNewRow" + ViewBag.ChildThread)
+            .OnRowRemoved("onRowRemoved" + ViewBag.ChildThread)
+            .OnContentReady("onContentReady" + ViewBag.ChildThread)
+            .OnToolbarPreparing("onCustomToolbarGridPreparing" + ViewBag.ChildThread)
+        )
+    </div>
+</div>

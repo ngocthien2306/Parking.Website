@@ -1,0 +1,578 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@{
+    Layout = null;
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.EDIT_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+}
+<style>
+    #detail-container {
+        padding-top: 100px;
+    }
+</style>
+<script>
+    var selectItemClassRow;
+    var rowItemClass, itemClassData;
+    var checkupdate = false;
+    $(document).ready(function () {
+        LoadingPage(1);
+        ReziePageMESItemClass();
+        selectItemClassRow = false;
+        DisableInputItemClass();
+
+        var Category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        var ComCode = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMCL00");
+
+        GetListItemClass();
+        GetListItemComCode(ComCode);
+        GetListItemCategory(Category);
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+    // Get list Item Class
+    function GetListItemClass() {
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListData", "MESItemClass")',
+            type: 'GET',
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                $("#treeItemClass").dxTreeList("option", "dataSource", JSON.parse(result));
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Get list Item Class Common Code
+    function GetListItemComCode(listComCode) {
+        CheckSession();
+        $("#ddlItemComCode").append('<option value="">--- Select ---</option>');
+        $.each(listComCode, function (index, item) {
+            $("#ddlItemComCode").append('<option value="' + item.BASE_CODE + '">' + item.BASE_NAME + '</option>');
+        });
+
+        @*LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GetListItemComCode", "MESItemClass")',
+            type: 'GET',
+            data: { groupCode: "IMCL00" },
+            dataType: 'json',
+            success: function (result) {
+                $("#ddlItemComCode").append('<option value="">--- Select ---</option>');
+                $.each(result, function (index, item) {
+                    $("#ddlItemComCode").append('<option value="' + item.BASE_CODE + '">' + item.BASE_NAME1 + '</option>');
+                });
+            }
+        });
+        LoadingPage(0);*@
+    }
+
+    // Get value Item Com Code
+    function GetValueItemComCode() {
+        CheckSession();
+        let value = $("#ddlItemComCode").val();
+        if (value != 'IMCL01') {
+            GetListItemUpCode(value);
+        }
+        else {
+            $("#ddlItemUpCode option").remove();
+        }
+    }
+
+    // Get list Item Up Code
+    function GetListItemUpCode(itemComCode) {
+        LoadingPage(1);
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetListItemUpCode", "MESItemClass")',
+            type: 'GET',
+            async: false,
+            data: { itemComCode: itemComCode },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                $("#ddlItemUpCode option").remove();
+                $("#ddlItemUpCode").append('<option value="">--- Select ---</option>');
+                $.each(result, function (index, item) {
+                    debugger;
+                    $("#ddlItemUpCode").append('<option value="' + item.ItemClassCode + '">' + item.ItemClassCode + '</option>');
+                });
+                LoadingPage(0);
+            }
+        });
+    }
+
+    // Get list Item Category
+    function GetListItemCategory(listCate) {
+        CheckSession();
+        $("#ddlItemCategory").append('<option value="">--- Select ---</option>');
+        $.each(listCate, function (index, item) {
+            $("#ddlItemCategory").append('<option value="' + item.BASE_CODE + '">' + item.BASE_NAME + '</option>');
+        });
+    }
+
+    // Select row Item Class
+    function SelectRowItemClass(e) {
+        debugger;
+        selectItemClassRow = true;
+        if (rowItemClass != undefined || rowItemClass != null) {
+            rowItemClass = null;
+        }
+        rowItemClass = e;
+
+        itemClassData = e.data;
+        $("#txtItemClassCode").val(itemClassData.ItemClassCode);
+
+        $("#ddlItemComCode").val(itemClassData.ItemComCode).change();
+        $("#ddlItemUpCode").val(itemClassData.ItemUpCode);
+        //$("#ddlItemCategory").val(itemClassData.CategoryCode);
+        $("#ddlItemCategory").val(itemClassData.Category);
+
+        $("#txtClassNameKor").val(itemClassData.ClassNameKor);
+        $("#txtClassNameEng").val(itemClassData.ClassNameEng);
+        $("#txtItemClassDesc").val(itemClassData.Etc);
+        DisableInputItemClass();
+    }
+
+    // Disable input Item Class
+    function DisableInputItemClass() {
+        $("#btnCheckItemClassCode").prop("disabled", true);
+        $("#txtItemClassCode").prop("readonly", true);
+        $("#ddlItemComCode").addClass("read-only");
+        $("#ddlItemUpCode").addClass("read-only");
+        $("#ddlItemCategory").addClass("read-only");
+        $("#txtClassNameKor").prop("readonly", true);
+        $("#txtClassNameEng").prop("readonly", true);
+        $("#txtItemClassDesc").prop("readonly", true);
+    }
+
+    // Active input Item Class
+    function ActiveInputItemClass(isEdit) {
+        debugger;
+        if (isEdit == false) {
+            debugger;
+            $("#btnCheckItemClassCode").prop("disabled", false);
+            $("#txtItemClassCode").prop("readonly", false);
+            $("#ddlItemComCode").removeClass("read-only");
+            $("#ddlItemUpCode").removeClass("read-only");
+        }
+        $("#ddlItemUpCode").removeClass("read-only");
+        $("#ddlItemCategory").removeClass("read-only");
+        $("#ddlItemComCode").removeClass("read-only");
+
+        $("#txtClassNameKor").prop("readonly", false);
+        $("#txtClassNameEng").prop("readonly", false);
+        $("#txtItemClassDesc").prop("readonly", false);
+    }
+
+    // Clear input Item Class
+    function ClearInputItemClass() {
+        $("#txtItemClassCode").val(null);
+
+        $("#ddlItemComCode").val("");
+        $("#ddlItemUpCode option").remove();
+        $("#ddlItemCategory").val("");
+
+        $("#txtClassNameKor").val(null);
+        $("#txtClassNameEng").val(null);
+        $("#txtItemClassDesc").val(null);
+    }
+
+    // Check ItemClassCode
+    function CheckItemClassCode(isDirect) {
+        LoadingPage(1);
+        CheckSession();
+        debugger;
+        let itemClassCode = $("#txtItemClassCode").val();
+        let itemComCode = $("#ddlItemComCode option:selected").val();
+
+        if (itemClassCode == null || itemClassCode == "") {
+            DevExpress.ui.dialog.alert("Please input Item Class Code!", "Error");
+            LoadingPage(0);
+            return;
+        }
+        //if (itemComCode == null || itemComCode == "") {
+        //    DevExpress.ui.dialog.alert("Please select Item Common Code!", "Error");
+        //    return;
+        //}
+
+        var isExist = false;
+        $.ajax({
+            url: '@Url.Action("CheckItemClassCode","MESItemClass")',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            data: { itemClassCode: itemClassCode, itemComCode: itemComCode },
+            success: function (result) {
+                LoadingPage(0);
+                if (!isDirect) {
+                    isExist = result;
+                }
+                else {
+                    if (result == true) {
+                        LoadingPage(1);
+                        DevExpress.ui.dialog.alert("Item Class Code is duplicated!", "Error");
+                        return;
+                    } else {
+                        DevExpress.ui.dialog.alert("Item Class Code can be used!", "Info");
+                    }
+                }
+            }
+        });
+        return isExist;
+        LoadingPage(0);
+    }
+
+    // Create Item Class
+    $("#btnCreate_@ViewBag.Thread").on("click", function () {
+        checkupdate = false;
+        if (selectItemClassRow) {
+            var treeMenu = $("#treeItemClass").dxTreeList("instance");
+            var keys = treeMenu.getSelectedRowKeys();
+            treeMenu.deselectRows(keys);
+        }
+
+        ClearInputItemClass();
+        ActiveInputItemClass(false);
+    });
+
+    // Edit Item Class
+    $("#btnEdit_@ViewBag.Thread").on("click", function () {
+        checkupdate = true;
+        if (selectItemClassRow) {
+            ActiveInputItemClass(true);
+        }
+        else {
+            DevExpress.ui.dialog.alert("Please select row Item Class!", "Error");
+            return;
+        }
+    });
+
+    // Save Item Class
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        LoadingPage(0);
+        CheckSession();
+        let itemClassCode = $("#txtItemClassCode").val();
+
+        let itemComCode = $("#ddlItemComCode option:selected").val();
+        let itemUpCode = $("#ddlItemUpCode option:selected").val();
+        let itemCategory = $("#ddlItemCategory option:selected").val();
+
+        let classNameKor = $("#txtClassNameKor").val();
+        let classNameEng = $("#txtClassNameEng").val();
+        let etc = $("#txtItemClassDesc").val();
+
+        if (itemClassCode == null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input Item Class Code!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+
+        if (!checkupdate) {
+            debugger;
+            if (CheckItemClassCode(false)) {
+                debugger;
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Item Class Code is duplicated!"))", "@(_loc.GetLocalizedString("Error"))");
+                return;
+            }
+        }
+
+        if (itemComCode == null || itemComCode == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please select Item Common Code!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        if (classNameKor == null || classNameKor == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input Class Name Kor!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        if (itemCategory == null || itemCategory == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please select Category!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("SaveItemClass","MESItemClass")',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { itemClassCode: itemClassCode, itemComCode: itemComCode, itemUpCode: itemUpCode, itemCategory: itemCategory, classNameKor: classNameKor, classNameEng: classNameEng, etc: etc },
+                    success: function (result) {
+                        debugger;
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                GetListItemClass();
+                                ClearInputItemClass();
+                                DisableInputItemClass();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message,  "@(_loc.GetLocalizedString("Error"))");
+                        }
+                    }, error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    // Delete Item Class
+    $("#btnDelete_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        if (!selectItemClassRow) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select row to delete!", "Error");
+            return;
+        }
+        let checkChildMenu = rowItemClass.node.children.length;
+        if (checkChildMenu > 0) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("This Item Class contains sub Item Class inside. Can't delete it!", "Error");
+            return;
+        }
+
+        let itemClassCode = rowItemClass.data.ItemClassCode;
+        let itemComCode = rowItemClass.data.ItemComCode;
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteItemClass", "MESItemClass")',
+                    type: "POST",
+                    data: { itemClassCode: itemClassCode, itemComCode: itemComCode},
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                GetListItemClass();
+                                ClearInputItemClass();
+                                DisableInputItemClass();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    },error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+            }
+            else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    $(window).resize(function () {
+        ReziePageMESItemClass();
+    });
+
+    function ReziePageMESItemClass() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+
+</script>
+
+<style>
+    .read-only {
+        pointer-events: none;
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+</style>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+@*<div class="row">*@
+@*<div class="col-md-12">*@
+
+
+<div class="row ml-0" id="divindex_@(ViewBag.Thread)">
+    <div class="card" style="height:100%;">
+        <div class="card-header" style="height:100%;">
+            <div class="row col-md-12" style="height:100%;">
+                @*<div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">*@
+                <div class="col-xs-12 col-md-5 card-body p-2" style="height:100%;">
+                    @(Html.DevExtreme().TreeList<MES_ItemClass>()
+                            .ID("treeItemClass")
+                            .KeyExpr("ItemClassCode")
+                            .ParentIdExpr("ItemUpCode")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .ShowRowLines(true)
+                            .Height(700)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.ItemClassCode).Caption(_loc.GetLocalizedString("Item Class Code"));
+                                c.AddFor(x => x.ClassNameEng).Caption(_loc.GetLocalizedString("Name Eng"));
+                                c.AddFor(x => x.ClassNameKor).Caption(_loc.GetLocalizedString("Name Kor"));
+                                c.AddFor(x => x.Category).Caption(_loc.GetLocalizedString("Category")).Visible(false);
+                                c.AddFor(x => x.CategoryName).Caption(_loc.GetLocalizedString("Category"));
+
+                            })
+                            .HeaderFilter(h=>h.Visible(false))
+                            .OnRowClick("SelectRowItemClass")
+                            .SearchPanel(seachPanel => seachPanel
+                                .Visible(true)
+                                .Width(250)
+                            )
+                            .Scrolling(scrolling => scrolling.Mode(TreeListScrollingMode.Virtual))
+                        //.Paging(paging =>
+                        //{
+                        //    paging.Enabled(true);
+                        //    paging.PageSize(15);
+                        //})
+                        //.Pager(pager =>
+                        //{
+                        //    pager.ShowInfo(true);
+                        //})
+                        )
+                </div>
+                @*<div class="col-xs-7 col-sm-7 col-md-7 col-lg-7">*@
+                <div class="col-md-7 card-body p-2" id="#detail-container" style="height:100%;">
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("Item Classification Code")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-7">
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="txtItemClassCode" />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <button class="btn btn-primary btn-action float-right" id="btnCheckItemClassCode" onclick="CheckItemClassCode(true)">@_loc.GetLocalizedString("Duplicate check")</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("ItemComCode")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-9">
+                            <div class="form-group">
+                                <select class="form-control" id="ddlItemComCode" onchange="GetValueItemComCode()"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("Parent Classification Code")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-9">
+                            <div class="form-group">
+                                <select class="form-control" id="ddlItemUpCode"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("Item Category")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-9">
+                            <div class="form-group">
+                                <select class="form-control" id="ddlItemCategory"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("Name Kor")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-9">
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="txtClassNameKor" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("Name Eng")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-9">
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="txtClassNameEng" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <div class="form-group pl-3">
+                                <label>@_loc.GetLocalizedString("Etc")</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-9">
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="txtItemClassDesc" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

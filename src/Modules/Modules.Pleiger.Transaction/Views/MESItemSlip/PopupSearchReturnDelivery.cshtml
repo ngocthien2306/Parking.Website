@@ -1,0 +1,289 @@
+﻿@using Modules.Pleiger.CommonModels;
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+@{
+    string gridProjectMst = "gridProjectMst" + ViewBag.Thread;
+    string UserProjectNumber = "UserProjectNumber" + ViewBag.Thread;
+    string PartnerName = "PartnerName" + ViewBag.Thread;
+    string btnChooseProject = "btnChooseProject" + ViewBag.Thread;
+    string ProjectCodeDelivery= "ProjectCodeDelivery" + ViewBag.Thread;
+}
+<script>
+
+    function SearchItemProjectMst() {
+        debugger;
+        let ProjectCode = getParamsProjectCodeSearch();
+        if (ProjectCode == null) {
+            DevExpress.ui.dialog.alert("Please select Project Name!", "Notice");
+            return;
+        }
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListGoodsDeliveries", "MESItemSlip")',
+            type: 'GET',
+            async: false,
+            data:
+            {
+                userProjectCode: getParamsUserProjectNumberSearch(),
+                partnerName: getParamsPartnerNameSearch(),
+                projectCode: getParamsProjectCodeSearch()
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                LoadingPage(0);
+                var grid = $("#gridProjectMst@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function FinishItemReturnSelectionChanged@(ViewBag.Thread)(e) {
+        CheckSession();
+        debugger;
+        var rowdata = e.data;
+        //Set data from Popup to Index
+        $('#UserProjectCodePopup@(ViewBag.Index)').val(rowdata.UserProjectCode);
+        $('#PartnerCode@(ViewBag.Index)').val(rowdata.PartnerCode);
+        $('#PartnerName@(ViewBag.Index)').val(rowdata.PartnerName);
+        $('#ProjectCode@(ViewBag.Index)').val(rowdata.ProjectCode);
+        $('#UserProjectCode@(ViewBag.Index)').val(rowdata.UserProjectCode);
+        $('#SlipNumberGoodIssues@(ViewBag.Index)').val(rowdata.SlipNumber);
+        //set wh
+        //$('#WHPleigerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", "0XXXF");
+        $('#WHPartnerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", rowdata.WHToCode);
+        partnerCodeSlt = rowdata.PartnerCode;
+        let remark = "";
+        if (rowdata != null) {
+            remark += "Return order from customer" + ".\n";
+            if (rowdata.ProjectCode != "") {
+                remark += "Based on Sale Orders " + rowdata.ProjectCode + ".\n";
+            }          
+            remark += "Based on Goods Issues Project " + rowdata.RelNumber + ".\n";
+            $("#Remark@(ViewBag.index)").val(remark);
+        }
+
+        $.ajax({
+            url: '@Url.Action("CreateGridItemSlipDtlByProjectInGoodsReturnDelivery", "MESItemSlip")',
+            type: "GET",
+            data: {
+                projectCode: rowdata.RelNumber,
+                slipNumber: rowdata.SlipNumber
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                var gridItemSlipDetail = $("#gridItemSlipDtl@(ViewBag.Index)").dxDataGrid("instance");
+                gridItemSlipDetail.option("dataSource", result.data);
+            }
+        });
+
+        $('#modalControl').modal('hide');
+    }
+
+    $('#btnChooseProject@(ViewBag.Thread)').on("click", function () {
+        debugger;
+        var dataGrid = $('#@gridProjectMst').dxDataGrid('instance');
+        var rowdata = dataGrid.getSelectedRowsData();
+        if (rowdata.length == 0) {
+            DevExpress.ui.dialog.alert("Please select row!", "Error");
+            return;
+        }
+        else
+        {
+            $('#UserProjectCodePopup@(ViewBag.Index)').val(rowdata[0].UserProjectNumber);
+            $('#PartnerCode@(ViewBag.Index)').val(rowdata[0].PartnerCode);
+            $('#PartnerName@(ViewBag.Index)').val(rowdata[0].PartnerName);
+            $('#ProjectCode@(ViewBag.Index)').val(rowdata[0].ProjectCode);
+            $('#UserProjectCode@(ViewBag.Index)').val(rowdata[0].UserProjectCode);
+            $('#SlipNumberGoodIssues@(ViewBag.Index)').val(rowdata[0].SlipNumber);
+            //set wh
+            //$('#WHPleigerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", "0XXXF");
+            $('#WHPartnerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", rowdata[0].WHToCode);
+
+            let remark = "";
+            if (rowdata != null) {
+                remark += "Return order from customer" + ".\n";
+                if (rowdata.ProjectCode != "") {
+                    remark += "Based on Sale Orders " + rowdata.ProjectCode + ".\n";
+                }          
+                remark += "Based on Goods Issues Project " + rowdata.RelNumber + ".\n";
+                $("#Remark@(ViewBag.index)").val(remark);
+            }
+
+
+            partnerCodeSlt = rowdata[0].PartnerCode;
+            //select Podetail
+            $.ajax({
+                    url: '@Url.Action("CreateGridItemSlipDtlByProjectInGoodsReturnDelivery", "MESItemSlip")',
+                    type: "GET",
+                    data: {
+                        projectCode: rowdata[0].RelNumber,
+                        slipNumber: rowdata[0].SlipNumber
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                    debugger;
+                   var gridItemSlipDetail = $("#gridItemSlipDtl@(ViewBag.Index)").dxDataGrid("instance");                        
+                    gridItemSlipDetail.option("dataSource", result.data);
+                }
+            });
+            //close popup
+            $('#modalControl').modal('hide');
+        }
+    });
+
+
+    function getParamsUserProjectNumberSearch() {
+        return $('#@UserProjectNumber').dxTextBox('option', 'value');
+    }
+
+    function getParamsPartnerNameSearch() {
+        return $('#@PartnerName').dxTextBox('option', 'value');
+    }
+
+     function getParamsProjectCodeSearch() {
+        return $('#@ProjectCodeDelivery').dxSelectBox("option", "value");
+    }
+    function gridProjectMstOnCellPrepared@(ViewBag.Thread)(e) {
+        if (e.rowType == 'data' && e.column.dataField == 'DeliverQty') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+        }
+    }
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("ListofDeliveries"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body pt-0">
+            <div class="card py-1 mb-0">
+                <div class="row">
+                    <div class="col-xs-12 col-md-12">
+                        <button class="btn btn-sm btn-primary btn-action" type="button" onclick="SearchItemProjectMst()" style="margin-right:5px"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                        <button class="btn btn-sm btn-primary btn-action" type="button" id="@(btnChooseProject)" style="margin-right:5px"><i class="fa fa-check"></i> @_loc.GetLocalizedString("Choose")</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("ProjectOrder")</legend>
+                        <div class="row">
+                            <div class="col-md-3 col-lg-3 col-sm-3 col-xs-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Project Name"))</label>                                  
+                                    @(Html.DevExtreme().SelectBox()
+                                    .ID(ProjectCodeDelivery)
+                                    .DisplayExpr("ProjectName")
+                                    .ValueExpr("ProjectCode")
+                                    .DataSource(d => d.Mvc().Controller("MESProductionRequestChange")
+                                        .LoadAction("GetProjectGoodsDelivery")
+                                        .Key("ProjectCode")
+                                    )
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+
+                              )
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                                    @(Html.DevExtreme().TextBox().ID(UserProjectNumber))
+
+
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Customer Name"))</label>
+                                    @(Html.DevExtreme().TextBox().ID(PartnerName))
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label style="visibility:hidden">@(_loc.GetLocalizedString("UserProjectCode"))</label>                   
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="form-group">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("ListofDeliveries")</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemSlipMaster>()
+                            .ID(gridProjectMst)
+                            .DataSource(
+                                x => x.Mvc().Controller("MESItemSlip")
+                                .LoadAction("GetListGoodsDeliveries").LoadParams(new
+                                {
+                                    userProjectNumber = new JS("getParamsUserProjectNumberSearch"),
+                                    partnerName = new JS("getParamsPartnerNameSearch"),
+                                    projectCode = new JS("getParamsProjectCodeSearch")
+                                })
+                                .Key("RelNumber")
+                                .Key("SlipNumber")
+                            )//.KeyExpr("ProjectCode").KeyExpr("No")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true).Height(450)
+                            .ShowRowLines(true)
+                            .ColumnAutoWidth(true)
+                            .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single)
+                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                            .SelectAllMode(SelectAllMode.AllPages))
+                            .Columns(c=>
+                            {
+                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).Width("5%");
+                                c.AddFor(x => x.RelNumber).Caption(_loc.GetLocalizedString("RelNumber")).Visible(false);//PROJECT CODE
+                                c.AddFor(x => x.SlipNumber).Caption(_loc.GetLocalizedString("SlipNumber")).Width("15%");
+                                c.AddFor(x => x.SlipYMD).Caption(_loc.GetLocalizedString("SlipYMD")).Width("10%").Format("yyyy-MM-dd");
+                                c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("ProjectCode")).Visible(false);//project code
+                                c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).Width("15%");// User project code
+                                c.AddFor(x => x.ProjectName).Caption(_loc.GetLocalizedString("ProjectName")).Width("20%");// User project code
+                                c.AddFor(x => x.DeliverQty).Caption(_loc.GetLocalizedString("Total Qty Delivered")).Visible(true).Format("#,##0").Width("15%");//Delivered Qty to customer when make goods issues
+                                c.AddFor(x => x.RelNumber).Caption(_loc.GetLocalizedString("ProjectCode")).Visible(false);//PO NUMBER
+                                c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code")).Visible(false);//CUST CODE
+                                c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Customer Name")).Width("15%");//CUST NAME
+                            })
+                            .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(100))
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            .OnRowDblClick("FinishItemReturnSelectionChanged" + ViewBag.Thread)
+                            .OnCellPrepared("gridProjectMstOnCellPrepared" + ViewBag.Thread)
+                  )
+                </fieldset>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

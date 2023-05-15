@@ -1,0 +1,167 @@
+﻿@using InfrastructureCore.Models.Identity;
+@using Modules.Common.Models;
+
+@{
+    Layout = null;
+    var currentUser = (SYLoggedUser)ViewBag.CurrentUser;
+    var userTypeName = (ViewBag.UserTypeName) != null ? ViewBag.UserTypeName : null;
+    string GroupNames = ViewBag.GroupNames;
+}
+
+<div class="modal-content">
+    <!-- Modal Header -->
+    <div class="modal-header">
+        <h5 class="modal-title">@(_loc.GetLocalizedString("User Information"))</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <!-- Modal body -->
+    <div class="modal-body">
+        <div class="form">
+            <input hidden id="txtIsChangePassword" value="false" />
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("UserName"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtUserName").Value(currentUser.UserName).Disabled(true))
+                </div>
+            </div>
+            <div class="dx-field" hidden>
+                <div class="dx-field-label">@(_loc.GetLocalizedString("First Name"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtFirstName").Value(currentUser.FirstName))
+                </div>
+            </div>
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("Employee Number"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtEmployeeNumber").Value(currentUser.UserCode).Disabled(true))
+                </div>
+            </div>
+            <div class="dx-field" hidden>
+                <div class="dx-field-label">@(_loc.GetLocalizedString("Last Name"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtLastName").Value(currentUser.LastName))
+                </div>
+            </div>
+            @* start add user type *@
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("User type"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtUserTypeName").Value(userTypeName).Disabled(true))
+                </div>
+            </div>
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("GroupName"))</div>
+                @*<div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtGroupName").Value(GroupNames))
+                </div>*@
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextArea().ID("txtGroupName").Value(GroupNames).ReadOnly(true))               
+                </div>
+            </div>
+            @* end add user type *@
+            <div class="dx-field" hidden="hidden">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("Email"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Text).ID("txtEmail").Value(currentUser.Email))
+                </div>
+            </div>
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("Old Password"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Password).ID("txtOldPassword"))
+                </div>
+            </div>
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("New Password"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Password).ID("txtNewPassword"))
+                </div>
+            </div>
+            <div class="dx-field">
+                <div class="dx-field-label">@(_loc.GetLocalizedString("Confirm New Password"))</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().TextBox().Mode(TextBoxMode.Password).ID("txtConfirmPassword"))
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal footer -->
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="UpdateUserInformation()">@(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>
+
+<script>
+    function UpdateUserInformation() {
+        LoadingPage(1);
+        CheckSession();
+        let firstName = $("#txtFirstName").dxTextBox("instance").option("value");
+        let lastName = $("#txtLastName").dxTextBox("instance").option("value");
+        let email = $("#txtEmail").dxTextBox("instance").option("value");
+        let oldPassword = $("#txtOldPassword").dxTextBox("instance").option("value");
+        let newPassword = $("#txtNewPassword").dxTextBox("instance").option("value");
+        var confirmPassword = $("#txtConfirmPassword").dxTextBox("instance").option("value");
+        var userTypeName = $("#txtUserTypeName").dxTextBox("instance").option("value");
+        if (oldPassword != "") {
+            if (newPassword == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Please input new password and confirm password!", "Warning");
+                return;
+            }
+        }
+        if (newPassword != "") {
+            if (oldPassword == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Please input Old Password!", "Warning");
+                return;
+            }
+            if (confirmPassword == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Please input Confirm Password!", "Warning");
+                return;
+            }
+            else if (confirmPassword != newPassword) {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Confirm password is incorrect!", "Warning");
+                return;
+            }
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("UpdateUserInformation", "User")',
+                    type: "POST",
+                    data: {
+                        firstName: firstName,
+                        lastName: lastName,
+                        email: email,
+                        oldPassword: oldPassword,
+                        newPassword: newPassword,
+                        userTypeName : userTypeName
+                    },
+                    dataType: "json",
+                    success: function (rs) {
+                        if (rs.Success == true) {
+                            LoadingPage(0);
+                            $("#modalUserControl").modal("hide");
+                            DevExpress.ui.dialog.alert(rs.Message, "Success");
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(rs.Message, "Warning");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+</script>

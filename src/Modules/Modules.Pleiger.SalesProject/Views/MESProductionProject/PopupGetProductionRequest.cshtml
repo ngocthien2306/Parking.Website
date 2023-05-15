@@ -1,0 +1,319 @@
+﻿@using Modules.Pleiger.CommonModels;
+@{
+    Layout = null;
+    string orderTeamCode = "OrderTeamCode" + ViewBag.Thread;
+    string projectStatus = "ProjectStatus" + ViewBag.Thread;
+    string userProjectCode = "UserProjectCode" + ViewBag.Thread;
+    string productType = "ProductType" + ViewBag.Thread;
+    string itemCode = "ItemCode" + ViewBag.Thread;
+    string itemName = "ItemName" + ViewBag.Thread;
+    string projectOrderType = "projectOrderType" + ViewBag.Thread;
+    string saleOrderProjectName = "saleOrderProjectName" + ViewBag.Thread;
+    string GridProductionProject_RequestProduction = "GridProductionProject" + ViewBag.Thread;
+    string GridSaleProjectExcel = "GridSaleProjectExcel" + ViewBag.Thread;
+    string ProdReq_RequestType = "ProdReq_RequestType" + ViewBag.thread;
+
+}
+
+<script>
+    var listRequestProduction = [];
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        var productType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "RQTP00");
+        $("#ProdReq_RequestType@(ViewBag.thread)").dxSelectBox({
+            dataSource: productType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        loadDataProductionProjectPopup();
+        LoadingPage(0);
+    });
+
+    function productTypeOnValueChanged@(ViewBag.Thread)(data) {
+        var itemClassCode = data.value;
+        var arrJson;
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("GetItemCodeNameByItemClassCode", "MESSaleProject")',
+            data: { itemClassCode: itemClassCode },
+            dataType: "json",
+            async: true
+        }).done(function (resp) {
+            arrJson = resp.data;
+            $("#@itemCode").dxSelectBox({
+                dataSource: arrJson,
+                displayExpr: "Name",
+                valueExpr: "ID"
+            });
+
+        });
+    }
+
+    function loadDataProductionProjectPopup() {
+        LoadingPage(1);
+        var txtProductType = $('#@productType').dxSelectBox('instance').option('value');
+        var txtItemCode = $('#@itemCode').dxTextBox('instance').option('value');
+        var txtItemName = $('#@itemName').dxTextBox('instance').option('value');
+        var SaleOrderProjectName = $("#@saleOrderProjectName").dxTextBox("option", "value");
+        var params = {
+            ProductType: txtProductType,
+            ItemCode: txtItemCode,
+            ItemName: txtItemName,
+            SalesOrderProjectName: SaleOrderProjectName
+        }
+        $.ajax({
+            async: true,
+            url: '@Url.Action("SearchRequestProduction", "MESProductionProject")',
+            type: "GET",
+            data: {
+                model: JSON.stringify(params)
+            },
+            dataType: "json",
+        }).done(function (resp) {
+            $("#@GridProductionProject_RequestProduction").dxDataGrid({
+                dataSource: resp,
+            });
+            LoadingPage(0);
+
+        }).fail(function (resp) {
+            LoadingPage(0);
+
+        });
+        LoadingPage(0);
+    }
+
+    function onSelectChangedProductionProject(event) {
+        listRequestProduction = [];
+        $.each(event.selectedRowsData, function (index, item) {
+            listRequestProduction.push(item);
+        })
+    }
+
+    function onContentReady(e) {
+        setTimeout(function timeOut() { }, 2000);
+    }
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        if ( $('#@productType').dxSelectBox('instance').option('value')) {
+        $('#@productType').dxSelectBox('instance').option('value', null);
+        }
+        if ($('#@itemCode').dxTextBox('instance').option('value') ) {
+            $('#@itemCode').dxTextBox('instance').option('value', null);
+        }
+        $('#@GridProductionProject_RequestProduction').dxDataGrid("instance").clearSelection();
+        $('#@itemName').dxTextBox('instance').option('value', null);
+        $('#@saleOrderProjectName').dxTextBox('instance').option('value', null);
+        loadDataProductionProject();
+    });
+
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        loadDataProductionProjectPopup();
+    });
+
+    $('#btnRequestProduction_@ViewBag.Thread').on("click", function () {
+        if (!CheckSession())
+        {
+            window.location.reload(true);
+        }
+        let ProdReq_RequestType = $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("option", "value");
+
+        if (listRequestProduction.length <= 0) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select the data line to request first")", '@_loc.GetLocalizedString("Error")');
+        }
+        else if (ProdReq_RequestType == "" || ProdReq_RequestType == null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please Input Production Classification!", "Error");
+            $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox('instance')._$element[0].style.borderColor = "red";
+            setTimeout(function () { $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("focus"); }, 2000);
+
+        }
+        else
+        {
+            $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox('instance')._$element[0].style.borderColor = "";
+            var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure to request data ?")</i>",'@_loc.GetLocalizedString("Confirm")');
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    $.ajax({
+                        url: '@Url.Action("SaveRequestProduction", "MESProductionProject")',
+                        async: false,
+                        type: 'POST',
+                        data: {
+                            listRequestProduction: JSON.stringify(listRequestProduction),
+                            ProdReqRequestType: ProdReq_RequestType
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                listRequestProduction.splice(0, listRequestProduction.length)
+                                $('#btnSearch_@ViewBag.Thread').trigger("click");
+                                $('#@GridProductionProject_RequestProduction').dxDataGrid("instance").clearSelection();
+                                DevExpress.ui.dialog.alert('@_loc.GetLocalizedString("Request Successfully")', '@_loc.GetLocalizedString("Success")');
+                                $('#btnReload_@ViewBag.idParent').trigger("click");
+                                LoadingPage(0);
+                            } else
+                            {
+                                DevExpress.ui.dialog.alert(result.Message, '@_loc.GetLocalizedString("Error")');
+                                LoadingPage(0);
+                            }
+                        }
+
+                    });
+                }
+            });
+        }
+    });
+
+</script>
+
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Request Production"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-12 ml-2">
+                <button class="btn btn-sm btn-secondary btn-action" title="Search" menu-id="btnReload_@ViewBag.Thread" id="btnReload_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-sync"></i> @_loc.GetLocalizedString("Reload")</button>
+                <button class="btn btn-sm btn-secondary btn-action" title="Search" menu-id="btnSearch_@ViewBag.Thread" id="btnSearch_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Sales Order Project Name"))</label>
+                            @(Html.DevExtreme().TextBox().ID(saleOrderProjectName).Value("")
+                                    .ShowClearButton(true)
+                               )
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("ProductType"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                    .ID(productType)
+                                    .DisplayExpr("ClassNameKor")
+                                    .ValueExpr("ItemClassCode")
+                                    .DataSource(d => d.Mvc().Controller("MESItemClass")
+                                        .LoadAction("GetItemClassByCategory")
+                                        .Key("ItemClassCode")
+                                    )
+                                    .ShowClearButton(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .SearchEnabled(true)
+                                    .AcceptCustomValue(true)
+                                    .OnValueChanged("productTypeOnValueChanged" + ViewBag.Thread)
+                                  )
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                            @(Html.DevExtreme().TextBox().ID(itemCode).ShowClearButton(true))
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group ">
+                            <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                            @(Html.DevExtreme().TextBox().ID(itemName).ShowClearButton(true))
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-12 col-lg-2">
+                <div class="form-group">
+                    <label>@_loc.GetLocalizedString("Production classification")<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().SelectBox()
+                                            .ID(ProdReq_RequestType)
+                                            .DisplayExpr("BASE_NAME")
+                                            .ValueExpr("BASE_CODE")
+                    )
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                        .ID(GridProductionProject_RequestProduction)
+                        .ShowBorders(true)
+                        .Width("100%")
+                        .RepaintChangesOnly(true)
+                        .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                        .ShowColumnLines(true)
+                        .Height(450)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .Selection(s => s.Mode(SelectionMode.Multiple)
+                                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                            .SelectAllMode(SelectAllMode.AllPages)).CacheEnabled(true)// just select 1 page
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                        .Columns(c =>
+                        {
+                        c.AddFor(x => x.No).Caption("No");
+                             c.AddFor(x => x.InitialCode).Caption(_loc.GetLocalizedString("Initial Code"))
+                             .CellTemplate
+                            (
+                                        @<text>
+                                                <% if(data.InitialCode) { %>
+                                                <div class=error-grid-data>Yes</div>
+                                            <% } else { %>
+                                                <div class=error-grid-data>No</div>
+
+                                            <% } %>
+                                        </text>
+                                );
+                            c.AddFor(x => x.ProjectCode).Caption((_loc.GetLocalizedString("Project Code"))).Visible(false);
+                            c.AddFor(x => x.ProjectOrderType).Caption((_loc.GetLocalizedString("Project Order Type")));
+                            c.AddFor(x => x.SalesOrderProjectName).Caption((_loc.GetLocalizedString("Sales Order Project Name")));
+                            c.AddFor(x => x.UserProjectCode).Caption((_loc.GetLocalizedString("UserProjectCode")));
+                            c.AddFor(x => x.ProjectName).Caption((_loc.GetLocalizedString("Projectname")));
+                            c.AddFor(x => x.ProjectStatusName).Caption((_loc.GetLocalizedString("StatusName")));
+                            c.AddFor(x => x.InCharge).Caption((_loc.GetLocalizedString("InCharge")));
+                            c.AddFor(x => x.ProductType).Caption((_loc.GetLocalizedString("ProductType")));
+                            c.AddFor(x => x.ItemCode).Caption((_loc.GetLocalizedString("Item Code")));
+                            c.AddFor(x => x.ItemName).Caption((_loc.GetLocalizedString("Item Name")));//Item Name
+                            c.AddFor(x => x.PartnerName).Caption((_loc.GetLocalizedString("Custommer Name")));
+                            c.AddFor(x => x.OrderNumber).Caption((_loc.GetLocalizedString("OrderNumber")));
+                            //c.AddFor(x => x.DomesticForeign).Caption((_loc.GetLocalizedString("DomesticForeign")));
+                            //c.AddFor(x => x.OrderQuantity).Caption((_loc.GetLocalizedString("Order Quantity"))).Format("#,##0");
+                            //c.AddFor(x => x.OrderPrice).Caption((_loc.GetLocalizedString("Total Order Price"))).Format("#,##0");// Add 2021-04-13 Total OrderPrice
+                            //c.AddFor(x => x.ConversionAmount).Caption((_loc.GetLocalizedString("Conversion Amount"))).Format("#,##0");
+                            //c.AddFor(x => x.PlanDeliveryDate).Caption((_loc.GetLocalizedString("PlanDeliveryDate"))).Format("yyyy-MM-dd");
+                            //c.AddFor(x => x.DeliveryDate).Caption((_loc.GetLocalizedString("Delivery Date"))).Format("yyyy-MM-dd").Visible(false);// Add export excel
+                            //c.AddFor(x => x.DeliverQty).Caption((_loc.GetLocalizedString("Delivered Qty"))).Format("#,##0").Visible(false);// Add export excel
+                            //c.AddFor(x => x.OrderTeamCodeName).Caption((_loc.GetLocalizedString("OrderTeamCodeName")));
+                            //c.AddFor(x => x.SalesClassification).Caption((_loc.GetLocalizedString("Sales Classification"))).Visible(false);
+                            //c.AddFor(x => x.SalesClassificationName).Caption((_loc.GetLocalizedString("Sales Classification")));
+                            //c.AddFor(x => x.ETC).Caption((_loc.GetLocalizedString("ETC")));
+                            //c.AddFor(x => x.Created_At).Caption((_loc.GetLocalizedString("Create Date"))).Format("yyyy-MM-dd");
+
+                        })
+                        .HeaderFilter(f => f.Visible(true))
+                        .OnContentReady("onContentReady")
+                        .OnSelectionChanged("onSelectChangedProductionProject")
+
+                    )
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+            <button type="button" class="btn btn-sm btn-primary" id="btnRequestProduction_@ViewBag.Thread"><i class='fab fa-product-hunt'></i> @(_loc.GetLocalizedString("Request Production"))</button>
+        </div>
+    </div>
+</div>

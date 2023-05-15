@@ -1,0 +1,43 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+}
+
+@if (Model.PEL_TYP == "G002C001" && Model.PEL_TYP != null)
+{
+    @await Html.PartialAsync("~/Views/DynamicMagt/_RenderForm.cshtml", Model)
+}
+else if (Model.PEL_TYP == "G002C002" && Model.PEL_TYP != null)
+{
+    @await Html.PartialAsync("~/Views/DynamicMagt/_RenderGrid.cshtml", Model)
+}
+else if (Model.PEL_TYP == "G002C017" && Model.PEL_TYP != null && Model.CUSTM_VIEW != null)
+{
+    @await Html.PartialAsync(Model.CUSTM_VIEW, null)
+
+    // Controller name viewm component mapping
+    @*@await Component.InvokeAsync("PriorityList", new { maxPriority = 2, isDone = false })*@
+}
+else if(Model.PEL_TYP == "G002C022" && Model.PEL_TYP != null && Model.CUSTM_VIEW != null)
+{
+    //@await Html.PartialAsync("~/Views/Scripts/WarehouseDynamic.cshtml", null)
+    //Load JS File
+    <script type="text/javascript">
+        $.ajax({
+            url: '@Url.Action("JavascriptFromViewString", "DynamicMagt")',
+            data: { PageID: @Model.PAG_ID, MenuID: null },
+            type: "GET"
+        }).done(function (ressult) {
+            debugger;
+            console.log(ressult);
+
+            var script = document.createElement("script");
+            script.setAttribute("type", "text/javascript");
+            script.setAttribute("src", ressult);
+            document.getElementsByTagName("head")[0].appendChild(script);
+            
+            //$.getScript(ressult);
+        })
+    </script>
+} 

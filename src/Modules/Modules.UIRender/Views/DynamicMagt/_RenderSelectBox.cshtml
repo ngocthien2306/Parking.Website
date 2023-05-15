@@ -1,0 +1,226 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@{ 
+
+    string idSelectBox = Model.PEL_ID + ViewBag.Thread;
+}
+    <script>
+    $(document).ready(function() {
+       // getDataSelect_@(Model.PEL_ID)();
+    })
+
+    function getLanguages() {
+        debugger;
+        let cookie = {};
+        document.cookie.split(';').forEach(function (el) {
+            let [k, v] = el.split('=');
+            cookie[k.trim()] = v;
+        })
+        var lang = '/en';
+        if (cookie["langname"] !== undefined) {
+            lang = '/' + cookie["langname"];
+        }
+        if (cookie["langname"] !== undefined && cookie["langname"] == "ko") {
+            $('#btnlanguage').html("KR")
+        }
+        if (cookie["langname"] !== undefined && cookie["langname"] == "en") {
+            $('#btnlanguage').html("EN")
+        }
+        return lang;
+    };
+
+    function getValue_@(Model.PEL_ID)() {
+        //return $("#@(Model.PEL_ID)").dxSelectBox("instance").option("value");
+
+        var flagRequired = false;// Init flag required field
+        debugger;
+        var value = $("#@(idSelectBox)").dxSelectBox("instance").option("value");
+        // Check required field
+        if ("@(Model.PEL_IS_REQUIRED)" === "True") {
+            if (typeof value !== 'undefined' && value != "" && value != null) {
+                flagRequired = false;
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return value;
+            }
+            else
+            {
+                flagRequired = true;
+                $("#@(idSelectBox)").dxValidator({
+                    validationRules: [{ type: "required" }]
+                });
+                DevExpress.validationEngine.validateGroup();
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return null;
+            }
+
+        }
+        else
+        {
+            return value;
+        }
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(idSelectBox)").dxSelectBox("instance").option("value",value);
+    }
+
+    function reference_valueChanged_@(Model.PEL_ID)(data) {
+        // Check value change
+        if (data !== undefined && data.value !== data.previousValue) {
+            reference_valueChanged_@(Model.PEL_ID)(); // Call reference in _RenderForm
+        }
+    }
+
+    function getDataSelect_@(Model.PEL_ID)() {
+        // call get by Groupcode
+        if ('@Model.GRP_CD' != '') {
+            $.ajax({
+                url: '@Url.Action("GetComboboxValueDynamicByGroupCodeAndConnection", "Admin")',
+                type: "GET",
+                data: { GRP_CD: '@Model.GRP_CD', CONNECTION_NM: '@Model.CONNECTION_NM' },
+                success: function (result) {
+                    gridData = $('#@idSelectBox').dxSelectBox('instance');
+                    gridData.option("dataSource", result.data);
+                }
+            });
+        }
+        // Call by Sp name custom
+        else
+        {
+             $.ajax({
+                url: '@Url.Action("GetComboboxValueDynamicByCustomSPAndConnection", "Admin")',
+                type: "GET",
+                data: { GRP_CD_CUSTOM: '@Model.GRP_CD_CUSTOM', CONNECTION_NM : '@Model.CONNECTION_NM'  },
+                 success: function (result) {
+                    @*gridData = $('#@Model.PEL_ID').dxSelectBox('instance');
+                    gridData.option("dataSource", result.data); *@
+                }
+             }).done(function (result) {
+                // gridData = $('#@Model.PEL_ID').dxSelectBox('instance');
+                  // gridData.option("dataSource", result.data);
+                 var dataSource = new DevExpress.data.DataSource({
+                     store: result.data,
+                     key: 'ItemCode'
+                 });
+                     gridData = $('#@idSelectBox').dxSelectBox({
+                         dataSource: dataSource,
+                         paginate: true,
+                         pageSize:100
+                     }).dxSelectBox('instance');
+
+             });
+        }
+    }
+    </script>
+@{
+    foreach (var item in Model.listDataMap)
+    {
+    <script>
+            function getDataSelect_@(Model.PEL_ID)() {
+                $.ajax({
+                        url: '@Url.Action("GetComboboxValueDynamicByGroupCodeAndConnection_MultiLang", "Admin")',
+                        type: "GET",
+                        data: { GRP_CD: '@Model.GRP_CD', CONNECTION_NM: '@Model.CONNECTION_NM', Lang: getLanguages().replace('/', '') },
+                        success: function (result) {
+                                @*gridData = $('#@Model.PEL_ID').dxSelectBox('instance');
+                               gridData.option("dataSource", result);
+
+                                gridData.option("paginate", true);
+                                gridData.option("pageSize", 100);*@
+                        }
+                }).done(function (result) {
+                    @*gridData = $('#@Model.PEL_ID').dxSelectBox('instance');
+                     gridData.option("dataSource", result.data);
+                     gridData.option("paginate", true);
+                     gridData.option("pageSize", 100);*@
+                       var dataSource = new DevExpress.data.DataSource({
+                             store: result.data,
+                             key: 'ItemCode'
+                       });
+                             gridData = $('#@(idSelectBox)').dxSelectBox({
+                                 dataSource: dataSource,
+                                 paginate: true,
+                                 pageSize:100
+                             }).dxSelectBox('instance');
+
+                });
+            }
+    </script>
+    }
+}
+@{if (Model.PEL_DFVALUE != null && Model.PEL_DFVALUE != "")
+    {
+        <script>
+            $( document ).ready(function() {
+                setValue_@(Model.PEL_ID)("@Model.PEL_DFVALUE");
+            });
+
+        </script>
+    }
+}
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+
+    @{ if (Model.GRP_CD != null)
+        {
+            @(Html.DevExtreme().SelectBox()
+                .ID(idSelectBox).DisplayExpr("Name")
+                .ValueExpr("ID").SearchEnabled(true)
+                //.ShowClearButton(true)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .OnValueChanged("reference_valueChanged_"+(Model.PEL_ID))
+                .SearchEnabled(true)
+                .DataSource(d => d.Mvc().Controller("Admin")
+                                        .LoadAction("GetComboboxValueDynamicByGroupCodeAndConnection_MultiLang")
+                                        .LoadParams(
+                                             new { GRP_CD = Model.GRP_CD, CONNECTION_NM =  Model.CONNECTION_NM, Lang = new JS("getLanguages") }
+                                           )
+                                        .Key("ID")
+                                    )
+                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+
+            )
+        }
+        else
+        {
+            @(Html.DevExtreme().SelectBox()
+                .ID(idSelectBox).DisplayExpr("Name")
+                .ValueExpr("ID").SearchEnabled(true)
+                //.ShowClearButton(true)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .OnValueChanged("reference_valueChanged_"+(Model.PEL_ID))
+                .SearchEnabled(true)
+                .DataSource(d => d.Mvc().Controller("Admin")
+                                        .LoadAction("GetComboboxValueDynamicByGroupCodeAndConnection_MultiLang_CustomeSoure")
+                                        .LoadParams(
+                                             new { GRP_CD_CUSTOM = Model.GRP_CD_CUSTOM, CONNECTION_NM =  Model.CONNECTION_NM, Lang = new JS("getLanguages") }
+                                           )
+                                        .Key("ID")
+                                    )
+                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+
+            )
+        }
+    }
+
+    @*@(Html.DevExtreme().SelectBox()
+                .ID(Model.PEL_ID).DisplayExpr("Name")
+                .ValueExpr("ID").SearchEnabled(true)
+                //.ShowClearButton(true)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .OnValueChanged("reference_valueChanged_"+(Model.PEL_ID))
+                .SearchEnabled(true)
+
+            )*@
+    @*<div class="dx-field">
+            <div class="dx-field-label">@Model.PEL_LBL</div>
+            <div class="dx-field-value">
+                @(Html.DevExtreme().SelectBox()
+                    .ID(Model.PEL_ID).DisplayExpr("Name")
+                    .ValueExpr("ID")
+                    //.ShowClearButton(true)
+                    .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                    .OnValueChanged("reference_valueChanged_"+(Model.PEL_ID))
+                )
+            </div>
+        </div>*@
+</div>

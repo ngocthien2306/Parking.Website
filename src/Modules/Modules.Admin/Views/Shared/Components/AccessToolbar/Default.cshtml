@@ -1,0 +1,134 @@
+﻿@*@model InfrastructureCore.Models.Menu.SYMenuAccess*@
+@model List<Modules.Admin.Models.ToolbarInfo>
+@using Modules.Admin.Models;
+@{
+    List<SYToolbarActions> lstToolActionDynamic = new List<SYToolbarActions>();
+    if (ViewBag.DynamicPage == true)
+    {
+        lstToolActionDynamic = (List<SYToolbarActions>)ViewBag.lstToolActionDynamic;
+    }
+}
+
+@{
+    if (ViewBag.DynamicPage == false)
+    {
+        <div class="row" id="menutoolbar" >
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12 ">
+                                @*<button class="btn btn-xs btn-secondary" title="Reload" onclick="RefreshTab(this)" menu-id="@Model.MENU_ID" style="margin-right:5px" localize-content><i class="fas fa-sync"></i> Reload</button>*@
+                                @{
+                                    foreach (var item in Model)
+                                    {
+                                        {
+                                            <button class="btn btn-sm btn-secondary btn-action" title="@(item.Name)" menu-id="@(item.MenuID)" id="@(item.ID)_@(ViewBag.Thread)" style="margin-right:5px" localize-content>@Html.Raw(item.Icon) @item.Name</button>
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        if (lstToolActionDynamic.Count > 0)
+        {
+            if (lstToolActionDynamic[0].PAG_TYPE == "G001C001") //toolbar of form
+            {
+                <div class="row" id="menutoolbar" >
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        @*<button class="btn btn-xs btn-secondary" title="Reload" onclick="RefreshTab(this)" menu-id="@Model.MENU_ID" style="margin-right:5px" localize-content><i class="fas fa-sync"></i> Reload</button>*@
+                                        @{
+                                            foreach (var item in Model)
+                                            {
+                                                {
+                                                    <button class="btn btn-sm btn-secondary btn-action" title="@item.Name" menu-id="@item.MenuID" id="@(item.ID)_@(item.MenuID)" onclick="@Html.Raw(item.Action)" style="margin-right:5px" localize-content>@Html.Raw(item.Icon) @item.Name</button>
+                                                }
+                                            }
+                                        }
+                                        @*@foreach (var item in lstToolActionDynamic)
+                                            {
+
+                                                if (item.ACT_TYP == "C001" && Model.CREATE_YN == true)
+                                                {
+                                                    <button class="btn btn-xs btn-secondary" title="Save" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" style="margin-right:5px" localize-content><i class="fa fa-plus-circle"></i> Create </button>
+                                                }
+                                                if (item.ACT_TYP == "C002" && Model.SEARCH_YN == true)
+                                                {
+                                                    <button class="btn btn-xs btn-secondary" title="Search" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" style="margin-right:5px" localize-content><i class="fa fa-search"></i> Search </button>
+                                                }
+                                                if (item.ACT_TYP == "C003" && Model.SAVE_YN == true)
+                                                {
+                                                    <button class="btn btn-xs btn-secondary" title="Save" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" style="margin-right:5px" localize-content><i class="fa fa-save"></i> Save </button>
+                                                }
+                                                if (item.ACT_TYP == "C004" && Model.DELETE_YN == true)
+                                                {
+                                                    <button class="btn btn-xs btn-secondary" title="Delete" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" style="margin-right:5px" localize-content><i class="fa fa-trash"></i> Delete </button>
+                                                }
+                                                if (item.ACT_TYP == "C010")
+                                                {
+                                                    <button class="btn btn-xs btn-secondary" title="Redirect" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" style="margin-right:5px" localize-content><i class="fa fa-sitemap"></i> Redirect </button>
+                                                }
+                                                if (item.ACT_TYP == "C007" && Model.EXCEL_YN == true)
+                                                {
+                                                    <button class="btn btn-xs btn-secondary" title="Excel" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" style="margin-right:5px"><i class="fas fa-download"></i> Excel</button>
+                                                }
+                                            }*@
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else //toolbar of Popup
+            {
+                
+                    foreach (var item in Model)
+                    {
+                        {
+                            @*<button class="btn btn-xs btn-secondary" title="@item.Name" id="@(item.ID)_@(item.MenuID)" onclick="@Html.Raw(item.Action)" style="margin-right:5px" localize-content>@Html.Raw(item.Icon) @item.Name</button>*@
+                            <button type="button" onclick="@Html.Raw(item.Action)" class="btn btn-sm btn-secondary btn-action" localize-content>@item.Name</button>
+                        }
+                    }
+                
+                @*foreach (var item in lstToolActionDynamic)
+                {
+                    if (item.ACT_TYP == "C001" && Model.CREATE_YN == true)
+                    {
+                        <button type="button" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" class="btn btn-primary" localize-content>Create</button>
+                    }
+                    if (item.ACT_TYP == "C002" && Model.SEARCH_YN == true)
+                    {
+                        <button type="button" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" class="btn btn-primary" localize-content>Search</button>
+                    }
+                    if (item.ACT_TYP == "C003" && Model.SAVE_YN == true)
+                    {
+                        <button type="button" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" class="btn btn-primary" localize-content>Save</button>
+                    }
+                    if (item.ACT_TYP == "C004" && Model.DELETE_YN == true)
+                    {
+                        <button type="button" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" class="btn btn-primary" localize-content>Delete</button>
+                    }
+                    if (item.ACT_TYP == "C005")
+                    {
+                        <button type="button" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" class="btn btn-primary" localize-content>Add row</button>
+                    }
+                    if (item.ACT_TYP == "C010")
+                    {
+                        <button type="button" onclick="RUN_@(item.ACT_ID)_@(item.PAG_ID)();" class="btn btn-primary" localize-content>Redirect</button>
+                    }
+                }*@
+            }
+        }
+    }
+}

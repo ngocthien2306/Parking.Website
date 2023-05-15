@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\Admin\**" />
+    <Compile Remove="Models\Common\**" />
+    <Compile Remove="Models\Web\**" />
+    <EmbeddedResource Remove="Models\Admin\**" />
+    <EmbeddedResource Remove="Models\Common\**" />
+    <EmbeddedResource Remove="Models\Web\**" />
+    <None Remove="Models\Admin\**" />
+    <None Remove="Models\Common\**" />
+    <None Remove="Models\Web\**" />
+  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+  </ItemGroup>
+</Project>

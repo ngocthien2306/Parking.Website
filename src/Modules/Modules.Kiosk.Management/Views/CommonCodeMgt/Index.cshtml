@@ -1,0 +1,399 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    //pageSetting.SEARCH_YN = true;
+    //pageSetting.SAVE_YN = true;
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string gridMasterCode = "gridMasterCode" + ViewBag.Thread;
+    string gridCommonCode = "gridCommonCode" + ViewBag.Thread;
+    string btnCreateCmCode = "btnCreateCmCode" + ViewBag.Thread;
+    string btnDeleteCmCode = "btnDeleteCmCode" + ViewBag.Thread;
+
+
+}
+<script>
+    var checkInsert = false;
+    $(document).ready(function () {
+        LoadingPage(1);
+        //GetMasterCode();
+        $("#@btnCreateCmCode").dxButton("instance").option("disabled", true);
+        $("#@btnDeleteCmCode").dxButton("instance").option("disabled", true);
+        LoadingPage(0);
+    })
+    function GridMasterCodeInstance() {
+        return $("#@gridMasterCode").dxDataGrid("instance");
+    }
+    function GridCommonCodeInstance() {
+        return $("#@gridCommonCode").dxDataGrid("instance");
+    }
+
+    // Region: Get Data
+    function LoadDataGridSubCode(commonCode) {
+        $("#@gridCommonCode").dxDataGrid({
+            dataSource: DevExpress.data.AspNet.createStore({
+                key: 'commonSubCode',
+                loadUrl: '@Url.Action("GetCommonCode", "CommonCodeMgt")' + "?code=" + commonCode,
+                updateUrl: '@Url.Action("UpdateCommonCode", "CommonCodeMgt")' + "?code=" + commonCode,
+                insertUrl: '@Url.Action("SaveCommonCode", "CommonCodeMgt")' + "?code=" + commonCode,
+                deleteUrl: '@Url.Action("DeleteCommonCode", "CommonCodeMgt")' + "?code=" + commonCode,
+                onBeforeSend(method, ajaxOptions) {
+                    ajaxOptions.code = commonCode;
+                },
+            })
+        })
+    }
+    function GetMasterCode() {
+        var url = '@Url.Action("GetMasterCode", "CommonCodeMgt")';
+        LoadGridData(url, {}, "#@gridMasterCode", METHOD.GET);
+    }
+
+    // End Region: Get Data
+
+    // Region: Update - Delete - Create
+    function SaveMasterCode(e) {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+                var url = '@Url.Action("SaveMasterCode", "CommonCodeMgt")';
+
+                var data = grid.option("dataSource").filter(f => f.commonCode == e.data.commonCode)[0];
+                var obj = {
+                    commonCode: data.commonCode,
+                    commonName1: data.commonName1,
+                    commonName2: data.commonName2,
+                    description: data.description,
+                    systemCode: data.systemCode
+                }
+                CRUDData(url, obj, METHOD.POST, false);
+                setTimeout(function () {
+
+                }, 500);
+            }
+        })
+    }
+   
+    // End Region: Update - Delete - Create
+
+    // Region: Event click
+    function OnRowUpdatedDt(e) {
+        debugger;
+        if (e.data.Success) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Save Data Successfully!")", "Notice")
+        }
+        else {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Save Data Failed!")", "Error")
+        }
+    }
+    function OnRowRemovedDt(e) {
+        debugger;
+        DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Delete Data Successfully!")", "Notice")
+
+    }
+    function OnRowRemoveMt(e) {
+        DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Delete Data Successfully!")", "Notice")
+        $("#@btnCreateCmCode").dxButton("instance").option("disabled", true);
+        $("#@btnDeleteCmCode").dxButton("instance").option("disabled", true);
+        LoadDataGridSubCode(e.data.commonCode);
+    }
+    function OnRowInsertedDt(e) {
+        debugger;
+        if (e.data.Success) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Insert Data Successfully!")", "Notice")
+        }
+        else {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Insert Data Failed!")", "Error")
+        }
+    }
+
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+
+        LoadingPage(0);
+    });
+    function BeforeSendCommonCode(operation, ajaxSettings) {
+        if (operation !== "load") {
+            ajaxSettings.data.code = commonCodeCurrent;
+        }
+    }
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+    function ShowCommonCode(e) {
+        //var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")';
+        commonCodeCurrent = e.data.commonCode;
+        //var obj = {
+        //    code: commonCodeCurrent
+        //}
+        //LoadGridData(url, obj, "#@gridCommonCode", METHOD.GET);
+
+        LoadDataGridSubCode(e.data.commonCode);
+        $("#@btnCreateCmCode").dxButton("instance").option("disabled", false);
+        $("#@btnDeleteCmCode").dxButton("instance").option("disabled", false);
+
+        if (e.rowIndex == 0 && checkInsert) {
+            GridMasterCodeInstance().columnOption(0, "allowEditing", true);
+            checkInsert = false;
+        }
+        else {
+            GridMasterCodeInstance().columnOption(0, "allowEditing", false);
+        }
+    }
+
+    function onCellPreparedMaster(e) {
+        debugger;
+        if (e.rowIndex == 0) {
+            GridMasterCodeInstance().columnOption(0, "allowEditing", true);
+
+        }
+        else {
+            GridMasterCodeInstance().columnOption(0, "allowEditing", false);
+        }
+
+    }
+    function onItemGridToolbarPreparing(e) {
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Create")",
+                    onClick: function () {
+                        checkInsert = true;
+                        GridMasterCodeInstance().addRow();
+                        GridMasterCodeInstance().columnOption(0, "allowEditing", true);
+                        GridMasterCodeInstance().columnOption(4, "value", false);
+                        var data = GridMasterCodeInstance().option("dataSource");
+                        for (let i = 1; i < data.length; i++) {
+                            GridMasterCodeInstance().columnOption(0, "allowEditing", false);
+                        }
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+    }
+    function onItemGridToolbarPreparingCode(e) {
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    elementAttr: {
+                        id: "@btnDeleteCmCode"
+                    },
+                    text: "@_loc.GetLocalizedString("Delete List")",
+                    onClick: function () {
+                        var cmCodes = GridCommonCodeInstance().getSelectedRowsData();
+                        if (cmCodes.length > 0) {
+                            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+                            yes_or_no.done(function (dialogResult) {
+                                if (dialogResult) {
+                                    var url = '@Url.Action("DeleteListCommonCode", "CommonCodeMgt")';
+                                    var subCodes = []
+                                    cmCodes.forEach(c => {
+                                        subCodes.push(c.commonSubCode);
+                                    });
+                                    var obj = {
+                                        cmCodes: subCodes
+                                    }
+                                    CRUDData(url, obj, METHOD.DELETE);
+                                    setTimeout(function () {
+                                        LoadDataGridSubCode(commonCodeCurrent)
+                                    }, 500);
+                                }
+                            })
+
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please choose common code to delete!")", "Error")
+                        }
+                    },
+                    icon: "fa fa-trash"
+                },
+                location: "after"
+            },
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    elementAttr: {
+                        id: "@btnCreateCmCode"
+                    },
+                    text: "@_loc.GetLocalizedString("Create")",
+                    onClick: function () {
+                        if (GridMasterCodeInstance().getSelectedRowsData().length > 0) {
+                            GridCommonCodeInstance().addRow();
+                            GridCommonCodeInstance().columnOption(0, "allowEditing", true);
+
+                            GridCommonCodeInstance().columnOption(4, "value", false);
+                        }
+                 
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+    }
+    // End Region: Event click
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:85vh">
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <fieldset class="customFieldset">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("Common Code")</legend>
+                                    @(Html.DevExtreme().DataGrid<KIO_MasterCode>()
+                                            .DataSource(d => d.Mvc()
+                                            .Controller("CommonCodeMgt")
+                                            .LoadAction("GetMasterCode")
+                                            .InsertAction("SaveMasterCode")
+                                            .UpdateAction("UpdateMasterCode")
+                                            .DeleteAction("DeleteMasterCode")
+                                            
+                                            .Key("commonCode")
+                                         )
+                                        .ID(gridMasterCode)
+                                        .ShowBorders(true)
+                                        .ShowColumnLines(true)
+                                        .Height("80vh")
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .AllowColumnReordering(true)
+                                        .RemoteOperations(true)
+                                        .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+                                        .FilterRow(f => f.Visible(true))
+                                        .ColumnAutoWidth(true)
+                                        .ColumnFixing(c => c.Enabled(true))
+                                        .RepaintChangesOnly(true)
+                                        .Selection(s => s.Mode(SelectionMode.Single))
+                                        .Editing(e => {
+                                            e.Mode(GridEditMode.Form);
+                                            e.AllowDeleting(true).UseIcons(true).ConfirmDelete(true).Texts(t => t.ConfirmDeleteMessage(_loc.GetLocalizedString(MessageCode.DELETE_CODE)));
+                                            e.AllowUpdating(true).UseIcons(true).RefreshMode(GridEditRefreshMode.Reshape);
+                                        })
+                                        .Columns(c =>
+                                        {
+                                            c.AddFor(x => x.commonCode).Caption(_loc.GetLocalizedString("Common Code")).AllowEditing(false);
+                                            c.AddFor(x => x.commonName1).Caption(_loc.GetLocalizedString("Name 1"));
+                                            c.AddFor(x => x.commonName2).Caption(_loc.GetLocalizedString("Name 2"));
+                                            c.AddFor(x => x.description).Caption(_loc.GetLocalizedString("Description"));
+                                            c.AddFor(x => x.systemCode).Caption(_loc.GetLocalizedString("System Code"));
+                                        })
+                                        .Pager(pager =>
+                                        {
+                                            pager.ShowInfo(true);
+                                            pager.ShowNavigationButtons(true);
+                                        })
+                                        .OnRowClick("ShowCommonCode")
+                                        //.OnRowInserted("SaveMasterCode")
+                                        //.OnCellPrepared("onCellPreparedMaster")
+                                        //.OnSelectionChanged("onItemGridSelectionChanged")
+                                        .OnRowInserted("OnRowInsertedDt")
+                                        .OnRowRemoved("OnRowRemoveMt")
+                                        .OnRowUpdated("OnRowUpdatedDt")
+                                        .OnToolbarPreparing("onItemGridToolbarPreparing")
+                                        .Paging(paging => paging.PageSize(100))
+                                        )
+                                </fieldset>
+                            </div>
+                            <div class="col-md-6">
+                                <fieldset class="customFieldset">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("Sub Code")</legend>
+
+                                    @(Html.DevExtreme().DataGrid<KIO_CommonCode>()
+@*                                        .DataSource(d => d.Mvc()
+                                            .Controller("CommonCodeMgt")
+                                            .LoadAction("GetCommonCode").LoadParams(new {code = "NONESEARCH"})
+                                            .InsertAction("SaveCommonCode")
+                                            .UpdateAction("UpdateCommonCode")
+                                            .DeleteAction("DeleteCommonCode")
+                                            .Key("commonSubCode")
+                                            .OnInserted("ReponseResultInsert")
+                                            .OnUpdated("ReponseResultUpdate")
+                                            .OnRemoved("ReponseResultDelete")
+                                        )*@
+                                        .ID(gridCommonCode)
+                                        .ShowBorders(true)
+                                        .ShowColumnLines(true)
+                                        .Height("80vh")
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .AllowColumnReordering(true)
+                                        .RemoteOperations(true)
+                                        .HeaderFilter(f => f.Visible(true))
+                                        .FilterRow(f => f.Visible(true))
+                                        .ColumnAutoWidth(true)
+                                        .ColumnFixing(c => c.Enabled(true))
+                                        .RepaintChangesOnly(true)
+                                        .Selection(s => s.Mode(SelectionMode.Multiple))
+                                        .Editing(e =>
+                                        {
+                                            e.Mode(GridEditMode.Form);
+                                            e.AllowDeleting(true).UseIcons(true).ConfirmDelete(true);
+                                            e.AllowUpdating(true).UseIcons(true);
+                                        })
+                                        .Columns(c =>
+                                        {
+                                            c.AddFor(x => x.commonSubCode).Caption(_loc.GetLocalizedString("Common Sub Code")).AllowEditing(false);
+                                            c.AddFor(x => x.commonSubName1).Caption(_loc.GetLocalizedString("Name 1"));
+                                            c.AddFor(x => x.commonSubName2).Caption(_loc.GetLocalizedString("Name 2"));
+                                            c.AddFor(x => x.description).Caption(_loc.GetLocalizedString("Description"));
+                                            c.AddFor(x => x.systemCode).Caption(_loc.GetLocalizedString("System Code"));
+                                        })
+                                        .Pager(pager =>
+                                        {
+                                            pager.ShowInfo(true);
+                                            pager.ShowNavigationButtons(true);
+                                        })
+                                        //.OnRowClick("ShowCommonCode")
+                                        //.OnRowInserted("SaveMasterCode")
+                                        //.OnCellPrepared("onCellPreparedMaster")
+                                        //.OnSelectionChanged("onItemGridSelectionChanged")
+                                        .OnRowInserted("OnRowInsertedDt")
+                                        .OnRowRemoved("OnRowRemovedDt")
+                                        .OnRowUpdated("OnRowUpdatedDt")
+                                        .OnToolbarPreparing("onItemGridToolbarPreparingCode")
+                                        .Paging(paging => paging.PageSize(100))
+                                        )
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,897 @@
+﻿@using InfrastructureCore.Models.Identity;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    var currentUser = (SYLoggedUser)ViewBag.CurrentUser;
+    string superAdmin = "G000C001";
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.EDIT_YN = true;
+    pageSetting.DELETE_YN = true;
+    pageSetting.SAVE_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+}
+
+<script>
+    var siteID = "";
+    var selectionRow = false;
+    var isEdit = false;
+    var row;
+    var txtMenuName, txtMenuNameEng, txtMenuPath, ddlMenuLevel, ddlMenuParent, txtMenuSEQ, ckbAdminLevel, ckbMenuType, ckbMenuBoard, ddlProgram, ddlProgramIsBoard, ckbMobileUse,
+    ckbIntraUse, txtMenuDescription, ddlMenuIcon, ckbStarupPageUse, ckbIsCanClose;
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        if ('@currentUser.UserType' != '@superAdmin') {
+            GetListMenuBySite('@currentUser.SiteID');
+            siteID = '@currentUser.SiteID';
+        }
+
+        txtMenuName = $("#txtMenuName").dxTextBox("instance");
+        txtMenuNameEng = $("#txtMenuNameEng").dxTextBox("instance");
+        txtMenuPath = $("#txtMenuPath").dxTextBox("instance");
+        ddlMenuLevel = $("#ddlMenuLevel").dxSelectBox("instance");
+        ddlMenuParent = $("#ddlMenuParent").dxSelectBox("instance");
+        txtMenuSEQ = $("#txtMenuSEQ").dxTextBox("instance");
+        ckbAdminLevel = $("#ckbAdminLevel").dxCheckBox("instance");
+        ckbMenuType = $("#ckbMenuType").dxCheckBox("instance");
+        ckbMenuBoard = $("#ckbMenuBoard").dxCheckBox("instance");
+        ddlProgram = $("#ddlProgram").dxSelectBox("instance");
+        ddlProgramIsBoard = $("#ddlProgramIsBoard").dxSelectBox("instance");
+        ckbMobileUse = $("#ckbMobileUse").dxCheckBox("instance");
+        ckbIntraUse = $("#ckbIntraUse").dxCheckBox("instance");
+        txtMenuDescription = $("#txtMenuDesc").dxTextBox("instance");
+        ddlMenuIcon = $("#ddlMenuIcon").dxSelectBox("instance");
+        ckbStarupPageUse = $("#ckbStarupPageUse").dxCheckBox("instance");
+        ckbIsCanClose = $("#ckbIsCanClose").dxCheckBox("instance");
+
+        GetListMenuLevel();
+        GetListPageLayout();
+        GetListPageBoard();
+        GetListMenuIcon();
+        DisableInput();
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        RefreshTab(this);
+    });
+
+    // Set SiteID
+    function SetSiteID(e) {
+        siteID = e.value;
+        GetListMenuBySite(siteID);
+    }
+    var language = getLanguages();
+    language = language.substring(1);
+     
+    // Get list menu by SiteID
+    function GetListMenuBySite(siteID) {
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListDataByGroup", "Menu")',
+            type: "GET",
+            data: {
+                siteID: siteID
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+                $("#treeMenuList").dxTreeList("option", "dataSource", JSON.parse(result));
+            }
+        });
+        LoadingPage(0);
+    }
+
+    // Disable input
+     function DisableInput() {
+         
+        txtMenuName.option("disabled", true);
+        txtMenuNameEng.option("disabled", true);
+        txtMenuPath.option("disabled", true);
+        ddlMenuLevel.option("disabled", true);
+        ddlMenuParent.option("disabled", true);
+        txtMenuSEQ.option("disabled", true);
+        ckbAdminLevel.option("disabled", true);
+        ckbMenuType.option("disabled", true);
+        ckbMenuBoard.option("disabled", true);
+        ddlProgram.option("disabled", true);
+        ddlProgramIsBoard.option("disabled", true);
+        ckbMobileUse.option("disabled", true);
+        ckbIntraUse.option("disabled", true);
+        txtMenuDescription.option("disabled", true);
+        ckbStarupPageUse.option("disabled", true);
+        ckbIsCanClose.option("disabled", true);
+        ddlMenuIcon.option("disabled", true);
+    }
+
+    // Active input before Create/Edit Menu
+    function ActiveInput() {
+        txtMenuName.option("disabled", false);
+        txtMenuNameEng.option("disabled", false);
+        txtMenuPath.option("disabled", false);
+        ddlMenuLevel.option("disabled", false);
+        ddlMenuParent.option("disabled", true);
+        txtMenuSEQ.option("disabled", false);
+        ckbAdminLevel.option("disabled", false);
+        ckbMenuType.option("disabled", false);
+        ckbMenuBoard.option("disabled", false);
+        ckbMobileUse.option("disabled", false);
+        ckbIntraUse.option("disabled", false);
+        txtMenuDescription.option("disabled", false);
+        ckbStarupPageUse.option("disabled", false);
+        ckbIsCanClose.option("disabled", false);
+        ddlMenuIcon.option("disabled", false);
+    }
+
+    // Clear input
+    function ClearInput() {
+        txtMenuName.option("value", null);
+        txtMenuNameEng.option("value", null);
+        txtMenuPath.option("value", null);
+        ddlMenuLevel.option("value", null);
+        ddlMenuParent.option("value", null);
+        txtMenuSEQ.option("value", null);
+        ckbAdminLevel.option("value", null);
+        ckbMenuType.option("value", null);
+        ckbMenuBoard.option("value", null);
+        ddlProgram.option("value", null);
+        ddlProgramIsBoard.option("value", null);
+        ckbMobileUse.option("value", null);
+        ckbIntraUse.option("value", null);
+        txtMenuDescription.option("value", null);
+        ckbStarupPageUse.option("value", null);
+        ckbIsCanClose.option("value", null);
+        ddlMenuIcon.option("value", null);
+    }
+
+    // Change Menu Level
+    function DdlMenuLevelChangeValue(e) {
+        let menuLevel = e.value;
+        if (menuLevel != 1 || isEdit == true) {
+             
+            GetListMenuParent(menuLevel);
+            ddlMenuParent.option("disabled", false);
+        }
+        else {
+            ddlMenuParent.option("disabled", true);
+        }
+    }
+
+    // Get list Menu Level
+    function GetListMenuLevel() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListMenuLevel", "Menu")',
+            type: 'GET',
+            datatype: 'json',
+            success: function (result) {
+                ddlMenuLevel.option("dataSource", result);
+            }
+        });
+    }
+
+    // Get list Menu Parent
+    function GetListMenuParent(menuLevel) {
+        CheckSession();
+         
+        $.ajax({
+            url: '@Url.Action("GetListMenuParent", "Menu")',
+            type: 'GET',
+            data: { siteID: siteID, menuLevel: menuLevel },
+            datatype: 'json',
+            success: function (result) {
+                 
+                ddlMenuParent.option("dataSource", result);
+            }
+        });
+    }
+
+    // Get list Page Layout
+    function GetListPageLayout() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListPageLayout", "Menu")',
+            type: 'GET',
+            datatype: 'json',
+            success: function (result) {
+                 
+                ddlProgram.option("dataSource", result);
+            }
+        });
+    }
+
+     // Get list page Board
+     // Quan change 2021-01-15 add query site
+     function GetListPageBoard() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListPageBoard", "Menu")',
+            type: 'GET',
+            datatype: 'json',
+            success: function (result)
+            {
+                ddlProgramIsBoard.option("dataSource", result);
+            }
+        });
+    }
+
+    // Get list Menu Icon
+    function GetListMenuIcon() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListMenuIcon", "Menu")',
+            type: 'GET',
+            datatype: 'json',
+            success: function (result) {
+                ddlMenuIcon.option("dataSource", result);
+            }
+        });
+    }
+
+    // Select Row from Tree List
+    function SelectRowData(e) {
+         
+        selectionRow = true;
+        if (row != undefined || row != null) {
+            row = null;
+        }
+        row = e;
+
+        let data = e.data;
+        $("#txtMenuID").val(data.MenuID);
+        // Set MenuName
+        txtMenuName.option("value", data.MenuName);
+        txtMenuNameEng.option("value", data.MenuNameEng);
+
+        // Set MenuPath
+        txtMenuPath.option("value", data.MenuPath);
+
+         
+        // Set Select MenuLevel
+        ddlMenuLevel.option("value", data.MenuLevel); // Menu level
+        GetListMenuParent(data.MenuLevel);
+
+        // Set select MenuParent
+        ddlMenuParent.option("value", data.MenuParentID); // Menu Parent
+        ddlMenuParent.option("disabled", true);
+
+        // Set MenuSEQ
+        txtMenuSEQ.option("value", data.MenuSeq);
+
+        // Set Check AdminLevel
+        ckbAdminLevel.option("value", data.AdminLevel == 'Y' ? true : false);
+
+        // Set Check IsDynamic
+        ckbMenuType.option("value", data.MenuType == 'Y' ? true : false);
+
+        // Set Check Board
+        ckbMenuBoard.option("value", data.MenuType == 'B' ? true : false);
+
+        // Set select ProgramID
+        ddlProgram.option("value", data.ProgramID);
+        ddlProgram.option("disabled", true);
+
+        // Set select ProgramID is Board
+        if (data.MenuType == "B") {
+            ddlProgramIsBoard.option("value", data.MenuPath.substring(8));
+            ddlProgramIsBoard.option("disabled", true);
+        }
+
+        // Set check MobileUse
+        ckbMobileUse.option("value", data.MobileUse == 'Y' ? true : false);
+
+        // Set check IntraUse
+        ckbIntraUse.option("value", data.IntraUse == 'Y' ? true : false);
+
+        // Set check StartupPage
+        ckbStarupPageUse.option("value", data.StartupPageUse == 'Y' ? true : false);
+
+        // Set check IsCanClose
+        ckbIsCanClose.option("value", data.IsCanClose == 'Y' ? true : false);
+
+        // Set select MenuIcon
+        ddlMenuIcon.option("value", data.MenuIcon);
+
+        txtMenuDescription.option("value", data.MenuDesc);
+    }
+
+    function SelectMenuIcon(e) {
+        CheckSession();
+        e.component.option("dropDownButtonTemplate", getDropDownButtonTemplate(e.selectedItem));
+    }
+
+    function getDropDownButtonTemplate(selectedItem) {
+        if (selectedItem) {
+            return function () {
+                return $("<i>", {
+                    class: "custom-icon " + selectedItem.Text
+                });
+            }
+        }
+
+        return "dropDownButton";
+    }
+
+    // Validate data
+    function ValidateData(menuName, menuLevel) {
+        if (menuName == "" || menuName == null) {
+            DevExpress.ui.dialog.alert("Please input Menu Name!", "Error");
+            return;
+        }
+
+        if (menuLevel == "" || menuLevel == null) {
+            DevExpress.ui.dialog.alert("Please input Menu Level!", "Error");
+            return;
+        }
+
+        return true;
+    }
+
+    // Is Dynamic menu
+    function SetIsDynamic(e){
+        let value = e.value;
+         
+        if (value == true) {
+            ddlProgram.option("disabled", false);
+        }
+        else {
+            ddlProgram.option("disabled", true);
+            ddlProgram.option("value", null);
+            txtMenuPath.option("value", null);
+        }
+    }
+    // Is Board menu
+    function SetIsBoard(e) {
+        let value = e.value;
+         
+        if (value == true)
+        {
+            ddlProgramIsBoard.option("disabled", false);
+        }
+        else
+        {
+            ddlProgramIsBoard.option("disabled", true);
+            ddlProgramIsBoard.option("value", null);
+            txtMenuPath.option("value", null);
+        }
+    }
+    // Set Dynamic URL
+    function SetDynamicUrl(e) {
+        let pageID = e.value;
+        if (pageID != -1 && pageID != 0) {
+            let url = "/DynamicMagt/?PageID=" + pageID;
+            txtMenuPath.option("value", url);
+        }
+    }
+    // Set Board URL
+    function SetIsBoardUrl(e) {
+        let pageID = e.value;
+        if (pageID != -1 && pageID != 0) {
+            let url = "/CB?bid=" + pageID;
+            txtMenuPath.option("value", url);
+        }
+    }
+    // Create new Menu
+    $("#btnCreate_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        if ('@currentUser.UserType' == '@superAdmin') {
+            if (siteID == 0) {
+                DevExpress.ui.dialog.alert("Please select Site!", "Error");
+                return;
+            }
+        }
+        if (selectionRow) {
+            var treeMenu = $("#treeMenuList").dxTreeList("instance");
+            var keys = treeMenu.getSelectedRowKeys();
+            treeMenu.deselectRows(keys);
+        }
+        $("#txtMenuID").val(null);
+        ClearInput();
+        ActiveInput();
+    });
+
+    // Edit Menu
+    $("#btnEdit_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        if (!selectionRow) {
+            DevExpress.ui.dialog.alert("Please select row to Edit!", "Error");
+            return;
+        }
+        isEdit = true;
+        ActiveInput();
+    });
+
+    // Save Menu
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        let menuID = $("#txtMenuID").val();
+        let menuName = txtMenuName.option("value");
+        let menuNameEng = txtMenuNameEng.option("value");
+        let menuPath = txtMenuPath.option("value");
+
+        let menuLevel = ddlMenuLevel.option("value");
+        let menuParentID = ddlMenuParent.option("value");
+        let menuSeq = txtMenuSEQ.option("value");
+
+        let adminLevel = ckbAdminLevel.option("value") == true ? 'Y' : 'N';
+        let menuType = ckbMenuType.option("value") == true ? 'Y' : 'N';
+         
+        // Quan add 2020/10/14
+        // MenuBoard is checked set MenuType = B
+        let MenuBoard = ckbMenuBoard.option("value") == true ? 'Y' : 'N';
+        if (MenuBoard != undefined && MenuBoard == "Y")
+        {
+            menuType = "B";
+        }
+        let programID = ddlProgram.option("value");
+
+        let mobileUse = ckbMobileUse.option("value") == true ? 'Y' : 'N';
+        let intraUse = ckbIntraUse.option("value") == true ? 'Y' : 'N';
+        let startupPageUse = ckbStarupPageUse.option("value") == true ? 'Y' : 'N';
+        let isCanClose = ckbIsCanClose.option("value") == true ? 'Y' : 'N';
+        let menuIcon = ddlMenuIcon.option("value");
+
+        let menuDesc = txtMenuDescription.option("value");
+
+        if (menuID == "" || menuID == null) {
+            menuID = 0;
+        }
+
+        if (ValidateData(menuName, menuLevel)) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.ajax({
+                        url: '@Url.Action("SaveData","Menu")',
+                        type: 'POST',
+                        data: {
+                            siteID: siteID, menuID: menuID, menuName: menuName, menuNameEng: menuNameEng, menuPath: menuPath
+                            , menuLevel: menuLevel, menuParentID: menuParentID, menuSeq: menuSeq
+                            , adminLevel: adminLevel, menuType: menuType, programID: programID
+                            , mobileUse: mobileUse, intraUse: intraUse
+                            , menuDesc: menuDesc, startupPageUse: startupPageUse, isCanClose: isCanClose
+                            , menuIcon: menuIcon
+
+                        },
+                        datatype: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    ClearInput();
+                                    DisableInput();
+                                    GetListMenuBySite(siteID);
+                                });
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+        }
+    });
+
+    // Delete Menu
+    $("#btnDelete_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        if (!selectionRow) {
+            DevExpress.ui.dialog.alert("Please select row to delete!", "Error");
+            return;
+        }
+        let checkChildMenu = row.node.children.length;
+        if (checkChildMenu > 0) {
+            DevExpress.ui.dialog.alert("This menu contains sub menu inside. Can't delete it!", "Error");
+            return;
+        }
+
+        let menuID = row.data.MenuID;
+        if (menuID == undefined) {
+            menuID = 0;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteData","Menu")',
+                    type: "POST",
+                    data: { menuID: menuID },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0008', "Success", function () {
+                                ClearInput();
+                                DisableInput();
+                                GetListMenuBySite(siteID);
+                            });
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    });
+</script>
+
+<style>
+    .custom-icon {
+        max-height: 100%;
+        max-width: 100%;
+        font-size: 20px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .custom-item i {
+        float: right;
+    }
+
+    .custom-item .item-name {
+        padding-right: 20px;
+    }
+</style>
+
+@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+<div class="row">
+    @if (currentUser.UserType == superAdmin)
+    {
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="dx-field">
+                        <div class="dx-field-label">Site</div>
+                        <div class="dx-field-value">
+                            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlSiteUserAccessMenu")
+                                .DataSource(d => d.Mvc().Controller("Site").LoadAction("GetListData"))
+                                .DisplayExpr("SiteName")
+                                .ValueExpr("SiteID")
+                                .OnValueChanged("SetSiteID")
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(10))
+                            )
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>@_loc.GetLocalizedString("MenuList")</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @(Html.DevExtreme().TreeList<SYMenu>()
+                                    .ID("treeMenuList")
+                                    .KeyExpr("MenuID")
+                                    .ParentIdExpr("MenuParentID")
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .Height("100%")
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.MenuSeq).SortOrder(SortOrder.Asc).Visible(false);
+                                        if(ViewBag.CurrentLanguage == "ko")
+                                        {
+                                            c.AddFor(x => x.MenuName).Caption(_loc.GetLocalizedString("MenuName"));
+                                        }
+                                        else if(ViewBag.CurrentLanguage == "en")
+                                        {
+                                            c.AddFor(x => x.MenuNameEng).Caption(_loc.GetLocalizedString("MenuName"));
+                                        }
+                                    })
+                                    .SearchPanel(s => s
+                                        .Visible(true)
+                                        .Width(250)
+                                    )
+                                    .HeaderFilter(h=>h.Visible(false))
+                                    .OnRowClick("SelectRowData")
+                                )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-9 col-sm-9 col-md-9 col-lg-9">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>@_loc.GetLocalizedString("MenuDetail")</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <input hidden id="txtMenuID" />
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("MenuName")</p>
+
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().TextBox().ID("txtMenuName"))
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("MenuNameEng")</p>
+
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().TextBox().ID("txtMenuNameEng"))
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("URL")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().TextBox().ID("txtMenuPath"))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("MenuLevel")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().SelectBox()
+                                        .ID("ddlMenuLevel")
+                                        .DisplayExpr("Text")
+                                        .ValueExpr("Value")
+                                        .OnValueChanged("DdlMenuLevelChangeValue")
+                                    )
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("MenuParent")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().SelectBox()
+                                        .ID("ddlMenuParent")
+                                        .DisplayExpr("MenuName")
+                                        .ValueExpr("MenuID")
+                                    )
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("Seq No")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().TextBox().ID("txtMenuSEQ"))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("AdminLevel")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox().ID("ckbAdminLevel"))
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("IsDynamic")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox()
+                                                .ID("ckbMenuType")
+                                                .OnValueChanged("SetIsDynamic")
+                                            )
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("Program")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().SelectBox()
+                                            .ID("ddlProgram")
+                                            .DisplayExpr("Text")
+                                            .ValueExpr("Value")
+                                            .OnValueChanged("SetDynamicUrl")
+                                            )
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("IsMobile")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox()
+                                                .ID("ckbMobileUse")
+                                            )
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("Is Board")</p>
+                                    </div> @*use for startup page*@
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox()
+                                                .ID("ckbMenuBoard")
+                                                .OnValueChanged("SetIsBoard")
+                                            )
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("Program")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().SelectBox()
+                                            .ID("ddlProgramIsBoard")
+                                            .DisplayExpr("BoardName")
+                                            .ValueExpr("BoardID")
+                                            .OnValueChanged("SetIsBoardUrl")
+                                            )
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("MenuIcon")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().SelectBox()
+                                            .ID("ddlMenuIcon")
+                                            .DisplayExpr("Text")
+                                            .ValueExpr("Value")
+                                            .ItemTemplate(
+                                                @<text>
+                                                    <div class="custom-item">
+                                                        <div class="item-name"><%- Text %></div>
+                                                        <i class="<%- Text %>"></i>
+                                                    </div>
+                                                </text>
+                                            )
+                                            .OnSelectionChanged("SelectMenuIcon")
+                                        )
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("IsStartupPage")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox()
+                                                .ID("ckbStarupPageUse")
+                                            )
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("IsCanClose")</p>
+                                    </div> @*use for startup page*@
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox()
+                                                .ID("ckbIsCanClose")
+                                            )
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("Description")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        @(Html.DevExtreme().TextBox().ID("txtMenuDesc"))
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="dx-field">
+                                    <div class="dx-field-label">
+                                        <p class="offset-sm-1">@_loc.GetLocalizedString("IntranetUse")</p>
+                                    </div>
+                                    <div class="dx-field-value">
+                                        <div style="float:left">
+                                            @(Html.DevExtreme().CheckBox()
+                                            .ID("ckbIntraUse")
+                                            )
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

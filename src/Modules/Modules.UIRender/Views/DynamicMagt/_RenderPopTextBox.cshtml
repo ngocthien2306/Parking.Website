@@ -1,0 +1,80 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@using Modules.Admin.Models;
+<script>
+    function getValue_@(Model.PEL_ID)() {
+        return $("#@(Model.PEL_ID)").dxTextBox("instance").option("value");
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(Model.PEL_ID)").dxTextBox("instance").option("value",value);
+    }
+</script>
+@{
+    if (Model.PEL_CLICK != 0 && Model.PEL_CLICK != null)
+    {
+        var actionEL = Model.listAction.Where(m => m.ACT_ID == Model.PEL_CLICK).FirstOrDefault();
+        var dataPag = new SYPageLayout();
+        if (actionEL != null)
+        {
+            if (actionEL.listActionDetail != null)
+            {
+                actionEL.PAG_KEY = Model.PAG_KEY;
+                @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", actionEL)
+            }
+
+        }
+    }
+
+    if (Model.PEL_DFVALUE != null && Model.PEL_DFVALUE != "")
+    {
+        <script>
+            $( document ).ready(function() {
+                setValue_@(Model.PEL_ID)("@Model.PEL_DFVALUE");
+            });
+
+        </script>
+
+    }
+
+}
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS==true?"display:block":"display:none")">
+    <div class="dx-field">
+        <div class="dx-field-label" localize-content>@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().TextBox()
+                .ID(Model.PEL_ID)
+               // .Placeholder(Model.PEL_ID)
+                .Mode(TextBoxMode.Text)
+                //.StylingMode(EditorStylingMode.)
+                .Buttons(buttons =>
+                        {
+                    buttons.Add()
+                        .Name("Search")
+                        .Location(TextEditorButtonLocation.After)
+                        .Widget(w => w.Button()
+                            .Type(ButtonType.Normal)
+                            .Icon("find")
+                            .OnClick("RUN_" + Model.PEL_CLICK + "_" + Model.PAG_ID)
+                            );
+                })
+            )
+            @*@{var tmp = Html.DevExtreme().TextBox()
+                            .ID(Model.PEL_ID)
+                            // .Placeholder(Model.PEL_ID)
+                            .Mode(TextBoxMode.Text)
+                            //.StylingMode(EditorStylingMode.)
+                            .Buttons(buttons =>
+                            {
+                                buttons.Add()
+                                .Name("Search")
+                                .Location(TextEditorButtonLocation.After)
+                                .Widget(w => w.Button()
+                                    .Type(ButtonType.Normal)
+                                    .Icon("find")
+                                    .OnClick("ShowPopText")
+                                    );
+                            });
+
+                }*@
+        </div>
+    </div>
+</div>

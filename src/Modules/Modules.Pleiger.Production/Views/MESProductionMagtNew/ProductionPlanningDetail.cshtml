@@ -1,0 +1,1361 @@
+﻿@model Modules.Pleiger.CommonModels.MES_SaleProject
+@using InfrastructureCore.Models.Menu
+@using Modules.Pleiger.CommonModels
+@using Modules.Admin.Models
+
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = true;
+
+    string gridListFileProductionPlan = "gridListFileProductionPlan" + ViewBag.thread;
+
+    string[] AllowedFileExtensions = new String[] { ".pdf", ".PDF" };
+    string[] listFile = new String[] { };
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Back";
+    info.ID = "btnBack";
+    info.Icon = "<i class='fas fa-undo'></i>";
+    lstNewToolbar.Add(info);
+
+    ToolbarInfo infoStart = new ToolbarInfo();
+    infoStart.Name = (_loc.GetLocalizedString("Start Work"));
+    infoStart.ID = "btnStart";
+    infoStart.Icon = "<i class='fas fa-cubes'></i>";
+    lstNewToolbar.Add(infoStart);
+
+    ToolbarInfo returnProject = new ToolbarInfo();
+    returnProject.Name = "Project Return";
+    returnProject.ID = "btnReturn";
+    returnProject.Icon = "<i class='fas fa-arrow-left'></i>";
+    lstNewToolbar.Add(returnProject);
+
+    ToolbarInfo closeProject = new ToolbarInfo();
+    closeProject.Name ="Project Close";
+    closeProject.ID = "btnClose";
+    closeProject.Icon = "<i class='far fa-window-close'></i>";
+    lstNewToolbar.Add(closeProject);
+
+
+    List<MES_ProductLine> lstProdLines = (List<MES_ProductLine>)ViewBag.lstProdLines;
+    List<MES_ComCodeDtls> lstInternalExternal = (List<MES_ComCodeDtls>)ViewBag.lstInternalExternal;
+    List<MES_ComCodeDtls> lstStatusProdLines = (List<MES_ComCodeDtls>)ViewBag.lstStatusProdLines;
+
+
+    string RequestDate = "#RequestDate" + ViewBag.Thread;
+    string GridProductLine = "#GridProductLine" + ViewBag.Thread;
+    string OrderQuantity = "#OrderQuantity" + ViewBag.Thread;
+    string GridItemMaterial = "GridItemMaterial" + ViewBag.Thread;
+
+    string ProjectOrderType = "ProjectOrderType" + ViewBag.Thread;
+    string SalesOrderProjectName = "SalesOrderProjectName" + ViewBag.Thread;
+    string ProductionProject = "ProductionProject" + ViewBag.Thread;
+    string PlanDeliveryDate = "PlanDeliveryDate" + ViewBag.Thread;
+
+    string UserProjectCode = "UserProjectCode" + ViewBag.Thread;
+    string ProjectName = "ProjectName" + ViewBag.Thread;
+    string ProjectStatus = "ProjectStatus" + ViewBag.Thread;
+    string ProductType = "ProductType" + ViewBag.Thread;
+
+    string PartnerName = "PartnerName" + ViewBag.Thread;
+    string UserRequest = "UserRequest" + ViewBag.Thread;
+    string ddlPopRequestType = "ddlPopRequestType" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+
+    string ItemName = "ItemName" + ViewBag.Thread;
+    string MaterWHCode = "MaterWHCode" + ViewBag.Thread;
+    string ProdcnCode = "ProdcnCode" + ViewBag.Thread;
+    string ProdcnMessagePlan = "ProdcnMessagePlan" + ViewBag.Thread;
+    string RequestMessage = "RequestMessage" + ViewBag.Thread;
+
+    string btnAddLineGroup = "btnAddLineGroup" + ViewBag.Thread;
+    string lineGridContainer = "lineGridContainer" + ViewBag.Thread;
+
+    string GridFileURL = "GridFileURL" + ViewBag.Thread;
+    string PlanningDoneDate = "PlanningDoneDate" + ViewBag.Thread;
+}
+<style>
+
+    
+     #@PlanningDoneDate
+    .dx-texteditor-container
+    .dx-texteditor-input-container
+    .dx-texteditor-input {
+        background-color: yellow;
+    }
+
+
+     #@MaterWHCode
+    .dx-texteditor-container
+    .dx-texteditor-input-container
+    .dx-texteditor-input {
+        background-color: yellow;
+    }
+
+
+     @*#@ProdcnMessagePlan
+    .dx-texteditor-container
+    .dx-texteditor-input-container
+    .dx-texteditor-input {
+        background-color: yellow;
+    }*@
+
+     @*#@RequestMessage
+    .dx-texteditor-container
+    .dx-texteditor-input-container
+    .dx-texteditor-input {
+        background-color: yellow;
+    }*@
+
+    .required:before {
+        content: "* ";
+        color: red;
+    }
+    .adjustPositionHeaderGridLine {
+        position: absolute;
+        z-index: 99;
+        width: 100%;
+        height: 100%;
+    }
+    .adjustPositionButtonRemoveGridLineIs1Grid {
+        height: 10.7% !important;
+        }
+    .adjustPositionButtonRemoveGridLineIs2Grid {
+        height: 6% !important;
+    }
+    .adjustPositionButtonRemoveGridLineIs3Grid {
+        height: 4% !important;
+    }
+    .adjustPositionButtonGridLine {
+        margin-left: 78.5%;
+        margin-top: 2%;
+        z-index: 999;
+        position: absolute;
+    }
+    .adjustPositionButtonGridLineEmpty {
+        bottom: 7%;
+        margin-left: 84%;
+    }
+    .dx-scrollable-wrapper {
+        z-index: 999;
+    }
+    .dx-toolbar-after {
+        z-index: 99 !important;
+    }
+
+    @@media only screen and (max-width : 960px) {
+        .adjustPositionButtonGridLine {
+            margin-left: 18.5%;
+            margin-top: 100%;
+            background-color:red;
+            position: absolute;
+        }
+
+        @@media only screen and (min-width : 992px) {
+
+}
+
+/* Large Devices, Wide Screens */
+@@media only screen and (min-width : 1200px) {
+
+}
+
+    }
+
+</style>
+<script>
+    debugger;
+    var UpdateArr = [];
+    var RequestCode = null;
+    var Category = null;
+    var ItemClassCode = null;
+    var StockQty = null;
+    var Pag_ID = '@Model.Pag_ID';
+    var Pag_Name = '@Model.Pag_Name';
+    var FileMasterID='@Model.FileMasterID'
+    var fileID_@(Model.ID) = '';
+    var arrTemp = [];
+    var FileID = '@Model.FileID';
+
+    //Combo box data
+    var lstProdLines = @Html.Raw(Json.Serialize(lstProdLines));
+    var lstInternalExternal = @Html.Raw(Json.Serialize(lstInternalExternal));
+    var lstStatusProdLines = @Html.Raw(Json.Serialize(lstStatusProdLines));
+    function getListProdLines@(ViewBag.Thread)() {
+        return lstProdLines;
+    };
+    function getListInternalExternal@(ViewBag.Thread)() {
+        return lstInternalExternal;
+    };
+    function getListStatusProdLines@(ViewBag.Thread)() {
+        return lstStatusProdLines;
+    };
+
+    $("#btnStart_@(ViewBag.Thread)").attr("hidden", false);
+
+    $(document).ready(function ()
+    {
+        debugger;
+        LoadingPage(1);
+        ReziePageProductionPlanningDetail();
+        //setValue_@(Model.ID)('@Model.FileID');
+
+
+        // Remove Part list
+        @*$.ajax({
+            url: '@Url.Action("GetlistItemRequest", "MESProductionRequestChange")',
+            type: "GET",
+            data: { projectCode: '@Model.ProjectCode' },
+            dataType: 'json',
+            success: function (result) {
+
+                console.log("catelory ", result.data);
+                var grid = $("#@(GridItemMaterial)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+                LoadingPage(0);
+            }
+        });*@
+        getAllGridLine@(ViewBag.Thread)();
+
+        LoadingPage(0);
+    });
+
+
+
+
+    //=============================Change Stutus Project==========================================
+    $("#btnReturn_@(ViewBag.Thread)").on("click", function () {
+        updateStatusProjectPlaning(true);
+    });
+    $("#btnClose_@(ViewBag.Thread)").on("click", function () {
+        updateStatusProjectPlaning(false);
+    });
+
+    function updateStatusProjectPlaning(flag) {
+        var result;
+        if (flag) {
+            result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Do you really want to return the project?")</i>", "Confirm changes");
+        }
+        else {
+            result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Do you really want to close the project?")</i>", "Confirm changes");
+        }
+        result.done(function (resultdialog) {
+            if (resultdialog) {
+                $.ajax({
+                    url: '@Url.Action("OnUpdateProjectReturn", "MESProductionMagtNew")',
+                    type: "POST",
+                    data: {
+                        ProjectCode: '@Model.ProjectCode',
+                        ProdcnCode: '@Model.ProdcnCode',
+                        ProjectStatusNow: "PJST03",
+                        Flag: flag,
+                        Planning: "Y"
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert(result.Message, "Success")
+                            $("#btnSave_@(ViewBag.Thread)").attr("hidden", true);
+                            setTimeout(function () {
+                                $("#btnBack_@(ViewBag.Thread)").click();
+                            }, 300);
+
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                            $("#btnSave_@(ViewBag.Thread)").attr("hidden", true);
+                            setTimeout(function () {
+                                $("#btnBack_@(ViewBag.Thread)").click();
+                            }, 300);
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        })
+    }
+    //============================= Add List File =================================================
+    var FileMasterID = '@Model.FileID'
+    var fileID_@(Model.ID) = '';
+
+    function setValue_@(Model.ID)(fileId) {
+        setValueGrid_@(Model.ID)(fileId);
+        fileID_@(Model.ID) = fileId;
+        if ('@Model.Upload_File' == true) {
+            $.ajax({
+                url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+                type: "GET",
+                data: { fileId: fileId },
+                success: function (result) {
+
+                    var container = $(".dx-fileuploader-files-container");
+                    container.empty();
+                    var arrTemp = [];
+                    $.each(result.data, function (index, item) {
+                        arrTemp.push(item.FileDetail);
+
+                        var strHTML = '<div class="dx-fileuploader-file-container">' +
+                            '<div class="dx-fileuploader-button-container">' +
+                            '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                            '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                            '</div>' +
+                            '</div>' +
+                            container.append(strHTML);
+                    });
+                    $('#@(gridListFileProductionPlan)').dxDataGrid('option', 'dataSource', arrTemp);
+                    $("#@(gridListFileProductionPlan)").dxDataGrid("instance").refresh();
+                }
+            });
+        }
+        else {
+            $.ajax({
+                url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+                type: "GET",
+                data: { fileId: fileId },
+                success: function (result) {
+
+                    var container = $(".dx-fileuploader-files-container");
+                    container.empty();
+                    var arrTemp = [];
+                    $.each(result.data, function (index, item) {
+                        arrTemp.push(item.FileDetail);
+
+                        var strHTML = '<div class="dx-fileuploader-file-container">' +
+                            '<div class="dx-fileuploader-button-container">' +
+                            '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                            '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                            '</div>' +
+                            '</div>' +
+                            container.append(strHTML);
+                    });
+                    $('#@(gridListFileProductionPlan)').dxDataGrid('option', 'dataSource', arrTemp);
+                    $("#@(gridListFileProductionPlan)").dxDataGrid("instance").refresh();
+                }
+            });
+        }
+    }
+
+    function setValueGrid_@(Model.ID)(fileId) {
+        fileID_@(Model.ID) = fileId;
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result) {
+                var arrTemp = [];
+                $.each(result.data, function (index, item) {
+                    arrTemp.push(item.FileDetail);
+                });
+
+                $('#@(gridListFileProductionPlan)').dxDataGrid('option', 'dataSource', arrTemp);
+
+            }
+        });
+    }
+
+
+    //============================= Add List File =================================================
+    $(function () {
+        CheckSession();
+        //SetDataGridProductLine@(ViewBag.Thread)();
+        // Get list Request Type
+        $.ajax({
+            url: '@Url.Action("GetListCommonCode", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { groupCode: "RQTP00" },
+            dataType: 'json',
+            success: function (result) {
+                $("#ddlPopRequestType@(ViewBag.Thread)").dxSelectBox("option", "dataSource", result);
+                $("#ddlPopRequestType@(ViewBag.Thread)").dxSelectBox("option", "value", '@Model.RequestType');
+            }
+        });
+    })
+
+    function getProjectCode@(ViewBag.Thread)() {
+            return '@Model.ProjectCode';
+    }
+
+    $("#btnBack_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        let urlBack = '/MESProductionMagtNew/ProductionPlanning';
+        $.ajax({
+            url: '@Url.Action("GetMenuIDByBoadID", "Menu")',
+            type: "POST",
+            data: { strUrl: urlBack },
+            dataType: "json",
+            success: function (result) {
+                GenerateTabConmonBoard(result.MenuName, urlBack, result.MenuID, false); // current menu id
+            }
+        });
+    });
+
+    function MaterWHCodeOnChange(data) {
+       // Quan chang logic not check Qty 2021-01-25
+       // CheckQtyOfEachItemIsEnoughInWarehouse(data.value);
+        removeColorAndFocusValidatedxSelectBox("#MaterWHCode@(ViewBag.Thread)");
+    }
+
+    //Magical Remove ColorAndFocusValidatedxDateBox()
+    function PlanningDoneDateOnChange(data) {
+        removeColorAndFocusValidatedxDateBox("#PlanningDoneDate@(ViewBag.Thread)");
+    }
+    //Magical Remove ColorAndFocusValidatedxDateBox()
+
+    function CheckQtyOfEachItemIsEnoughInWarehouse(data) {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("CheckQtyOfEachItemIsEnoughInWarehouse", "MESProductionMagtNew")',
+            type: "POST",
+            data: {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                RequestCode: "@Model.RequestCode",
+                MaterialWarehouse: data,// on value change wh code
+                OrderQty:"@Model.OrderQuantity"
+            },
+            dataType: "json",
+            success: function (result)
+            {
+                if (result.Success)
+                {
+                    let mess = "@(_loc.GetLocalizedString("OutOfStockWarehouse"))";
+                    DevExpress.ui.dialog.alert(mess, "Error");
+                }
+                else
+                {
+
+                }
+            }
+        });
+    }
+
+    $("#btnStart_@(ViewBag.Thread)").on("click", function () {
+        // Quan add 2020-11-26
+        // Check  Project status
+        // If Project Recall Stark Work fail
+        // Back Ui index
+        var checkStartWork = true;
+        $.ajax({
+            url: '@Url.Action("GetProjectStatus", "MESProductionRequestChange")',
+            type: "GET",
+            data:
+            {
+                projectCode: '@Model.ProjectCode',
+                menuID: "",
+                vbParent: "",
+            },
+            dataType: "json",
+            success: function (result)
+            {
+                if (result == "PJST03")
+                {
+                    checkStartWork = true;
+                }
+                else
+                {
+                    checkStartWork = false;
+                }
+                if (checkStartWork)
+                {
+                    CheckSession();
+                    if (!validateGroupLineData@(ViewBag.Thread)()) {
+                        return;
+                    }
+                    else
+                    {
+                        $.ajax({
+                            url: '@Url.Action("CheckPlanRequestQty", "MESProductionRequestChange")',
+                            type: "GET",
+                            data:
+                            {
+                                projectCode: '@Model.ProjectCode',
+                            },
+                            dataType: "json",
+                            success: function (result) {
+                                debugger;
+                                if (@Model.OrderQuantity== result) {
+                                    var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure to start work?")</i>", "Confirm changes");
+                                    result.done(function (dialogResult) {
+                                        if (dialogResult) {
+                                            onUpdateWorkPlan();
+                                        };
+                                    });
+                                }
+                                else
+                                {
+                                    for (var i = 0; i < groupLineThreads.length; i++) {
+                                        addColorAndFocusValidatedxTextBox("#tb_PlanRequestQty" + groupLineThreads[i]);
+                                    }
+                                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("AssignedQty to product line should be equal OrderQuantity!"))", "@(_loc.GetLocalizedString("Error"))");
+                                }
+
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                    DevExpress.ui.dialog.alert("Project have recall you can't stark work", "Stark Work fail");
+                    LoadingPage(0);
+                    $("#btnBack_@(ViewBag.Thread)").trigger("click");
+                }
+            }
+        })
+    });
+
+    function addColorAndFocusValidatedxSelectBox(idElement) {
+        $(`${idElement}`).dxSelectBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxSelectBox("focus");
+        }, 2000)
+    }
+    function addColorAndFocusValidatedxDateBox(idElement) {
+        $(`${idElement}`).dxDateBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxDateBox("focus");
+        }, 2000)
+    }
+    function addColorAndFocusValidatedxTextBox(idElement) {
+        $(`${idElement}`).dxNumberBox('instance')._$element[0].style.borderColor = "red";
+        setTimeout(function () {
+            $(`${idElement}`).dxNumberBox("focus");
+        }, 2000);
+    }
+    function removeColorAndFocusValidatedxTextBox(idElement) {
+        $(`${idElement}`).dxNumberBox('instance')._$element[0].style.borderColor = "";
+    }
+    function removeColorAndFocusValidatedxSelectBox(idElement) {
+        $(`${idElement}`).dxSelectBox('instance')._$element[0].style.borderColor = "";
+    }
+    function removeColorAndFocusValidatedxDateBox(idElement) {
+        $(`${idElement}`).dxDateBox('instance')._$element[0].style.borderColor = "";
+    }
+
+    function onWorkerAuthen@(ViewBag.Thread)() {
+
+        CheckSession();
+        let id = $("#ID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        let pw = $("#Password@(ViewBag.Thread)").dxTextBox("instance").option("value");
+            $.ajax({
+            url: '@Url.Action("OnWorkLogin", "MESAccount")',
+            type: "POST",
+            data: {
+                id: id,
+                pw:pw
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    onUpdateWorkPlan();
+                }
+                else {
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+    }
+
+    function onUpdateWorkPlan() {
+        CheckSession();
+        var MaterialWarehouse = $("#MaterWHCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        if (validatePlanRequestQty@(ViewBag.Thread)()) {
+            $.ajax({
+                url: '@Url.Action("OnUpdateWorkPlan", "MESProductionMagtNew")',
+                type: "POST",
+                data: {
+                    ProjectCode: '@Model.ProjectCode',
+                    ProdcnCode: '@Model.ProdcnCode',
+                    RequestCode: "@Model.RequestCode",
+                    MaterialWarehouse: MaterialWarehouse,
+                    OrderQty: "@Model.OrderQuantity"
+                },
+                dataType: "json",
+                success: function (result) {
+                    if (result.Success) {
+                        $("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("hide");
+                        setTimeout(function () {
+                            $("#btnBack_@(ViewBag.Thread)").click();
+                        }, 300);
+
+                    }
+                    else {
+                        $("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("hide");
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });
+        }
+    }
+
+    function CheckSumQuantity@(ViewBag.Thread)(e) {
+
+        console.log(e);
+    }
+
+    //PVN Add
+    function Test(e, value) {
+
+        var sum = 0;
+        var grid = $('#GridProductLine@(ViewBag.Thread)').dxDataGrid("instance");
+        var visibleRows = grid.getVisibleRows();
+
+        e.AssignedQty = value;
+
+        $.each(visibleRows, function (index, item) {
+            sum += item.cells[1].value;
+        })
+
+        $('#GridProductLine@(ViewBag.Thread)').dxDataGrid({
+            OnToolbarPreparing: function (e) {
+                let toolbarItems = e.toolbarOptions.items;
+                console.log(toolbarItems);
+
+                toolbarItems.unshift({
+                    widget: "dxTextBox",
+                    location: "before",
+                    template: function ()
+                    {
+                        return $("<div/>")
+                            .addClass("informer")
+                            .append(
+                                $("<h2 />")
+                                    .addClass("count")
+                                    .text("Sum: " + sum),
+                                $("<span />")
+                                    .addClass("name")
+                                    .text("Total Count")
+                            );
+                    }
+                })
+            }
+        });
+    }
+
+    $(window).resize(function () {
+        //function recalculate resize height
+        ReziePageProductionPlanningDetail();
+    });
+
+    $(`#GridProductLine@(ViewBag.Thread)`).resize(function () {
+        ReziePageProductionPlanningDetail();
+    });
+
+    function ReziePageProductionPlanningDetail() {
+
+        let height1 = $(`#headerpage_@(ViewBag.Thread)`).height();
+        let height2 = $(`#bodypage_@(ViewBag.Thread)`).height();
+
+        let totalheight = height1 + height2;
+        $(`#divindex_@(ViewBag.Thread)`).height(totalheight+50);
+        //ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                //ReCalResize("content_bodypage_@(ViewBag.Thread)", "ID", "bodypage_@(ViewBag.Thread)", "top_bodypage_@(ViewBag.Thread)", "height");
+
+            }
+        }
+    }
+
+    // File Thien Add 2022-01-20
+    function OnValueChangedFileRequest(e) {
+
+        var files = e.value;
+        if (files.length > 0) {
+            listFile = files;
+        }
+    }
+
+    function updateIdFile(value) {
+        // if (value != "" ) {
+        var uploader = $("#@Model.ID").dxFileUploader("instance");
+        var url = uploader.option("uploadUrl");
+        url = updateQueryStringParameterPopupRequest(url, "idFile", value);
+        uploader.option("uploadUrl", url);
+        //}
+    }
+
+    function OnUploadAbortedPopupRequest(e) {
+        console.log(e);
+    }
+
+    function onUploadTaskDrawingRequest(e) {
+        LoadingPage(1);
+        var result = JSON.parse(e.request.response);
+        e.file.fileGuid = result.data.FileGuid;
+        fileID_@(Model.ID) = result.fileID;
+        updateIdFile(result.fileID);
+   
+
+        setTimeout(function () {
+            var buttonHtml = '<div class="dx-fileuploader-button-container btn-custom-file">' +
+                '<div class="dx-fileuploader-button dx-widget dx-button-has-icon">' +
+                '<div class="dx-button-content">' +
+                '<a href="#" onClick="deleteFilePopup(this,\''+ result.data.FileGuid +'\')">'+
+                '<i class="dx-icon dx-icon-remove"></i>' +
+                '</a>'+
+                '</div>' +
+                '</div>' +
+                '</div>';
+            var container = $(".dx-fileuploader-files-container");
+            var child = $(".dx-fileuploader-file-container");
+            var temp = $(".dx-fileuploader-files-container").find(child);
+            $.each(temp, function (i, item) {
+
+                var link = $("<a href='" + getLanguages() +"/FilesUpload/DownloadFile?fileguid=" + result.data.FileGuid + "'></a>");
+                var temp1 = item.children[1].children[0];
+
+                var temp2 = temp1.children[0];
+                link.append(temp2);
+                $(temp1).prepend(link);
+                var temp3 = $(temp1).find(".btn-custom-file");
+                if (temp3.length === 0) {
+                    $(temp1).append(buttonHtml)
+                }
+            });
+        }, 3000000);
+    //PVN Add
+    e.component.__uploadedFilesCount++;
+    if (e.component.option("value").length === e.component.__uploadedFilesCount) {
+        e.component.reset();
+        e.component.__uploadedFilesCount = null;
+    }
+    LoadingPage(0);
+    }
+
+    function updateQueryStringParameterPopupRequest(uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        if (uri.match(re)) {
+
+  
+            return uri.replace(re, '$1' + key + "=" + value + '$2');
+        }
+        else {
+            return uri + separator + key + "=" + value;
+        }
+    }
+
+    function SetRoleUserToDisplay(e) {
+        if (e.row.data.No === 1)
+            return true
+        else
+            return false;
+    }
+
+    // Dat ngo
+    var groupNextId = 1;
+    var groupLineThreads = [];
+    var groupLineCount = @ViewBag.GroupLineCount;
+    var saveLineData = [];
+    var listSelectedLine@(ViewBag.Thread) = [];
+
+    function getGridLine@(ViewBag.Thread)(childThread, groupLine) {
+        return $.ajax(
+            {
+                url: '@Url.Action("PlanningLineGrid", "MESProductionMagtNew")',
+                type: "GET",
+                data: {
+                    childThread: childThread,
+                    parentThread: "@ViewBag.Thread",
+                    projectCode: '@Model.ProjectCode',
+                    groupLine: groupLine
+                },
+                async: false,
+                dataType: "html"
+            }
+        );
+    };
+    function loadGridLine@(ViewBag.Thread)(groupLine) {
+        debugger;
+        LoadingPage(1);
+        var childThread = "@ViewBag.Thread" + "_" + groupNextId;
+        $("#@lineGridContainer").append(`<div id="container${childThread}"></div>`);
+        getGridLine@(ViewBag.Thread)(childThread, groupLine)
+            .done(function (result) {
+                debugger;
+                $(`#container${childThread}`).append(result);
+                groupLineThreads.push(childThread);
+                LoadingPage(0);
+            });
+    };
+    function addGroupLine@(ViewBag.Thread)() {
+        debugger;
+        loadGridLine@(ViewBag.Thread)("");
+        groupLineCount += 1;
+        groupNextId += 1;
+        if (groupLineCount == 3) {
+            $("#@btnAddLineGroup").prop('disabled', true);
+        }
+        numberingGroup@(ViewBag.Thread)();
+    }
+    function removeGroupLine@(ViewBag.Thread)(groupLineID) {
+        debugger;
+        $("#" + groupLineID).remove();
+        var groupLineThread = groupLineID.replace("group", "");
+        $(`#container${groupLineThread}`).remove();
+        const index = groupLineThreads.indexOf(groupLineThread);
+        if (index > -1) {
+            groupLineThreads.splice(index, 1);
+            groupLineCount -= 1;
+        }
+        if (groupLineThreads.length < 3) {
+            $("#@btnAddLineGroup").prop('disabled', false);
+        }
+        numberingGroup@(ViewBag.Thread)();
+    };
+    function numberingGroup@(ViewBag.Thread)() {
+        for (var i = 0; i < groupLineThreads.length; i++) {
+            $("#lb_groupLabel" + groupLineThreads[i]).text("Plan Line " + (i + 1));
+        }
+    };
+    function checkProductionLineCode@(ViewBag.Thread)(data) {
+        debugger;
+        for (var i = 0; i < data.length; i++) {
+            for (var j = i + 1; j < data.length; j++) {
+                if (data[i].ProdcnLineCode == data[j].ProdcnLineCode) {
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("The Production line name cannot be the same, please choose again."))", "@(_loc.GetLocalizedString("Error"))");
+                    return false;
+                };
+            };
+        };
+        return true;
+    };
+    function reloadAllGridLine@(ViewBag.Thread)() {
+        $("#@lineGridContainer").empty();
+        debugger;
+        groupLineThreads = [];
+        groupNextId = 1;
+        saveLineData = [];
+        getAllGridLine@(ViewBag.Thread)();
+    }
+    function reloadGridLine@(ViewBag.Thread)(groupLineID, groupLine) {
+        LoadingPage(1);
+        debugger;
+        var childThread = groupLineThreads[groupLine - 1];
+        $(`#container${childThread}`).empty();
+        getGridLine@(ViewBag.Thread)(childThread, groupLine)
+            .done(function (result) {
+                debugger;
+                $(`#container${childThread}`).append(result);
+                numberingGroup@(ViewBag.Thread)();
+                LoadingPage(0);
+            });
+    };
+    function getAllGridLine@(ViewBag.Thread)() {
+        debugger;
+        if (groupLineCount == 3) {
+            $("#@btnAddLineGroup").prop('disabled', true);
+        }
+        for (var i = 0; i < groupLineCount; i++) {
+            loadGridLine@(ViewBag.Thread)(i + 1);
+            groupNextId += 1;
+        }
+        numberingGroup@(ViewBag.Thread)();
+    };
+
+    function deleteLine@(ViewBag.Thread)(prductionLineCode, groupLineID, isLastLine, groupLine) {
+        debugger;
+        if (isLastLine) {
+            removeGroupLine@(ViewBag.Thread)(groupLineID);
+        }
+        if (groupLine == undefined) {
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("DeleteProductionLine", "MESProductionMagtNew")',
+            type: "POST",
+            data: {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                ProdcnLineCode: prductionLineCode,
+                GroupLine: groupLine
+            },
+            async: false,
+            dataType: "json",
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Line Deleted"))", "Message");
+                    if (!isLastLine) {
+                        reloadGridLine@(ViewBag.Thread)(groupLineID, groupLine);
+                    }
+                }
+            }
+        });
+    };
+    function prepareSaveData@(ViewBag.Thread)() {
+        debugger;
+        var data = [];
+        var current = (new Date()).toISOString().split('T')[0];
+
+        // validate each grid
+        for (var i = 0; i < groupLineThreads.length; i++) {
+            var rows = $("#gridLine" + groupLineThreads[i]).dxDataGrid("getVisibleRows");
+            if (rows.length <= 0) {
+                DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select at least one line for each group")", "Error");
+                return [];
+            }
+            // validate each row
+            for (var j = 0; j < rows.length; j++) {
+                if (rows[j].data.OutSource === null || rows[j].data.OutSource === undefined || rows[j].data.OutSource === "") {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Select OutSource")", "Error");
+                    return [];
+                }
+                else if (rows[j].data.ProdcnLineCode === null || rows[j].data.ProdcnLineCode === undefined || rows[j].data.ProdcnLineCode === "") {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Select Production Line")", "Error");
+                    return [];
+                }
+                else if (rows[j].data.PlanStartDate === null || rows[j].data.PlanStartDate === undefined || rows[j].data.PlanStartDate === "") {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Plan Start Date")", "Error");
+                    return [];
+                }
+                else if (rows[j].data.PlanEndDate === null || rows[j].data.PlanEndDate === undefined || rows[j].data.PlanEndDate === "") {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Plan End Date")", "Error");
+                    return [];
+                }
+                else if (current > ParsingDateyyyyMMdd(rows[j].data.PlanStartDate)) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Plan Start Date Must Largger Or Equal  Date Now")", "Error");
+                    return [];
+                }
+                else if (ParsingDateyyyyMMdd(rows[j].data.PlanEndDate) < ParsingDateyyyyMMdd(rows[j].data.PlanStartDate)) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Plan End Date Must Langger Or Eaqual  Plan Start Date")", "Error");
+                    return [];
+                }
+
+                rows[j].data.GroupLine = i + 1;
+                rows[j].data.LineOrder = j + 1;
+                rows[j].data.PlanStartDate = ParsingDateyyyyMMdd(rows[j].data.PlanStartDate);
+                rows[j].data.PlanEndDate = ParsingDateyyyyMMdd(rows[j].data.PlanEndDate);
+                var qty = $("#tb_PlanRequestQty" + groupLineThreads[i]).dxNumberBox("option", "value");
+                rows[j].data.PlanRequestQty = qty;
+                data.push(rows[j].data);
+            }
+        }
+        for (var i = 0; i < data.length; i++) {
+            delete (data[i])["__KEY__"];
+        }
+        return data;
+    };
+    function saveFormData@(ViewBag.Thread)() {
+        var materWH = $("#MaterWHCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var ProdcnMessage = $("#ProdcnMessagePlan@(ViewBag.Thread)").dxTextBox("option", "value");
+        var RequestDate = $("#RequestDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        var PlanningDoneDate = $("#PlanningDoneDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        var FormatPlanningDoneDate;
+
+        if (PlanningDoneDate !== '' || PlanningDoneDate !== null) {
+            FormatPlanningDoneDate = ParsingDateyyyyMMdd(PlanningDoneDate);
+        }
+
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("SavePlanningFormData", "MESProductionMagtNew")',
+            type: 'POST',
+            async: false,
+            data:
+            {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                MaterWHCode: materWH,
+                ProdcnMessage: ProdcnMessage,
+                PlanDoneDate: FormatPlanningDoneDate,
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+            }
+        });
+    };
+
+    function saveGroupLineData@(ViewBag.Thread)() {
+        debugger;
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("SaveLineGridData", "MESProductionMagtNew")',
+            type: 'POST',
+            async: false,
+            data:
+            {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                Data: JSON.stringify(saveLineData)
+            },
+            dataType: 'json',
+            success: function (result) {
+                if (result.Success == true) {
+                    reloadAllGridLine@(ViewBag.Thread)();
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Save data success"))", "@(_loc.GetLocalizedString("Notice"))");
+                }
+                setTimeout(LoadingPage(0), 1000);
+
+            }
+        });
+        saveLineData = [];
+    };
+
+    function validateFormData@(ViewBag.Thread)() {
+        var materWH = $("#MaterWHCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var ProdcnMessage = $("#ProdcnMessagePlan@(ViewBag.Thread)").dxTextBox("option", "value");
+        var RequestDate = $("#RequestDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        var PlanningDoneDate = $("#PlanningDoneDate@(ViewBag.Thread)").dxDateBox("option", "value");
+
+        if (materWH === "" || materWH === null) {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please select material warehouse!"))", "@(_loc.GetLocalizedString("Error"))");
+            addColorAndFocusValidatedxSelectBox("#MaterWHCode@(ViewBag.Thread)");
+            return false;
+        }
+        else if (PlanningDoneDate === "" || PlanningDoneDate === null) {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Planning Done Date cannot be null!"))", "@(_loc.GetLocalizedString("Error"))");
+            addColorAndFocusValidatedxDateBox("#PlanningDoneDate@(ViewBag.Thread)");
+            return false;
+        }
+        else if (PlanningDoneDate < RequestDate) {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Planning Done Date cannot be less than Request Date!"))", "@(_loc.GetLocalizedString("Error"))");
+            addColorAndFocusValidatedxDateBox("#PlanningDoneDate@(ViewBag.Thread)");
+            return false;
+        }
+        return true;
+    }
+    function validateGroupLineData@(ViewBag.Thread)() {
+        @*if (!validatePlanRequestQty@(ViewBag.Thread)()) {
+            return false;
+        }*@
+        debugger;
+        saveLineData = prepareSaveData@(ViewBag.Thread)();
+        if (saveLineData.length == 0) {
+            saveLineData = [];
+            @*DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please add the production line before start work!"))", "@(_loc.GetLocalizedString("Notice"))");*@
+            return false;
+        }
+        debugger;
+        var sumData = [];
+        for(var i = 0; i < groupLineThreads.length; i++) {
+            var rows = $("#gridLine" + groupLineThreads[i]).dxDataGrid("getVisibleRows");
+            if(rows.length != 0) {
+                sumData.push(rows);
+            }
+        }
+        if (!checkProductionAllLineCodes@(ViewBag.Thread)(sumData)) {
+            saveLineData = [];
+            return false;
+        }
+        return true;
+    };
+
+/* function checkProductionLineCode@(ViewBag.Thread)(data) {
+        debugger;
+        for (var i = 0; i < data.length; i++) {
+            for (var j = i + 1; j < data.length; j++) {
+                if (data[i].ProdcnLineCode == data[j].ProdcnLineCode) {
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("The Production line name cannot be the same, please choose again."))", "@(_loc.GetLocalizedString("Error"))");
+                    return false;
+                };
+            };
+        };
+        return true;
+    };*/
+    function checkProductionAllLineCodes@(ViewBag.Thread)(data) {
+        debugger;
+        for(var i = 0; i < data.length; i++) {
+            for(var j = 0; j < data[i].length - 1; j++) {
+                var flag = data[i][0].data.ProdcnLineCode;
+                if(flag == data[i][j+1].data.ProdcnLineCode) {
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("The Production line name cannot be the same, please choose again."))", "@(_loc.GetLocalizedString("Error"))");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    function checkQuantityPlanRequestQty() {
+        var sum = 0;
+        for (var i = 0; i < groupLineThreads.length; i++) {
+            debugger;
+            var qty = $("#tb_PlanRequestQty" + groupLineThreads[i]).dxNumberBox("option", "value");
+            sum += qty;
+        }
+
+        if (sum === 0) {
+            return false;
+        }
+        if (sum === @Model.OrderQuantity ) {
+            return true;
+        }
+        return false;
+    }
+
+    function validatePlanRequestQty@(ViewBag.Thread)() {
+        debugger;
+        if (!checkQuantityPlanRequestQty()) {
+            for (var i = 0; i < groupLineThreads.length; i++) {
+                addColorAndFocusValidatedxTextBox("#tb_PlanRequestQty" + groupLineThreads[i]);
+            }
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("AssignedQty to product line should be equal OrderQuantity!"))", "@(_loc.GetLocalizedString("Error"))");
+            return false;
+        } else {
+            for (var i = 0; i < groupLineThreads.length; i++) {
+                var qty = $("#tb_PlanRequestQty" + groupLineThreads[i]).dxNumberBox("option", "value");
+                if (qty == 0) {
+                    addColorAndFocusValidatedxTextBox("#tb_PlanRequestQty" + groupLineThreads[i]);
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please Check Plan Request Qty!"))", "@(_loc.GetLocalizedString("Error"))");
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
+    $("#@btnAddLineGroup").click(function () {
+        debugger;
+        addGroupLine@(ViewBag.Thread)();
+    });
+
+    $("#btnSave_@(ViewBag.Thread)").click(function () {
+        CheckSession();
+        if (!validateFormData@(ViewBag.Thread)()) {
+            return;
+        }
+        if (!validateGroupLineData@(ViewBag.Thread)() && groupLineThreads.length>0) {
+            return;
+        }
+        for (var i = 0; i < groupLineThreads.length; i++) {
+            removeColorAndFocusValidatedxTextBox("#tb_PlanRequestQty" + groupLineThreads[i]);
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@_loc.GetLocalizedString("Are you sure to save data?")</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+
+                saveFormData@(ViewBag.Thread)();
+                saveGroupLineData@(ViewBag.Thread)();
+              
+
+            };
+        });
+    });
+
+
+
+
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div id="divindex_@(ViewBag.Thread)" style="flex: 1">
+    <div class="card row pl-2 pr-2" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header" id="headerpage_@(ViewBag.Thread)">
+                <div class="form-group row align-items-center" id="rowBoardDocKey">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("UserProjectCode")</label>
+                    <div class="col-sm-2">
+                        @(Html.DevExtreme().TextBox().Visible(false).ID("ProjectCode" + ViewBag.Thread).ReadOnly(true).Value(Model.ProjectCode))
+                        @(Html.DevExtreme().TextBox().ID("UserProjectCode" + ViewBag.Thread).ReadOnly(true).Value(Model.UserProjectCode))
+                    </div>
+                    <label class="col-sm-1 col-form-label" style="display: none">@_loc.GetLocalizedString("Production Project")</label>
+                    <div class="col-sm-2" style="display: none">
+                        @(Html.DevExtreme().TextBox().ID("ProjectName" + ViewBag.Thread).ReadOnly(true).Value(Model.ProjectName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Status")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ProjectStatus" + ViewBag.Thread).ReadOnly(true).Value(Model.ProjectStatusName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Product Type")</label>
+                    <div class="col-md-5">
+                        @(Html.DevExtreme().TextBox().ID("ProductType" + ViewBag.Thread).ReadOnly(true).Value(Model.ProductType))
+                    </div>
+                </div>
+                <div class="form-group row align-items-center">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Customer Name")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("PartnerName" + ViewBag.Thread).ReadOnly(true).Value(Model.PartnerName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("User Request")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("UserRequest" + ViewBag.Thread).ReadOnly(true).Value(Model.UserNameRequest))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Create Date")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().DateBox().ID("RequestDate" + ViewBag.Thread).Type(DateBoxType.Date).Value(Model.Created_At).ReadOnly(true)
+                                        .DisplayFormat("yyyy-MM-dd").Min(DateTime.Now)
+                                    )
+                        @*@(Html.DevExtreme().TextBox().ID("RequestDate" + ViewBag.Thread)
+                            .ReadOnly(true)
+                            .Value(Model.RequestDate.Replace("/", "-")))*@
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Request Message")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ReadOnly(true).ID("RequestMessage" + ViewBag.Thread).Value(Model.RequestMessage))
+                    </div>
+                    <label class="col-sm-1 col-form-label" hidden="hidden">@_loc.GetLocalizedString("Request Type")</label>
+                    <div class="col-md-2" hidden="hidden">
+                        @(Html.DevExtreme().SelectBox()
+                            .ID("ddlPopRequestType" + ViewBag.Thread)
+                            .DisplayExpr("BASE_NAME1")
+                            .ValueExpr("BASE_CODE").ReadOnly(true)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row align-items-center">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Item Code")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ItemCode" + ViewBag.Thread).ReadOnly(true).Value(Model.ItemCode))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Item Name")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ItemName" + ViewBag.Thread).ReadOnly(true).Value(Model.ItemName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Order Quantity")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().NumberBox().ID("OrderQuantity" + ViewBag.Thread).ReadOnly(true).Format("#,##0").Value(Model.OrderQuantity))
+                    </div>
+                    <label class="col-sm-1 col-form-label star">@_loc.GetLocalizedString("Material Warehouse")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().SelectBox()
+                            .ID(MaterWHCode)
+                            .DataSource(d => d.Mvc()
+                                .Controller("MESProductionMagtNew")
+                                .LoadAction("GetListWareHouse")
+                                .Key("WarehouseCode"))
+                            .OnValueChanged("MaterWHCodeOnChange")
+                            .Value(Model.MaterWHCode)
+                            .DisplayExpr("WarehouseName")
+                            .ValueExpr("WarehouseCode")
+                        )
+                    </div>
+                </div>
+                <div class="form-group row align-items-center">
+                    <label class="col-sm-1 col-form-label" hidden="hidden">@_loc.GetLocalizedString("Production Code")</label>
+                    <div class="col-md-2" hidden="hidden">
+                        @(Html.DevExtreme().TextBox().ID("ProdcnCode" + ViewBag.Thread).ReadOnly(true).Value(Model.ProdcnCode).ReadOnly(true))
+                    </div>
+                    <label class="col-sm-1 col-form-label star">@_loc.GetLocalizedString("Planning Done Date")</label>
+                    <div class="col-md-2">
+                        @if (Model.PlanDoneDate == null)
+                        {
+                            @(Html.DevExtreme().DateBox().ID("PlanningDoneDate" + ViewBag.Thread)
+                                .Type(DateBoxType.Date)
+                                .Value("")
+                                .OnValueChanged("PlanningDoneDateOnChange")
+                                .DisplayFormat("yyyy-MM-dd").Min(DateTime.Now)
+                            )
+                        }
+                        else
+                        {
+                            @(Html.DevExtreme().DateBox().ID("PlanningDoneDate" + ViewBag.Thread)
+                                .Type(DateBoxType.Date)
+                                .Value(Model.PlanDoneDate).ReadOnly(true)
+                                .DisplayFormat("yyyy-MM-dd").Min(DateTime.Now)
+                            )
+                        }
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Plan Delivery Date")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().DateBox().ID("PlanDeliveryDate" + ViewBag.Thread)
+                            .Type(DateBoxType.Date)
+                            .Value(DateTime.Now).ReadOnly(true)
+                            .DisplayFormat("yyyy-MM-dd").Min(DateTime.Now)
+                        )
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Message")</label>
+                    <div class="col-md-5">
+                        @(Html.DevExtreme().TextBox().ID("ProdcnMessagePlan" + ViewBag.Thread).Value(Model.ProdcnMessage))
+                    </div>
+                </div>
+                <div class="form-group row align-items-center">
+
+                    <label class="col-sm-1 col-form-label" hidden="hidden">@_loc.GetLocalizedString("Order Type")</label>
+                    <div class="col-md-2" hidden="hidden">
+                        @(Html.DevExtreme().TextBox().ReadOnly(true).ID("ProjectOrderType" + ViewBag.Thread).Value(Model.ProjectOrderType))
+                    </div>
+                    
+                    <label class="col-sm-1 col-form-label" style="display: none">@_loc.GetLocalizedString("Production Project")</label>
+                    <div class="col-md-2" style="display: none">
+                        @(Html.DevExtreme().TextBox().ID("ProductionProject" + ViewBag.Thread).ReadOnly(true).Value(Model.SalesOrderProjectName).ReadOnly(true))
+                    </div>
+                    
+
+                </div>
+            </div>
+
+            <div class="col-12 card-body p-0 pl-2 pr-2" style="height:100%">
+                <!--=============================Add Production lines Remake=================================================-->
+                <div class="row mb-2">
+                    <div class="col-md-12" style="height:100%">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Production Lines")</legend>
+                            <div class="row justify-content-end">
+                                <button id="@btnAddLineGroup" type="button" class="btn btn-primary">@_loc.GetLocalizedString("Add Planned Production Line")</button>
+                            </div>  
+                            <div id="@lineGridContainer"></div>
+                        </fieldset>
+                    </div>
+                </div>
+                <!--=============================End Production lines Remake=================================================-->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="WorkerAuthenticationPop@(ViewBag.Thread)" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @_loc.GetLocalizedString("Worker Authentication")
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <p style="color:red">@_loc.GetLocalizedString("RFID card IDPW")</p>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label"> ID:</label>
+                    <div class="col-sm-8">
+                        @(Html.DevExtreme().TextBox().ID("ID"+ ViewBag.Thread)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">
+                        Password:
+                    </label>
+                    <div class="col-sm-8">
+                        @(Html.DevExtreme().TextBox().ID("Password"+ ViewBag.Thread).Mode(TextBoxMode.Password)
+
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="onWorkerAuthen@(ViewBag.Thread)()">
+                    Login
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@*<partial name="~/Views/MESProductionMagtNew/ProductionLinesPopup.cshtml" />*@

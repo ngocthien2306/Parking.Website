@@ -1,0 +1,926 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+
+@model MES_PORequest
+@{
+    Layout = null;
+    var ListPartner = ViewBag.ListPartner;
+}
+
+<script>
+    var poRequest_ListItem;
+    var poRequest_ListLeadTimeType;
+
+        //let listItemPOREquest = @Html.Raw(Json.Serialize(Model.ListItemPORequest));
+
+    $(document).ready(function () {
+        LoadingPage(1);
+          debugger;
+            let poRequestStatus = '@Model.StatusCode';
+            @*let listItemPOREquest = @Html.Raw(Json.Serialize(Model.ListItemPORequest));*@
+            let listItemPOREquest = @Html.Raw(Json.Serialize(Model.ListItemPORequest));
+            debugger;
+        poRequest_CountItem = listItemPOREquest.length;
+        poRequest_ListLeadTimeType = [];
+
+        poRequest_ListItem = @Html.Raw(Json.Serialize(ViewBag.ListItemSupplied));
+        $.ajax({
+            url: '@Url.Action("GetListLeadTimeType","MESPORequest")',
+            type: "GET",
+            async: false,
+            dataType: "json",
+            success: function (result) {
+                debugger;
+                poRequest_ListLeadTimeType = result;
+            }
+        });
+
+        for (var i = 0; i < listItemPOREquest.length; ++i) {
+            let html = '';
+
+            html += '<tr id="trPORequest_ItemPO' + i + '" class="item-po-request" item-po-id="' + i + '">';
+
+            html += '<td>';
+            html += '<div id="txtPORequest_ItemName'+i+'" type="text" value="' + listItemPOREquest[i].ItemCode + '" name="ddlPORequest_ItemCode' + i + '"></div>';
+            html += '</td>';
+            //html += '<td>';
+            //html += '<div id="ddlPORequest_UserPONumber' + i + '" value="' + listItemPOREquest[i].UserPONumber + '" name="ddlPORequest_UserPONumber' + i + '" ></div>';
+            //html += '</td>';
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].ItemName + '"  name="txtPORequest_ItemName' + i + '" readonly />';
+            html += '</td>';
+
+            if (listItemPOREquest[i].ItemStatusName === 'Accept') {
+                html += '<td>';
+                html += '<input disabled  class="form-control input-sm" value="' + listItemPOREquest[i].POQty + '"   name="txtPORequest_POQty' + i + '" ' + (poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? 'readonly' : 'onblur="ChangeQtyItemPORequest(this)"') + '   />';
+                html += '</td>';
+            }
+            else {
+                html += '<td>';
+                html += '<input    class="form-control input-sm" value="' + listItemPOREquest[i].POQty + '"   name="txtPORequest_POQty' + i + '" ' + (poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? 'readonly' : 'onblur="ChangeQtyItemPORequest(this)"') + '   />';
+                html += '</td>';
+            }
+
+                html += '<td>';
+                html += '<div name="ddlPORequest_LeadTimeType' + i + '"></div>';
+                html += '</td>';
+
+
+            if (listItemPOREquest[i].ItemStatusName === 'Accept') {
+                html += '<td>';
+                html += '<input disabled class="form-control input-sm" value="' + listItemPOREquest[i].LeadTime + '" name="txtPORequest_LeadTime' + i + '"  id="txtPORequest_LeadTime' + i + '" ' + (poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? 'readonly' : '') + ' />';
+                html += '</td>';
+            }
+            else {
+                html += '<td>';
+                html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].LeadTime + '" name="txtPORequest_LeadTime' + i + '"  id="txtPORequest_LeadTime' + i + '" ' + (poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? 'readonly' : '') + ' />';
+                html += '</td>';
+            }
+
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].MonetaryUnit + '" name="txtPORequest_MonetaryUnit' + i + '"  readonly />';
+            html += '</td>';
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].ItemPrice + '" name="txtPORequest_ItemPrice' + i + '" id="txtPORequest_ItemPrice' + i + '" ' + (poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? 'readonly' : 'onblur="ChangePriceItemPORequest(this)"') + ' disabled />';
+            html += '</td>';
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].TotalPrice + '" name="txtPORequest_TotalPrice' + i + '"  readonly />';
+            html += '</td>';
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].ItemStatusName + '" name="txtPORequest_StatusName' + i + '" readonly />';
+            html += '</td>';
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].PleigerRemark + '" name="txtPORequest_PleigerRemark' + i + '" />';
+            html += '</td>';
+
+            html += '<td>';
+            html += '<input class="form-control input-sm" value="' + listItemPOREquest[i].PORemark + '" name="txtPORequest_PORemark' + i + '" id="txtPORequest_PORemark' + i + '" ' + (poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? 'readonly' : '') + ' />';
+            html += '</td>';
+            //
+            html += '<td>';
+            html += '<input  class="form-control input-sm"  name="dtpPORequest_PlanDeliverDate' + i + '"  value="' + listItemPOREquest[i].PlanDeliverDate + '" readonly></input>';
+            html += '</td>';
+
+            html += '<td>';
+            if (poRequestStatus == "ORST01" || poRequestStatus == "ORST02") {
+                html += '<button class="btn btn-sm btn-danger" onclick="DeleteItemPORequest(this)" item-po-request="' + i + '">Delete</buton>';
+            }
+            html += '</td>';
+            html += '</tr>';
+
+            $("[name=ddlPORequest_UserPONumber" + i+"]").dxTextBox({
+            displayExpr: "UserPONumber",
+                valueExpr: "UserPONumber",
+                value: listItemPOREquest[i].UserPONumber,
+                disabled:true
+            }).dxTextBox("instance");
+
+            $("[name=dtpPORequest_PlanDeliverDate" + i+"]").dxDateBox({
+                displayFormat: "yyyy-MM-dd",
+                value: listItemPOREquest[i].PlanDeliverDate,
+                disabled: poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? true : false
+            });
+            //render to desktop
+            $("#tblPORequest_ItemPO tbody").append(html);
+            //add value
+            $("[name=ddlPORequest_ItemCode" + i + "]").dxSelectBox({
+                dataSource: new DevExpress.data.DataSource({
+                    store: poRequest_ListItem,
+                    paginate: true,
+                    pageSize: 10
+                }),
+                displayExpr: "ItemCode",
+                valueExpr: "ItemCode",
+                value: listItemPOREquest[i].ItemCode,
+                searchEnabled: true,
+                disabled: true,
+                onValueChanged: function (data) {
+                    //reset value PO Qty , Total Price = 0
+                    $("[name=txtPORequest_POQty" + id + "]").val("");
+                    $("[name=PORequest_TotalPrice" + id + "]").val("");
+                    let stringId = data.element[0].id;
+                    let id = stringId.substr(21, stringId.length);
+                    let item = poRequest_ListItem.find(x => x.ItemCode == data.value);
+                    $("[name=txtPORequest_ItemName" + id + "]").val(item.ItemName);
+                    $("[name=ddlPORequest_LeadTimeType" + id + "]").dxSelectBox("option", "value", item.LeadTimeType);
+                    $("[name=txtPORequest_LeadTime" + id + "]").val(item.LeadTime);
+                    $("[name=txtPORequest_MonetaryUnit" + id + "]").val(item.MonetaryUnit);
+                    $("[name=txtPORequest_ItemPrice" + id + "]").val(item.ItemPrice);
+                    $("[name=txtPORequest_StatusName" + id + "]").val("Request");
+                }
+            }).dxSelectBox("instance");
+            //add value
+            $("[name=ddlPORequest_LeadTimeType" + i + "]").dxSelectBox({
+                dataSource: new DevExpress.data.DataSource({
+                    store: poRequest_ListLeadTimeType,
+                    paginate: true,
+                    pageSize: 5
+                }),
+                displayExpr: "BASE_NAME1",
+                valueExpr: "BASE_CODE",
+                value: listItemPOREquest[i].LeadTimeType,
+                //disabled: poRequestStatus != "ORST01" && poRequestStatus != "ORST02" ? true : false
+                disabled: listItemPOREquest[i].ItemStatusName==='Accept'?true:false
+            }).dxSelectBox("instance");
+        }
+        LoadingPage(0);
+    });
+    // Back to master PO Request
+        $("#btn_BackToPORequest").on("click", function () {
+            if (!CheckSession()) {
+                window.location.reload(true);
+            }
+            BackToMainPORequest();
+
+    });
+    // Reload detail PO Request
+    $("#btn_ReloadDetailPORequest").on("click", function () {
+        LoadingPage(1);
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        ReloadDetailPORequest();
+        LoadingPage(0);
+    });
+    // Save data PO Request
+    $("#btn_SaveDataPORequest").on("click", function () {
+        LoadingPage(1);
+        //if (!CheckSession()) {
+        //    window.location.reload(true);
+        //}
+        let listItemPORequest = [];
+
+        var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+        debugger;
+        if (userPONumber == null || userPONumber == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please insert User PONumber !", "Error");
+            return;
+        }
+        debugger;
+        let arrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "text");
+        if (arrivalRequestDate == null || arrivalRequestDate == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select Arrival Request Date!", "Error");
+            return;
+        }
+
+        let countItemPORequest = $('#tblPORequest_ItemPO tbody tr[class="item-po-request"]').length;
+        for (var i = 0; i < countItemPORequest; i++) {
+            let item = $('#tblPORequest_ItemPO tbody tr[class="item-po-request"]')[i];
+            let id = $(item).attr("item-po-id");
+            let itemCode = $(item).find("[name=ddlPORequest_ItemCode" + id+"]").dxSelectBox("option", "value");
+            //user po number
+            let UserPONumber = $(item).find("[name=ddlPORequest_UserPONumber" + id+"]").dxTextBox("option", "value");
+            ///
+            debugger;
+            let poQty = $(item).find("input[name=txtPORequest_POQty" + id+"]").val();
+            if (isNaN(poQty) || parseFloat(poQty) < 0 || poQty == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("PO Quantity is invalid!", "Error");
+                return;
+            }
+
+            let itemPrice = $(item).find("input[name=txtPORequest_ItemPrice" + id+"]").val();
+            if (isNaN(itemPrice) || parseFloat(itemPrice) < 0) {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Item Price is invalid!", "Error");
+                return;
+            }
+
+            let totalPrice = $(item).find("input[name=txtPORequest_TotalPrice" + id+"]").val();
+            let leadTimeType = $(item).find("[name=ddlPORequest_LeadTimeType" + id+"]").dxSelectBox("option", "value");
+            if (leadTimeType == null || leadTimeType == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Please select Lead Time Type!", "Error");
+                return;
+            }
+
+            let leadTime = $(item).find("input[name=txtPORequest_LeadTime" + id+"]").val();
+            if (isNaN(leadTime) || parseFloat(leadTime) < 0) {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Lead Time is invalid!", "Error");
+                return;
+            }
+
+            let poRemark = $(item).find("input[name=txtPORequest_PORemark" + id+"]").val();
+            debugger;
+           // let planDeliverDate = $(item).find("[name=dtpPORequest_PlanDeliverDate" + id+"]").dxDateBox("option", "text");
+            let planDeliverDate = $(item).find("[name=dtpPORequest_PlanDeliverDate" + id+"]").val();
+
+            let itemPO = {
+                ItemCode: itemCode,
+                POQty: poQty,
+                ItemPrice: itemPrice,
+                TotalPrice: totalPrice,
+                LeadTimeType: leadTimeType,
+                LeadTime: leadTime,
+                PORemark: poRemark,
+                PlanDeliverDate: planDeliverDate,
+                UserPONumber: UserPONumber
+            };
+            listItemPORequest.push(itemPO);
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+
+                $.ajax({
+                    url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@Model.ProjectCode',
+                        saveDataType: '"InsertNewPORequest"', requestCode: '@Model.RequestCode', poNumber: '@Model.PONumber', partnerCode: '@Model.PartnerCode'
+                        , arrivalRequestDate: arrivalRequestDate
+                        , listItemPORequest: JSON.stringify(listItemPORequest)
+                        , UserPONumber: userPONumber
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                isSuccess = true;
+                            });
+                        }
+                        else {
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }, error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+                if (isSuccess) {
+                    LoadingPage(0);
+                    if ('@Model.PONumber' != null) {
+                        ReloadDetailPORequest();
+                    }
+                    else {
+                        BackToMainPORequest();
+                    }
+                }
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    // Accept PO Request
+    $("#btn_AcceptPORequest").on("click", function () {
+        LoadingPage(1);
+        //if (!CheckSession()) {
+        //    window.location.reload(true);
+            //}
+        let listItemPORequest = [];
+        let arrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "text");
+        if (arrivalRequestDate == null || arrivalRequestDate == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select Arrival Request Date!", "Error");
+            return;
+        }
+        let countItemPORequest = $("#tblPORequest_ItemPO tbody tr").length;
+        for (var i = 0; i < countItemPORequest; i++) {
+            let item = $('#tblPORequest_ItemPO tbody tr[class="item-po-request"]')[i];
+            let id = $(item).attr("item-po-id");
+           // let itemCode = $(item).find("[name=ddlPORequest_ItemCode" + id+"]").dxSelectBox("option", "value");
+            let itemCode = $(item).find("#txtPORequest_ItemName" + id).dxSelectBox("option", "value");
+            //user po number
+            //let UserPONumber = $(item).find("[name=ddlPORequest_UserPONumber" + id+"]").dxTextBox("option", "value");
+            debugger;
+            let UserPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+
+            let poQty = $(item).find("input[name=txtPORequest_POQty" + id+"]").val();
+            if (isNaN(poQty) || parseFloat(poQty) < 0 || poQty == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("PO Quantity is invalid!", "Error");
+                return;
+            }
+            let itemPrice = $(item).find("input[name=txtPORequest_ItemPrice" + id+"]").val();
+            if (isNaN(itemPrice) || parseFloat(itemPrice) < 0) {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Item Price is invalid!", "Error");
+                return;
+            }
+            let totalPrice = $(item).find("input[name=txtPORequest_TotalPrice" + id+"]").val();
+            let leadTimeType = $(item).find("[name=ddlPORequest_LeadTimeType" + id+"]").dxSelectBox("option", "value");
+            if (leadTimeType == null || leadTimeType == "") {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Please select Lead Time Type!", "Error");
+                return;
+            }
+            let leadTime = $(item).find("input[name=txtPORequest_LeadTime" + id+"]").val();
+            if (isNaN(leadTime) || parseFloat(leadTime) < 0) {
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert("Lead Time is invalid!", "Error");
+                return;
+            }
+
+            let poRemark = $(item).find("input[name=txtPORequest_PORemark" + id + "]").val();
+            debugger;
+            let planDeliverDate = $(item).find("[name=dtpPORequest_PlanDeliverDate" + id + "]").val();
+
+            debugger;
+            let itemPO = {
+                ItemCode: itemCode,
+                POQty: poQty,
+                ItemPrice: itemPrice,
+                TotalPrice: totalPrice,
+                LeadTimeType: leadTimeType,
+                LeadTime: leadTime,
+                PORemark: poRemark,
+                PlanDeliverDate: planDeliverDate,
+                UserPONumber: UserPONumber
+            };
+            listItemPORequest.push(itemPO);
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+                $.ajax({
+                    url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@Model.ProjectCode',
+                        saveDataType: 'Accept',
+                        requestCode: '@Model.RequestCode',
+                        poNumber: '@Model.PONumber',
+                        partnerCode: '@Model.PartnerCode',
+                        arrivalRequestDate: arrivalRequestDate,
+                        listItemPORequest: JSON.stringify(listItemPORequest),
+                        UserPONumber: $("#txtPO_User_PONumber").dxTextBox("option", "value")
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                isSuccess = true;
+                            });
+                        }
+                        else {
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+                if (isSuccess) {
+                    LoadingPage(0);
+                    $.unblockUI();
+                    if ('@Model.PONumber' != null) {
+                        ReloadDetailPORequest();
+                    }
+                        BackToMainPORequest();
+                    }
+                }
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    // Reject PO Request
+        var listItemPOReject = [];
+    $("#btn_RejectPORequest").on("click", function () {
+        LoadingPage(1);
+        debugger;
+        let arrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "text");
+        if (arrivalRequestDate == null || arrivalRequestDate == "") {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select Arrival Request Date!", "Error");
+            return;
+        }
+        let countItemPORequest = $('#tblPORequest_ItemPO tbody tr[class="item-po-request"]').length;
+            for (var i = 0; i < countItemPORequest; i++) {
+                 //filter ra reject
+                let item = $('#tblPORequest_ItemPO tbody tr[class="item-po-request"]')[i];
+                debugger;
+                //let item = $(`#tblPORequest_ItemPO > tbody tr#trPORequest_ItemPO${i}`);
+                var statusName = $(item).find("[name=txtPORequest_StatusName" + i + "]").val();
+                if (statusName === 'Request') {
+                    debugger;
+                        let id = $(item).attr("item-po-id");
+                        let itemCode = $(item).find("[name=ddlPORequest_ItemCode" + id + "]").dxSelectBox("option", "value");
+                        let UserPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+                        let poQty = $(item).find("input[name=txtPORequest_POQty" + id + "]").val();
+                        if (isNaN(poQty) || parseFloat(poQty) < 0 || poQty == "") {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert("PO Quantity is invalid!", "Error");
+                            return;
+                        }
+                        let itemPrice = $(item).find("input[name=txtPORequest_ItemPrice" + id + "]").val();
+                        if (isNaN(itemPrice) || parseFloat(itemPrice) < 0) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert("Item Price is invalid!", "Error");
+                            return;
+                        }
+                        let totalPrice = $(item).find("input[name=txtPORequest_TotalPrice" + id + "]").val();
+                        let leadTimeType = $(item).find("[name=ddlPORequest_LeadTimeType" + id + "]").dxSelectBox("option", "value");
+                        if (leadTimeType == null || leadTimeType == "") {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert("Please select Lead Time Type!", "Error");
+                            return;
+                        }
+                        let leadTime = $(item).find("input[name=txtPORequest_LeadTime" + id + "]").val();
+                        if (isNaN(leadTime) || parseFloat(leadTime) < 0) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert("Lead Time is invalid!", "Error");
+                            return;
+                        }
+                        let poRemark = $(item).find("input[name=txtPORequest_PORemark" + id + "]").val();
+                        let planDeliverDate = $(item).find("[name=dtpPORequest_PlanDeliverDate" + id + "]").val();
+                        let itemPOReject = {
+                            ItemCode: itemCode,
+                            POQty: poQty,
+                            ItemPrice: itemPrice,
+                            TotalPrice: totalPrice,
+                            LeadTimeType: leadTimeType,
+                            LeadTime: leadTime,
+                            PORemark: poRemark,
+                            PlanDeliverDate: planDeliverDate,
+                            UserPONumber: UserPONumber
+                        };
+                        listItemPOReject.push(itemPOReject);
+                } else {
+                    LoadingPage(0);
+                    //ko làm
+                }
+            };
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+                $.ajax({
+                    url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@Model.ProjectCode', saveDataType: 'Reject', requestCode: '@Model.RequestCode', poNumber: '@Model.PONumber', partnerCode:'@Model.PartnerCode'
+                        , arrivalRequestDate: arrivalRequestDate
+                        , listItemPORequest: JSON.stringify(listItemPOReject),
+                        UserPONumber: $("#txtPO_User_PONumber").dxTextBox("option", "value")
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('Reject success', "Success", function () {
+                                isSuccess = true;
+                                ReloadDetailPORequest();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }, error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+                //if (isSuccess) {
+                //    $.unblockUI();
+                //    ReloadDetailPORequest();
+                //}
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    $('#btn_PrintDetailPORequest').on("click", function () {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetDetailPOReq", "MESPORequest")',
+            type: 'GET',
+            async: false,
+            data: {
+                PONumber: '@Model.PONumber'
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                var link = $("<a href='" + getLanguages() + "/MESPORequest/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                location.href = link[0].href;
+            }
+        });
+    })
+
+    // Reload detail PO Request
+    function ReloadDetailPORequest() {
+        $.ajax({
+            url: '@Url.Action("ShowDetailPORequest", "MESPORequest")',
+            type: "GET",
+            data: { projectCode: '@Model.ProjectCode', poNumber: '@Model.PONumber' },
+            dataType: "html",
+            success: function (result) {
+                debugger;
+                console.log(result);
+                $("#divPORequestDetail").html(null);
+                $("#divPORequestDetail").html(result);
+                $.unblockUI();
+                count = 0;
+            }
+        });
+    }
+
+    function BackToMainPORequest() {
+        $("#divMainPOREquest").prop("hidden", false);
+        $("#divPORequestDetail").prop("hidden", true);
+        $("#divPORequestDetail").html(null);
+        $("#btnReload_@ViewBag.Thread").on("click", function () {
+            RefreshTab(this);
+        });
+    }
+
+    // Change Price of Item PO Request
+    function ChangePriceItemPORequest(obj) {
+        debugger;
+        let tr = $(obj).parent().parent();
+        let stringId = $(obj).attr("id");
+        let id = stringId.substr(22, stringId.length);
+        let value = $(obj).val();
+        if (isNaN(value) || parseFloat(value) < 0) {
+            DevExpress.ui.dialog.alert("Item Price is invalid!", "Error");
+            return;
+        }
+        let poQty = $(tr).find("input[name=txtPORequest_POQty" + id+"]").val();
+        //$(tr).find("input#txtPORequest_TotalPrice" + id).val(parseFloat(value) * parseFloat(poQty));
+        $(tr).find("input[name=txtPORequest_TotalPrice" +id+"]").val(parseFloat(value) * parseFloat(poQty));
+    }
+
+    // Change Qty of Item PO Request
+    function ChangeQtyItemPORequest(obj) {
+        debugger;
+        let tr = $(obj).parent().parent();
+       // let stringId = $(obj).attr("id");
+        let stringId = $(obj).attr("name");
+        let id = stringId.substr(18, stringId.length);
+        let value = $(obj).val();
+        if (isNaN(value) || parseFloat(value) < 0 || value == "") {
+            DevExpress.ui.dialog.alert("PO Qty is invalid!", "Error");
+            return;
+        }
+        let itemPrice = $(tr).find("input[name=txtPORequest_ItemPrice" + id+"]").val();
+        $(tr).find("[name=txtPORequest_TotalPrice" + id+"]").val(parseFloat(value) * parseFloat(itemPrice));
+    }
+
+    // Reject Item PO Request
+    function DeleteItemPORequest(obj) {
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                let id = $(obj).attr("item-po-request");
+                $("#tblPORequest_ItemPO tbody tr#trPORequest_ItemPO" + id).remove();
+            } else {
+                return;
+            }
+        });
+        }
+        debugger;
+    var poRequest_CountItem = 0;
+    // Add new Item PO
+    var count = 0;
+    $("#btnPORequest_AddNewItemPO").on("click", function () {
+        var html = $("#tr_ItemPO_Parent").clone();
+        $(html).closest("tr").removeAttr("id").removeClass("d-none");
+        //$(html).find("td input").attr("name", `createItemPO${count++}`);
+        var trItemPO_Create = $(html).find("td");
+        $.each($(trItemPO_Create), function (idx, ele) {
+            debugger;
+            var name = $(this).children().attr("name");
+            name = name + count;
+            $(this).children().attr("name",name);
+        });
+        debugger;
+        var divNameItemcode = `[name=ddlPORequest_ItemCode${count}]`;
+        ///phải có giao diện mới render ra value dc ...
+        $("#tblPORequest_ItemPO tbody").append($(html));
+        //start render value...
+        $(divNameItemcode).dxSelectBox({
+            dataSource: new DevExpress.data.DataSource({
+                store: poRequest_ListItem,
+                paginate: true,
+                pageSize: 10
+            }),
+            displayExpr: "ItemCode",
+            valueExpr: "ItemCode",
+            searchEnabled: true,
+            onValueChanged: function (data) {
+                debugger;
+                let stringId = data.element[0].attributes['name'];
+                let id = stringId.substr(21, stringId.length);
+                let item = poRequest_ListItem.find(x => x.ItemCode == data.value);
+                debugger;
+                $("[name=txtPORequest_ItemName" + count + "]").val(item.ItemName);
+                $("[name=ddlPORequest_LeadTimeType" + count + "]").dxSelectBox("option", "value", item.LeadTimeType);
+                $("[name=txtPORequest_LeadTime" + count + "]").val(item.LeadTime);
+                $("[name=txtPORequest_MonetaryUnit" + count + "]").val(item.MonetaryUnit);
+                $("[name=txtPORequest_ItemPrice" + count + "]").val(item.ItemPrice);
+                $("[name=txtPORequest_StatusName" + count + "]").val("Request");
+            }
+        }).dxSelectBox("instance");
+        $("[name=ddlPORequest_UserPONumber" +count+ "]").dxTextBox({
+            value: $("#txtPO_User_PONumber").dxTextBox("option", "value"),
+            disabled: true
+        }).dxTextBox("instance");
+        $("div[name=ddlPORequest_LeadTimeType" + poRequest_CountItem + "]").dxSelectBox({
+            dataSource: new DevExpress.data.DataSource({
+                store: poRequest_ListLeadTimeType,
+                paginate: true,
+                pageSize: 5
+            }),
+            displayExpr: "BASE_NAME1",
+            valueExpr: "BASE_CODE",
+        }).dxSelectBox("instance");
+        $("[name=dtpPORequest_PlanDeliverDate" + poRequest_CountItem + "]").dxDateBox({
+            displayFormat: "yyyy-MM-dd"
+        });
+
+        count++;
+    });
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-xs btn-secondary" title="Back to PO Request" id="btn_BackToPORequest" style="margin-right:5px"><i class="fas fa-reply"></i> @(_loc.GetLocalizedString("Back"))</button>
+                        <button class="btn btn-xs btn-secondary" title="Reload" id="btn_ReloadDetailPORequest" style="margin-right:5px"><i class="fas fa-sync"></i> @(_loc.GetLocalizedString("Reload")) </button>
+                        @if (Model.StatusCode == "ORST01" || Model.StatusCode == "ORST02")
+                        {
+                            <button class="btn btn-xs btn-secondary" title="Save" id="btn_SaveDataPORequest" style="margin-right:5px"><i class="fa fa-save"></i> @(_loc.GetLocalizedString("Save"))</button>
+                            <button class="btn btn-xs btn-secondary" title="Accept" id="btn_AcceptPORequest" style="margin-right:5px"><i class="fa fa-check"></i> @(_loc.GetLocalizedString("Accept"))</button>
+                            @*if (Model.PONumber != null)
+                            {
+                                <button class="btn btn-xs btn-secondary" title="Reject" id="btn_RejectPORequest" style="margin-right:5px"><i class="fa fa-times"></i> @(_loc.GetLocalizedString("Reject"))</button>
+                            }*@
+                        }
+                        <button class="btn btn-xs btn-secondary" title="Print" id="btn_PrintDetailPORequest" style="margin-right:5px"><i class="fas fa-download"></i> @(_loc.GetLocalizedString("Print")) </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    @if (Model.ProjectCode != null)
+                    {
+                        <div class="col-md-2 d-none">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Project Code"))</label>
+                                @(Html.DevExtreme().TextBox().ID("txtPO_ProjectCode").Value(Model.ProjectCode).Disabled(true))
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Project Code"))</label>
+                                @(Html.DevExtreme().TextBox().ID("txtPO_ProjectCode").Value(Model.ProjectCode).Disabled(true))
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-md-2 d-none">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("PO Number"))</label>
+                            @(Html.DevExtreme().TextBox().ID("txtPO_PONumber").Value(Model.PONumber).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("UserPONumber"))</label>
+                            @if (Model.UserPONumber == null)
+                            {
+                                @(Html.DevExtreme().TextBox().ID("txtPO_User_PONumber").Value(Model.UserPONumber))
+                            }
+                            else
+                            {
+                                @(Html.DevExtreme().TextBox().ID("txtPO_User_PONumber").Value(Model.UserPONumber).Disabled(true))
+                            }
+
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("PO Status")) </label>
+                            @(Html.DevExtreme().TextBox().ID("txtPO_POStatus").Value(Model.Status).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Request Date")) </label>
+                            @(Html.DevExtreme().DateBox().ID("dtpPO_ReqDate").Value(Model.RequestDate).Disabled(true).DisplayFormat("yyyy-MM-dd"))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Arrival Request Date"))</label>
+                            @(Html.DevExtreme().DateBox()
+                            .ID("dtpPO_ArrivalReqDate")
+                            .Value(Model.ArrivalRequestDate)
+                            .DisplayFormat("yyyy-MM-dd")
+                            .Disabled(Model.StatusCode != "ORST01" && Model.StatusCode != "ORST02" ? true : false))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("User Request"))</label>
+                            @(Html.DevExtreme().TextBox().ID("txtPO_UserReq").Value(Model.UserRequest).Disabled(true))
+                        </div>
+                    </div>
+                    @* nếu chưa có userPONumber thì là create .có rồi là xem detail  *@
+                    @if (Model.UserPONumber == null)
+                    {
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Partner Code</label>
+                                @(Html.DevExtreme().SelectBox()
+                                    .ID("txtPartnerCode")
+                                    .DisplayExpr("PartnerName").ValueExpr("PartnerCode")
+                                    .DataSource(d => d.Mvc().Controller("MESPORequest")
+                                        .LoadAction("getListPartner")
+                                        .Key("PartnerCode")
+                                    )
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                                )
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                       
+                    }
+
+                    @if (Model.StatusCode == "ORST02" || Model.StatusCode == "ORST03")
+                    {
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(Model.StatusCode == "ORST02" ? "Accept Date" : "Reject Date")</label>
+                                @(Html.DevExtreme().DateBox()
+                                .ID("dtpPO_StatusDate")
+                                .Value(Model.StatusCode == "ORST02" ? Model.AcceptDate : Model.RejectDate)
+                                .DisplayFormat("yyyy-MM-dd")
+                                .Disabled(true))
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>@(Model.Status == "ORST02" ? "User Accept" : "User Reject")</label>
+                                @(Html.DevExtreme().TextBox().ID("#txtPO_UserModify").Value(Model.StatusCode == "ORST02" ? Model.UserAccept : Model.UserReject).Disabled(true))
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>@(_loc.GetLocalizedString("List Item Materials"))</label>
+                        @if (Model.StatusCode == "ORST01" || Model.StatusCode == "ORST02")
+                        {
+                            <button class="btn btn-sm float-right btn-primary mb-2" id="btnPORequest_AddNewItemPO"><i class="fa fa-plus"></i>@(_loc.GetLocalizedString(" Add Item Material"))</button>
+                        }
+                        <div style="overflow:auto; width:100%;">
+                            <table class="table table-bordered" id="tblPORequest_ItemPO" style="width:100vw">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="min-width:170px">@(_loc.GetLocalizedString("Item Code"))</th>
+                                        @*<th class="text-center" style="min-width:170px">User PONumber</th>*@
+                                        <th class="text-center" style="min-width:200px">@(_loc.GetLocalizedString("Item Name"))</th>
+                                        <th class="text-center" style="min-width:100px">@(_loc.GetLocalizedString("PO Qty"))</th>
+                                        <th class="text-center" style="min-width:130px">@(_loc.GetLocalizedString("Lead Time Type"))</th>
+                                        <th class="text-center" style="min-width:100px">@(_loc.GetLocalizedString("Lead Time"))</th>
+                                        <th class="text-center" style="min-width:140px">@(_loc.GetLocalizedString("Monetary Unit"))</th>
+                                        <th class="text-center" style="min-width:200px">@(_loc.GetLocalizedString("Item Price"))</th>
+                                        <th class="text-center" style="min-width:200px">@(_loc.GetLocalizedString("Total Price"))</th>
+                                        <th class="text-center" style="min-width:120px">@(_loc.GetLocalizedString("Item Status"))</th>
+                                        <th class="text-center" style="min-width:500px">@(_loc.GetLocalizedString("Pleiger Remark"))</th>
+                                        <th class="text-center" style="min-width:500px">@(_loc.GetLocalizedString("PO Remark"))</th>
+                                        <th class="text-center" style="min-width:180px">@(_loc.GetLocalizedString("Plan Delivery Date"))</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="tr_ItemPO_Parent"  name="trPORequest_ItemPO_Parent" class="item-po-request d-none" item-po-id="">
+                                        <td>
+                                            @* comment id lại   id="ddlPORequest_ItemCode"  *@
+                                            <div  id="" name="ddlPORequest_ItemCode"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_ItemName" readonly />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_POQty" onblur="ChangeQtyItemPORequest(this)" />
+                                        </td>
+                                        <td>
+                                            <div name="ddlPORequest_LeadTimeType"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_LeadTime'" />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_MonetaryUnit" readonly />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_ItemPrice" disabled onblur="ChangePriceItemPORequest(this)" />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_TotalPrice" readonly />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_StatusName" readonly />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_PleigerRemark" />
+                                        </td>
+                                        <td>
+                                            <input class="form-control input-sm" name="txtPORequest_PORemark" />
+                                        </td>
+                                        <td>
+                                            <div class="dtpPORequest_PlanDeliverDate" name="dtpPORequest_PlanDeliverDate" name="dtpPORequest_PlanDeliverDate"></div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-danger" name="btn_delete" onclick="DeleteItemPORequest(this)" item-po-request="">Delete</buton>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

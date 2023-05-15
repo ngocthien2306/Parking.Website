@@ -1,0 +1,62 @@
+{
+  version: 0,
+  monospaced_fonts: [
+    {bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}},
+    {name:"gothic",bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}}
+  ],
+  paper: {
+    margin: {bottom:20.0,left:20.0,right:20.0,top:20.0},
+    scale_unit: "point",
+    type: "a4"
+  },
+  caption: "納品書",
+  font: {size:12.0},
+  custom_fields: [
+    {key:"kingaku",exp:"(* .tanka .suryo)"}
+  ],
+  group: {
+    caption: "部門グループ",
+    keys: ["bumonCd"],
+    page_break: true,
+    layout: {
+      size: 525.0,
+      x: 5.0,
+      y: 0.0
+    },
+    contents: [
+      {
+        size: {
+          initial: 65.0
+        },
+        aggregate_src: true,
+        caption: "ボディ",
+
+        group: {
+          caption: "明細グループ",
+          detail: true,
+          layout: {
+            size: 525.0,
+            x: 0.0,
+            y: 0.0
+          },
+          contents: [
+            {
+              size: {
+                initial: 65.0
+              },
+              aggregate_src: true,
+              caption: "明細",
+              elements: [
+                {type:"field",layout:{x1:345.0,y1:0.0,x2:525.0,y2:50.0},exp:".NameKor",font:{name:"malgun",size:7.0},formatter:{format:"#,###",type:"default"},halign:"center",valign:"center",xls_format:"#,###"},
+                {type:"barcode",layout:{x1:40.0,y1:0.0,x2:95.0,y2:50.0},barcode_type:"qrcode",exp:".ItemCode"},
+                {type:"field",layout:{x1:140.0,y1:0.0,x2:265.0,y2:50.0},exp:".ItemClassCode",font:{name:"malgun",size:7.0},formatter:{format:"#,##0",type:"default"},halign:"center",valign:"center"},
+                {type:"field",layout:{x1:265.0,y1:0.0,x2:345.0,y2:50.0},exp:".No",font:{name:"malgun",size:7.0},halign:"center",valign:"center"},
+                {type:"line",layout:{x1:0.0,y1:65.0,x2:525.0,y2:65.0}}
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

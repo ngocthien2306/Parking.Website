@@ -1,0 +1,121 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+
+
+    <script>
+    function getValue_@(Model.PEL_ID)() {
+        var value = $("#@(Model.PEL_ID)").dxNumberBox("instance").option("value");
+        var parseValue = parseFloat(value);
+        //return parseValue;
+
+        var flagRequired = false;// Init flag required field
+        //var value = $("#@(Model.PEL_ID)").dxNumberBox("instance").option("value");
+        // Check required field
+        if ("@(Model.PEL_IS_REQUIRED)" === "True") {
+            if (typeof value !== 'undefined' && value != "" && value != null) {
+                flagRequired = false;
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return parseValue;
+            }
+            else
+            {
+                flagRequired = true;
+                $("#@(Model.PEL_ID)").dxValidator({
+                    validationRules: [{ type: "required" }]
+                });
+                DevExpress.validationEngine.validateGroup();
+                countRequired.push(flagRequired); // push into global variable in Index.cshtml
+                return null;
+            }
+
+        }
+        else
+        {
+            return parseValue;
+        }
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        var exMath = '@Html.Raw(Model.PEL_EXP_TEXT)';
+        if (exMath != null && exMath != '') {
+            var valueExpression;//exMath != null ? @Html.Raw(Model.PEL_EXP_TEXT) : value;
+            if (exMath != null && exMath != '') {
+                valueExpression = '@Html.Raw(Model.PEL_EXP_TEXT)';
+            }
+            else {
+                valueExpression = value;
+            }
+            setTimeout(function(){ return $("#@(Model.PEL_ID)").dxNumberBox("instance").option("value", eval(valueExpression)); }, 500);
+
+        }
+        else {
+            return $("#@(Model.PEL_ID)").dxNumberBox("instance").option("value",value);
+        }
+    }
+
+    function reference_valueChanged_@(Model.PEL_ID)(data) {
+        // Check value change
+        if (data !== undefined && data.value !== data.previousValue) {
+            reference_valueChanged_@(Model.PEL_ID)(); // Call reference in _RenderForm
+        }
+    }
+    </script>
+@{if (Model.PEL_DFVALUE != null && Model.PEL_DFVALUE != "")
+    {
+        <script>
+            $( document ).ready(function() {
+                setValue_@(Model.PEL_ID)("@Model.PEL_DFVALUE");
+            });
+
+        </script>
+
+    }
+} 
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS==true?"display:block":"display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+    @if (@Model != null)
+    {
+        string format = "";
+        switch (Model.PEL_FORL)
+        {
+            case "C001": format = "#,##0"; break;
+            case "C002": format = "#,##0.#0"; break;
+            case "C003": format = "#,###.##0"; break;
+            case "C004": format = "#,###.###0"; break;
+            case "C005": format = "#,##0.#####0"; break;
+            default: format = ""; break;
+        }
+
+        @(Html.DevExtreme().NumberBox().ID(Model.PEL_ID).Format(format)
+                    .ShowSpinButtons(true)// Show spin button
+                    .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                    .OnValueChanged("reference_valueChanged_"+(Model.PEL_ID))
+                )
+    }
+    @*<div class="dx-field">
+        <div class="dx-field-label">@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+
+            @if (@Model != null)
+            {
+                string format = "";
+                switch (Model.PEL_FORL)
+                {
+                    case "C001": format = "#,##0"; break;
+                    case "C002": format = "#,##0.#0"; break;
+                    case "C003": format = "#,###.##0"; break;
+                    case "C004": format = "#,###.###0"; break;
+                    case "C005": format = "#,##0.#####0"; break;
+                    default: format = ""; break;
+                }
+
+                @(Html.DevExtreme().NumberBox().ID(Model.PEL_ID).Format(format)
+                    .ShowSpinButtons(true)// Show spin button
+                    .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                    .OnValueChanged("reference_valueChanged_"+(Model.PEL_ID))
+                )
+            }
+
+        </div>
+    </div>*@
+</div>

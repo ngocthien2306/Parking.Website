@@ -1,0 +1,186 @@
+﻿@using Modules.Common.Models;
+@using Newtonsoft.Json;
+@{
+    Layout = null;
+}
+<script type="text/javascript">
+    var changedBySelectBox;
+    function getDataGridInstance() {
+        return $("#DataGridClearElements").dxDataGrid("instance");
+    }
+
+    $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+        if ($(e.target).attr("href") === '#custom-clear-element') {
+            $('#btn-save-clear').css('display', 'block');
+        }
+        else {
+            $('#btn-save-clear').css('display', 'none');
+        }
+    });
+
+    $("#btn-save-clear").on("click", function () {
+        CheckSession();
+        var dataGrid = getDataGridInstance();
+        var data = dataGrid.getSelectedRowsData();
+        $.ajax({
+            url: '@Url.Action("SaveDataGridClearElements","Admin")',
+            type: "POST",
+            data: { data: data, pageID: '@ViewBag.PAG_ID', actionID: '@ViewBag.ACT_ID' },
+            dataType: "json",
+            success: function (rs) {
+                if (rs.result == 1) {
+                    dataGrid.refresh();
+                }
+            }
+        });
+    });
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Setting Data Page Actions Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-12 col-sm-12 col-lg-12">
+                <div class="card card-primary card-outline card-tabs">
+                    <div class="card-header p-0 pt-1 border-bottom-0">
+                        <ul class="nav nav-tabs" id="custom-tabs-two-tab" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="custom-action-detail-tab" data-toggle="pill" href="#custom-action-detail" role="tab" aria-selected="false">Detail Action</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="custom-clear-element-tab" data-toggle="pill" href="#custom-clear-element" role="tab" aria-selected="false">Clear Element</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="custom-tabs-tabContent">
+                            <div class="tab-pane fade active show" id="custom-action-detail" role="tabpanel">
+                                @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageActionDetails>()
+                                    .ID("DataGridPageActionDetails")
+                                    .DataSource(d => d.Mvc()
+                                        .Controller("Admin")
+                                        .LoadAction("GetDataGridPageActionDetails")
+                                        .LoadParams(new { ACT_ID = ViewBag.ACT_ID, PAG_ID = ViewBag.PAG_ID })
+                                        .Key("ACT_ID")
+                                        .Key("PAG_ID")
+                                        .Key("SOURCE_ID")
+                                    )
+                                    .ShowBorders(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .FilterRow(filterRow => filterRow
+                                        .Visible(true)
+                                        .ApplyFilter(GridApplyFilterMode.Auto)
+                                    )
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Row);
+                                        editing.AllowAdding(true);
+                                        editing.AllowDeleting(true);
+                                        editing.AllowUpdating(true);
+                                    })
+                                    .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                                    .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                                    .Columns(columns =>
+                                    {
+                                        columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                        {
+                                            btns.Add().Name(GridColumnButtonName.Edit);
+                                            btns.Add().Name(GridColumnButtonName.Save).OnClick("SavedDataPageActionDetailsLayout");
+                                            btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeletedDataPageActionDetailsLayout");
+                                        });
+                                        columns.AddFor(m => m.PAG_ID).Width(150).Visible(false);
+                                        columns.AddFor(m => m.ACT_ID).Width(150).Visible(false);
+                                        columns.AddFor(m => m.SOURCE_ID).Width("35%").Caption(_loc.GetLocalizedString("Source name (map/pop)")).Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetMapPelIDInSYDataMap").LoadParams(new { PAG_ID = ViewBag.PAG_ID }).Key("ID"))
+                                            .DisplayExpr("Name")
+                                            .ValueExpr("ID")
+                                        );
+                                        columns.AddFor(m => m.ACT_TYPE).Caption(_loc.GetLocalizedString("Action Type")).Width("15%").Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetActionType").Key("DTL_CD"))
+                                            .DisplayExpr("COD_NM")
+                                            .ValueExpr("DTL_CD")
+                                        );
+                                        columns.AddFor(m => m.ACT_FN).Width("20%").Caption(_loc.GetLocalizedString("Function script"));
+
+
+                                        columns.AddFor(m => m.PAG_REDIRECT).Caption(_loc.GetLocalizedString("Select Page Redirect")).Width("15%").Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetPageELWithType").Key("PAG_ID"))
+                                            .DisplayExpr("PAG_KEY")
+                                            .ValueExpr("PAG_ID")
+                                        );
+                                        columns.AddFor(m => m.EXEC_SEQ).Caption(_loc.GetLocalizedString("Action Execute Sequence")).Width("15%").DataType(GridColumnDataType.Number);
+                                        columns.AddFor(m => m.RUN_TRXN).Caption(_loc.GetLocalizedString("Run transaction")).Width("15%").Lookup(lookup => lookup
+                                            .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetTypeTrueFalse").Key("ID"))
+                                            .DisplayExpr("Name")
+                                            .ValueExpr("ID")
+                                        );
+                                    })
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(10))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowPageSizeSelector(false);
+                                        pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                        pager.ShowInfo(true);
+                                    })
+                                )
+                            </div>
+                            <div class="tab-pane fade" id="custom-clear-element" role="tabpanel">
+                                @(Html.DevExtreme().DataGrid<Modules.Admin.Models.SYPageLayElements>()
+                                    .ID("DataGridClearElements")
+                                    .DataSource(d => d.Mvc()
+                                        .Controller("Admin")
+                                        .LoadAction("GetDataGridClearElements")
+                                        .LoadParams(new { ACT_ID = ViewBag.ACT_ID, PAG_ID = ViewBag.PAG_ID })
+                                        .Key("ACT_ID")
+                                        .Key("PAG_ID")
+                                        .Key("PEL_ID")
+                                    )
+                                    .ShowBorders(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .FilterRow(filterRow => filterRow
+                                        .Visible(true)
+                                        .ApplyFilter(GridApplyFilterMode.Auto)
+                                    )
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Multiple).ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always).SelectAllMode(SelectAllMode.AllPages))
+                                    .OnInitialized("GridClearElementsInitialized")
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                    .OnEditingStart(@<text> function(e) { LogPageEvent("Edit"); } </text>)
+                                    .OnInitNewRow(@<text> function(e) { LogPageEvent("Add"); } </text>)
+                                    .Columns(columns =>
+                                    {
+                                        columns.AddFor(m => m.PAG_ID).Alignment(HorizontalAlignment.Center);
+                                        columns.AddFor(m => m.PEL_ID);
+                                        columns.AddFor(m => m.PEL_TYP);
+                                    })
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(10))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowPageSizeSelector(false);
+                                        pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                                        pager.ShowInfo(true);
+                                    })
+                                )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-save-clear">Save</button>
+    </div>
+</div>

@@ -1,0 +1,90 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+
+<script>
+    function getValue_@(Model.PEL_ID)() {
+        debugger;
+        var flagRequired = false;// Init flag required field
+        var valueStartDate = $("#startDate@(Model.PEL_ID)@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        var valueEndDate = $("#endDate@(Model.PEL_ID)@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        // check is null
+        if (valueStartDate === null || valueEndDate === null) {
+            return null;
+        }
+
+        // check not null
+        if (typeof valueStartDate !== 'undefined' && valueStartDate != "" && typeof valueEndDate !== 'undefined' && valueEndDate != "") {
+            var dateFormat = new Date(valueStartDate);
+            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            //
+            var dateFormatEnd = new Date(valueEndDate);
+            var dateStringEnd = new Date(dateFormatEnd.getTime() - (dateFormatEnd.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            //
+            debugger;
+            if (ValidateRangeDate(ParsingDateyyyyMMdd(dateString), ParsingDateyyyyMMdd(dateStringEnd))) {
+                var dateFromTo = dateString + "," + dateStringEnd;
+                return dateFromTo;
+            } else {
+                return false;
+            }
+
+        }
+        return null;
+        //}
+    }
+
+    function setValue_@(Model.PEL_ID)(value) {
+        debugger;
+        return $("#@(Model.PEL_ID)@(ViewBag.Thread)").dxDateBox("instance").option("value", value);
+    }
+
+    //Check validate StartDate<= EndDate
+    function validateDate(startDate, endDate) {
+        if (startDate > endDate) {
+            DevExpress.ui.dialog.alert('Date From Can Not Less Than Date To', "Error");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    function OnContentReady@(Model.PEL_ID)@(ViewBag.Thread)() {
+        debugger;
+        var customStartDate = GetStartDateDefaultOfDynamicPage('@(Model.PEL_DFVALUE)');
+        $("#startDate@(Model.PEL_ID)@(ViewBag.Thread)").dxDateBox("instance").option("value", customStartDate);
+    }
+
+</script>
+
+@*<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS==true?"display:block":"display:none")">*@
+    <div class="col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+        <div class="form-group">
+            <label>@(_loc.GetLocalizedString(Model.PEL_LBL))</label>
+            <div class="form-group row">
+                <div class="col-sm-5 col-xs-5">
+                    @(Html.DevExtreme().DateBox().OnContentReady("OnContentReady" + Model.PEL_ID + ViewBag.Thread)
+                        .ID("startDate"+ Model.PEL_ID + ViewBag.Thread)
+                                        //.Type(DateBoxType.Date)
+                                        //.Value(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1))
+                                        //.Value(new DateTime Parse(Model.PEL_DFVALUE))
+                                        //.Value()
+                                        //.Value(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1))
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                        )
+                </div>
+                <div style="align-self: center;">~</div>
+                <div class="col-sm-5 col-xs-5">
+                    @(Html.DevExtreme().DateBox().ID("endDate" + Model.PEL_ID + ViewBag.Thread)
+                                        //.Type(DateBoxType.Date)
+                                        .Value(DateTime.Now)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                        )
+                </div>
+            </div>
+        </div>
+    </div>
+@* comment
+    chỗ date from to này bất hợp lí .. mặc định là đầu tháng -> ngày hien tại ..nen search sẽ ko ra ..nen để mặc định là rỗng
+    *@

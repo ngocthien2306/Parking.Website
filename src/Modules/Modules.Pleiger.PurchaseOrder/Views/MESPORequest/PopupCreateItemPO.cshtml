@@ -1,0 +1,215 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@{
+    Layout = null;
+    string PartnerCode = "PartnerCode" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemName = "ItemName" + ViewBag.Thread;
+    string POQty = "POQty" + ViewBag.Thread;
+    string ItemPrice = "ItemPrice" + ViewBag.Thread;
+    string TotalPrice = "TotalPrice" + ViewBag.Thread;
+    string ItemStatus = "ItemStatus" + ViewBag.Thread;
+    string ListTimeType = "ListTimeType" + ViewBag.Thread;
+    string ListTime = "ListTime" + ViewBag.Thread;
+    string MonetaryUnit = "MonetaryUnit" + ViewBag.Thread;
+    string PlanDeliveryDate = "PlanDeliveryDate" + ViewBag.Thread;
+    string PleigerRemark = "PleigerRemark" + ViewBag.Thread;
+    string PORemark = "PORemark" + ViewBag.Thread;
+
+}
+<script>
+
+    function OnPartnerChanged(e) {
+        LoadingPage(1);
+        console.log(e);
+        let partnerCode = e.value;
+        $.ajax({
+            url: '@Url.Action("getListItemByPartner", "MESPORequest")',
+            type: "GET",
+            data: { partnerCode: partnerCode },
+            dataType: "json",
+            success: function (resp) {
+                LoadingPage(0);
+                var dxItemCode = $('#@(ItemCode)').dxSelectBox("instance");
+                dxItemCode.option("dataSource", resp);
+                dxItemCode.option("displayExpr", "ItemCode");
+                dxItemCode.option("valueExpr", "ItemCode");
+            }, error: function (resp) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+    function OnItemChanged(e) {
+        LoadingPage(1);
+        var itemCode = e.value;
+        var partnerCode = $("#@(PartnerCode)").dxSelectBox("option", "value");
+         $.ajax({
+            url: '@Url.Action("getItemByParam", "MESPORequest")',
+            type: "GET",
+             data: {
+                 partnerCode: partnerCode,
+                 itemCode: itemCode
+             },
+            dataType: "json",
+             success: function (resp) {
+                 LoadingPage(0);
+                console.log(resp);
+                $("#@(ItemPrice)").dxTextBox("option", "value", resp.ItemPrice);
+                $("#@(ItemName)").dxTextBox("option", "value", resp.ItemName);
+                $("#@(ItemStatus)").dxTextBox("option", "value", 'Request');
+                $("#@(ItemStatus)").dxTextBox({
+                    disabled: true
+                });
+
+             }, error: function (resp) {
+                 LoadingPage(0);
+             }
+         });
+        LoadingPage(0);
+    }
+        function ChangeQtyItemPORequest(data) {
+
+        let POQty = data.value;
+        debugger;
+            if (isNaN(POQty) || parseFloat(POQty) < 0 || POQty == "") {
+            DevExpress.ui.dialog.alert("PO Qty is invalid!", "Error");
+        return;
+        }
+            debugger;
+            var itemPrice = $("#@(TotalPrice)").dxDateBox("instance").option("value");
+            $("#@(TotalPrice)").dxTextBox("option", "value", parseFloat(POQty) * parseFloat(itemPrice))
+    }
+    </script>
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title">Add Item Material</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-xs-12 col-md-3">
+                    <label>Partnercode</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(PartnerCode)
+                        .DisplayExpr("PartnerName").ValueExpr("PartnerCode")
+                        .DataSource(d => d.Mvc().Controller("MESPartner")
+                           .LoadAction("GetAllPartner")
+                           .Key("PartnerCode")
+                        )
+                        .OnValueChanged("OnPartnerChanged")
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>ItemCode</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(ItemCode)
+                        //.DisplayExpr("ItemCode").ValueExpr("ItemCode")
+                        .OnValueChanged("OnItemChanged")
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>ItemName</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(ItemName)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>POQty</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(POQty)
+                        .Value("").OnValueChanged("ChangeQtyItemPORequest")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>ItemPrice</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(ItemPrice)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>Total Price</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(TotalPrice)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>Item Status</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(ItemStatus)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>ListTimeType</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(ListTimeType)
+                        .DisplayExpr("BASE_NAME1").ValueExpr("BASE_CODE")
+                        .DataSource(d => d.Mvc().Controller("MESPORequest")
+                            .LoadAction("GetListLeadTimeType")
+                            .Key("BASE_CODE")
+                        )
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>Lead Time</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(ListTime)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>Monetary Unit</label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(MonetaryUnit)
+                        .DisplayExpr("Name").ValueExpr("ID")
+                        .DataSource(d => d.Mvc().Controller("MESPORequest")
+                            .LoadAction("getListMonetaryUnit")
+                            .Key("ID")
+                        )
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//a
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>PlanDeliveryDate</label>
+                    @(Html.DevExtreme().DateBox()
+                        .ID(PlanDeliveryDate)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>Pleiger Remark</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(PleigerRemark)
+                        .Value("")
+                    )
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <label>PO Remark</label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(PORemark)
+                        .Value("")
+                    )
+                </div>
+
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>

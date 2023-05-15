@@ -1,0 +1,212 @@
+﻿@using Modules.Pleiger.Production.Model;
+@using Modules.Common.Models;
+@{
+    Layout = null;
+
+    string frmMaterialIssueNo = "frmMaterialIssueNo" + ViewBag.Thread;
+    string frmUseTeam = "frmUseTeam" + ViewBag.Thread;
+    string frmItemCode = "frmItemCode" + ViewBag.Thread;
+    string frmItemName = "frmItemName" + ViewBag.Thread;
+    string frmStatus = "frmStatus" + ViewBag.Thread;
+    string inputExcel = "inputExcel" + ViewBag.Thread;
+    string save = "save" + ViewBag.Thread;
+    string print = "print" + ViewBag.Thread;
+
+    string MaterWHCode = "MaterWHCode" + ViewBag.Thread;
+
+    string Message = ""; // Thien Add
+}
+<script>
+    var saveAction = '@ViewBag.SaveAction';
+    var fileLoc;
+    $(document).ready(function () {
+        loadCombobox@(ViewBag.Thread)();
+    });
+
+    function loadCombobox@(ViewBag.Thread)() {
+        LoadingPage(1);
+
+        var useTeamCom = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "MUT000");
+        var statusCom = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "MIS000");
+
+        $("#@frmUseTeam").dxSelectBox({
+            dataSource: useTeamCom,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+        });
+
+        $("#@frmStatus").dxSelectBox({
+            dataSource: statusCom,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+        });
+
+        LoadingPage(0);
+    };
+    function onUploadedFileImport@(ViewBag.Thread)(e) {
+        var result = JSON.parse(e.request.response);
+        fileLoc = result.data;
+        debugger;
+    };
+
+    $("#@save").on("click", function () {
+
+        let materWHCode = $('#@MaterWHCode').dxSelectBox('instance').option('value');
+
+        if (materWHCode == null || materWHCode == "" || typeof materWHCode === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please choose warehourse!")", "Error");
+            return false;
+        }
+        if (fileLoc === null || fileLoc === '' || fileLoc === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please choose the file to upload first")", "Error");
+            return;
+        };
+        var confirm = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+        confirm.done(function (dialogResult) {
+            if (dialogResult) {
+                LoadingPage(1);
+                $.ajax({
+                    url: '@Url.Action("UpdateDataFromExcelSaleProject", "MESMaterialIssue")',
+                    data: {
+                        fileLoc: fileLoc,
+                        materWHCode: materWHCode,
+                        materialIssueNo: '@(ViewBag.mESMaterialIssue.MaterialIssueNo)'
+                    },
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (result) {
+                        DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.MD0004))', '@(_loc.GetLocalizedString("Message"))', function () {
+                            fileLoc = null;
+                            $("#btnReload_@ViewBag.ParentThread").trigger('click');
+                            $('#modalControl').modal('hide');
+                            LoadingPage(0);
+                        });
+                    }
+                })
+                LoadingPage(0);
+            }
+        });
+    });
+
+    $("#@print").on("click", function () {
+        $("#btnPrint_@ViewBag.ParentThread").trigger("click");
+    });
+
+</script>
+<div class="modal-content" id="InventoryCheck">
+    <div class="modal-header">
+        <h5 class="modal-title">@_loc.GetLocalizedString("Batch registration of material disbursement")</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <form>
+            <div class="form-group row">
+                <label for="@frmMaterialIssueNo" class="col-4 text-right col-form-label">@(_loc.GetLocalizedString("Material Issue No")):</label>
+                <div class="col-8">
+                    @(
+                    Html.DevExtreme()
+                    .TextBox()
+                    .ID(frmMaterialIssueNo)
+                    .ReadOnly(true)
+                    .Value(ViewBag.mESMaterialIssue.MaterialIssueNo)
+                    )
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="@frmUseTeam" class="col-4 text-right col-form-label">@(_loc.GetLocalizedString("Use Team")):</label>
+                <div class="col-8">
+                    @(
+                    Html.DevExtreme()
+                    .SelectBox()
+                    .ID(frmUseTeam)
+                    .ReadOnly(true)
+                    .Value(ViewBag.mESMaterialIssue.UseTeamCode)
+                    )
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="@frmItemCode" class="col-4 text-right col-form-label">@(_loc.GetLocalizedString("Item Code")):</label>
+                <div class="col-8">
+                    @(
+                    Html.DevExtreme()
+                    .TextBox()
+                    .ID(frmItemCode)
+                    .ReadOnly(true)
+                    .Value(ViewBag.mESMaterialIssue.ITEMCode)
+                    )
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="@frmItemName" class="col-4 text-right col-form-label">@(_loc.GetLocalizedString("Item Name")):</label>
+                <div class="col-8">
+                    @(
+                    Html.DevExtreme()
+                    .TextBox()
+                    .ID(frmItemName)
+                    .ReadOnly(true)
+                    .Value(ViewBag.mESMaterialIssue.ItemName)
+                    )
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="@frmStatus" class="col-4 text-right col-form-label">@(_loc.GetLocalizedString("Status")):</label>
+                <div class="col-8">
+                    @(
+                    Html.DevExtreme()
+                    .SelectBox()
+                    .ID(frmStatus)
+                    .Value(ViewBag.mESMaterialIssue.StatusCode)
+                    .ReadOnly(true)
+                    )
+                </div>
+            </div>
+        </form>
+        <hr>
+        <div class="row m-0">
+            <button id="@print" class="btn btn-primary">@(_loc.GetLocalizedString("Refrain from Payment Excel Download"))</button>
+        </div>
+        <hr>
+        <hr>
+        <div class="row m-0">
+            <label class="col-4 text-right col-form-label">@(_loc.GetLocalizedString("Material Warehouse"))<span class="required-input"> *</span></label>
+            <div class="col-6">
+                @(Html.DevExtreme().SelectBox()
+                    .ID(MaterWHCode)
+                    .DataSource(d => d.Mvc().Controller("MESProductionMagt")
+                            .LoadAction("GetListWareHouse")
+                            .Key("WarehouseCode")
+                        )
+                    .DisplayExpr("WarehouseName")
+                    .ValueExpr("WarehouseCode")
+                )
+            </div>
+        </div>
+        <hr>
+        <div class="row m-0">
+            @*<input type="file" class="btn btn-outline-secondary col-6" id="@inputExcel">*@
+            <form id="form" method="post" enctype="multipart/form-data">
+                <div class="col-12 fileuploader-container">
+                    @(Html.DevExtreme().FileUploader()
+                    .ID(inputExcel)
+                    .Name("myFile")
+                    .ChunkSize(10000000)
+                    .MaxFileSize(50000000000)
+                    .AllowedFileExtensions(new[] { ".xls", ".xlsx" })
+                    .SelectButtonText(@_loc.GetLocalizedString("Select file"))
+                    .UploadUrl(Url.Action("UploadFilePopup", "MESMaterialIssue"))
+                    .OnUploaded("onUploadedFileImport" + ViewBag.Thread)
+                    )
+                </div>
+            </form>
+        </div>
+        <hr>
+        <div class="row m-0">
+            <button id="@save" class="btn btn-primary col-6">Save</button>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary float-right" data-dismiss="modal" aria-label="Close">Close</button>
+    </div>
+</div>

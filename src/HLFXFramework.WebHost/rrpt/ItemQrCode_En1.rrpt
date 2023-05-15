@@ -1,0 +1,57 @@
+{
+  version: 0,
+  monospaced_fonts: [
+    {bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}},
+    {name:"gothic",bold:{full_width:1.033,half_width:0.536,row_height:1.0},regular:{full_width:1.03,half_width:0.516,row_height:1.0}}
+  ],
+  paper: {
+    margin: {bottom:20.0,left:20.0,right:20.0,top:20.0},
+    scale_unit: "point",
+    type: "a4"
+  },
+  caption: "納品書",
+  font: {size:12.0},
+  custom_fields: [
+    {key:"kingaku",exp:"(* .tanka .suryo)"}
+  ],
+  group: {
+    caption: "部門グループ",
+    keys: ["bumonCd"],
+    page_break: true,
+    layout: {
+      size: 525.0,
+      x: 5.0,
+      y: 0.0
+    },
+    contents: [
+      {
+        size: {
+          initial: 65.0
+        },
+        aggregate_src: true,
+        caption: "ボディ",
+        group: {
+          caption: "明細グループ",
+          detail: true,
+          layout: {
+            size: 525.0,
+            x: 0.0,
+            y: 0.0
+          },
+          contents: [
+            {
+              size: {
+                initial: 230.0
+              },
+              aggregate_src: true,
+              caption: "明細",
+              elements: [
+                {type:"barcode",layout:{x1:170.0,y1:25.0,x2:370.0,y2:220.0},barcode_type:"qrcode",exp:".ItemCode"}
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

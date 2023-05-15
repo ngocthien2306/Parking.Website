@@ -1,0 +1,479 @@
+﻿@model Modules.Admin.Models.SYBoardInfo
+@using Modules.FileUpload.Models
+
+<script>
+
+    function GetDocDT() {
+        LoadingPage(1);
+        var value = $("#DocDT" + getBoardIDOfCB()).dxDateBox("instance").option("value");
+        if (typeof value !== 'undefined' && value != "") {
+            var dateFormat = new Date(value);
+            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            LoadingPage(0);
+            return dateString;
+        }
+        LoadingPage(0);
+        return null;
+    }
+    function GetInsertDT() {
+        LoadingPage(1);
+        var value = $("#InsertDT" + getBoardIDOfCB()).dxDateBox("instance").option("value");
+        if (typeof value !== 'undefined' && value != "") {
+            var dateFormat = new Date(value);
+            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            LoadingPage(0);
+            return dateString;
+        }
+        LoadingPage(0);
+        return null;
+    }
+    function onSaveCommonBoard() {
+        LoadingPage(1);
+            CheckSession();
+            var _BoardID = getBoardIDOfCB();
+            var _BoardDocID = $("#BoardDocID" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _InsertID = $("#InsertID" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            // var _InsertName = $("#InsertName" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _Email = $("#Email" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _Subject = $("#Subject" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _InternalPhone = $("#InternalPhone" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _InsertDT = GetInsertDT();
+            var _ReadCount = $("#ReadCount" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _Body = $("#Body" + getBoardIDOfCB()).dxHtmlEditor("instance").option("value");
+            var _DocDT = GetDocDT();
+            var _ReferenceUrl = $("#ReferenceUrl" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _FileID = eval('getValue_FileID' + getBoardIDOfCB() + '()');
+            var _BoardDocKey = $("#BoardDocKey" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+
+            var _BranchName = $("#BranchName" + getBoardIDOfCB()).dxSelectBox("instance").option("value");
+            var _NoticeTime = $("#NoticeTime" + getBoardIDOfCB()).dxSelectBox("instance").option("value");
+            //  var _ReplyNum = ;
+            // var _ReplyDepth = ;
+            //  var _DocStatus = ;
+            //   var _ParentReplyNum =;
+            //   var _SortOrder = ;
+            // var _NoticeOrder;
+            // var _NoticeOption = ;
+            //  var _NoticeDT = ;
+             
+            var CommonBoardInfo = {
+                BoardID: _BoardID,
+                BoardDocID: _BoardDocID,
+                InsertID: _InsertID,
+                //  InsertName: _InsertName,
+                InternalPhone: _InternalPhone,
+                Email: _Email,
+                Subject: _Subject,
+                InsertDT: _InsertDT,
+                ReadCount: _ReadCount,
+                Body: _Body,
+                DocDT: _DocDT,
+                ReferenceUrl: _ReferenceUrl,
+                FileID: _FileID,
+                BoardDocKey: _BoardDocKey,
+                BranchName: _BranchName,
+                NoticeTime: _NoticeTime
+            }
+
+            $.ajax({
+                url: '@Url.Action("OnSave", "CB")',
+                type: "POST",
+                data: {
+                    CommonBoardInfo: CommonBoardInfo,
+                    actionCB: actionCB
+                },
+                dataType: "json",
+                success: function (result) {
+                    LoadingPage(0);
+                    if (result.Success) {
+                        DevExpress.ui.dialog.alert('Save success', "Success", function () {
+                            var grid = $("#GridCommonBoardManagement").dxTreeList("instance");
+                            grid.refresh();
+                            $("#DetailCBPopup").modal("hide");
+                            ResetCreateCommonBoardPop();
+                        @*$.ajax({
+                            url: '@Url.Action("GenergateGUUID", "BoardManagement")',
+                            type: "GET",
+                            dataType: "json",
+                            success: function (result) {
+                                tempBoardID = result;
+                            }
+                        });*@
+                        });
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });
+        LoadingPage(0);
+        }
+    function onDeleteCommonBoard() {
+        LoadingPage(1);
+            CheckSession();
+            var _BoardID = getBoardIDOfCB();
+            var _BoardDocID = $("#BoardDocID" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            $.ajax({
+                url: '@Url.Action("OnDelete", "CB")',
+                type: "POST",
+                data: {
+                    BoardID: _BoardID,
+                    BoardDocID: _BoardDocID
+                },
+                dataType: "json",
+                success: function (result) {
+                    LoadingPage(0);
+                    if (result.Success) {
+                        DevExpress.ui.dialog.alert('Save success', "Success", function () {
+                            var grid = $("#GridCommonBoardManagement").dxTreeList("instance");
+                            grid.refresh();
+                            $("#DetailCBPopup").modal("hide");
+                            ResetCreateCommonBoardPop();
+                        });
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });
+        LoadingPage(0);
+        }
+    $(function () {
+        LoadingPage(1);
+            CheckSession();
+            $.ajax({
+                url: '@Url.Action("GetListBoardBranchByBoardID", "CB")',
+                type: "GET",
+                data: {
+                    bid: getBoardIDOfCB()
+                },
+                dataType: "json",
+                success: function (result) {
+                    $("#BranchName" + getBoardIDOfCB()).dxSelectBox("instance").option("dataSource", result.data)
+                }
+            });
+            $.ajax({
+                url: '@Url.Action("GetRangeNoticeDate", "CB")',
+                type: "GET",
+                data: {
+                    bid: getBoardIDOfCB(),
+                    textDay:'@_loc.GetLocalizedString("Day")',
+                },
+                dataType: "json",
+                success: function (result) {
+                    $("#NoticeTime" + getBoardIDOfCB()).dxSelectBox("instance").option("dataSource", result.data)
+                }
+            });
+        LoadingPage(0);
+    });
+    function SetToolbarReplyCB() {
+        actionCB = "REPLY";
+        }
+    function SetToolbarEditCB() {
+        actionCB = "UPDATE";
+        }
+    function SetToolbarInsertCB() {
+        
+        actionCB = "INSERT";
+        }
+    function InsertCommonBoardComment() {
+        LoadingPage(1);
+            CheckSession();
+            var _BoardID = getBoardIDOfCB();
+            var _BoardDocID = $("#BoardDocID" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            var _CommentBody = $("#CommentBody" + getBoardIDOfCB()).dxTextBox("instance").option("value");
+            if (_CommentBody !== "") {
+                var commentCBInfo = {
+                    BoardID: _BoardID,
+                    BoardDocID: _BoardDocID,
+                    CommentBody: _CommentBody
+                }
+                $.ajax({
+                    url: '@Url.Action("OnInsertComment", "CB")',
+                    type: "POST",
+                    data: {
+                        CommentCBInfo: commentCBInfo
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            $("#CommentBody" + getBoardIDOfCB()).dxTextBox("instance").option("value", "");
+                            LoadCommentCB(result.Data);
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+                LoadingPage(0);
+        }
+        LoadingPage(0);
+        }
+</script>
+<div class="modal fade" tabindex="-1" role="dialog" id="DetailCBPopup">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row" id="rowBoardDocKey">
+                    <label class="col-sm-2 col-form-label"> 번호</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().TextBox().ID("BoardDocKey"+ Model.BoardID)
+                            .Disabled(true)
+                        )
+
+                    </div>
+                    <label class="col-sm-2 col-form-label"> BoardDocID</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().TextBox().ID("BoardDocID" + Model.BoardID)
+                            .Disabled(true)
+                        )
+                    </div>
+                </div>
+                @*<div class="form-group row" id="rowGroupName">
+                        <label class="col-sm-2 col-form-label"> 번호</label>
+                        <div class="col-sm-4">
+                            @(Html.DevExtreme().TextBox().ID("BoardDocKey")
+                                .Disabled(true) // Editable or not readonly
+                            )
+                        </div>
+                        <label class="col-sm-2 col-form-label"> 분류명</label>
+                        <div class="col-sm-4">
+                            @(Html.DevExtreme().DateBox().ID("InsertDT").Type(DateBoxType.Date)
+                                .Value(DateTime.Now)
+                                .DisplayFormat("yyyy-MM-dd")
+                            )
+                        </div>
+                    </div>*@
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 분류명</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().SelectBox()
+                        .ID("BranchName" + Model.BoardID)
+                        //.DataSource(d => d.Mvc().Controller("CB").LoadAction("GetListBoardBranchByBoardID").LoadParams(new { bid = new JS("getBoardIDOfCB") }))
+                        .DisplayExpr("BranchNameDesc")
+                        .ValueExpr("BranchNameID")
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> 작성자</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("InsertID" + Model.BoardID).Value(ViewBag.UserName).Disabled(true)
+                        )
+                    </div>
+                    @*<label class="col-sm-2 col-form-label"> 열람범위</label>
+                        <div class="col-md-4">
+                            @(Html.DevExtreme().TextBox().ID("DocAuth" + Model.BoardID).Value(ViewBag.UserName).Disabled(true)
+                            )
+                        </div>*@
+                </div>
+                @*<div class="form-group row">
+                        <label class="col-sm-2 col-form-label"> 분류명</label>
+                        <div class="col-md-4">
+                            @(Html.DevExtreme().TextBox().ID("GroupName")
+                            )
+                        </div>
+                        <label class="col-sm-2 col-form-label"> 열람범위</label>
+                        <div class="col-md-4">
+                            @(Html.DevExtreme().TextBox().ID("DocAuthName")
+                            )
+                        </div>
+                    </div>*@
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 전화번호</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("InternalPhone" + Model.BoardID)
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> E-mail</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("Email" + Model.BoardID)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 문서작성일</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().DateBox().ID("DocDT" + Model.BoardID).Type(DateBoxType.Date)
+                            .Value(DateTime.Now)
+                            .DisplayFormat("yyyy-MM-dd")
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> 게시기한</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().SelectBox()
+                        .ID("NoticeTime" + Model.BoardID)
+                      //  .DataSource(d => d.Mvc().Controller("CB").LoadAction("GetRangeNoticeDate"))
+                        .DisplayExpr("TextDay")
+                        .ValueExpr("Day")
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 등록일</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().DateBox().ID("InsertDT" + Model.BoardID).Type(DateBoxType.Date)
+                            .Value(DateTime.Now)
+                            .DisplayFormat("yyyy-MM-dd").Disabled(true)
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> 조회수</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("ReadCount" + Model.BoardID)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 제목</label>
+                    <div class="col-md-10">
+                        @(Html.DevExtreme().TextBox().ID("Subject" + Model.BoardID)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        @(Html.DevExtreme().HtmlEditor()
+                            .ID("Body" + Model.BoardID
+                            )
+                            .Height(250)
+
+                            .Toolbar(toolbar => toolbar.Items(
+                            items =>
+                            {
+                                items.Add().FormatName(HtmlEditorToolbarItem.Undo);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Redo);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add()
+                                .FormatName("size")
+                                .FormatValues(new[] { "8pt", "10pt", "12pt", "14pt", "18pt", "24pt", "36pt" });
+
+                                items.Add()
+                                .FormatName("font")
+                                .FormatValues(new[] { "Arial", "Courier New", "Georgia", "Impact", "Lucida Console", "Tahoma", "Times New Roman", "Verdana" });
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Bold);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Italic);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Strike);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Underline);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.AlignLeft);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.AlignCenter);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.AlignRight);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.AlignJustify);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.OrderedList);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.BulletList);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add()
+                                .FormatName("header")
+                                .FormatValues(new JS("[false, 1, 2, 3, 4, 5]"));
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Color);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Background);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Link);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Image);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Clear);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.CodeBlock);
+
+                                items.Add().FormatName(HtmlEditorToolbarItem.Blockquote);
+                            })
+                            )
+                            .MediaResizing(m => m.Enabled(true))
+                    )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 인터넷주소</label>
+                    <div class="col-md-10">
+                        @(Html.DevExtreme().TextBox().ID("ReferenceUrl" + Model.BoardID)
+                        )
+                        @*<a id="refUrl" href="javascript: window.open()" style="display: none; text-decoration: none">Model.ReferenceUrl</a>*@
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-12 col-form-label"> Comment</label>
+                </div>
+                <div class="form-group row" id="divBoardComment" style="border: 1px solid rgba(0,0,0,.125);">
+                    <div class="col-md-12" id="bodyBoardComment" style="overflow-y:auto; height:150px;">
+                    </div>
+                    @*<div class="col-md-2"></div>*@
+                    <div class="col-md-12" style="padding: .75rem 1.25rem;">
+                        @(Html.DevExtreme().TextBox().ID("CommentBody" + Model.BoardID).Buttons(buttons =>
+                            {
+                                buttons.Add()
+                                    .Name("comment")
+                                    .Location(TextEditorButtonLocation.After)
+                                    .Widget(w => w.Button()
+                                        .Type(ButtonType.Default)
+                                        .Icon("rename").OnClick("InsertCommonBoardComment"));
+                            })
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 첨부파일</label>
+                    <div class="col-md-12">
+                        @{
+                            FileInfor temp = new FileInfor();
+                            temp.ID = "FileID" + Model.BoardID;
+                            temp.Site_ID = ViewBag.SiteID;
+                            temp.urlPath = "";
+                        }
+                        @await Html.PartialAsync("~/Views/Shared/_FileUploadTemplate.cshtml", temp)
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"><i class="fas fa-caret-up"></i> 이전글</label>
+                    <div class="col-md-10">
+                        PrevReport
+                    </div>
+                    <label class="col-sm-2 col-form-label"><i class="fas fa-caret-down"></i> 다음글</label>
+                    <div class="col-md-10">
+                        NextReport
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="onDeleteCommonBoard()">Delete</button>
+                <button type="button" class="btn btn-primary" onclick="EditCommonBoardPop()">Edit</button>
+                <button type="button" class="btn btn-primary" onclick="ReplyCommonBoardPop()">Reply</button>
+                <button type="button" class="btn btn-primary" onclick="onSaveCommonBoard()">Save changes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

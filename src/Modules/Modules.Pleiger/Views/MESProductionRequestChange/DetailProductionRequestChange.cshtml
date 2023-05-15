@@ -1,0 +1,925 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+
+@model MES_SaleProject;
+
+@{
+    Layout = null;
+    string GridItemMaterial = "GridItemMaterial" + ViewBag.thread;
+    string ProdReq_RequestType = "ProdReq_RequestType" + ViewBag.thread;
+}
+
+<script>
+    var RequestCode = null;
+    var Category = null;
+    var ItemClassCode = null;
+    var StockQty = null;
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+
+        if('@(ViewBag.ProjectStatus)'=='PJST03')
+        {
+           $("#btnRecall_@(ViewBag.thread)").show();
+        }
+        else
+        {
+           $("#btnRecall_@(ViewBag.thread)").hide();
+        }
+        if ('@(ViewBag.ProjectStatus)' == "PJST01" || '@(ViewBag.ProjectStatus)' == "PJST02")
+        {
+            $("#btnRequestProduction_@(ViewBag.thread)").show();
+        }
+        else
+        {
+            $("#btnRequestProduction_@(ViewBag.thread)").hide();
+        }
+
+        var productType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "RQTP00");
+        debugger;
+        $("#ProdReq_RequestType@(ViewBag.thread)").dxSelectBox({
+            dataSource: productType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        // Get data GridItemMaterial
+        $.ajax({
+            url: '@Url.Action("GetlistItemRequest", "MESProductionRequestChange")',
+            type: "GET",
+            data: { projectCode: '@ViewBag.ProjectCode' },
+            dataType: 'json',
+            success: function (result) {
+                console.log("catelory ", result.data);
+                var grid = $("#@(GridItemMaterial)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+                debugger;
+                //localStorage.setItem('ListItemRequestSorage', JSON.stringify(result.data));
+
+                LoadingPage(0);
+            }
+        });
+
+        checkStockQty();
+        LoadingPage(0);
+    });
+
+    function checkStockQty() {
+        $.ajax({
+            url: '@Url.Action("CheckStkQtyIsEnough","MESProductionRequestChange")',
+            type: 'GET',
+            async: false,
+            data:
+            {
+                projectCode: '@ViewBag.ProjectCode',
+                orderQuantity: '@ViewBag.OrderQuantity'
+            },
+            dataType: 'json',
+            success: function (result) {
+                if (result == null) {
+                    debugger;
+                    $("#btnRequestProduction_@(ViewBag.thread)").removeAttr('disabled');
+                }
+                else {
+                    debugger;
+                    $("#btnRequestProduction_@(ViewBag.thread)").attr('disabled', 'disabled');
+                }
+            }
+        });
+    };
+
+    // Refresh Production Request
+    $("#btnReFresh_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+         // Refresh Mst
+        let projectCode = $("#ProdReq_ProjectCode").dxTextBox('instance').option('value');
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ReloadRequestMst", "MESProductionRequestChange")',
+            type: "GET",
+            data: {
+                projectCode: projectCode,
+                menuID : '@ViewBag.menuID'
+            },
+            dataType: "json",
+            success: function (result) {
+                debugger;
+                $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("instance").option("value", result.RequestType);
+                $('#ProdReq_RequestMessage@(ViewBag.Thread)').dxTextBox('instance').option("value", result.RequestMessage);
+                RequestCode = result.RequestCode;
+
+            }
+        });
+
+
+        $.ajax({
+            url: '@Url.Action("GetlistItemRequest", "MESProductionRequestChange")',
+            type: "GET",
+            data: { projectCode: '@ViewBag.ProjectCode' },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#@(GridItemMaterial)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+                debugger;
+            }
+        });
+        LoadingPage(0);
+        //RefreshProductionRequest();
+    });
+
+    function RefreshProductionRequest() {
+        LoadingPage(1);
+        $.blockUI();
+        $.ajax({
+            url: '@Url.Action("ShowDetailProductionRequest", "MESProductionRequestChange")',
+            type: "GET",
+            data: { projectCode: '@ViewBag.ProjectCode' },
+            dataType: "html",
+            success: function (result) {
+                $("#divDetailProductionRequestChange").html(null);
+                $("#divDetailProductionRequestChange").html(result);
+                $.unblockUI();
+            }
+        })
+        LoadingPage(0);
+    }
+
+    // Back to main Production Request
+    $("#btnBack_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        $("#divMainProductionRequestChange").prop("hidden", false);
+        $("#divDetailProductionRequestChange").prop("hidden", true);
+        $("#divDetailProductionRequestChange").html(null);
+    });
+
+    // 20201005 Minh add
+    // Change state from "Production planning" => to "Production Req"
+    $("#btnRecall_@(ViewBag.Thread)").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+                $.ajax({
+                    url: '@Url.Action("RecallProductionRequest", "MESProductionRequestChange")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: "@(ViewBag.ProjectCode)"
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                $("#btnRecall_@(ViewBag.thread)").hide();
+                                $("#btnRequestProduction_@(ViewBag.thread)").show();
+
+                                ReloadTabProductionRequest();
+                                $.unblockUI();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            } else {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+
+    });
+
+    // Quan add 2020/09/16
+    // Save data Master
+    // Save listItemRequest
+    $("#btnSave_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+        let ProdReq_RequestMessage = $('#ProdReq_RequestMessage@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        let ProdReq_RequestType = $("#ProdReq_RequestType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        let dataGridMaterial = $("#@(GridItemMaterial)").dxDataGrid("instance");
+        let listData = dataGridMaterial.getVisibleRows();
+        if (ProdReq_RequestType == "" || ProdReq_RequestType == null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please Input Production Classification!", "Error");
+            return;
+        }
+        let isSuccess = false;
+        //Get data listItemRequest
+        let listItemRequest = [];
+        // Remove row if ItemCode = null
+        $.each(listData, function (index, item) {
+            if (listData[index].removed == undefined && listData[index].data.ItemCode != null && listData[index].data.ItemCode != "" && listData[index].data.ItemCode != undefined) {
+                listItemRequest.push(item.data)
+            }
+        });
+
+        // Remote row dublicate
+        var ListItemFinal = {};
+        var Cell = {};
+        listItemRequest.forEach(function (item) {
+            Cell = ListItemFinal[item.ItemCode] = ListItemFinal[item.ItemCode] || {};
+            //grade[item.Domain] = true;
+            Cell["No"] = item.No;
+            Cell["ItemCode"] = item.ItemCode;
+            Cell["ItemName"] = item.ItemName;
+            Cell["ReqQty"] = item.ReqQty;
+            Cell["StkQty"] = item.StkQty;
+            Cell["POQty"] = item.POQty;
+            Cell["totalPOQty"] = item.totalPOQty;
+            Cell["totalPOFnQty"] = item.totalPOFnQty;
+            Cell["RealQty"] = item.RealQty;
+        });
+
+        let listItemRequestFinal = [];
+        $.each(ListItemFinal, function (index, item) {
+            listItemRequestFinal.push(item);
+        });
+
+        debugger;
+        let indexlistData = listData.length;
+        let indexlistItemRequestFinal = listItemRequestFinal.length;
+        if (listItemRequestFinal.length == 0 && indexlistData == 0) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("UpdateDataProductionRequestChange", "MESProductionRequestChange")',
+                        type: 'POST',
+                        async: false,
+                        data:
+                        {
+                            projectCode: '@ViewBag.ProjectCode',
+                            requestCode: '@ViewBag.requestCode',
+                            requestType: ProdReq_RequestType,
+                            requestMessage: ProdReq_RequestMessage
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                checkStockQty();
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                LoadingPage(0);
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        //$.unblockUI();
+                        //$("#divMainProductionRequestChange").prop("hidden", false);
+                        //$("#divDetailProductionRequestChange").prop("hidden", true);
+                        //$("#divDetailProductionRequestChange").html(null);
+                        ReloadTabProductionRequest();
+                        LoadingPage(0);
+                    }
+                } else {
+                    return;
+                }
+            });
+        }
+        else {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveDataProductionRequestChange", "MESProductionRequestChange")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            projectCode: '@ViewBag.ProjectCode',
+                            requestCode: '@ViewBag.requestCode',
+                            requestType: ProdReq_RequestType,
+                            requestMessage: ProdReq_RequestMessage,
+                            listItemRequest: listItemRequestFinal
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                checkStockQty();
+                                $("#btnReFresh_@ViewBag.Thread").trigger("click");
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                                LoadingPage(0);
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        //debugger;
+                        //$.unblockUI();
+                        //$("#divMainProductionRequestChange").prop("hidden", false);
+                        //$("#divDetailProductionRequestChange").prop("hidden", true);
+                        //$("#divDetailProductionRequestChange").html(null);
+                        ReloadTabProductionRequest();
+                        LoadingPage(0);
+                    }
+                } else {
+                    return;
+                }
+            });
+        }
+        LoadingPage(0);
+    });
+
+    // Check RequestProduction And Update Status
+    $("#btnRequestProduction_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        let isSuccess = false;
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD00011</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.blockUI();
+                $.ajax({
+                    url: '@Url.Action("RequestProduction", "MESProductionRequestChange")',
+                    type: 'POST',
+                    async: false,
+                    data: {
+                        projectCode: '@ViewBag.ProjectCode'
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.Success) {
+
+                            DevExpress.ui.dialog.alert('@MessageCode.MD00012', "Success", function () {
+                                $.unblockUI();
+                                isSuccess = true;
+                                $("#btnRecall_@(ViewBag.thread)").show();
+                                $("#btnRequestProduction_@(ViewBag.thread)").hide();
+                            });
+                        }
+                        else {
+                            $.unblockUI();
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+
+                if (isSuccess) {
+                    $.unblockUI();
+                    ReloadTabProductionRequest();
+                }
+            } else {
+                return;
+            }
+        });
+    });
+
+    //ShowPopup List Item
+    function ProductionRequestPopup() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("ProductionRequestPopup", "MESProductionRequestChange")',
+            type: "GET",
+            data: {
+                projectCode: null
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+    }
+
+    //SetColor cell RealQty
+    function SetColorRealQty(e) {
+        debugger;
+
+        if (e.Cell != undefined) {
+            if (e.cells[3].rowType === "data" && e.cells[3].value !== null && e.cells[3].value !== "") {
+                var ReqestQty = new string(e.cells[3].value);
+                var RealQty = new string(e.cells[4].value);
+            }
+            if (ReqestQty !== "" && RealQty !== "") {
+                if (RealQty < ReqestQty) {
+                    e.cells[4].cellElement.css("color", "red");
+                    e.cells[4].cellElement.css("backgroundColor", "yellow");
+                }
+            }
+        }
+
+    }
+
+    function ReloadTabProductionRequest() {
+        debugger;
+         $.ajax({
+                url: '@Url.Action("SearchListProductionRequest", "MESProductionRequestChange")',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    projectCode: "",
+                    requestType: "",
+                    customerName: "",
+                    itemCode: "",
+                    userProjectCode: "",
+                    requestStartDate: "",
+                    requestEndDate: "",
+                    projectStatus: ""
+                },
+                success: function (result) {
+                    debugger;
+                    $("#GridProductionRequest@(ViewBag.Parent)").dxDataGrid("option", "dataSource", result);
+                    $("#GridProductionRequest@(ViewBag.Parent)").dxDataGrid("instance").refresh();
+
+
+                }
+            });
+        //RefreshTabByIDMenu('@ViewBag.MenuID');
+    }
+
+    function onToolbarPreparing(e) {
+
+        e.toolbarOptions.items[1].visible = false;
+
+        let dataGridMaterial_show = $("#@(GridItemMaterial)").dxDataGrid("instance");
+        let listData_show = dataGridMaterial_show.getVisibleRows();
+
+        let toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift({
+            widget: "dxButton",
+            options: {
+                text: "@_loc.GetLocalizedString("Get From Project")",
+                onClick: function () {
+                    $.ajax({
+                        url: '@Url.Action("ProductionRequestPopup", "MESProductionRequestChange")',
+                        type: "GET",
+                        data: {
+                            projectCode: null,
+                            vbThread: '@ViewBag.Thread',
+                            listItemRequest: listData_show,
+
+                        },
+                        dataType: "html",
+                        success: function (result) {
+                            // parent popup
+                            $("#modalContent").html(result);
+                            $("#modalContent").addClass("modal-xl");
+                            $('#modalControl').modal('show');
+                        }
+                    });
+                }
+            },
+            location: "after"
+        });
+    }
+
+    function SetDataItemCodeChange(rowData, value) {
+        debugger;
+        rowData.ItemCode = value;
+        $("#btnRequestProduction_@(ViewBag.thread)").attr('disabled', 'disabled');
+    }
+
+    function SetDataReqQtyChange(rowData, value) {
+        debugger;
+
+        if (value != null && value != undefined) {
+            if (value >= 0)
+            {
+                rowData.ReqQty = value;
+                // Quan add 2020/10/21
+                debugger;
+                if (value * @ViewBag.OrderQuantity > StockQty)
+                {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Insufficient material quantity. Please ask the purchasing team. The process continues.")", "Notice");
+                    return;
+                }
+
+            }
+            else {
+                DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input positive number or different zero.")", "Error");
+                return;
+            }
+
+        }
+        $("#btnRequestProduction_@(ViewBag.thread)").attr('disabled', 'disabled');
+
+    }
+
+    function SetDataChange(e) {
+        $("#btnRequestProduction_@(ViewBag.thread)").attr('disabled', 'disabled');
+     }
+
+    // Quan change
+    function SetCellValueCategory(rowData, value) {
+        debugger;
+        Category = value;
+        rowData.Category = value;
+        rowData.ItemClassCode = null;
+        rowData.ItemCode = null;
+        rowData.ReqQty = 0;
+        rowData.RealQty = 0
+
+    }
+
+    function SetCellValueItemClassCode(rowData, value) {
+
+        ItemClassCode = value;
+        rowData.ItemClassCode = value;
+        rowData.ItemCode = null;
+        rowData.ReqQty = 0;
+        rowData.RealQty = 0
+    }
+
+    function SetCellValueItemCode(rowData, value) {
+        debugger;
+        rowData.RealQty = value;
+        rowData.ItemCode = value;
+        rowData.ReqQty = 0;
+        rowData.RealQty = 0
+    }
+
+    function getParamsCategory() {
+        return Category;
+    }
+
+    function getParamsItemClassCode() {
+        return ItemClassCode;
+    }
+
+    function GridItemMaterialOnEditorPreparing(e) {
+        debugger;
+        if (e.parentType === "dataRow" && e.dataField === "ItemClassCode") {
+            e.editorOptions.disabled = (typeof e.row.data.Category !== "string");
+        }
+        if (e.parentType === "dataRow" && e.dataField === "ItemCode") {
+            e.editorOptions.disabled = (typeof e.row.data.ItemClassCode !== "string");
+        }
+
+        //StockQty = e.row.data.StkQty;
+        StockQty = e.row.data.RealQty;
+    }
+
+    function OnFocusedRowChanged(e) {
+        debugger;
+    }
+
+    function OnInitialized(e) {
+        debugger;
+    }
+
+    function GetBOMData() {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetBOMData", "MESProductionRequestChange")',
+            type: 'GET',
+            data: { projectCode: '@ViewBag.ProjectCode' },
+            dataType: 'json'
+        }).done(function (result) {
+            $.each(result, function (index, item) {
+                debugger;
+                item.State = 'BOM';
+            });
+            debugger;
+            var grid = $("#@(GridItemMaterial)").dxDataGrid("instance");
+            grid.option("dataSource", result);
+            grid.refresh();
+            debugger;
+        })
+    }
+
+    function toolbar_preparing(e) {
+        var isVisible = true;
+        if('@(ViewBag.ProjectStatus)'=='PJST03')
+        {
+            isVisible=false;
+        }
+        else {
+            isVisible = true;
+        }
+
+        let toolbarItems = e.toolbarOptions.items;
+        toolbarItems.forEach(function(item, index)
+        {
+            if(item.name == "saveButton")
+            {
+                toolbarItems.splice(index, 1);
+            }
+        })
+        toolbarItems.unshift(
+            {
+                location: "before",
+                template: function () {
+                    return $("<div />")
+                        .append(
+                            $("<span />")
+                                .text("Enter only the quantity for making one finished product")
+                        );
+                }
+            },
+            {
+                visible: isVisible,
+                widget: "dxButton",
+                options: {
+                    type: "default",
+                    text: "@_loc.GetLocalizedString("Get BOM Data")",
+                    onClick: function () {
+                        GetBOMData();
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            },
+            {
+                visible: isVisible,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Get Item Project")",
+                    onClick: function () {
+                        $.ajax({
+                            url: '@Url.Action("ProductionRequestPopup", "MESProductionRequestChange")',
+                            type: "GET",
+                            data: {
+                                projectCode: null,
+                                vbThread: '@ViewBag.Thread',
+                            },
+                            dataType: "html",
+                            success: function (result) {
+                                // parent popup
+                                $("#modalContent").html(result);
+                                $("#modalContent").addClass("modal-xl");
+                                $('#modalControl').modal('show');
+                            }
+                        });
+                    },
+                    icon: "fa fa-search"
+                },
+                location: "after"
+            },
+            {
+                visible: isVisible,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Add new item")",
+                    onClick: function () {
+                        $.ajax({
+                            url: '@Url.Action("ProductionRequestAddPartListPopup", "MESProductionRequestChange")',
+                            type: "GET",
+                            data: {
+                                projectCode: null,
+                                vbThread: '@ViewBag.Thread',
+                            },
+                            dataType: "html",
+                            success: function (result) {
+                                // parent popup
+                                $("#modalContent").html(result);
+                                $("#modalContent").addClass("modal-xl");
+                                $('#modalControl').modal('show');
+                            }
+                        });
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        );
+    }
+    var listItemDelete = [];
+
+    function DeleteGridItemPartList(e) {
+         var data = (e.data);
+        @*var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {*@
+        console.log("@Model.RequestCode");
+            $.ajax({
+                url: '@Url.Action("DeleteGridItemPartList", "MESProductionRequestChange")',
+                type: "POST",
+                data:
+                {
+                    ItemCode: data.ItemCode,
+                    //RequestCode: '@ViewBag.requestCode',
+                    RequestCode: RequestCode,
+                },
+                success: function (result) {
+                }
+            });
+    }
+
+    function OnGridItemMaterialEditingStart(e) {
+        debugger;
+        var keyValue = e.key.State;
+        if (keyValue === 'BOM') {
+            e.cancel = true;
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-sm btn-secondary btn-action" title="Back" id="btnBack_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-reply"></i> @_loc.GetLocalizedString("Back")</button>
+                        <button class="btn btn-sm btn-secondary btn-action" title="Reload" id="btnReFresh_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-sync"></i> @_loc.GetLocalizedString("Reload")</button>
+                        @if (ViewBag.ProjectStatus == "PJST01" || ViewBag.ProjectStatus == "PJST02")
+                        {
+                            <button class="btn btn-sm btn-secondary btn-action" title="Save" id="btnSave_@(ViewBag.thread)" style="margin-right:5px"><i class="fa fa-save"></i> @_loc.GetLocalizedString("Save")</button>
+                            @*<button class="btn btn-sm btn-secondary btn-action" title="Request Production" id="btnRequestProduction_@(ViewBag.thread)" style="margin-right:5px">
+                                <i class="fas fa-industry"></i> @_loc.GetLocalizedString("Request Production")
+                            </button>*@
+                        }
+                        <button class="btn btn-sm btn-secondary btn-action" title="Request Production" id="btnRequestProduction_@(ViewBag.thread)" style="margin-right:5px">
+                            <i class="fas fa-industry"></i> @_loc.GetLocalizedString("Request Production")
+                        </button>
+                        <button class="btn btn-sm btn-warning btn-warning-action" title="Recall" id="btnRecall_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-undo"></i> @_loc.GetLocalizedString("Recall")</button>
+                        @*@if (ViewBag.ProjectStatus == "PJST03")
+                        {
+                            <button class="btn btn-sm btn-warning btn-warning-action" title="Recall" id="btnRecall_@(ViewBag.thread)" style="margin-right:5px"><i class="fas fa-undo"></i> @_loc.GetLocalizedString("Recall")</button>
+                        }*@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Project Name")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ProjectName").Value(ViewBag.ProjectName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group" hidden="hidden">
+                            <label>@_loc.GetLocalizedString("Project Code")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ProjectCode").Value(ViewBag.ProjectCode).Disabled(true))
+                        </div>
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("UserProjectCode")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_UserProjectCode").Value(ViewBag.UserProjectCode).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Customer Name")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_CustomerName").Value(ViewBag.PartnerName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Project Status")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ProjectStatus").Value(ViewBag.ProjectStatusName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("User Request")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_UserRequest").Value(ViewBag.UserRequest).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Scheduled production completion date")</label>
+                            @(Html.DevExtreme().DateBox()
+                                            .ID("ProdReq_RequestDate")
+                                            .DisplayFormat("yyyy-MM-dd")
+                                            .Value(ViewBag.RequestDate != "" ? ViewBag.RequestDate : DateTime.Now.ToString("yyyy-MM-dd"))
+                                            .Disabled(true)
+                            )
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Production classification")</label>
+                            @(Html.DevExtreme().SelectBox()
+                                            .ID(ProdReq_RequestType)
+                                            .DisplayExpr("BASE_NAME")
+                                            .ValueExpr("BASE_CODE")
+                                            .Value(ViewBag.RequestType)
+                           )
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Item Name")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_ItemRequest" + ViewBag.Thread ).Value(ViewBag.ItemName).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-2">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Quantity Requested")</label>
+                            @(Html.DevExtreme().NumberBox().ID("ProdReq_ItemQtyRequest" + ViewBag.Thread).Format("#,##0").Disabled(true)//Fortmat decimal(3,1)#,###.###0
+                            .Value(ViewBag.OrderQuantity)
+                            .ShowSpinButtons(true)
+                            .Min(0)
+                            .Max(999999)
+
+                        )
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-12 col-lg-6">
+                        <div class="form-group">
+                            <label>@_loc.GetLocalizedString("Request Message")</label>
+                            @(Html.DevExtreme().TextBox().ID("ProdReq_RequestMessage" + ViewBag.Thread).Value(ViewBag.RequestMessage))
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-12 col-md-12 form-group">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Part List")</legend>
+                            @(Html.DevExtreme().DataGrid<ItemRequest>()
+                                    .ID(GridItemMaterial)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .ColumnAutoWidth(true)
+                                    .RepaintChangesOnly(true)
+                                    .OnEditorPreparing("GridItemMaterialOnEditorPreparing")
+                                    .OnFocusedRowChanged("OnFocusedRowChanged")
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Cell);
+                                        //editing.AllowAdding(true);
+                                        editing.AllowDeleting(true).ConfirmDelete(true);
+                                        editing.AllowUpdating(true);
+                                        editing.UseIcons(true);
+                                        editing.Texts(text => text.ConfirmDeleteMessage(_loc.GetLocalizedString("Are you sure you want to delete this record?")));
+                                    })
+                                    .Columns(c =>
+                                    {
+                                        c.AddFor(x => x.No).Caption("No").AllowEditing(false).Width("10%").AllowEditing(false);
+
+                                        // Quan add Category
+                                        c.AddFor(x => x.CategoryName).Caption((@_loc.GetLocalizedString("Category"))).Width("20%").EncodeHtml(false);;
+
+                                        // Quan add ItenClass
+                                        c.AddFor(x => x.ItemClassCode).Caption((@_loc.GetLocalizedString("Item Class Code"))).Width("20%").AllowEditing(false);
+
+                                        c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code"))).Width("20%").AllowEditing(false);
+
+                                        c.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name"))).Width("50%").AllowEditing(false).EncodeHtml(false);
+
+                                        c.AddFor(x => x.ReqQty).Caption((@_loc.GetLocalizedString("Request Qty"))).Width("20%").SetCellValue("SetDataReqQtyChange");
+
+                                        c.AddFor(x => x.RealQty).Caption((@_loc.GetLocalizedString("Stock Qty"))).AllowEditing(false).Format("#,##0").Width("20%").SetCellValue("SetCellValueItemCode");
+
+
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+
+                                    .OnToolbarPreparing("toolbar_preparing")
+                                    .OnRowRemoved("DeleteGridItemPartList")
+                                    .OnEditingStart("OnGridItemMaterialEditingStart")
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                    .OnInitNewRow("SetDataChange")
+
+                                    .Summary(s => s
+                                    .RecalculateWhileEditing(true)
+                                    .TotalItems(items =>
+                                    {
+
+                                        items.AddFor(m => m.ReqQty)
+                                            .SummaryType(SummaryType.Sum)
+                                            .Alignment(HorizontalAlignment.Right).DisplayFormat("" + _loc.GetLocalizedString("Total Qty") + " : {0}")
+                                            .ValueFormat("#,##0");
+
+                                    })
+                            )
+                         )
+                        </fieldset>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,18 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+<script>
+    function getValue_@(Model.PEL_ID)() {
+        var value = $("#@(Model.PEL_ID)").val();
+        return value;
+    }
+
+    function setValue_@(Model.PEL_ID)(value) {
+        debugger;
+        if (typeof value === undefined || value === "null" || value === "") {
+            value = null;
+        }
+        return $("#@(Model.PEL_ID)").val(value);
+    }
+</script>
+
+<input type="hidden" id="@Model.PEL_ID" name="@Model.PEL_ID" value=""/>

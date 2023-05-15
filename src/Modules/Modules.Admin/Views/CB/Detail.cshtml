@@ -1,0 +1,914 @@
+﻿@model Modules.Admin.Models.SYBoardInfo
+@using Modules.FileUpload.Models
+@using Modules.Admin.Models
+@using InfrastructureCore.Models.Menu
+@{
+    Layout = null;
+    BoardType boardType = new BoardType(Model.BoardType);
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = false;
+    pageSetting.SAVE_YN = true;
+    pageSetting.EDIT_YN = true;
+    pageSetting.DELETE_YN = true;
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reply";
+    info.ID = "btnReply";
+    info.Sort = 0;
+    info.Icon = "<i class='fas fa-reply'></i>";
+    lstNewToolbar.Add(info);
+
+    ToolbarInfo infoBack = new ToolbarInfo();
+    infoBack.Name = "Back";
+    infoBack.ID = "btnBack";
+    info.Sort = 10;
+    infoBack.Icon = "<i class='fas fa-undo'></i>";
+    lstNewToolbar.Add(infoBack);
+}
+<style>
+    #select-file-zone .dx-fileuploader-wrapper {
+        padding: 0px !important;
+    }
+
+    #select-file-zone .dx-fileuploader-input-wrapper {
+        border: none;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        ReziePageCBDetail();
+         
+        $("#btnsave_@(ViewBag.Thread)").prop("readonly", true);
+
+        // Quan add 2020/10/28
+        if ('@ViewBag.OwnerID' == '@ViewBag.UserID' || '@ViewBag.UserType' == "G000C001" || '@ViewBag.UserType' == "G000C002")
+        {
+            if ('@ViewBag.BDID' == 0)
+            {
+                $("#btnEdit_@(ViewBag.Thread)").addClass("d-none");
+                $("#btnDelete_@(ViewBag.Thread)").addClass("d-none");
+            }
+        }
+        else
+        {
+            $("#btnEdit_@(ViewBag.Thread)").addClass("d-none");
+            $("#btnDelete_@(ViewBag.Thread)").addClass("d-none");
+            var FileUploader = $('#FileID@(ViewBag.Thread)').dxFileUploader({
+                visible: false
+            })
+        }
+
+        LoadingPage(0);
+    })
+    var actionCB@(ViewBag.Thread) = "INSERT";
+
+    function GetDocDT@(ViewBag.Thread)() {
+        LoadingPage(1);
+        var value = $("#DocDT@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (typeof value !== 'undefined' && value != "") {
+            var dateFormat = new Date(value);
+            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            LoadingPage(0);
+            return dateString;
+        }
+        LoadingPage(0);
+        return null;
+    }
+
+    function GetInsertDT@(ViewBag.Thread)() {
+        var value = $("#InsertDT@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (typeof value !== 'undefined' && value != "") {
+            var dateFormat = new Date(value);
+            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            return dateString;
+        }
+        return null;
+    }
+
+    function onSaveCommonBoard@(ViewBag.Thread)() {
+        LoadingPage(1);
+        CheckSession();
+        var _BoardID = '@ViewBag.BID';
+        var _BoardDocID = $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+
+        var _InsertID = $("#InsertID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+
+        var _Email = $("#Email@(ViewBag.Thread)").dxTextBox("instance").option("value");
+
+        var _Subject = $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        if (_Subject == null || _Subject == "" || typeof  _Subject == undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ErrorSubject")", "Error");
+            LoadingPage(0);
+            return ;
+        }
+
+        var _InternalPhone = $("#InternalPhone@(ViewBag.Thread)").dxTextBox("instance").option("value");
+
+        var _InsertDT = GetInsertDT@(ViewBag.Thread)();
+
+        var _ReadCount = $("#ReadCount@(ViewBag.Thread)").dxTextBox("instance").option("value");
+
+        var _Body = $("#Body@(ViewBag.Thread)").dxHtmlEditor("instance").option("value");
+
+        var _DocDT = GetDocDT@(ViewBag.Thread)();
+
+        var _ReferenceUrl = '';
+        if ('@boardType.ReferenceURLYN' === 'True') {
+            _ReferenceUrl = $("#ReferenceUrl@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        }
+        var _FileID = '';
+        if ('@boardType.FileUpoadYN' === 'True') {
+
+            _FileID = getValue_FileID@(ViewBag.Thread)();
+        }
+        var _NoticeTime = '';
+        if ('@boardType.NoticeDTYN' === 'True') {
+            _NoticeTime = $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        }
+        var _BoardDocKey = $("#BoardDocKey@(ViewBag.Thread)").dxTextBox("instance").option("value");
+
+        var _BranchName = $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+         
+        var CommonBoardInfo = {
+            BoardID: _BoardID,
+            BoardDocID: _BoardDocID,
+            InsertID: _InsertID,
+            InternalPhone: _InternalPhone,
+            Email: _Email,
+            Subject: _Subject,
+            InsertDT: _InsertDT,
+            ReadCount: _ReadCount,
+            Body: _Body,
+            DocDT: _DocDT,
+            ReferenceUrl: _ReferenceUrl,
+            FileID: _FileID,
+            BoardDocKey: _BoardDocKey,
+            BranchName: _BranchName,
+            NoticeTime: _NoticeTime
+        }
+        $.ajax({
+            url: '@Url.Action("OnSave", "CB")',
+            type: "POST",
+            data: {
+                CommonBoardInfo: CommonBoardInfo,
+                actionCB: actionCB@(ViewBag.Thread)
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert('Save success', "Success", function () {
+                @*var grid = $("#GridCommonBoardManagement@(ViewBag.Thread)").dxTreeList("instance");
+                if (grid != undefined) {
+                    grid.refresh();
+                }*@
+                        $("#btnBack_@(ViewBag.Thread)").click();
+                        //ResetCreateCommonBoardPop@(ViewBag.Thread)();
+                    });
+                }
+                else {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function onDeleteCommonBoard@(ViewBag.Thread)() {
+        LoadingPage(1);
+        CheckSession();
+        var _BoardID = '@ViewBag.BID';
+        var _BoardDocID = $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        var _BoardDocID = $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (resultdialog) {
+            if (resultdialog) {
+
+                $.ajax({
+                    url: '@Url.Action("OnDelete", "CB")',
+                    type: "POST",
+                    data: {
+                        BoardID: _BoardID,
+                        BoardDocID: _BoardDocID
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            DevExpress.ui.dialog.alert('Save success', "Success", function () {
+                    @*var grid = $("#GridCommonBoardManagement@(ViewBag.Thread)").dxTreeList("instance");
+                    if (grid != undefined) {
+                        grid.refresh();
+                    }*@
+                                $("#btnBack_@(ViewBag.Thread)").click();
+                                // ResetCreateCommonBoardPop@(ViewBag.Thread)();
+                            });
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            }
+            else {
+                LoadingPage(0);
+                return
+            }
+        });
+        LoadingPage(0);
+    }
+
+    $(function () {
+        LoadingPage(1);
+        CheckSession();
+         
+        if (@ViewBag.BDID !== 0) {
+            $.ajax({
+                url: '@Url.Action("GetCommonBoardInfo", "CB")',
+                type: "POST",
+                data: { BoardID: '@ViewBag.BID', BoardDocID: @ViewBag.BDID },
+                dataType: "json",
+                success: function (result) {
+                    if (result.Success)
+                    {
+                        LoadingPage(0);
+                         
+                        //Quan add 2020-10-29
+                        //@Model.Pag_ID= result.FileID;
+
+                        if (result.Data == null) {
+                            return;
+                        }
+                        $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.BoardDocID);
+                        //$("#InsertID@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.InsertID);
+                        $("#InsertID@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.OwnerName);
+                        $("#Email@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.Email);
+                         $("#DocDT@(ViewBag.Thread)").dxDateBox("instance").option("value", result.Data.DocDT);
+                        $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.Subject);
+                        $("#InternalPhone@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.InternalPhone);
+                        $("#ReadCount@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.ReadCount);
+                        $("#Body@(ViewBag.Thread)").dxHtmlEditor("instance").option("value", result.Data.Body);
+                        $("#Body@(ViewBag.Thread)").css("opacity", 1);
+
+                        if ('@boardType.ReferenceURLYN' === 'True') {
+                            $("#ReferenceUrl@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.ReferenceUrl);
+                        }
+                        $("#BoardDocKey@(ViewBag.Thread)").dxTextBox("instance").option("value", result.Data.BoardDocKey);
+                        $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("value", result.Data.BranchName);
+                        if ('@boardType.NoticeDTYN' === 'True') {
+                            $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("value", result.Data.NoticeTime);
+                        }
+                        if ('@boardType.FileUpoadYN' === 'True') {
+                            //eval('setValue_FileID' + getBoardIDOfCB() + '("' + result.Data.FileID + '")');
+                            eval('setValue_FileID@(ViewBag.Thread)("' + result.Data.FileID + '")');
+                        @*setValue_FileID@(ViewBag.Thread)(+ result.Data.FileID + )*@
+                        }
+                        if ('@boardType.CommentYN' === 'True') {
+                            LoadCommentCB@(ViewBag.Thread)(result.Data.lstComment);
+                        }
+                         
+                        $("#nextCB@(ViewBag.Thread)").empty();
+                        $("#prevCB@(ViewBag.Thread)").empty();
+                        if (result.Data.prevCB.BoardDocID !== 0) {
+                             
+                            var htmlPrev = '<a style="font-size: 1rem" href="#" onclick="OpenEditCommonBoardPop@(ViewBag.ViewBagIndex)(' + result.Data.prevCB.BoardDocID + ',' + "'" + result.Data.prevCB.BoardID + "'" +')">' +
+                                result.Data.prevCB.Subject +
+                                '</a>';
+                            $("#prevCB@(ViewBag.Thread)").append(htmlPrev);
+                        }
+                        if (result.Data.nextCB.BoardDocID !== 0) {
+                             
+                            var htmlNext = '<a style="font-size: 1rem" href="#" onclick="OpenEditCommonBoardPop@(ViewBag.ViewBagIndex)(' + result.Data.nextCB.BoardDocID + ',' + "'" + result.Data.nextCB.BoardID + "'" + ')">' +
+                                result.Data.nextCB.Subject +
+                                '</a>';
+                            $("#nextCB@(ViewBag.Thread)").append(htmlNext);
+                        }
+                    }
+                    else {
+                        LoadingPage(0);
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }
+            });
+            SetToolbarEditCB@(ViewBag.Thread)();
+            ViewCommonBoardPop@(ViewBag.Thread)();
+        @*OpenDetailCBPopup@(ViewBag.Thread)();*@
+        }
+        $.ajax({
+            url: '@Url.Action("GetListBoardBranchByBoardID", "CB")',
+            type: "GET",
+            data: {
+                bid: '@ViewBag.BID'
+            },
+            dataType: "json",
+            success: function (result) {
+                $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("dataSource", result.data)
+            }
+        });
+        if ('@boardType.NoticeDTYN' === 'True') {
+            $.ajax({
+                url: '@Url.Action("GetRangeNoticeDate", "CB")',
+                type: "GET",
+                data: {
+                    bid: '@ViewBag.BID',
+                    textDay:'@_loc.GetLocalizedString("Day")',
+                },
+                dataType: "json",
+                success: function (result) {
+                    $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("dataSource", result.data)
+                }
+            });
+        }
+        if ('@boardType.ReplyYN' !== 'True' || @ViewBag.BDID === 0) {
+            $("#btnReply_@(ViewBag.Thread)").addClass("d-none");
+        }
+
+        if ('@ViewBag.IsEdit' !== 'True' && @ViewBag.BDID === 0) {
+            $("#btnEdit_@(ViewBag.Thread)").addClass("d-none");
+            $("#btnDelete_@(ViewBag.Thread)").addClass("d-none");
+        }
+        LoadingPage(0);
+    });
+
+    function ClearFile@(ViewBag.Thread)()
+    {
+        $("#FileID@(ViewBag.Thread) > .dx-fileuploader-wrapper > .dx-fileuploader-container > .dx-fileuploader-content >.dx-fileuploader-files-container").empty();
+    }
+
+    function SetToolbarEditCB@(ViewBag.Thread)() {
+        actionCB@(ViewBag.Thread) = "UPDATE";
+    }
+
+    function SetToolbarInsertCB@(ViewBag.Thread)() {
+        actionCB@(ViewBag.Thread) = "INSERT";
+    }
+
+    function InsertCommonBoardComment@(ViewBag.Thread)() {
+        LoadingPage(1);
+            CheckSession();
+            var _BoardID = '@ViewBag.BID';
+            var _BoardDocID = $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+            var _CommentBody = $("#CommentBody@(ViewBag.Thread)").dxTextBox("instance").option("value");
+            if (_CommentBody !== "") {
+                var commentCBInfo = {
+                    BoardID: _BoardID,
+                    BoardDocID: _BoardDocID,
+                    CommentBody: _CommentBody
+                }
+                $.ajax({
+                    url: '@Url.Action("OnInsertComment", "CB")',
+                    type: "POST",
+                    data: {
+                        CommentCBInfo: commentCBInfo
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            $("#CommentBody@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+                            LoadCommentCB@(ViewBag.Thread)(result.Data);
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+                LoadingPage(0);
+        }
+        LoadingPage(0);
+    }
+
+    function ViewCommonBoardPop@(ViewBag.Thread)() {
+        LoadingPage(1);
+        $("#btnSave_@(ViewBag.Thread)").addClass("d-none");
+        $("#DocDT@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        $("#Email@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        $("#InternalPhone@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+       // $("#ReadCount@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        $("#Body@(ViewBag.Thread)").dxHtmlEditor("instance").option("disabled", true);
+        $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        // var _DocDT = GetDocDT();
+        if ('@boardType.ReferenceURLYN' === 'True') {
+            $("#ReferenceUrl@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        }
+        // eval('getValue_FileID' + getBoardIDOfCB() + '()');
+        $("#BoardDocKey@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+
+        $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        if ('@boardType.NoticeDTYN' === 'True') {
+            $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        }
+        LoadingPage(0);
+    }
+
+        function EditCommonBoardPop@(ViewBag.Thread)() {
+             
+        LoadingPage(1);
+        $("#btnSave_@(ViewBag.Thread)").removeClass("d-none");
+        $("#DocDT@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+        $("#Email@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        $("#InternalPhone@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+       // $("#ReadCount@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+
+         $("#Body@(ViewBag.Thread)").dxHtmlEditor("instance").option("disabled", false);
+
+        $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        if ('@boardType.ReferenceURLYN' === 'True') {
+            $("#ReferenceUrl@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        }
+        $("#BoardDocKey@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        if ('@boardType.ReferenceURLYN' === 'True') {
+            $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        }
+        $("#btnsave_@(ViewBag.Thread)").prop("readonly", false);
+
+        // Quan add 2020/10/28
+        if ('@ViewBag.OwnerID' == '@ViewBag.UserID' || '@ViewBag.UserType'=="G000C001" || '@ViewBag.UserType'=="G000C002")
+        {
+            var FileUploader = $('#FileID@(ViewBag.Thread)').dxFileUploader({
+                visible: true
+             })
+        }
+        else
+        {
+            var FileUploader = $('#FileID@(ViewBag.Thread)').dxFileUploader({
+                visible: false
+            })
+        }
+
+        @*var FileUploader = $('#FileID@(ViewBag.Thread)').dxFileUploader({
+            //disabled: false
+            visible:false
+
+        })*@
+        LoadingPage(0);
+
+    }
+
+    function ResetCreateCommonBoardPop@(ViewBag.Thread)() {
+        LoadingPage(1);
+        $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        $("#InsertID@(ViewBag.Thread)").dxTextBox("instance").option("value", "@ViewBag.UserName");
+        $("#Email@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        $("#InternalPhone@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        $("#ReadCount@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        $("#Body@(ViewBag.Thread)").dxHtmlEditor("instance").option("value", "");
+        if ('@boardType.ReferenceURLYN' === 'True') {
+            $("#ReferenceUrl@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        }
+        $("#BoardDocKey@(ViewBag.Thread)").dxTextBox("instance").option("value", "");
+        $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("value", "");
+        $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("value", "");
+        $("#nextCB@(ViewBag.Thread)").empty();
+        $("#prevCB@(ViewBag.Thread)").empty();
+        LoadingPage(0);
+    }
+
+    $("#btnReply_@(ViewBag.Thread)").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        //Quan add 2020/10/12
+        if (actionCB@(ViewBag.Thread) != "REPLY")
+        {
+              ReplyCommonBoardPop@(ViewBag.Thread)();
+        }
+        LoadingPage(0);
+    });
+
+    function ReplyCommonBoardPop@(ViewBag.Thread)() {
+        LoadingPage(1);
+        SetToolbarReplyCB@(ViewBag.Thread)();
+        $("#btnSave_@(ViewBag.Thread)").removeClass("d-none");
+        $("#Email@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        $("#InternalPhone@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        let sb = $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("value", "RE: " + sb);
+        $("#Subject@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        // $("#ReadCount@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        $("#Body@(ViewBag.Thread)").dxHtmlEditor("instance").option("disabled", false);
+        $("#ReferenceUrl@(ViewBag.Thread)").dxTextBox("instance").option("disabled", false);
+        $("#BoardDocKey@(ViewBag.Thread)").dxTextBox("instance").option("disabled", true);
+        $("#BranchName@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        if ('@boardType.ReferenceURLYN' === 'True')
+        {
+            $("#NoticeTime@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        }
+        LoadingPage(0);
+     }
+
+    function SetToolbarReplyCB@(ViewBag.Thread)() {
+        actionCB@(ViewBag.Thread) = "REPLY";
+    }
+
+    $("#btnEdit_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        EditCommonBoardPop@(ViewBag.Thread)();
+    });
+
+    $("#btnDelete_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        onDeleteCommonBoard@(ViewBag.Thread)();
+    });
+
+    $("#btnSave_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        onSaveCommonBoard@(ViewBag.Thread)();
+    });
+
+    $("#btnBack_@(ViewBag.Thread)").on("click", function () {
+         
+            CheckSession();
+            @*let urlBack = '/CB?bid=' + '@ViewBag.BID';
+            $.ajax({
+                url: '@Url.Action("GetMenuIDByBoadID", "Menu")',
+                type: "POST",
+                data: { strUrl: urlBack },
+                dataType: "json",
+                success: function (result) {
+                     
+                    //GenerateTabConmonBoard(result.MenuName, urlBack, result.MenuID, false); // current menu id
+                    GenerateTabConmonBoard(result.MenuName, urlBack, menuObject.MenuID , false); // current menu id
+
+                }
+            });*@
+            $.ajax({
+                url: '@Url.Action("GetPathIDByMenuID", "Menu")',
+                type: "POST",
+                data: { MenuID: menuObject.MenuID },
+                dataType: "json",
+                success: function (result) {
+                     
+                    GenerateTabConmonBoard(result.MenuName, result.MenuPath, menuObject.MenuID, false); // current menu id
+                }
+            });
+    });
+
+    function LoadCommentCB@(ViewBag.Thread)(data) {
+        LoadingPage(1);
+        CheckSession();
+        var container = $("#bodyBoardComment@(ViewBag.Thread)");
+        container.empty();
+        $.each(data, function (index, item) {
+            var strHTML = '';
+            if ('@ViewBag.UserID' === item.InsertID) {
+                strHTML = '<div class="direct-chat-msg">' +
+                    '<div class="direct-chat-infos clearfix">' +
+                    '<span class="direct-chat-name float-left">' +
+                    item.InsertID
+                    + '</span >' +
+                    '<span class="direct-chat-timestamp float-right">' +
+                    item.InsertDT
+                    + '</span >' +
+                    '<span class="btn btn-tool" onclick="DeleteCommentCB@(ViewBag.Thread)(' + item.CommentID + ')"><i class="fas fa-times"></i></span>' +
+                    '</div>' +
+                    '<div class="direct-chat-text">' +
+                    item.CommentBody
+                '</div>' +
+                    '</div>'
+            }
+            else {
+                strHTML = '<div class="direct-chat-msg">' +
+                    '<div class="direct-chat-infos clearfix">' +
+                    '<span class="direct-chat-name float-left">' +
+                    item.InsertID
+                    + '</span >' +
+                    '<span class="direct-chat-timestamp float-right">' +
+                    item.InsertDT
+                    + '</span >' +
+                    '</div>' +
+                    '<div class="direct-chat-text">' +
+                    item.CommentBody
+                '</div>' +
+                    '</div>'
+            }
+
+            container.append(strHTML);
+        })
+        LoadingPage(0);
+    }
+
+    function DeleteCommentCB@(ViewBag.Thread)(commentID) {
+        LoadingPage(1);
+             
+            CheckSession();
+        //Quan change delete comment 2020/10/12
+        var _BoardID = getBoardIDOfCB@(ViewBag.ViewBagIndex)();
+        var _BoardDocID = $("#BoardDocID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        $.ajax({
+            url: '@Url.Action("OnDeleteComment", "CB")',
+            type: "POST",
+            data: {
+                CommentID: commentID,
+                BoardID: _BoardID,
+                BoardDocID: _BoardDocID,
+            },
+            dataType: "json",
+            success: function (result) {
+                LoadingPage(0);
+                if (result.Success) {
+                    LoadCommentCB@(ViewBag.Thread)(result.Data);
+                }
+                else {
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+        LoadingPage(0);
+    }
+
+    $(window).resize(function () {
+        //function recalculate resize height
+        ReziePageCBDetail();
+
+    });
+    function ReziePageCBDetail() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            @*RecalculateResize(0.4, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+            RecalculateResize(0.6, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                ReCalResize("contentbody_@(ViewBag.Thread)", "ID", "bodypage_@(ViewBag.Thread)", "topbody_@(ViewBag.Thread)", "height");
+                //RecalculateResize(0.55, "height", "topbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+                //RecalculateResize(0.4, "height", "contentbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+            }
+        }
+    }
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="content">
+    <div class="container-fluid" style="height:100%">
+        <div class="row" style="height:100%">
+            <div class="col-md-12" style="height:100%">
+                <div class="card card-primary" style="height:100%">
+                    <div class="card-body box-profile" style="height:100%">
+                        <div class="row">
+                            <div class="form-group col-md-2" hidden>
+                                <label> @_loc.GetLocalizedString("번호")</label>
+                                @(Html.DevExtreme().TextBox().ID("BoardDocKey" + ViewBag.Thread).Disabled(true))
+                            </div>
+
+                            <div class="form-group col-md-2" hidden>
+                                <label> @_loc.GetLocalizedString("BoardDocID")</label>
+                                @(Html.DevExtreme().TextBox().ID("BoardDocID" + ViewBag.Thread).Disabled(true))
+                            </div>
+
+                            <div class="form-group col-md-2" hidden>
+                                <label> @_loc.GetLocalizedString("BranchName")</label>
+                                @(Html.DevExtreme().SelectBox()
+                                      .ID("BranchName" + ViewBag.Thread)
+                                      .DisplayExpr("BranchNameDesc")
+                                      .ValueExpr("BranchNameID"))
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label>@_loc.GetLocalizedString("Writer")</label>
+                                @(Html.DevExtreme().TextBox().ID("InsertID" + ViewBag.Thread).Value(ViewBag.UserName).Disabled(true))
+                            </div>
+                            @{
+                                if (ViewBag.BDID == null || ViewBag.BDID == 0)
+                                {
+                                    <div class="form-group col-md-2" hidden>
+                                        <label> @_loc.GetLocalizedString("InternalPhone")</label>
+                                        @(Html.DevExtreme().TextBox().ID("InternalPhone" + ViewBag.Thread))
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="form-group col-md-2" hidden="hidden">
+                                        <label> @_loc.GetLocalizedString("InternalPhone")</label>
+                                        @(Html.DevExtreme().TextBox().ID("InternalPhone" + ViewBag.Thread))
+                                    </div>
+                                }
+                            }
+                            <div class="form-group col-md-2" hidden>
+                                <label>@_loc.GetLocalizedString("E-mail")</label>
+                                @(Html.DevExtreme().TextBox().ID("Email" + ViewBag.Thread))
+                            </div>
+
+                            <div class="form-group col-md-2">
+                                <label>@_loc.GetLocalizedString("DocDT")</label>
+                                @(Html.DevExtreme().DateBox().ID("DocDT" + ViewBag.Thread).Type(DateBoxType.Date)
+                                        .Value(DateTime.Now)
+                                        .DisplayFormat("yyyy-MM-dd"))
+                            </div>
+                            @{
+                                if (boardType.NoticeDTYN == true)
+                                {
+                                    <div class="form-group col-md-2">
+                                        <label> @_loc.GetLocalizedString("ExpiredPeriod")</label>
+                                        @(Html.DevExtreme().SelectBox()
+                                              .ID("NoticeTime" + ViewBag.Thread)
+                                              .DisplayExpr("TextDay")
+                                              .ValueExpr("Day"))
+                                    </div>
+                                }
+                            }
+                            @{
+                                if (ViewBag.BDID == null || ViewBag.BDID == 0)
+                                {
+                                    <div class="form-group col-md-2">
+                                        <label>@_loc.GetLocalizedString("InsertDT")</label>
+                                        @(Html.DevExtreme().DateBox().ID("InsertDT" + ViewBag.Thread).Type(DateBoxType.Date)
+                                                .Value(DateTime.Now)
+                                                .DisplayFormat("yyyy-MM-dd").Disabled(true) )
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="form-group col-md-2" hidden="hidden">
+                                        <label>@_loc.GetLocalizedString("InsertDT")</label>
+                                        @(Html.DevExtreme().DateBox().ID("InsertDT" + ViewBag.Thread).Type(DateBoxType.Date)
+                                            .Value(DateTime.Now)
+                                            .DisplayFormat("yyyy-MM-dd").Disabled(true) )
+                                    </div>
+                                }
+                            }
+                            <div class="form-group col-md-2" hidden>
+                                <label> @_loc.GetLocalizedString("ViewsCount")</label>
+                                @(Html.DevExtreme().TextBox().ID("ReadCount" + ViewBag.Thread).Disabled(true))
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <label> @_loc.GetLocalizedString("Subject")</label>
+                                @(Html.DevExtreme().TextBox().ID("Subject" + ViewBag.Thread))
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-12">
+
+                                @{ string iDEditor = "Body" + ViewBag.Thread;}
+
+                                @{
+                                    if (ViewBag.OwnerID == ViewBag.UserID || ViewBag.UserType == "G000C001" || ViewBag.UserType == "G000C002")
+                                    {
+                                        @(Html.DevExtreme().HtmlEditor()
+                                            .ID(iDEditor)
+                                            .Height("100%")
+                                            .Toolbar(toolbar => toolbar.Items(
+                                            items =>
+                                            {
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Undo);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Redo);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add()
+                                                    .FormatName("size")
+                                                    .FormatValues(new[] { "8pt", "10pt", "12pt", "14pt", "18pt", "24pt", "36pt" });
+                                                items.Add()
+                                                     .FormatName("font")
+                                                     .FormatValues(new[] { "Arial", "Courier New", "Georgia", "Impact", "Lucida Console", "Tahoma", "Times New              Roman",      "Verdana" });
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Bold);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Italic);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Strike);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Underline);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.AlignLeft);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.AlignCenter);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.AlignRight);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.AlignJustify);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.OrderedList);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.BulletList);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add()
+                                                     .FormatName("header")
+                                                     .FormatValues(new JS("[false, 1, 2, 3, 4, 5]"));
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Color);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Background);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Link);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Image);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Separator);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Clear);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.CodeBlock);
+                                                items.Add().FormatName(HtmlEditorToolbarItem.Blockquote);
+                                            }
+                                            )).MediaResizing(m => m.Enabled(true))
+                                         )
+                                    }
+                                    else
+                                    {
+                                        @(Html.DevExtreme().HtmlEditor()
+                                            .ID(iDEditor)
+                                            .Height("100%")
+                                            .MediaResizing(m => m.Enabled(true))
+                                        )
+                                    }
+                                }
+                            </div>
+                        </div>
+                        @{
+                            if (boardType.ReferenceURLYN == true)
+                            {
+                                <div class="form-group row">
+                                    <label class="col-sm-1"> @_loc.GetLocalizedString("boardType4")</label>
+                                    <div class="col-md-11">
+                                        @(Html.DevExtreme().TextBox().ID("ReferenceUrl" + ViewBag.Thread))
+                                    </div>
+                                </div>
+                            }
+                        }
+                        <div class="border border-primary form-group">
+                            <div class="card" style="margin:0">
+                                <div class="bg-primary border border-primary">
+                                    <div class="form-group d-flex justify-content-left mb-1">
+                                        <label class=" bg-primary ml-2" style="margin:auto"> @_loc.GetLocalizedString("Attach file")</label>
+                                        <button class="btn btn-tool" data-card-widget="collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="select-file-zone" style="display: block;">
+                                    <div class="row">
+                                        @{
+                                            if (boardType.FileUpoadYN == true)
+                                            {
+                                                <div class="form-group row">
+
+                                                    <div class="col-md-12">
+                                                        @{
+                                                            FileInfor temp = new FileInfor();
+                                                            temp.ID = "FileID" + ViewBag.Thread;
+                                                            temp.urlPath = "";
+                                                            temp.FileMasterID = Model.FileID;
+                                                            temp.FileID = Model.FileID;
+                                                            temp.Pag_Name = "";
+                                                            temp.Pag_ID = Model.Pag_ID;
+                                                            temp.Sp_Name = "UPLOAD_FILE_NOTICE_DOCID";
+                                                            temp.Sp_Name_CheckDeleteFile = "UPDATE_FILEID_BOARD_CONTENT";
+                                                            temp.DeleteFile = ViewBag.Delele_File;
+                                                            temp.UploadFile = ViewBag.Upload_File;
+                                                            temp.BoardDocID = ViewBag.BDID;
+                                                            temp.Action_ReloadListFile = "GetListBoardContent";
+                                                            temp.Controller_ReloadListFile = "CB";
+                                                            temp.Site_ID = ViewBag.SiteID;                                                            
+                                                        }
+                                                        @await Html.PartialAsync("~/Views/Shared/_FileUploadTemplate.cshtml", temp)
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @{
+                            if (ViewBag.BDID != 0)
+                            {
+                                if (boardType.CommentYN == true)
+                                {
+                                    <div class="border border-primary">
+                                        <div class="form-group">
+                                            <label class="col-sm-12 col-form-label bg-primary"> @_loc.GetLocalizedString("Comment")</label>
+                                        </div>
+                                        <div id="divBoardComment@(ViewBag.Thread)" style="border: 1px solid rgba(0,0,0,.125);">
+                                            <div class="col-md-12" id="bodyBoardComment@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="col-md-12" style="padding: .75rem 1.25rem;">
+                                                @{
+                                                    string idCommnent = "CommentBody" + ViewBag.Thread;
+                                                }
+                                                @(Html.DevExtreme().TextBox().ID(idCommnent).Buttons(buttons =>
+                                                {
+                                                    buttons.Add()
+                                                        .Name("comment")
+                                                        .Location(TextEditorButtonLocation.After)
+                                                        .Widget(w => w.Button()
+                                                            .Type(ButtonType.Default)
+                                                            .Icon("rename").OnClick("InsertCommonBoardComment"+ViewBag.Thread));
+                                                    })
+                                                )
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                        <div class="form-group row">
+                            <label class="col-sm-1 col-form-label"><i class="fas fa-caret-up"></i> @_loc.GetLocalizedString("Previous")</label>
+                            <div class="col-md-11" id="prevCB@(ViewBag.Thread)" style="padding-top: 5px;">
+                            </div>
+                            <label class="col-sm-1 col-form-label"><i class="fas fa-caret-down"></i> @_loc.GetLocalizedString("Next")</label>
+                            <div class="col-md-11" id="nextCB@(ViewBag.Thread)" style="padding-top: 5px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

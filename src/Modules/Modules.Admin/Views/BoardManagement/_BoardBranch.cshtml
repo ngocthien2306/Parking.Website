@@ -1,0 +1,156 @@
+﻿@using Modules.Admin.Models
+@using Modules.Common.Models;
+<script>
+    function getBoardID() {
+        // return $("#boardIDOfBranch").dxTextBox("instance").option("value");
+        return tempBoardID;
+    }
+    function SaveDataBoardBranch(e) {
+            CheckSession();
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    var data = (e.row.data);
+                    var bid = $("#boardIDOfBranch").dxTextBox("instance").option("value");
+                    if (data.BranchNameDesc == "") {
+                        LoadingPage(0);
+                        DevExpress.ui.dialog.alert("Enter Board Branch Name.", "Error");
+                    }
+                    else {
+                        $.ajax({
+                            url: '@Url.Action("OnSaveBranch", "BoardManagement")',
+                            type: "POST",
+                            data: { data: data, bid: bid },
+                            dataType: "json",
+                            success: function (result) {
+                                if (result.Success) {
+                                    LoadingPage(0);
+                                    DevExpress.ui.dialog.alert("@MessageCode.MD0004", "Success", function () {
+                                        SetDataBranchPop(bid)
+                                    });
+                                }
+                                else {
+                                    LoadingPage(0);
+                                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                                }
+                            }
+                        });
+                    }
+
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        LoadingPage(0);
+    }
+    function DeleteDataBoardBranch(e) {
+            CheckSession();
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1); 
+                    var data = (e.row.data);
+                    var bid = $("#boardIDOfBranch").dxTextBox("instance").option("value");
+                    $.ajax({
+                        url: '@Url.Action("OnDeleteBranch", "BoardManagement")',
+                        type: "POST",
+                        data: { BranchNameID: data.BranchNameID, bid: bid },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert("@MessageCode.MD0004", "Success", function () {
+                                    SetDataBranchPop(bid);
+                                });
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        }
+</script>
+<div class="modal fade" tabindex="-1" role="dialog" id="BoardBranchMagtPop" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@_loc.GetLocalizedString("BoardBranchInformation")</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("BoardID")</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().TextBox().ID("boardIDOfBranch")
+                            .Disabled(true)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        @(Html.DevExtreme().DataGrid<SYBoardBranchNames>()
+                            .ID("GridBoardBranchManagement")
+                            //.DataSource(d => d.Mvc().Controller("BoardManagement").LoadAction("GetListBoardBranchData").LoadParams(new { bid = new JS("getBoardID") }))
+                            .KeyExpr("BranchNameID")
+                            .Height("100%")
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Row);
+                                editing.AllowAdding(true);
+                                editing.AllowDeleting(true);
+                                editing.UseIcons(true);
+                            })
+                            .AllowColumnResizing(true)
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .RepaintChangesOnly(true)
+                            //.Selection(s => s.Mode(SelectionMode.Multiple).ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always).SelectAllMode(SelectAllMode.AllPages))
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.BranchNameID).Caption(_loc.GetLocalizedString("BoardBranchID")).Width("35%").AllowEditing(false);
+                                columns.AddFor(m => m.BranchNameDesc).Caption(_loc.GetLocalizedString("BoardBranchName")).Width("35%");
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(btns =>
+                                {
+                                    btns.Add().Name(GridColumnButtonName.Edit);
+                                    btns.Add().Name(GridColumnButtonName.Save).OnClick("SaveDataBoardBranch");
+                                    btns.Add().Name(GridColumnButtonName.Delete).OnClick("DeleteDataBoardBranch");
+
+                                });
+
+
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                        //.Paging(paging => paging.PageSize(10))
+                        //.Pager(pager =>
+                        //{
+                        //    pager.ShowPageSizeSelector(false);
+                        //    pager.AllowedPageSizes(new[] { 5, 10, 20 });
+                        //    pager.ShowInfo(true);
+                        //})
+                        // .OnSelectionChanged("gridCommonCodeMasterSelectionChanged")
+                        )
+                    </div>
+                </div>
+            </div>
+            @*<div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="onSaveBoardBranch()">Save changes</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>*@
+        </div>
+    </div>
+</div>

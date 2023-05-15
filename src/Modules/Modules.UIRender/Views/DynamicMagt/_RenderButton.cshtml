@@ -1,0 +1,23 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+@*<div class="form-group col-@Model.PEL_COL" hidden="@Model.PEL_VIS">*@
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+    <div class="dx-field">
+        <div class="dx-field-label" localize-content>@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().Button()
+                    .Icon("check")
+                    .ID(Model.PEL_ID)
+                    .Text(Model.PEL_LBL)
+                    .Type(ButtonType.Success)
+                    .OnClick("buttonColumnEvent_" + Model.PEL_ID + "_" + Model.PAG_ID)
+                    //.Disabled(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == "True" ? true : false) // Hidden Column False: hidden, True: Display
+                )
+        </div>
+    </div>
+</div>
+<script>
+    function buttonColumnEvent_@(Model.PEL_ID)_@(Model.PAG_ID)() {
+
+    }
+    
+</script>

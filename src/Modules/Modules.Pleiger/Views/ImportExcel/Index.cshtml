@@ -1,0 +1,165 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.FileUpload.Models
+
+@using Modules.Admin.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+
+    string ProductType = "ProductType" + ViewBag.Thread;
+    string projectStatus = "projectStatus" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string gridDrawing = "gridImportExcel";
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload" + ViewBag.thread;
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+}
+
+<script>
+
+    function productTypeOnValueChanged(data) {
+        LoadingPage(1);
+        CheckSession();
+        var itemClassCode = data.value;
+        var arrJson;
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("GetItemCodeNameByItemClassCode", "MESSaleProject")',
+            data: { itemClassCode: itemClassCode },
+            dataType: "json",
+            async: true
+        }).done(function (resp) {
+            arrJson = resp.data;
+            console.log(arrJson);
+            $("#ItemCode@(ViewBag.Thread)").dxSelectBox({
+                disabled: false,
+                dataSource: arrJson,
+                displayExpr: "Name",
+                valueExpr: "ID"
+            });
+            LoadingPage(0);
+        }).fail(function (resp) {
+            LoadingPage(0);
+            return
+        });
+        LoadingPage(0);
+    }
+    // Quan add 2020/08/19
+    // Import excel
+    $('#btnExcel_@ViewBag.Thread').on("click", function () {
+        //ReadExceclFile
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("ReadlFile", "ImportExcel")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                UrlFile: "url",
+                ModelName:"MESEmployees"
+            },
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    LoadingPage(0);
+                }
+                else {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Cannot delete project with status")", "Error");
+                }
+            },
+            error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    $('#ImportFile').on("click", function () {
+        LoadingPage(1);
+        debugger;
+        CheckSession();
+        document.getElementById('ImportFile').addEventListener('change', handleFileSelect, false);
+        LoadingPage(0);
+    });
+
+    function handleFileSelect(evt) {
+
+        debugger;
+        var files = evt.target.files; // FileList object
+        var xl2json = new ExcelToJSON();
+        xl2json.parseExcel(files[0]);
+    }
+
+    var ExcelToJSON = function () {
+
+        debugger;
+        CheckSession();
+        this.parseExcel = function (file) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var workbook = XLSX.read(data, {
+                    type: 'binary'
+                });
+                workbook.SheetNames.forEach(function (sheetName) {
+                    // Here is your object
+                    debugger;
+                    var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+                    var json_object = JSON.stringify(XL_row_object);
+                    console.log(JSON.parse(json_object));
+                    jQuery('#xlx_json').val(json_object);
+
+                    //$("#gridDrawing").dxDataGrid({
+                    //    dataSource: resp,
+                    //})
+
+
+                })
+            };
+
+            reader.onerror = function (ex) {
+                console.log(ex);
+            };
+            debugger;
+
+            reader.readAsBinaryString(file);
+        };
+    };
+    // Import excel
+</script>
+
+@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> 첨부파일</label>
+                    <div class="col-md-12">
+                        @{
+                            FileInfor temp = new FileInfor();
+                            temp.ID = "FileID" + ViewBag.Thread;
+                            temp.urlPath = "";
+                        }
+                        @await Html.PartialAsync("~/Views/Shared/_FileUploadExcel.cshtml", temp)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

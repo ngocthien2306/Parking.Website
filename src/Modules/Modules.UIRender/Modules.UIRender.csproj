@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <!--<OutputPath>..\..\HLFXFramework.WebHost\Modules\Modules.UIRender</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Views\DynamicMagt\_RenderAction.cshtml~RF2973b3b4.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExtreme.AspNet.Core" Version="20.1.4" />
+    <PackageReference Include="DevExtreme.AspNet.Data" Version="2.5.1" />
+  </ItemGroup>
+  <!--Copy Views file when build-->
+  <!--<ItemGroup>
+    <ViewsFiles Include="Views\**\*.*" />
+  </ItemGroup>-->
+  <!--<ItemGroup>
+    <ViewsFiles Remove="Views\DynamicMagt\Index.cshtml" />
+  </ItemGroup>-->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+    <ProjectReference Include="..\Modules.Admin\Modules.Admin.csproj" />
+    <ProjectReference Include="..\Modules.FileUpload\Modules.FileUpload.csproj" />
+    <ProjectReference Include="..\Modules.Pleiger.PurchaseOrder\Modules.Pleiger.PurchaseOrder.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Views\Scripts\" />
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+  <!--<Target Name="CopyModule" AfterTargets="Build">
+    <Copy SourceFiles="@(ViewsFiles)" DestinationFiles="@(ViewsFiles->'..\..\HLFXFramework.WebHost\Modules\Modules.UIRender\Views\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>-->
+</Project>

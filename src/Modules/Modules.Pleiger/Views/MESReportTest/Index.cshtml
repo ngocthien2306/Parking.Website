@@ -1,0 +1,57 @@
+﻿@{
+    Layout = null;
+   
+}
+
+<style>
+    #testChart1 {
+        width: 100%;
+    }
+
+    #testChart2 {
+        width: 100%;
+    }
+
+    #testChart3 {
+        width: 100%;
+    }
+</style>
+<script>
+    @*$(document).ready(function () {
+        $("#chartDash11").dxChart("render");
+        $("#chartDash21").dxChart("render");
+
+    })
+    }*@
+
+</script>
+
+<div class="container-fluid">
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-pie mr-1"></i> @_loc.GetLocalizedString("Chart")
+                        </h5>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var widgeMst in Model)
+                            {
+                                @await Component.InvokeAsync("Widget", new { WidgetNumber = widgeMst.WidgetNumber})
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+

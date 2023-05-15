@@ -1,0 +1,469 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+
+@{
+    string gridItem = "gridItem" + ViewBag.Thread;
+    string txtCategory = "Category" + ViewBag.Thread;
+    string txtItemCode = "ItemCode" + ViewBag.Thread;
+    string txtItemName = "ItemName" + ViewBag.Thread;
+    string txtItemClassCode = "ItemClass" + ViewBag.Thread;
+    string btnSaveItems = "btnSave_"+ViewBag.Thread;
+}
+<script>
+
+    $(document).ready(function () {
+        debugger;
+        //LoadingPage(1);
+        debugger;
+        //var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        var category = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "IMTP00");
+        var ListItemcategory = category.filter(grCate => grCate.BASE_CODE == "IMTP01" || grCate.BASE_CODE == "IMTP02");
+        debugger;
+        $("#@txtCategory").dxSelectBox({
+            dataSource: ListItemcategory,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+     
+    });
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+            SearchItemFromItemClassCode();
+    });
+
+    function SearchItemFromItemClassCode() {
+            
+            CheckSession();
+            LoadingPage(1);
+            var Category = $('#@txtCategory').dxSelectBox('option', 'value');
+            var ItemClassCode = $('#@txtItemClassCode').dxSelectBox('option', 'value');
+            var ItemCode = $('#@txtItemCode').dxTextBox('instance').option('value');
+            var ItemName = $('#@txtItemName').dxTextBox('instance').option('value');
+
+            $.ajax({
+                url: '@Url.Action("GetListItemOfItemClasscode", "MESProductionRequestChange")',
+                type: 'GET',
+                async: false,
+                data:
+                {
+                    Category: Category,
+                    ItemClassCode: ItemClassCode,
+                    ItemCode: ItemCode,
+                    ItemName: ItemName
+                },
+                dataType: 'json',
+                success: function (result) {
+                    LoadingPage(0);
+                    console.log("result ", result);
+                    LoadingPage(0);
+                    $('#@gridItem').dxDataGrid({
+
+                        dataSource: result
+                    })
+                },
+                error: function () {
+                    LoadingPage(0);
+                }
+            });
+            LoadingPage(0);
+    }
+
+    function itemclasscodeOnValueChanged(data) {
+        CheckSession();
+        var itemClassCode = data.value;
+        var arrJson;
+        if (itemClassCode == null || itemClassCode == '') {
+            $("#@txtItemCode").dxTextBox('instance').reset();
+            $("#@txtItemName").dxTextBox('instance').reset();
+
+            $('#@txtItemCode').dxTextBox({
+                disabled: true
+            });
+            $('#@txtItemName').dxTextBox({
+                disabled: true
+            });
+        } else {
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetItemCodeNameByItemClassCode", "MESSaleProject")',
+                data: { itemClassCode: itemClassCode },
+                dataType: "json",
+                async: true
+            }).done(function (resp) {
+                //debugger;
+                arrJson = resp.data;
+                console.log(arrJson);
+                $('#@txtItemCode').dxTextBox({
+                    disabled: false,
+                });
+                $('#@txtItemName').dxTextBox({
+                    disabled: false,
+                });
+            });
+        }
+
+    };
+
+    function categoryOnValueChange(data) {
+        CheckSession();
+        $("#@txtItemClassCode").dxSelectBox('instance').reset();
+            $("#@txtItemCode").dxTextBox('instance').reset();
+            $("#@txtItemName").dxTextBox('instance').reset();
+        var categoryCode = data.value;
+        if (categoryCode == null || categoryCode == '') {
+
+
+            $('#@txtItemCode').dxTextBox({
+                disabled: true,
+            });
+            $('#@txtItemName').dxTextBox({
+                disabled: true,
+            });
+            $('#@txtItemClassCode').dxSelectBox({
+                disabled: true,
+            });
+        }
+        else {
+            var arrJson;
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetListItemClass", "MESProductionRequestChange")',
+                data: { categoryCode: categoryCode },
+                dataType: "json",
+                async: true
+            }).done(function (resp) {
+                arrJson = resp.data;
+                console.log(arrJson);
+                $('#@txtItemClassCode').dxSelectBox({
+                    disabled: false,
+                    dataSource: new DevExpress.data.DataSource({
+                        store: arrJson,
+                        paginate: true,
+                        pageSize: 100
+                    }),
+                    displayExpr: "ClassNameKor",
+                    valueExpr: "ItemClassCode"
+                });
+            });
+        }
+
+    };
+
+    function ItemRequestPopupSelectionChanged(selectedItems) {
+        //debugger;
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        }
+        LoadingPage(0);
+    }
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Item Part List"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-sm btn-secondary btn-action" title="Search" menu-id="btnSearch_@ViewBag.Thread" id="btnSearch_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                <button class="btn btn-sm btn-primary btn-action" title="Add Item" menu-id="btnSave_@ViewBag.Thread" id="btnSave_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-plus"></i> @_loc.GetLocalizedString("Add Item")</button>
+            </div>
+        </div>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("Item Partner Request")</legend>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Category"))</label>
+                                    @(Html.DevExtreme().SelectBox()
+                                    .ID(txtCategory)
+                                    //.DisplayExpr("BASE_NAME1").ValueExpr("BASE_CODE")
+                                    //.DataSource(d => d.Mvc().Controller("MESProductionRequestChange")
+                                    //    .LoadAction("GetCategory")
+                                    //    .Key("BASE_CODE")
+                                    //)
+                                    .ShowClearButton(true)
+                                    .OnValueChanged("categoryOnValueChange")
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+
+                              )
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Item Class Code"))</label>
+                                    @*@(Html.DevExtreme().TextBox()
+                                        .ID("ProjectCode" + ViewBag.Thread))*@
+                                    @(Html.DevExtreme().SelectBox()
+                                    .ID(txtItemClassCode)
+                                    .ShowClearButton(true)
+                                    .Disabled(true)
+                                    .OnValueChanged("itemclasscodeOnValueChanged")
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                    .AcceptCustomValue(true)
+
+                              )
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                                    @*@(Html.DevExtreme().TextBox()
+                                        .ID("ProjectCode" + ViewBag.Thread))*@
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(txtItemCode)
+                                    //.DisplayExpr("ClassNameKor")
+                                    //.ValueExpr("ItemClassCode")
+                                    //.DataSource(d => d.Mvc().Controller("MESItemClass")
+                                    //    .LoadAction("GetListItemClassByCategory")
+                                    //    .Key("ItemClassCode")
+                                    //)
+                                    .Disabled(true)
+                              )
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Item Name"))</label>
+
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(txtItemName)
+                                    .Disabled(true)
+                              )
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-md-3 offset-md-3 d-flex flex-row justify-content-center align-items-end pb-0 " hidden="hidden">
+                                @*<div class="form-group mr-2">
+                                        @(Html.DevExtreme().Button()
+                                            .ID(btnSaveItems).Type(ButtonType.Default)
+                                            .Text($"{_loc.GetLocalizedString("Add Item")}")
+                                        )
+                                    </div>
+                                    <div class="form-group">
+                                        @(Html.DevExtreme().Button()
+                                              .ID("btnSearchItem")
+                                              .Icon("search")
+                                            .OnClick("SearchItemFromItemClassCode")
+                                            .Text($"{_loc.GetLocalizedString("Search")}")
+                                        )
+                                    </div>*@
+                                @*<div class="form-group mr-2">
+                                        <div class="dx-button dx-button-default dx-button-mode-contained dx-widget dx-button-has-text" role="button" aria-label="Add item">
+                                            <div id="btnSave_@ViewBag.Thread" class="dx-button-content">
+                                                <span class="dx-button-text">@(_loc.GetLocalizedString("Add item"))</span>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-button-has-text" role="button" aria-label="Search">
+                                            @(Html.DevExtreme().Button()
+                                            .Text(_loc.GetLocalizedString("Search")).Icon("fa fa-search")
+                                            .Type(ButtonType.Normal)
+                                            .Width(150)
+                                            .StylingMode(ButtonStylingMode.Contained).OnClick("SearchItemFromItemClassCode"))
+                                        </div>
+
+                                    </div>*@
+                            </div>
+
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="form-group">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("List Partner Request")</legend>
+                    @(Html.DevExtreme().DataGrid<ItemRequest>()
+                                    .ID(gridItem)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true).Height(450)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto))
+                                    .Width("100%")
+                                    .RepaintChangesOnly(true)
+                                    .ColumnAutoWidth(true).AllowColumnResizing(true)
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Cell);
+                                        //editing.AllowAdding(true);
+                                        //editing.AllowDeleting(true);
+                                        editing.AllowUpdating(true);
+                                        //editing.UseIcons(true);
+
+                                    })
+                                    .Selection(s => s.Mode(SelectionMode.Multiple)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=> {
+                                        //c.AddFor(x => x.No).Caption("No");
+                                        c.AddFor(x => x.Category).Caption((@_loc.GetLocalizedString("Category"))).Visible(false).AllowEditing(false);
+                                        c.AddFor(x => x.CategoryName).Caption((@_loc.GetLocalizedString("CategoryName"))).Visible(false).AllowEditing(false);
+                                        c.AddFor(x => x.ItemClassCode).Caption((@_loc.GetLocalizedString("Item Class Code"))).Visible(false).AllowEditing(false);
+                                        c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code"))).Width("10%").AllowEditing(false);
+                                        c.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name"))).Width("50%").AllowEditing(false);
+                                        c.AddFor(x => x.ReqQty).Caption((@_loc.GetLocalizedString("Request Qty"))).Width("15%").Format("#,##0");
+                                        c.AddFor(x => x.RealQty).Caption((@_loc.GetLocalizedString("Warehouse From In Stock"))).Width("15%").Format("#,##0").AllowEditing(false);
+                                        //c.AddFor(x => x.totalPOQty).Caption((@_loc.GetLocalizedString("Total PO Qty")));
+                                        //c.AddFor(x => x.totalPOFnQty).Caption((@_loc.GetLocalizedString("Total PO Final Qty")));
+
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                .OnSelectionChanged("ItemRequestPopupSelectionChanged")
+                                )
+                </fieldset>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>
+
+<script>
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        debugger;
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+
+        $("#frm-SaleSetting2").submit();
+    });
+
+
+
+    $("#frm-SaleSetting2").submit(function (e) {
+        e.preventDefault();       
+
+
+        var dataGrid = $('#@gridItem').dxDataGrid('instance');
+        var flagselectItem = dataGrid.getSelectedRowsData();
+        var data = dataGrid.getSelectedRowsData();
+        console.log(data);
+        var gridItemMaterial = $('#GridItemMaterial@(@ViewBag.OldThread)').dxDataGrid("instance");
+        if (gridItemMaterial == null) {
+            gridItemMaterial = [];
+        }
+        var ItemListRequest = gridItemMaterial.getDataSource().items();
+
+        $("#btnRequestProduction_@(ViewBag.OldThread)").attr('disabled', 'disabled');
+
+        if (data.length == 0) {
+            DevExpress.ui.dialog.alert("Please select an item!", "Error");
+
+        }
+        else {
+            $('#GridItemMaterial@(@ViewBag.OldThread)').dxDataGrid({
+                dataSource: data
+            })
+
+            //$('#modalControl').modal('hide');
+        }
+        debugger;
+        //var storedNames = JSON.parse(localStorage.getItem("ListItemRequestSorage"));
+        //storedNames.push(data);
+        $.each(ItemListRequest, function (index, item) {
+            debugger;
+            console.log(item)
+            data.push(item)
+        });
+        var ListItemFinal = {};
+        var Cell = {};
+        data.forEach(function (item) {
+            debugger;
+            Cell = ListItemFinal[item.ItemCode] = ListItemFinal[item.ItemCode] || {};
+            //grade[item.Domain] = true;
+            //Cell["No"] = item.No;
+            Cell["Category"] = item.Category;
+            Cell["ItemClassCode"] = item.ItemClassCode;
+            Cell["ItemCode"] = item.ItemCode;
+            Cell["ItemName"] = item.ItemName;
+            Cell["NameEng"] = item.NameEng;
+            Cell["No"] = item.No;
+            Cell["POFnQty"] = item.POFnQty;
+            Cell["POQty"] = item.POQty;
+            Cell["RealQty"] = item.RealQty;
+            Cell["ReqQty"] = item.ReqQty;
+            Cell["StkQty"] = item.StkQty;
+            Cell["totalPOFnQty"] = item.totalPOFnQty;
+            Cell["totalPOQty"] = item.totalPOQty;
+            Cell["CategoryName"] = item.CategoryName;
+            Cell["State"] = item.State;
+        });
+
+        let listItemFinish = [];
+
+        debugger;
+        //var count = 1;
+        $.each(ListItemFinal, function (index, item) {
+            //item.No = count++;
+            listItemFinish.push(item);
+        });
+        debugger;
+        listItemFinish.sort(compareItemNo);
+
+        //if (count == listItemFinish.length + 1) {
+        //    count = 1;
+        //}
+
+        var mainGridItems = $('#GridItemMaterial@(@ViewBag.OldThread)').dxDataGrid("instance");
+        // Check if select item
+        if (flagselectItem.length == 0) {
+            DevExpress.ui.dialog.alert("Please select an item!", "Error");
+        }
+        else {
+            mainGridItems = mainGridItems.option("dataSource", listItemFinish);
+            //$('#modalControl').modal('hide');
+        }
+        LoadingPage(0);
+
+    });
+
+    function compareItemNo(a, b) {
+        if (a.No < b.No) {
+            return -1;
+            // a should come after b in the sorted order
+        } else if (a.No > b.No) {
+            return 1;
+            // a and b are the same
+        } else {
+            return 0;
+        }
+    }
+</script>

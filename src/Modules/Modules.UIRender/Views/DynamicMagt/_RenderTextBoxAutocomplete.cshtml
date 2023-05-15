@@ -1,0 +1,60 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+
+<script>
+
+    $(document).ready(function () {
+        getDataAutocomplete_@(Model.PEL_ID)();
+    });
+
+    function getValue_@(Model.PEL_ID)() {
+        var value = $("#@(Model.PEL_ID)").dxAutocomplete("instance").option("value");
+        return value;
+    }
+    function setValue_@(Model.PEL_ID)(value) {
+        return $("#@(Model.PEL_ID)").dxAutocomplete("instance").option("value",value);
+    }
+
+    function autocomplete_changed_@(Model.PEL_ID)(data) {
+        console.log("autocomplete_changed_: ", data.value);
+    }
+
+    function getDataAutocomplete_@(Model.PEL_ID)() {
+        // Call by Sp name custom
+        $.ajax({
+            url: '@Url.Action("GetDataAutocompleteDynamicByCustomSPAndConnection", "Admin")',
+            type: "GET",
+            data: { SP_CUSTOM: '@Model.GRP_CD_CUSTOM', CONNECTION_NM : '@Model.CONNECTION_NM'  },
+            success: function (result) {
+                autocomplete = $('#@Model.PEL_ID').dxAutocomplete('instance');
+                autocomplete.option("dataSource", result.data);
+            }
+        });
+    }
+</script>
+
+
+
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS == true ? "display:block" : "display:none")">
+    <label for="@Model.PEL_ID">@_loc.GetLocalizedString(Model.PEL_LBL)</label>
+    @(Html.DevExtreme().Autocomplete().ID(Model.PEL_ID)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .ShowClearButton(true)
+                .Placeholder("")
+                .ValueExpr("text")
+                .SearchExpr("text")// search in view
+                .OnValueChanged("autocomplete_changed_" + (Model.PEL_ID))
+            )
+    @*<div class="dx-field">
+        <div class="dx-field-label">@Model.PEL_LBL</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().Autocomplete().ID(Model.PEL_ID)
+                .Disabled(@Model.IS_EDIT != true ? true : false) // Editable or not readonly
+                .ShowClearButton(true)
+                .Placeholder("")
+                .ValueExpr("text")
+                .SearchExpr("text")// search in view
+                .OnValueChanged("autocomplete_changed_" + (Model.PEL_ID))
+            )
+        </div>
+    </div>*@
+</div>

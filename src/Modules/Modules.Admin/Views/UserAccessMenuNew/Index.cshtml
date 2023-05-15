@@ -1,0 +1,949 @@
+﻿@using InfrastructureCore.Models.Identity;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Common.Models;
+@using Microsoft.AspNetCore.Mvc.Localization;
+@using Modules.Admin.Models;
+
+@{
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = null;
+    var currentUser = (SYLoggedUser)ViewBag.CurrentUser;
+    string superAdmin = "G000C001";
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = true;
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    string UserGrid = "UserGird" + ViewBag.Thread;
+    string TreeView = "TreeView" + ViewBag.Thread;
+    string SelectedMenuGrid = "SelectedMenuGrid" + ViewBag.Thread;
+    string currentlanguage = ViewBag.CurrentLanguage;
+    string UserGroup = "UserGroup" + ViewBag.Thread; ;
+
+}
+
+<script>
+    var UserArrUpdate = [];
+    var UserArrDelete = [];
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        ReziePageUserAccessMenuNew();
+         
+        var UserGrid = InitUserGrid();
+        var MenuGrid = InitMenuTreeView();
+        var SelectedMenuGrid = InitSelectedMenuGrid();
+
+        UserGrid.option('height', (($(window).height()) - 350));
+        MenuGrid.option('height', (($(window).height()) - 350));
+        SelectedMenuGrid.option('height', (($(window).height()) - 350));
+
+        $.ajax({
+        url: '@Url.Action("GetAllUser", "UserAccessMenuNew")',
+            type: 'GET',
+            dataType: 'json',
+        }).done(function (result) {
+             
+
+            UserGrid.option('dataSource', result);
+        });
+        LoadingPage(0);
+    });
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        RefreshTab(this);
+    });
+
+    $('#btnSave_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger
+        if (UserArrUpdate.length == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to set permission to a user!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", '@(_loc.GetLocalizedString("Confirm changes"))');
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                 
+                var listUpdatePermission = JSON.stringify(UserArrUpdate);
+                var listDeletePermission = JSON.stringify(UserArrDelete);
+                $.ajax({
+                    url: '@Url.Action("UpdateUserPermission", "UserAccessMenuNew")',
+                    data: { listUpdatePermission: listUpdatePermission},
+                    dataType: 'json',
+                    type: 'POST',
+
+                }).done(function (result) {
+                    if (result.Success == true) {
+                        DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Save Successs"))', '@(_loc.GetLocalizedString("Success"))');
+                        UserArrUpdate = [];
+                         
+                        //Quan change 2021-02-02
+                        var UserGrid = InitUserGrid().getSelectedRowsData();
+                        ReSelectedUserList(UserGrid[0].USER_CODE)
+
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Save Fail"))', '@(_loc.GetLocalizedString("Error"))');
+                    }
+                });
+            }
+        })
+    })
+
+    //PVN Add
+    function InitUserGrid() {
+        return $('#@UserGrid').dxDataGrid('instance');
+    }
+
+    function InitMenuTreeView() {
+        return $('#@TreeView').dxTreeView('instance');
+    }
+
+    function InitSelectedMenuGrid() {
+        return $('#@SelectedMenuGrid').dxDataGrid('instance');
+    }
+    function ReSelectedUserList(UserCode) {
+        // 
+        CheckSession();
+        //var MenuTreeView = InitMenuTreeView();
+        var SelectedMenuGrid = InitSelectedMenuGrid();
+        $.ajax({
+            url: '@Url.Action("GetMenuByUserId", "UserAccessMenuNew")',
+            data: { UserCode: UserCode },
+            type: 'GET',
+            dataType: 'json',
+        }).done(function (result) {
+             
+            SelectedMenuGrid.option('dataSource', result);
+        })
+
+        ReloadCheckedMenu(UserCode);
+        SetCheckBoxValue(false, false, false, false, false, false, false, false, false, false, false, false);
+        SetCheckBoxValue_Group(false, false, false, false, false, false, false, false, false, false, false, false);
+
+        SelectedMenuGrid.deselectRows(SelectedMenuGrid.getSelectedRowKeys());
+
+    }
+    @*function GetMenuByUserId(e) {
+         
+        CheckSession();
+        var SelectedMenuGrid = InitSelectedMenuGrid();
+        $.ajax({
+            url: '@Url.Action("GetMenuByUserId", "UserAccessMenuNew")',
+            data: { UserCode: e.values[1] },
+            type: 'GET',
+            dataType: 'json',
+        }).done(function (result) {
+             
+            SelectedMenuGrid.option('dataSource', result);
+        })
+        $("#@(UserGroup)").dxSelectBox("instance").option("value", null);
+        $("#@(UserGroup)").dxSelectBox({
+            dataSource: null,
+            displayExpr: "GROUP_NAME",
+            valueExpr: "GROUP_ID"
+        });
+
+        ReloadCheckedMenu(e.values[1]);
+        SetCheckBoxValue(false, false, false, false, false, false, false, false, false, false, false, false);
+        SetCheckBoxValue_Group(false, false, false, false, false, false, false, false, false, false, false, false);
+
+
+        SelectedMenuGrid.deselectRows(SelectedMenuGrid.getSelectedRowKeys());
+
+    }*@
+    // Quan add test
+    function GetMenuByUserId(e) {
+         
+        CheckSession();
+        var SelectedMenuGrid = InitSelectedMenuGrid();
+        $.ajax({
+            url: '@Url.Action("GetMenuByUserId", "UserAccessMenuNew")',
+            data: { UserCode: e.values[1] },
+            type: 'GET',
+            dataType: 'json',
+        }).done(function (result) {
+             
+            SelectedMenuGrid.option('dataSource', result);
+        })
+        $("#@(UserGroup)").dxSelectBox("instance").option("value", null);
+        $("#@(UserGroup)").dxSelectBox({
+            dataSource: null,
+            displayExpr: "GROUP_NAME",
+            valueExpr: "GROUP_ID"
+        });
+
+        ReloadCheckedMenu(e.values[1]);
+        SetCheckBoxValue(false, false, false, false, false, false, false, false, false, false, false, false);
+        SetCheckBoxValue_Group(false, false, false, false, false, false, false, false, false, false, false, false);
+
+
+        SelectedMenuGrid.deselectRows(SelectedMenuGrid.getSelectedRowKeys());
+
+    }
+
+    function ReloadCheckedMenu(UserCode) {
+         
+            $.ajax({
+            url: '@Url.Action("GetCheckedMenu", "UserAccessMenuNew")',
+            data: { UserCode: UserCode },
+            type: 'GET',
+            dataType: 'json',
+        }).done(function (result) {
+             
+            console.log(" data default ", result);
+             
+            var MenuGrid = InitMenuTreeView();
+            MenuGrid.option('dataSource', result);
+        });
+    }
+
+
+    function SetCheckBoxValue(SEARCH_YN, CREATE_YN, SAVE_YN, DELETE_YN, EDIT_YN, EXCEL_YN, PRINT_YN, DELETE_FILE_YN, UPLOAD_FILE_YN, INVENTORY_YN, PURCHASE_ORDER_YN, EXPORT_EXCEL_ICUBE_YN) {
+        $('#SeachYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', SEARCH_YN);
+        $('#CreateYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', CREATE_YN);
+        $('#SaveYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', SAVE_YN);
+        $('#DeleteYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', DELETE_YN);
+        $('#EditYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', EDIT_YN);
+        $('#ExcelYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', EXCEL_YN);
+        $('#PrintYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', PRINT_YN);
+        $('#DeleteFileYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', DELETE_FILE_YN);
+        $('#UploadFileYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', UPLOAD_FILE_YN);
+        $('#InventoryYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', INVENTORY_YN);
+        $('#ExportExcelICube@( ViewBag.Thread)').dxCheckBox('instance').option('value', EXPORT_EXCEL_ICUBE_YN);
+        $('#PurchaseOrderYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', PURCHASE_ORDER_YN);
+    }
+    // Quan add
+    function SetCheckBoxValue_Group(SEARCH_YN, CREATE_YN, SAVE_YN, DELETE_YN, EDIT_YN, EXCEL_YN, PRINT_YN, DELETE_FILE_YN, UPLOAD_FILE_YN, INVENTORY_YN, PURCHASE_ORDER_YN, EXPORT_EXCEL_ICUBE_YN) {
+         
+        $('#Group_SeachYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', SEARCH_YN);
+        $('#Group_CreateYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', CREATE_YN);
+        $('#Group_SaveYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', SAVE_YN);
+        $('#Group_DeleteYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', DELETE_YN);
+        $('#Group_EditYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', EDIT_YN);
+        $('#Group_ExcelYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', EXCEL_YN);
+        $('#Group_PrintYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', PRINT_YN);
+        $('#Group_DeleteFileYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', DELETE_FILE_YN);
+        $('#Group_UploadFileYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', UPLOAD_FILE_YN);
+        $('#Group_InventoryYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', INVENTORY_YN);
+        $('#Group_ExportExcelICube@( ViewBag.Thread)').dxCheckBox('instance').option('value', EXPORT_EXCEL_ICUBE_YN);
+        $('#Group_PurchaseOrderYN@( ViewBag.Thread)').dxCheckBox('instance').option('value', PURCHASE_ORDER_YN);
+    }
+
+    function MoveToSelectedGrid() {
+        CheckSession();
+         
+        var MenuTreeView = InitMenuTreeView().getSelectedNodes();
+        var SelectedMenuGrid = InitSelectedMenuGrid().getDataSource();
+        var UserGrid = InitUserGrid().getSelectedRowsData();
+        var NewDataSource = [];
+
+        if (UserGrid == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to select an user!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        if (MenuTreeView.length == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to select at least 1 menu!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        let singleObj = {};
+        let MenuList = [];
+
+        // Add new Datasource for Selected Menu List
+        // Tạo 1 list mới gồm những menu không chứa menu con
+        $.each(MenuTreeView, function (MenuTreeViewIndex, MenuTreeViewItem) {
+            if (MenuTreeViewItem.items.length == 0) {
+                NewDataSource.push(MenuTreeViewItem.itemData);
+            }
+        });
+
+        if (SelectedMenuGrid.items().length != 0) {
+            $.each(SelectedMenuGrid.items(), function (SelectedMenuGridIndex, SelectedMenuGridItem) {
+                NewDataSource.push(SelectedMenuGridItem);
+            });
+        }
+
+        let ListItemFinal = {};
+        let Cell = {};
+        NewDataSource.forEach(function (item) {
+             
+            Cell = ListItemFinal[item.MenuID] = ListItemFinal[item.MenuID] || {};
+            Cell["No"] = item.No;
+            Cell["MenuID"] = item.MenuID;
+            Cell["MenuName"] = item.MenuName;
+            Cell["MenuNameEng"] = item.MenuNameEng;
+            Cell["MenuParentID"] = item.MenuParentID;
+            Cell["SiteID"] = item.SiteID;
+            Cell["MenuPath"] = item.MenuPath;
+
+            let CheckUserExist = UserArrUpdate.findIndex(userId => userId.UserId == UserGrid[0].USER_ID);
+
+             
+            let permissionUpdate = {};
+            permissionUpdate['MenuId'] = item.MenuID;
+            permissionUpdate['SEARCH_YN'] = false;
+            permissionUpdate['CREATE_YN'] = false;
+            permissionUpdate['SAVE_YN'] = false;
+            permissionUpdate['DELETE_YN'] = false;
+            permissionUpdate['EDIT_YN'] = false;
+            permissionUpdate['EXCEL_YN'] = false;
+            permissionUpdate['PRINT_YN'] = false;
+            permissionUpdate['DELETE_FILE_YN'] = false;
+            permissionUpdate['UPLOAD_FILE_YN'] = false;
+            permissionUpdate['INVENTORY_YN'] = false;
+            permissionUpdate['PURCHASE_ORDER_YN'] = false;
+            permissionUpdate['EXPORT_EXCEL_ICUBE_YN'] = false;
+            permissionUpdate['STATE'] = 'UPDATE';
+
+           
+            // Quan add 2021-03-04
+            // Get list Permission By Userid And MenuID
+            $.ajax({
+            async: false,
+            url: '@Url.Action("GetPermissionByUserAndMenuID", "UserAccessMenuNew")',            
+            type: 'GET',
+            dataType: 'json',
+              data: {
+                  UserID: UserGrid[0].USER_ID,
+                  MenuID: item.MenuID
+            }
+            }).done(function (result) {
+                 
+                if (result.length>0)
+                {
+                    permissionUpdate['MenuId'] = item.MenuID;
+                    permissionUpdate['CREATE_YN'] = result[0].CREATE_YN;
+                    permissionUpdate['SEARCH_YN'] = result[0].SEARCH_YN;
+                    permissionUpdate['SAVE_YN'] = result[0].SAVE_YN;
+                    permissionUpdate['DELETE_YN'] = result[0].DELETE_YN;
+                    permissionUpdate['EDIT_YN'] = result[0].EDIT_YN;
+                    permissionUpdate['EXCEL_YN'] = result[0].EXCEL_YN;
+                    permissionUpdate['PRINT_YN'] = result[0].PRINT_YN;
+                    permissionUpdate['DELETE_FILE_YN'] = result[0].DELETE_FILE_YN;
+                    permissionUpdate['UPLOAD_FILE_YN'] = result[0].UPLOAD_FILE_YN;
+                    permissionUpdate['INVENTORY_YN'] = result[0].INVENTORY_YN;
+                    permissionUpdate['PURCHASE_ORDER_YN'] = result[0].PURCHASE_ORDER_YN;
+                    permissionUpdate['EXPORT_EXCEL_ICUBE_YN'] = result[0].EXPORT_EXCEL_ICUBE_YN;
+                    permissionUpdate['STATE'] = 'UPDATE';
+                }
+               
+            })
+            //END
+
+            MenuList.push(permissionUpdate);
+
+            if (CheckUserExist != -1) {
+                $.each(MenuList, function (index, item) {
+                     
+                    let ExistMenuId = UserArrUpdate[CheckUserExist].PermissionUpdate.findIndex(menuId => menuId.MenuId == item.MenuId)
+                    if (ExistMenuId == -1) {
+                         
+                        UserArrUpdate[CheckUserExist].PermissionUpdate.push(item);
+                    }
+                    else {
+                        let UpdateMenuExist = UserArrUpdate[CheckUserExist].PermissionUpdate[ExistMenuId];
+                        UpdateMenuExist.STATE = 'UPDATE';
+                    }
+                })
+            }
+            else {
+                singleObj['UserId'] = UserGrid[0].USER_ID;
+                singleObj['PermissionUpdate'] = MenuList;
+
+                UserArrUpdate.push(singleObj);
+            }
+        });
+
+
+         
+        let listItemRequestFinal = [];
+        $.each(ListItemFinal, function (index, item) {
+            listItemRequestFinal.push(item);
+        });
+         
+        InitSelectedMenuGrid().option('dataSource', null);
+        InitSelectedMenuGrid().option('dataSource', listItemRequestFinal);
+        InitSelectedMenuGrid().refresh();
+    }
+
+    function RemoveFromSelectedGrid() {
+        CheckSession();
+         
+        let UserGrid = InitUserGrid().getSelectedRowsData();
+
+        var SelectedMenuGrid = InitSelectedMenuGrid();
+
+        if (SelectedMenuGrid.getSelectedRowsData() == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to select a row to remove!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        let CheckUserExist_ArrUpdate = UserArrUpdate.findIndex(userId => userId.UserId == UserGrid[0].USER_ID);
+
+        $.each(SelectedMenuGrid.getSelectedRowKeys(), function (index, key) {
+
+            let findDeleteMenuIndex = UserArrUpdate[CheckUserExist_ArrUpdate].PermissionUpdate.findIndex(menuId => menuId.MenuId == key);
+
+            if (findDeleteMenuIndex != -1) {
+                 
+                let findDeleteMenu = UserArrUpdate[CheckUserExist_ArrUpdate].PermissionUpdate[findDeleteMenuIndex];
+                findDeleteMenu.STATE = "DELETE";
+            }
+
+            SelectedMenuGrid.getDataSource().store().remove(key);
+        })
+
+        SelectedMenuGrid.refresh();
+    }
+
+    function LoadPermission() {
+        var SelectedMenuGrid = InitSelectedMenuGrid().getSelectedRowsData();
+        var UserGrid = InitUserGrid().getSelectedRowsData();
+
+        if (UserGrid == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to select an user!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        $.ajax({
+            url: '@Url.Action("GetPermission", "UserAccessMenuNew")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                UserCode: UserGrid[0].USER_CODE,
+                MenuId: SelectedMenuGrid[SelectedMenuGrid.length - 1].MenuID
+            }
+        }).done(function (result) {
+            // Bỏ trạng thái trước đó của checkbox để tránh trường hợp mặc dù Checkbox được check nhưng thật ra giá trị đang là False
+            SetCheckBoxValue(false, false, false, false, false, false, false, false, false, false, false, false);
+            SetCheckBoxValue_Group(false, false, false, false, false, false, false, false, false, false, false, false);
+
+            if (result.length != 0) {
+                 
+                SetCheckBoxValue(result[0].SEARCH_YN, result[0].CREATE_YN, result[0].SAVE_YN, result[0].DELETE_YN,
+                    result[0].EDIT_YN, result[0].EXCEL_YN, result[0].PRINT_YN, result[0].DELETE_FILE_YN,
+                    result[0].UPLOAD_FILE_YN, result[0].INVENTORY_YN,
+                    result[0].PURCHASE_ORDER_YN, result[0].EXPORT_EXCEL_ICUBE_YN);
+            }
+        })
+        // Quan add get GetPermission by Group
+        $("#@(UserGroup)").dxSelectBox("instance").option("value", null);
+        $.ajax({
+            url: '@Url.Action("GetGroupByUser", "UserAccessMenuNew")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                UserCode: UserGrid[0].USER_CODE,
+                MenuId: SelectedMenuGrid[SelectedMenuGrid.length - 1].MenuID
+            }
+        }).done(function (result) {
+             
+            $("#@(UserGroup)").dxSelectBox({
+                dataSource: result,
+                displayExpr: "GROUP_NAME",
+                valueExpr: "GROUP_ID"
+            });
+
+
+            // Bỏ trạng thái trước đó của checkbox để tránh trường hợp mặc dù Checkbox được check nhưng thật ra giá trị đang là False
+            //SetCheckBoxValue_Group(false, false, false, false, false, false, false, false, false, false, false, false);
+
+            //if (result.length != 0) {
+            //     
+            //    SetCheckBoxValue_Group(result[0].SEARCH_YN, result[0].CREATE_YN, result[0].SAVE_YN, result[0].DELETE_YN,
+            //        result[0].EDIT_YN, result[0].EXCEL_YN, result[0].PRINT_YN, result[0].DELETE_FILE_YN,
+            //        result[0].UPLOAD_FILE_YN, result[0].INVENTORY_YN,
+            //        result[0].PURCHASE_ORDER_YN, result[0].EXPORT_EXCEL_ICUBE_YN);
+            //}
+        })
+
+    }
+
+    function checkbox_ValueChanged(e) {
+        let UserGrid = InitUserGrid().getSelectedRowsData();
+        let SelectedMenuGrid = InitSelectedMenuGrid();
+
+        if (UserGrid == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to select an user!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        if (SelectedMenuGrid.length == 0) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("You need to select a menu!"))', '@(_loc.GetLocalizedString("Error"))');
+            return false;
+        }
+
+        let SEARCH_YN           = $('#SeachYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let CREATE_YN           = $('#CreateYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let SAVE_YN             = $('#SaveYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let DELETE_YN           = $('#DeleteYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let EDIT_YN             = $('#EditYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let EXCEL_YN            = $('#ExcelYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let PRINT_YN            = $('#PrintYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let DELETE_FILE_YN      = $('#DeleteFileYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let UPLOAD_FILE_YN      = $('#UploadFileYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let INVENTORY_YN        = $('#InventoryYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let PURCHASE_ORDER_YN   = $('#PurchaseOrderYN@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+        let EXPORT_EXCEL_ICUBE_YN = $('#ExportExcelICube@( ViewBag.Thread)').dxCheckBox('instance').option('value');
+
+         
+        let CheckUserExist = UserArrUpdate.findIndex(userId => userId.UserId == UserGrid[0].USER_ID);
+
+        if (CheckUserExist != -1) {
+            let GetMenuRow = UserArrUpdate[CheckUserExist].PermissionUpdate;
+
+            $.each(SelectedMenuGrid.getSelectedRowKeys(), function (index, item) {
+                let getUserPermission = GetMenuRow.findIndex(menuId => menuId.MenuId == item);
+                if (getUserPermission != -1) {
+                    GetMenuRow[getUserPermission].SEARCH_YN = SEARCH_YN;
+                    GetMenuRow[getUserPermission].CREATE_YN = CREATE_YN;
+                    GetMenuRow[getUserPermission].SAVE_YN = SAVE_YN;
+                    GetMenuRow[getUserPermission].DELETE_YN = DELETE_YN;
+                    GetMenuRow[getUserPermission].EDIT_YN = EDIT_YN;
+                    GetMenuRow[getUserPermission].EXCEL_YN = EXCEL_YN;
+                    GetMenuRow[getUserPermission].PRINT_YN = PRINT_YN;
+                    GetMenuRow[getUserPermission].DELETE_FILE_YN = DELETE_FILE_YN;
+                    GetMenuRow[getUserPermission].UPLOAD_FILE_YN = UPLOAD_FILE_YN;
+                    GetMenuRow[getUserPermission].INVENTORY_YN = INVENTORY_YN;
+                    GetMenuRow[getUserPermission].PURCHASE_ORDER_YN = PURCHASE_ORDER_YN;
+                    GetMenuRow[getUserPermission].EXPORT_EXCEL_ICUBE_YN = EXPORT_EXCEL_ICUBE_YN;
+                    GetMenuRow[getUserPermission].STATE = 'UPDATE';
+                }
+            })
+        }
+    }
+
+    function AddUserAndMenuId(e) {
+        let UserGrid = InitUserGrid().getSelectedRowsData();
+        let SelectedMenuGrid = InitSelectedMenuGrid();
+        let singleObj = {};
+        let MenuList = [];
+
+        if (SelectedMenuGrid.getSelectedRowKeys().length == 0) return false;
+
+        let CheckUserExist = UserArrUpdate.findIndex(userId => userId.UserId == UserGrid[0].USER_ID);
+
+        $.each(SelectedMenuGrid.getSelectedRowKeys(), function (index, item) {
+             
+            let permissionUpdate = {};
+            permissionUpdate['MenuId'] = item;
+            permissionUpdate['SEARCH_YN']         = false;
+            permissionUpdate['CREATE_YN']         = false;
+            permissionUpdate['SAVE_YN']           = false;
+            permissionUpdate['DELETE_YN']         = false;
+            permissionUpdate['EDIT_YN']           = false;
+            permissionUpdate['EXCEL_YN']          = false;
+            permissionUpdate['PRINT_YN']          = false;
+            permissionUpdate['DELETE_FILE_YN']    = false;
+            permissionUpdate['UPLOAD_FILE_YN']    = false;
+            permissionUpdate['INVENTORY_YN']      = false;
+            permissionUpdate['PURCHASE_ORDER_YN'] = false;
+            permissionUpdate['EXPORTEXCELICUBE_YN'] = false;
+            permissionUpdate['STATE']             = 'UPDATE';
+
+            MenuList.push(permissionUpdate);
+        });
+
+        if (CheckUserExist != -1) {
+            $.each(MenuList, function (index, item) {
+                 
+                let ExistMenuId = UserArrUpdate[CheckUserExist].PermissionUpdate.findIndex(menuId => menuId.MenuId == item.MenuId)
+                if (ExistMenuId == -1) {
+                    UserArrUpdate[CheckUserExist].PermissionUpdate.push(item);
+                }
+            })
+        }
+        else {
+            singleObj['UserId'] = UserGrid[0].USER_ID;
+            singleObj['PermissionUpdate'] = MenuList;
+
+            UserArrUpdate.push(singleObj);
+        }
+    }
+
+    $(window).resize(function () {
+        //$("#headerpage_@(ViewBag.Thread)").resizeddiv();
+        ReziePageUserAccessMenuNew();
+
+    });
+    function ReziePageUserAccessMenuNew() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+            @*RecalculateResize(0.4, "height", "headerpage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");
+            RecalculateResize(0.6, "height", "bodypage_@(ViewBag.Thread)", "divindex_@(ViewBag.Thread)");*@
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+
+    function UserGroupOnValueChanged@(ViewBag.Thread)(data) {
+        var SelectedMenuGrid = InitSelectedMenuGrid().getSelectedRowsData();
+        var UserGrid = InitUserGrid().getSelectedRowsData();
+        $.ajax({
+            url: '@Url.Action("GetPermissionByGroup", "UserAccessMenuNew")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                UserCode: UserGrid[0].USER_CODE,
+                MenuId: SelectedMenuGrid[SelectedMenuGrid.length - 1].MenuID,
+                GroupID: data.value
+            }
+        }).done(function (result) {
+            // Bỏ trạng thái trước đó của checkbox để tránh trường hợp mặc dù Checkbox được check nhưng thật ra giá trị đang là False
+            SetCheckBoxValue_Group(false, false, false, false, false, false, false, false, false, false, false, false);
+
+            if (result.length != 0) {
+                SetCheckBoxValue_Group(result[0].SEARCH_YN, result[0].CREATE_YN, result[0].SAVE_YN, result[0].DELETE_YN,
+                    result[0].EDIT_YN, result[0].EXCEL_YN, result[0].PRINT_YN, result[0].DELETE_FILE_YN,
+                    result[0].UPLOAD_FILE_YN, result[0].INVENTORY_YN,
+                    result[0].PURCHASE_ORDER_YN, result[0].EXPORT_EXCEL_ICUBE_YN);
+            }
+        })
+    }
+
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+@*<div class="content">
+    <div class="container-fluid">*@
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-3" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header">
+                <h6>@_loc.GetLocalizedString("UserList")</h6>
+            </div>
+            <div class="card-body">
+                @(Html.DevExtreme().DataGrid<SYUserAccessMenus>()
+                            .ID(UserGrid)
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .Height("100%")
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Virtual))
+                            .KeyExpr("USER_ID")
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Batch);
+                            })
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m =>m.No).Caption("No").Width("70");
+                                columns.AddFor(m => m.USER_CODE).Caption(_loc.GetLocalizedString("UserCode"));
+                                columns.AddFor(m => m.USER_NAME).Caption(_loc.GetLocalizedString("UserName"));
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(500))
+                            .OnRowClick("GetMenuByUserId")
+                        )
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header">
+                <h6>@_loc.GetLocalizedString("MenuList")</h6>
+            </div>
+            <div class="card-body">
+                @(Html.DevExtreme().TreeView()
+                    .ID(TreeView)
+                    .DataSource(d => d.Mvc().Controller("UserAccessMenuNew").LoadAction("GetAllSite"))
+                    .KeyExpr("MenuID")
+                    .DisplayExpr(
+                        ViewBag.CurrentLanguage == "en" ?  "MenuNameEng": "MenuName"
+                    )
+                    .ParentIdExpr("MenuParentID")
+                    .SelectedExpr("Selected")
+                    .DataStructure(TreeViewDataStructure.Plain)
+                    .Width(340)
+                    .Height("100%")
+                    .ShowCheckBoxesMode(TreeViewCheckBoxMode.Normal)
+                    @*.ItemTemplate(
+                     if(ViewBag.CurrentLanguage == "ko") {
+                          @<text>
+                              <%- MenuNameEng %>
+                          </text>
+                     }
+                     else
+                     {
+                            @<text>
+                            <%- MenuNameEng %>
+                            </text>
+                     }
+
+                    )*@
+                )
+            </div>
+        </div>
+    </div>
+    <div class="col-md-1" style="text-align:center; margin:auto">
+        <p>
+            @(Html.DevExtreme().Button().Text(">>").OnClick("MoveToSelectedGrid"))
+        </p>
+        <p>
+            @(Html.DevExtreme().Button().Text("<<").OnClick("RemoveFromSelectedGrid"))
+        </p>
+    </div>
+    <div class="col-md-2" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header">
+                <h6>@_loc.GetLocalizedString("MenusSelected")</h6>
+            </div>
+            <div class="card-body">
+                @(Html.DevExtreme().DataGrid<SYMenu>()
+                            .ID(SelectedMenuGrid)
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .Height("100%")
+                            .FilterRow(filterRow => filterRow
+                                .Visible(true)
+                                .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                            .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Virtual))
+                            .KeyExpr("MenuID")
+                            .Selection(s => s.Mode(SelectionMode.Multiple))
+                            .RepaintChangesOnly(true)
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Batch);
+                                editing.UseIcons(true);
+                            })
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m =>m.SiteID).Visible(false);
+                                columns.AddFor(m =>m.MenuID).Visible(false);
+                                columns.AddFor(m =>m.MenuParentID).Visible(false);
+                                //columns.AddFor(m => m.MenuName).Caption(_loc.GetLocalizedString("MenuName"));
+                                if (currentlanguage == "ko")
+                                {
+                                    columns.AddFor(m => m.MenuName).Caption(_loc.GetLocalizedString("MenuName"));
+                                }
+                                else
+                                {
+                                    columns.AddFor(m => m.MenuNameEng).Caption(_loc.GetLocalizedString("MenuName"));
+                                }
+                                //columns.AddFor(m => m.GroupName).Caption(_loc.GetLocalizedString("GroupName"));
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(500))
+                            .OnRowClick("LoadPermission")
+                            .OnSelectionChanged("AddUserAndMenuId")
+                        )
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header">
+                <h6>@_loc.GetLocalizedString("Permissions")</h6>
+            </div>
+            <div class="card-body">
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("SeachYN" + ViewBag.Thread)
+                            .Text("Search YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("CreateYN" + ViewBag.Thread)
+                            .Text("Create YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("SaveYN" + ViewBag.Thread)
+                            .Text("Save YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("DeleteYN" + ViewBag.Thread)
+                            .Text("Delete YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("EditYN" + ViewBag.Thread)
+                            .Text("Edit YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("ExcelYN" + ViewBag.Thread)
+                            .Text("Excel YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("PrintYN" + ViewBag.Thread)
+                            .Text("Print YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("DeleteFileYN" + ViewBag.Thread)
+                            .Text("Delete File YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("UploadFileYN" + ViewBag.Thread)
+                            .Text("Upload File YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("PurchaseOrderYN" + ViewBag.Thread)
+                            .Text("Purchase Order YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("InventoryYN" + ViewBag.Thread)
+                            .Text("Inventory YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox()
+                            .OnValueChanged("checkbox_ValueChanged")
+                            .ID("ExportExcelICube" + ViewBag.Thread)
+                            .Text("Export Excel I-Cube YN")
+                        )
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2" style="height:100%">
+        <div class="card" style="height:100%">
+            @*<div class="card-header">
+            <h6>@_loc.GetLocalizedString("Group Permissions")</h6>
+            </div>*@
+            <div class="row card-header">
+                <div class="form-group col-md-12 ">
+                    <h6>@_loc.GetLocalizedString("Group Permissions")</h6>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(UserGroup)
+                        .ShowClearButton(true)
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                        .OnValueChanged("UserGroupOnValueChanged" + ViewBag.Thread)
+                    )
+                </div>
+            </div>
+
+            <div class="form-group col-md-12">
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_SeachYN" + ViewBag.Thread)
+                            .Text("Search YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_CreateYN" + ViewBag.Thread)
+                            .Text("Create YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_SaveYN" + ViewBag.Thread)
+                            .Text("Save YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_DeleteYN" + ViewBag.Thread)
+                            .Text("Delete YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_EditYN" + ViewBag.Thread)
+                            .Text("Edit YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_ExcelYN" + ViewBag.Thread)
+                            .Text("Excel YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_PrintYN" + ViewBag.Thread)
+                            .Text("Print YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_DeleteFileYN" + ViewBag.Thread)
+                            .Text("Delete File YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_UploadFileYN" + ViewBag.Thread)
+                            .Text("Upload File YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_PurchaseOrderYN" + ViewBag.Thread)
+                            .Text("Purchase Order YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_InventoryYN" + ViewBag.Thread)
+                            .Text("Inventory YN")
+                        )
+                </p>
+                <p>
+                    @(Html.DevExtreme().CheckBox().ReadOnly(true)
+                            .ID("Group_ExportExcelICube" + ViewBag.Thread)
+                            .Text("Export Excel I-Cube YN")
+                        )
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+

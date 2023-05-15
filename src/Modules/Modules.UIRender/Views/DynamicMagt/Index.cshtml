@@ -1,0 +1,214 @@
+﻿@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu
+@model List<SYPageLayout>
+@{
+    Layout = null;
+    var countPop = ViewBag.CountPop;
+    var countPopCustomView = ViewBag.CountPopCustomView;
+    var PagePopupCustom = ViewBag.PagePopupCustom;
+
+    var listForm = Model.Where(x => x.PAG_TYPE == "G001C001").ToList();
+    var listPop = countPop > 0 ? Model.Where(x => x.PAG_TYPE == "G001C002").ToList() : null;
+    var listPopCustomeView = countPopCustomView > 0 ? Model.Where(x => x.PAG_TYPE == "G001C004").ToList() : null;
+    List<string> lstFuncPostData = new List<string>();
+}
+
+@*<script src=@Url.Content("Modules/Modules.UIRender/wwwroot/js/WarehouseDynamic.js") type="text/javascript"></script>*@
+<script>
+    objPostData = [];
+    var countPop = @countPop; // Init count popup page which had been created
+    var countPopCustomView = @countPopCustomView; // Init count popup page custom which had been created
+    var countRequired = []; // Init required variable count when render element
+
+    //function mappingObjectData(dataObject, listMapDetails) {
+    //    for (var i = 0; i < dataObject.length; i++) {
+    //        $.each(listMapDetails, function (index, element) {
+    //            let tempKey = dataObject[i].Key;
+    //            if (element.MAP_FROM === tempKey) {
+    //                eval('setValue_' + element.MAP_TO + '("' + dataObject[i].Value + '");');
+    //            }
+    //        })
+    //    }
+    //}
+
+    //function changetext(e) {
+    //    return e.value;
+    //}
+
+    //function getUrlParameter() {
+    //    var lstTemp = [];
+    //    var sPageURL = window.location.search.substring(1),
+    //        sURLVariables = sPageURL.split('&'),
+    //        sParameterName,
+    //        i;
+
+    //    for (i = 0; i < sURLVariables.length; i++) {
+    //        var param = {
+    //            key: '',
+    //            value: ''
+    //        }
+    //        sParameterName = sURLVariables[i].split('=');
+    //        param.key = sParameterName[0];
+    //        param.value = sParameterName[1];
+    //        lstTemp.push(param);
+    //    }
+    //    return lstTemp;
+    //};
+
+    $(document).ready(function () {
+        if (countPop > 0) {
+            let listPop = @Html.Raw(Json.Serialize(listPop));
+            GeneratePopupDynamic('@ViewBag.Thread', listPop);
+        }
+    });
+
+    $(document).ready(function () {
+        if (countPopCustomView > 0) {
+            let listPopCustomeView = @Html.Raw(Json.Serialize(PagePopupCustom));
+            GeneratePopupCustom('@ViewBag.Thread', listPopCustomeView);
+        }
+    });
+
+    // Reload tab
+    $("#btnReload_@ViewBag.MenuID").on("click", function () {
+        RefreshTab(this);
+    });
+
+</script>
+
+<div id="formFileUpLoad@(ViewBag.PageID)" hidden>
+    <input type="text" value="@Model.FirstOrDefault().PAG_KEY" id="MenuName@(ViewBag.PageID)" />
+    <input id="FileUpload@(ViewBag.PageID)" type="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+</div>
+
+@foreach (var page in Model)
+{
+    SYMenuAccess pageSetting = new SYMenuAccess();
+
+    //pageSetting.SEARCH_YN = true; 
+    //pageSetting.CREATE_YN = true;
+    //pageSetting.SAVE_YN = true;
+    //pageSetting.EDIT_YN = true;
+    //pageSetting.DELETE_YN = true;
+    //pageSetting.EXCEL_YN = true;
+    //pageSetting.PRINT_YN = true;
+    //pageSetting.UPLOAD_FILE_YN = true;
+    //pageSetting.DELETE_FILE_YN = true;
+    pageSetting.SEARCH_YN      = ViewBag.Search;
+    pageSetting.CREATE_YN      = ViewBag.Create;
+    pageSetting.SAVE_YN        = ViewBag.Save;
+    pageSetting.EDIT_YN        = ViewBag.Edit;
+    pageSetting.DELETE_YN      = ViewBag.Delete;
+    pageSetting.EXCEL_YN       = ViewBag.Excel;
+    pageSetting.PRINT_YN       = ViewBag.Print;
+    pageSetting.UPLOAD_FILE_YN = ViewBag.Uploadfile;
+    pageSetting.DELETE_FILE_YN = ViewBag.Deletefile;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    if (page.PAG_TYPE == "G001C001")
+    {
+        @*@await Component.InvokeAsync("AccessToolbar", new { PageID = page.PAG_ID, pageSetting = pageSetting })*@
+        @await Component.InvokeAsync("AccessToolbar", new { PageID = page.PAG_ID, pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread, GridMenuID = ViewBag.GridMenuID })
+        <div class="card border-top-custom" style="margin-right:1px;">
+            <div class="card-body p-1" style="height:100%">
+                <div class="row" style="margin-left: 5px;margin-right:5px;height:100%">
+                    @foreach (var item in page.listPageElement.Where(m => m.PEL_PRN == "" || m.PEL_PRN == null).OrderBy(m => m.PEL_SEQ))
+                    {
+                        item.listElementChild = page.listPageElement.Where(m => m.PEL_PRN == item.PEL_ID_REAL).ToList();
+                        item.listAction = page.listAction;
+                        @await Html.PartialAsync("~/Views/DynamicMagt/_RenderPage.cshtml", item)
+                    }
+                </div>
+            </div>
+        </div>
+
+        @*foreach (var item in page.listToolbar)
+            {
+                var action = page.listAction.Where(m => m.ACT_ID == item.ACT_ID).FirstOrDefault();
+                if (action != null)
+                {
+                    @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", action)
+                }
+            }*@
+        foreach (var item in page.listAction)
+        {
+            @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", item)
+        }
+
+        var titlePage = page.PAG_TITLE;
+        <script>
+        $(document).ready(function () {
+            $("#title-content-header").html('@titlePage');
+           // recalculatePageDynamic();
+            var lstAction =  @Html.Raw(Json.Serialize(page.listAction));
+            $.each(lstAction, function (index, item) {
+                if (item.IS_INIT === true) {
+                    eval('RUN_' + `${item.ACT_ID}` + '_' + `${item.PAG_ID}` + '()');
+                }
+            });
+        });
+         @*$(window).resize(function () {
+            //function recalculate resize height
+             recalculatePageDynamic();
+
+        });
+        function recalculatePageDynamic() {
+            ReCalResize("divindex_@(ViewBag.MenuID)", "ID", "tab-menu-content", "menutoolbar", "height");
+            if (CheckMobiNew()) {
+
+            }
+            else {
+                if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                    //ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                    //RecalculateResize(0.55, "height", "topbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+                    //RecalculateResize(0.4, "height", "contentbody_@(ViewBag.Thread)", "bodypage_@(ViewBag.Thread)");
+                }
+            }
+        }*@
+
+        </script>
+    }
+    /*check and addd post data function to list */
+
+    foreach (var action in page.listAction)
+    {
+        int iCount = 0;
+        int iRedirect = 0;
+        foreach (var item in action.listActionDetail)
+        {
+            if (item.ACT_TYPE == "G010C001")
+            {
+                if (item.dataMap != null)
+                {
+                    if (item.dataMap.MAP_SPTYPE == "G006C006")
+                    {
+                        iCount++;
+                        break;
+                    }
+                }
+            }
+            if (item.ACT_TYPE == "G010C005")
+            {
+                iRedirect++;
+            }
+        }
+        if (iRedirect > 0)
+        {
+            @await Html.PartialAsync("~/Views/DynamicMagt/_RenderAction.cshtml", action)
+        }
+        //if (iCount > 0)
+        //{
+        //    string funcName = "RUN_" + action.ACT_ID + "_" + action.PAG_ID + "();";
+        //    lstFuncPostData.Add(funcName);
+        //}
+    }
+}
+
+

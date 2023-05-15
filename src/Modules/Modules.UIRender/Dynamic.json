@@ -1,0 +1,31 @@
+[
+  {
+    "Site": "Pleiger",
+    "DynamicTable": [
+      {
+        "PageName": "WAREHOUSE_MGT",
+        "DBTblName": "MES_Warehouse",
+        "ModelName": "",
+        "AssemblyName": "Modules.Pleiger.CommonModels.MES_Warehouse, Modules.Pleiger.CommonModels",
+        "SPName": "SP_MES_WAREHOUSE_IMPORT_EXCEL_DYNAMIC",
+        "TemplateName": "WarehouseTemplate.xlsx"
+      },
+      {
+        "PageName": "ITEMS_MGT",
+        "DBTblName": "MES_Item",
+        "ModelName": "",
+        "AssemblyName": "Modules.Pleiger.CommonModels.MES_Item, Modules.Pleiger.CommonModels",
+        "SPName": "SP_MES_ITEM_IMPORT_EXCEL_DYNAMIC",
+        "TemplateName": "Batch_ItemMgtTemplate.xlsx"
+      },
+      {
+        "PageName": "ITEM_PARTNER_INFO",
+        "DBTblName": "MES_ItemPartner",
+        "ModelName": "",
+        "AssemblyName": "Modules.Pleiger.CommonModels.MES_ItemPartner, Modules.Pleiger.CommonModels",
+        "SPName": "SP_MES_ITEM_PARTNER_IMPORT_EXCEL_DYNAMIC",
+        "TemplateName": "Batch_ItemPartnerMgtTemplate.xlsx"
+      }
+    ]
+  }
+]

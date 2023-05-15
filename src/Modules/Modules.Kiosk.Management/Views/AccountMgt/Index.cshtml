@@ -1,0 +1,417 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var approveRejectEntities = new[] {
+        new {id = false, name ="False" },
+        new {id = true, name = "True"}
+    };
+
+    string btnAddStoreToUser = "btnAddStoreToUser" + ViewBag.Thread;
+
+    string gridUser = "gridUser" + ViewBag.Thread;
+    string gridUserStore = "gridUserStore" + ViewBag.Thread;
+    string gridStore = "gridStore" + ViewBag.Thread;
+    string userId = "userId" + ViewBag.Thread;
+
+    string storeName = "storeName" + ViewBag.Thread;
+    string location = "location" + ViewBag.Thread;
+
+}
+<script>
+    var currentApproveReject;
+    $(document).ready(function () {
+        LoadingPage(1);
+        GetAccountMgt();
+
+        $('#btnSave_@ViewBag.Thread').prop('disabled', true);
+        $("#@location").dxSelectBox("instance").option("disabled", true);
+        $("#@storeName").dxTextBox("instance").option("disabled", true);
+
+        LoadingPage(0);
+    })
+    function GetGridAccountIntance() {
+        return $("#@gridUser").dxDataGrid("instance");
+    }
+    function GetGridStoreUserInstance() {
+        return $("#@gridUserStore").dxDataGrid("instance");
+    }
+    // Region: btn click event
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        GetAccountMgt();
+        LoadingPage(0);
+    });
+
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        CheckSession();
+        AddUserToStore();
+        LoadingPage(0);
+    });
+    
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    function ShowStoreRegistered(e) {
+        LoadingPage(1);
+        ShowDetailAccountMgt(e.data.storeNo, e.data.userId);
+    }
+    function DeleteUserEvent(e) {
+        CheckSession();
+        debugger;
+        DeleteUserRegisteredStore(e);
+    }
+    // End Region: btn click event
+
+    // Region: Get data
+    function GetAccountMgt() {
+        var obj = {
+            userId: GetDataElement("#@userId")
+        }
+        var url = '@Url.Action("GetAccountMgt", "AccountMgt")';
+        LoadGridData(url, obj, "#@gridUser", METHOD.GET);
+    }
+    function ShowDetailAccountMgt(storeNo, userId) {
+        debugger;
+        GetGridStoreUserInstance().selectRows();
+        var url = '@Url.Action("GetUserRegisteredStore", "AccountMgt")';
+        var obj = {
+            storeNo: null,
+            userId: userId
+        }
+        LoadGridData(url, obj, "#@gridUserStore", METHOD.GET);
+        
+
+        $('#btnSave_@ViewBag.Thread').prop('disabled', true);
+        $("#@location").dxSelectBox("instance").option("disabled", true);
+        $("#@storeName").dxTextBox("instance").option("disabled", true);
+        $("#@gridStore").dxDataGrid("instance").option("dataSource", null);
+
+    }
+    function SearchStore(e) {
+        LoadStoreMaster(null, GetDataElement("#@location"), GetDataElement("#@storeName"), "#@gridStore");
+    }
+    // End Region: Get data
+
+    // Region: Create - Update - Delete
+    function DeleteUserRegisteredStore(e) {
+       
+        var url = '@Url.Action("DeleteUserOutStore", "AccountMgt")';
+        var obj = {
+            userId: e.data.userId,
+            storeNo: e.data.storeNo
+        }
+        CRUDData(url, obj, METHOD.POST);
+        setTimeout(function () {
+            GetAccountMgt();
+        }, 500);
+
+    }
+    function AddUserToStore() {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+                var gridStore = GetGridIntance("#@gridStore").getSelectedRowsData();
+                var gridUserStore = GetGridAccountIntance().getSelectedRowsData()[0];
+
+                var listStoreNo = [];
+                gridStore.forEach(store => {
+                    listStoreNo.push({storeNo: store.storeNo});
+                })
+                var url = '@Url.Action("AddUserToStore", "AccountMgt")';
+                var obj = {
+                    userId: gridUserStore.userId,
+                    storeNos: JSON.stringify(listStoreNo)
+                }
+
+                CRUDData(url, obj, METHOD.POST);
+                setTimeout(function () {
+                    GetAccountMgt();
+                    ShowDetailAccountMgt(null, gridUserStore.userId);
+                }, 500);
+            }
+        });
+    }
+    function UpdateApproveRejectUser(e) {
+        currentApproveReject = e.value;
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0021))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            var gridUser = GetGridAccountIntance().getSelectedRowsData()[0];
+            if (dialogResult) {
+                debugger;
+                var url = '@Url.Action("SaveAccountMgt", "AccountMgt")';
+                var obj = {
+                    userId: gridUser.userId,
+                    status: currentApproveReject
+                }
+                CRUDData(url, obj, METHOD.POST);
+                setTimeout(function () {
+                    GetAccountMgt();
+                }, 500);
+                GetGridStoreUserInstance().option("dataSource", null);
+            }
+            else {
+                debugger;
+                GetGridAccountIntance().refresh();
+            }
+        })
+    }
+    // End Region: Create - Update - Delete
+    function onItemGridToolbarPreparing(e) {
+        debugger;
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                elementAttr: {
+                    id: "@btnAddStoreToUser"
+                },
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Create")",
+                    onClick: function () {
+                        if (GetGridAccountIntance().getSelectedRowsData().length < 1) {
+                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0004))', '@(_loc.GetLocalizedString("Message"))');
+                        }
+                        else {
+                            $('#btnSave_@ViewBag.Thread').prop('disabled', false);
+                            $("#@location").dxSelectBox("instance").option("disabled", false);
+                            $("#@storeName").dxTextBox("instance").option("disabled", false);
+                            LoadStoreMaster(null, null, null, "#@gridStore");
+                            var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+                            // if status = false -> not get initial data for ccb
+                            LoadDataCommboBox("LCT000", url, '#@location', false);
+                        }
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+
+    }
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row mt-1">
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("ID"))</label>
+                        @(Html.DevExtreme().TextBox()
+                            .ID(userId)
+                            )
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:95vh">
+                    <div class="col-md-12">
+                        <fieldset class="customFieldset">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Account Information")</legend>
+                            @(Html.DevExtreme().DataGrid<KIO_AccountMgt>()
+                                .ID(gridUser)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .Height("35vh")
+                                .ShowRowLines(true)
+                                .HeaderFilter(f => f.Visible(true))
+                                .FilterRow(f => f.Visible(true))
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .RemoteOperations(true)
+                                .ColumnAutoWidth(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .ColumnFixing(c => c.Enabled(true))
+                                .RepaintChangesOnly(true)
+                                
+                                .Columns(c =>
+                                {
+                                    c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                    c.AddFor(x => x.userId).Caption(_loc.GetLocalizedString("ID"));
+                                    c.AddFor(x => x.userTypeName).Caption(_loc.GetLocalizedString("User Type"));
+                                    c.AddFor(x => x.countUserMgt).Caption(_loc.GetLocalizedString("Number Store"));
+                                    c.AddFor(x => x.loginTime).Caption(_loc.GetLocalizedString("Login Time")).Format("yyyy-MM-dd").Alignment(0);
+                                    c.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd").Alignment(0);
+                                    c.AddFor(x => x.memo).Caption(_loc.GetLocalizedString("Memo"));
+                                    c.Add().Caption(_loc.GetLocalizedString("Approve Reject")).CellTemplate(@<text>
+                                        @(
+                                        Html.DevExtreme().RadioGroup()
+                                        .DataSource(approveRejectEntities)
+                                        .ValueExpr("id")
+                                        .DisplayExpr("name")
+                                        .Value(new JS("data.approveReject"))
+                                        .Layout(Orientation.Horizontal)
+                                        .OnValueChanged("UpdateApproveRejectUser")
+                                        )
+                                    </text>);
+                                })
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                .OnRowClick("ShowStoreRegistered")
+                                //.OnSelectionChanged("onItemGridSelectionChanged")
+                                //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                                .Paging(paging => paging.PageSize(100))
+                                )
+                        </fieldset>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <fieldset class="customFieldset">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("Registration List")</legend>
+
+                                    @(
+                                        Html.DevExtreme().DataGrid<KIO_UseRegisteredStore>()
+                                        .ID(gridUserStore)
+                                        .Height("40vh")
+                                        .ShowBorders(true)
+                                        .ShowColumnLines(true)
+@*                                        .HeaderFilter(f => f.Visible(true))
+                                        .FilterRow(f => f.Visible(true))*@
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .AllowColumnReordering(true)
+                                        .RemoteOperations(true)
+                                        .ColumnAutoWidth(true)
+                                        .ColumnFixing(c => c.Enabled(true))
+                                        .RepaintChangesOnly(true)
+                                        .Selection(s => s.Mode(SelectionMode.Single))
+                                        .Editing(e => {
+                                            e.Mode(GridEditMode.Row);
+                                            e.AllowDeleting(true).UseIcons(true).Texts(t => t.ConfirmDeleteMessage(_loc.GetLocalizedString(MessageCode.MD0002)));
+                                        })
+                                        .Columns(c =>
+                                        {
+                                            c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                            c.AddFor(x => x.storeNo).Caption(_loc.GetLocalizedString("Store No"));
+                                            c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                            c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                            
+@*                                            c.Add().Type(GridCommandColumnType.Buttons)
+                                            .Alignment(HorizontalAlignment.Center)
+                                            .Buttons(b =>
+                                            {
+                                                b.Add().Icon("fas fa-trash")
+                                                .Hint("Click to delete user out store")
+                                                .OnClick("DeleteUserEvent");
+                                            }).Caption(_loc.GetLocalizedString("관리"));*@
+                                            @*c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");*@
+                                        })
+                                        .OnRowRemoving("DeleteUserEvent")
+                                        .Pager(pager =>
+                                        {
+                                            pager.ShowInfo(true);
+                                            pager.ShowNavigationButtons(true);
+                                        })
+                                        //.OnSelectionChanged("onItemGridSelectionChanged")
+                                        .OnToolbarPreparing("onItemGridToolbarPreparing")
+                                        //.Paging(paging => paging.PageSize(100))
+                                        )
+                                </fieldset>
+                            </div>
+                            <div class="col-md-4">
+                                <fieldset class="customFieldset">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("Store Selection")</legend>
+                                    <div class="row">
+                                        <label class="mt-2 ml-2">@(_loc.GetLocalizedString("Location")): </label>
+                                        <div class="form-group col-md-4">
+                                            <div class="d-flex flex-row ">
+
+                                                @(Html.DevExtreme().SelectBox()
+                                                    .ID(location)
+                                                    .OnSelectionChanged("SearchStore")
+                                                    .ShowClearButton(true)
+                                                    )
+                                            </div>
+                                        </div>
+                                        <label class="mt-2 ml-2">@(_loc.GetLocalizedString("Store Name")): </label>
+                                        <div class="form-group col-md-4">
+
+                                            <div class="d-flex flex-row ">
+
+                                                @(Html.DevExtreme().TextBox()
+                                                    .ID(storeName)
+                                                    .OnEnterKey("SearchStore")
+                                                    .Hint(_loc.GetLocalizedString("Input and enter key to search by store name"))
+                                                    .Placeholder(_loc.GetLocalizedString("Click enter to search data by store name"))
+                                                    )
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-1">
+                                        @(Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                                            .ID(gridStore)
+                                            .ShowBorders(true)
+                                            .ShowColumnLines(true)
+                                            .Height("30vh")
+                                            .ShowRowLines(true)
+                                            .AllowColumnResizing(true)
+                                            .AllowColumnReordering(true)
+                                            .RemoteOperations(true)
+                                            .ColumnAutoWidth(true)
+                                            .ColumnFixing(c => c.Enabled(true))
+                                            .RepaintChangesOnly(true)
+                                            .Selection(s => s.Mode(SelectionMode.Multiple))
+                                            .Columns(c =>
+                                            {
+                                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                                c.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd").Alignment(0);
+                                                //c.AddFor(x => x.UnitPrice).Caption(_loc.GetLocalizedString("Unit Price")).Format("#,##0");
+                                            })
+                                            .Pager(pager =>
+                                            {
+                                                pager.ShowInfo(true);
+                                                pager.ShowNavigationButtons(true);
+                                            })
+                                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                                            .Paging(paging => paging.PageSize(100))
+                                            )
+                                    </div>
+
+                                    <div class="row mt-2" style="justify-content: flex-end">
+                                        <div></div>
+                                        <div>
+                                            <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("선택추가"))</button>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

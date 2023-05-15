@@ -1,0 +1,449 @@
+﻿@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@using Modules.Pleiger.CommonModels.Parking;
+
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var statusApproveReject = new[] {
+        new {id = false, name =_loc.GetLocalizedString("Reject") },
+        new {id = true, name = _loc.GetLocalizedString("Approve")}
+    };
+
+    var searchByMinutes = new[] {
+        new {id = 30, name =_loc.GetLocalizedString("Last 30 minutes")},
+        new {id = 60, name = _loc.GetLocalizedString("Last 60 minutes")}
+    };
+
+    string startDateCheckIn = "startDateCheckInParking";
+    string endDateCheckIn = "endDateCheckInParking";
+    string gridStore = "gridParkingCheckInPage";
+    string gridCheckIn = "gridCheckInVehicleRealTime";
+    string optionSearchByMin = "optionSearchByMin" + ViewBag.Thread;
+}
+
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        GetStoreMastersByUser("#@gridStore", { siteType: "SIT001"});
+        LoadingPage(0);
+    })
+
+    function GridStoreInstance() {
+        return $("#@gridStore").dxDataGrid("instance");
+    }
+
+    function GridCheckInInstance() {
+        return $("#@gridCheckIn").dxDataGrid("instance");
+    }
+
+    // Region: btn click event
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    function onInitialized(e) {
+        e.component.beginCustomLoading();
+    }
+
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+
+        var stores = GridStoreInstance().getSelectedRowsData();
+        //if (stores.length < 1) {
+        //    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select store!")", "Notice")
+        //}
+        //else {
+            debugger;
+            var listStore = [];
+            stores.forEach(s => {
+                listStore.push(s.storeNo)
+            })
+            GetCheckInInfo(listStore.join())
+            LoadingPage(0);
+            return;
+        //}
+
+        LoadingPage(0);
+    });
+    function ShowCheckInHistory(e) {
+        LoadingPage(1);
+        GetCheckInInfo(e.data.storeNo);
+    }
+
+    // End Region: btn click event
+
+    function SetValueGenderName(e) {
+        if(e == "Men") {
+            return "@_loc.GetLocalizedString("Men")";
+        }
+        else {
+            return "@_loc.GetLocalizedString("Women")";
+        }
+    }
+    // Region: Get Data
+    function GetCheckInInfo(storeNo) {
+        var obj = {
+            startTime: formatDate("#@startDateCheckIn"),
+            endTime: formatDate("#@endDateCheckIn"),
+            byMin: GetDataElement("#@optionSearchByMin"),
+            storeNo: storeNo
+        }
+
+        var url = '@Url.Action("GetVehicleCheckin", "MonitoringVehicle")';
+
+        LoadGridData(url, obj, "#@gridCheckIn", METHOD.GET);
+    }
+
+    // End Region: Get Data
+
+
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <label>@(_loc.GetLocalizedString("Vehicle Monitoring Period"))</label>
+                <div class="row mt-1">
+                    <div class="form-group col-md-2">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(startDateCheckIn)
+                            .DisplayFormat("yyyy-MM-dd HH")
+                            .Value(DateTime.Today)
+                            .ShowClearButton(true)
+                            )
+                    </div>
+                    <span class="mt-2">~</span>
+                    <div class="form-group col-md-2">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(endDateCheckIn)
+                            .DisplayFormat("yyyy-MM-dd HH")
+                            .Value(DateTime.Now)
+                            .ShowClearButton(true)
+                            )
+                    </div>
+                    <div class="form-group col-md-6">
+                        @(
+                            Html.DevExtreme().RadioGroup()
+                            .ID(optionSearchByMin)
+                            .DataSource(searchByMinutes)
+                            .ValueExpr("id")
+                            .DisplayExpr("name")
+                            .Layout(Orientation.Horizontal)
+                            .OnValueChanged("SearchByMinutesChanged")
+                            .Value(30)
+                            )
+                    </div>
+
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-2">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                            .ID(gridStore)
+                            .Height("70vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .FilterRow(f => f.Visible(true))
+                            .HeaderFilter(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .FocusedRowIndex(0)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Site Name"));
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("ShowCheckInHistory")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+
+                    <div class="col-md-10">
+                        @(
+                            Html.DevExtreme().DataGrid<ParkingCheckin>()
+                            .ID(gridCheckIn)
+                            .ShowBorders(true)
+                            .ShowColumnLines(false)
+                            .LoadPanel(loadPanel => loadPanel.Enabled(false))
+                            .OnInitialized("onInitialized")
+                            //.RepaintChangesOnly(true)
+                            .HighlightChanges(true)
+                            .Height("70vh")
+
+                            .ShowRowLines(true)
+                            .HeaderFilter(f => f.Visible(true))
+                            .FilterRow(f => f.Visible(true))
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Columns(columns =>
+                            {
+                                columns.Add().Caption(_loc.GetLocalizedString("Vehicle Information")).CellTemplate(@<text>
+
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Store Name"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .TextBox()
+                                                .Value(new JS("data.storeName"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Start Time"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .DateBox().DisplayFormat("yyyy-MM-dd HH:mm:ss")
+                                                .Value(new JS("data.startTime"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("End Time"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .DateBox().DisplayFormat("yyyy-MM-dd HH:mm:ss")
+                                                .Value(new JS("data.endTime"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Plate Number"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .TextBox()
+                                                .Value(new JS("data.plateNum"))
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Type Plate"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+
+                                                @(
+                                                    Html.DevExtreme()
+                                                    .TextBox()
+                                                    .ReadOnly(true)
+                                                    //.Value(new JS("data.genderName"))
+                                                    .Value(new JS("data.typePlate"))
+                                                    )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Transport"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .TextBox()
+                                                .Value(new JS("data.typeTransport"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin mt-1 row">
+                                        <div class="col-md-4">
+                                            <label class="ml-2">@(_loc.GetLocalizedString("Approve / Reject"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme().RadioGroup()
+                                                .DataSource(statusApproveReject)
+                                                .ValueExpr("id")
+                                                .DisplayExpr("name")
+                                                .Value(new JS("data.approveReject"))
+                                                .Layout(Orientation.Horizontal)
+                                                .OnValueChanged("UpdateApproveRejectUser")
+                                                )
+                                            </div>
+                                    </div>
+                                        <div class="custom-site-checkin mt-2 row">
+                                            <div class="col-md-4">
+                                                <label class="ml-2">@(_loc.GetLocalizedString("# Visitors"))</label>
+                                            </div>
+                                            <div class="col-md-8">
+                                                @(
+                                                    Html.DevExtreme()
+                                                    .TextBox()
+                                                    .Value(new JS("data.no"))
+                                                    .ReadOnly(true)
+                                                 )
+                                            </div>
+                                        </div>
+                                </text>).Width("32%");
+                                columns.AddFor(m => m.detectInFace).Caption(_loc.GetLocalizedString("Face In"))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 224px; width:190px; object-fit: cover" src="https://media.vov.vn/sites/default/files/styles/large/public/2022-04/279640817_1507990452956005_3385687153711999503_n.jpg" /></div>
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                    </text>).Width("17%");
+                                columns.AddFor(m => m.detectOutFace).Caption(_loc.GetLocalizedString("Face Out"))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                             <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 224px; width: 190px; object-fit: cover " src="https://media.vov.vn/sites/default/files/styles/large/public/2022-04/279640817_1507990452956005_3385687153711999503_n.jpg" /></div>
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                    </text>).Width("17%");
+                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString("Vehicle In"))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 224px; width: 190px; object-fit: cover " src="https://luatannam.vn/wp-content/uploads/2018/04/mua-xe-o-ha-noi-co-the-dang-ky-lam-bien-so-xe-nghe-an-duoc-khong-.jpg" /></div>
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                   </text>).Width("17%");
+                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString("Vehicle Out"))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 224px; width: 190px; object-fit: cover " src="https://luatannam.vn/wp-content/uploads/2018/04/mua-xe-o-ha-noi-co-the-dang-ky-lam-bien-so-xe-nghe-an-duoc-khong-.jpg" /></div>
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                   </text>).Width("17%");
+                                })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                //pager.ShowNavigationButtons(true);
+                            })
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            .Paging(paging => paging.PageSize(10))
+                            )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    "use strict";
+    var connection = new signalR.HubConnectionBuilder().withUrl("/trackHub").build();
+    function ConvertDatetime(min) {
+        var date = new Date();
+        date.setMinutes(date.getMinutes() - min);
+        return (
+            [
+                date.getFullYear(),
+                padTo2Digits(date.getMonth() + 1),
+                padTo2Digits(date.getDate()),
+            ].join('-') +
+            'T' +
+            [
+                padTo2Digits(date.getHours()),
+                padTo2Digits(date.getMinutes()),
+                padTo2Digits(date.getSeconds()),
+            ].join(':')
+        );
+    }
+    $(function () {
+        connection.start().then(function () {
+
+            InvokeCheckins();
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+    });
+    function InvokeCheckins() {
+        connection.invoke("SendTracks").catch(function (err) {
+            return console.error(err.toString());
+        });
+    }
+    connection.on("ReceivedTracks", function (checkins) {
+        debugger;
+
+        GetGridIntance("#gridCheckInVehicleRealTime").option("dataSource", checkins)
+
+        // focus row index zero
+        if (checkins.length > 0) {
+            $("#gridCheckInVehicleRealTime").dxDataGrid({
+                // ...
+                focusedRowEnabled: true,
+                focusedRowIndex: 0,
+                errorRowEnabled: false
+            });
+        }
+
+    })
+</script>

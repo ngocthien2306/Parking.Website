@@ -1,0 +1,288 @@
+﻿@using Modules.Pleiger.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    string txtProductReq_ItemCode = "txtProductReq_ItemCode";
+    string txtProductReq_ItemName = "txtProductReq_ItemName";
+}
+
+<script>
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        //function recalculate resize height
+        var productType = MES_ComCodeMst;
+
+        $("#ddlProductReq_RequestType").dxSelectBox({
+            dataSource = MES_ComCodeDtls
+        })
+        //LoadDataOderList();
+        LoadingPage(0);
+    })
+    $(window).resize(function () {
+        //function recalculate resize height
+    });
+    function ShowDetailProductionRequest(e) {
+        CheckSession();
+        let data = e.data;
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("ShowDetailProductionRequest", "MESProductionRequest")',
+            type: "GET",
+            data: { projectCode: data.ProjectCode },
+            dataType: "html",
+            success: function (result) {
+                $("#divDetailProductionRequest").html(null);
+                $("#divDetailProductionRequest").html(result);
+                $("#divMainProductionRequest").prop("hidden", true);
+                $("#divDetailProductionRequest").prop("hidden", false);
+                LoadingPage(0);
+            }
+        })
+
+    }
+
+    function ReloadTabProductionRequest() {
+        RefreshTabByIDMenu('@ViewBag.MenuID');
+    }
+
+    // Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        setTimeout(function () { LoadingPage(0); }, 1500);
+    });
+
+    // Search list PO Request
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        LoadDataOderList();
+        setTimeout(function () { LoadingPage(0); },1500);
+        @*CheckSession();
+        let projectCode = $("#txtProductReq_ProjectCode").dxTextBox("option", "value");
+        let userProjectCode = $("#txtUserProjectCode").dxTextBox("option", "value");
+        let requestType = $("#ddlProductReq_RequestType").dxSelectBox("option", "value");
+        let customerName = $("#txtProductReq_CustomerName").dxTextBox("option", "value");
+        //let itemCode = $("#txtProductReq_ItemCode").dxTextBox("option", "value");
+        var projectStatus = $("#projectStatusPro").dxSelectBox('instance').option('value');
+        var itemCode = $("#txtProductReq_ItemCode").dxSelectBox('instance').option('value');
+
+        function getParamDateFrom() {
+            var value = $("#StartRequestDate").dxDateBox("option", "value");
+            return (value !== null && value !== undefined && value !== "") ? ParsingDateyyyyMMdd(value) : "";
+        }
+        function getParamDateTo() {
+            var value = $("#EndRequestDate").dxDateBox("option", "value");
+            return (value !== null && value !== undefined && value !== "") ? ParsingDateyyyyMMdd(value) : "";
+        }
+
+        $.ajax({
+            url: '@Url.Action("SearchListProductionRequest", "MESProductionRequest")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                projectCode: projectCode,
+                requestType: requestType,
+                customerName: customerName,
+                itemCode: itemCode,
+                userProjectCode: userProjectCode,
+                requestStartDate: getParamDateFrom(),
+                requestEndDate: getParamDateTo(),
+                projectStatus: projectStatus
+            },
+            success: function (result) {
+                $("#gridProductionRequest").dxDataGrid("option", "dataSource", result);
+            }
+        });*@
+    });
+
+    function LoadDataOderList() {
+        CheckSession();
+        let projectCode = $("#txtProductReq_ProjectCode").dxTextBox("option", "value");
+        let userProjectCode = $("#txtUserProjectCode").dxTextBox("option", "value");
+        let requestType = $("#ddlProductReq_RequestType").dxSelectBox("option", "value");
+        let customerName = $("#txtProductReq_CustomerName").dxTextBox("option", "value");
+        //let itemCode = $("#txtProductReq_ItemCode").dxTextBox("option", "value");
+        var projectStatus = $("#projectStatusPro").dxSelectBox('instance').option('value');
+        var itemCode = $("#txtProductReq_ItemCode").dxTextBox('instance').option('value');
+        var itemName = $("#txtProductReq_ItemName").dxTextBox('instance').option('value');
+
+        function getParamDateFrom() {
+            var value = $("#StartRequestDate").dxDateBox("option", "value");
+            return (value !== null && value !== undefined && value !== "") ? ParsingDateyyyyMMdd(value) : "";
+        }
+        function getParamDateTo() {
+            var value = $("#EndRequestDate").dxDateBox("option", "value");
+            return (value !== null && value !== undefined && value !== "") ? ParsingDateyyyyMMdd(value) : "";
+        }
+
+        $.ajax({
+            url: '@Url.Action("SearchListProductionRequest", "MESProductionRequest")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                projectCode: projectCode,
+                requestType: requestType,
+                customerName: customerName,
+                itemCode: itemCode,
+                itemName: itemName,
+                userProjectCode: userProjectCode,
+                requestStartDate: getParamDateFrom(),
+                requestEndDate: getParamDateTo(),
+                projectStatus: projectStatus
+            },
+            success: function (result) {
+                $("#gridProductionRequest").dxDataGrid("option", "dataSource", result);
+            }
+        });
+    }
+</script>
+
+<div id="divMainProductionRequest">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row">
+                        @*<div class="col-md-2">
+        <div class="form-group">
+            <label>@(_loc.GetLocalizedString("Project Code"))</label>
+            @(Html.DevExtreme().TextBox()
+            .ID("txtProductReq_ProjectCode"))
+        </div>
+        </div>*@
+                        <div class="form-group col-md-2">
+
+                            <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID("txtUserProjectCode"))
+
+                        </div>
+                        <div class="form-group col-md-2">
+                            <label>@(_loc.GetLocalizedString("Project Status"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                    .ID("projectStatusPro")
+                                    .DataSource(d => d.Mvc().Controller("MESSaleProject")
+                                        .LoadAction("GetProjectStatus")
+                                        .Key("ID")
+                                    )
+                                    .DisplayExpr("Name").ValueExpr("ID")
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+
+                              )
+                        </div>
+                        <div class="col-md-1 orm-group">
+
+                            <label>@(_loc.GetLocalizedString("Request Type"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                .ID("ddlProductReq_RequestType")
+                                .DataSource(d=>d.Mvc().Controller("MESProductionRequest").LoadAction("GetListCommonCode").LoadParams(new { groupCode="RQTP00"}))
+                                .DisplayExpr("BASE_NAME1")
+                                .ValueExpr("BASE_CODE"))
+
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>@(_loc.GetLocalizedString("Customer Name"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID("txtProductReq_CustomerName"))
+                        </div>
+                        <div class="form-group col-xs-12 col-md-2">
+                            <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                            @(Html.DevExtreme().TextBox().ID(txtProductReq_ItemCode))
+                        </div>
+                        <div class="form-group col-xs-12 col-md-2">
+                            <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                            @(Html.DevExtreme().TextBox().ID(txtProductReq_ItemName))
+                        </div>
+                        <div class="col-md-3">
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>@(_loc.GetLocalizedString("Request Date"))</label>
+                                    @(Html.DevExtreme().DateBox()
+                                            .ID("StartRequestDate")
+                                            .Type(DateBoxType.Date)
+                                            .DisplayFormat("yyyy-MM-dd")
+                                            .MaxLength(10)
+                                )
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label style="visibility:hidden">@(_loc.GetLocalizedString("Request Date"))</label>
+                                    @(Html.DevExtreme().DateBox()
+                                        .ID("EndRequestDate")
+                                        .Type(DateBoxType.Date)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                        .ID("gridProductionRequest")
+                        .DataSource(x=>x.Mvc().Controller("MesProductionRequest").LoadAction("GetListData"))
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                        )
+                         .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single)
+                                    //.ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                        .Columns(c=> {
+                            c.AddFor(x => x.No).Caption("No");
+                            c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("Project Code"));
+                            c.AddFor(x => x.UserProjectCode).Caption((_loc.GetLocalizedString("UserProjectCode")));
+                            c.AddFor(x => x.ProjectStatusName).Caption("ProjectStatusName");
+                            c.AddFor(x => x.RequestTypeName).Caption((_loc.GetLocalizedString("Request Type")));
+                            c.AddFor(x => x.RequestDate).Caption((_loc.GetLocalizedString("Request Date"))).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                            c.AddFor(x => x.UserNameRequest).Caption(_loc.GetLocalizedString("User Request"));
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Customer Name"));
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                            c.AddFor(x => x.OrderQuantity).Caption(_loc.GetLocalizedString("Order Quantity")).Format("#,##0");
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            //pager.ShowPageSizeSelector(false);
+                            //pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        .OnRowDblClick("ShowDetailProductionRequest"))
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="divDetailProductionRequest" hidden>
+
+</div>

@@ -1,0 +1,310 @@
+﻿@model Modules.UIRender.Models.ColumnGridModel;
+
+@if (Model.ColData.PEL_TYP == "G002C006") // Char, text box
+{
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL)).DataType(GridColumnDataType.String)
+        .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+        .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+        .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+        .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+        //.SetCellValue("SetCellValue")
+        .EncodeHtml(false)
+        .ValidationRules(vr =>
+        {
+            // Check required field
+            if (Model.ColData.PEL_IS_REQUIRED == true)
+            {
+                vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+            }
+            // Check validate async controller API
+            if (Model.ColData.PEL_VALIDATE_RULE_API != null)
+            {
+                vr.AddAsync()
+                .Message(Model.ColData.PEL_VALIDATE_RULE_API_MSG)
+                .ValidationCallback("asyncValidation_" + Model.ColData.PAG_ID + "_" + Model.ColData.PEL_ID_REAL);
+            }
+            //Check validate pattern
+            if (Model.ColData.PEL_VALIDATE_REGULAR_EXP != null)
+            {
+                vr.AddPattern().Pattern(Model.ColData.PEL_VALIDATE_REGULAR_EXP)
+                .Message(Model.ColData.PEL_VALIDATE_REGULAR_EXP_MSG);
+            }
+        })
+        //.EditorOptions(new { maxLength = Model.ColData.PEL_LEN }) // set max length
+        ;
+}
+// Numeric
+else if (Model.ColData.PEL_TYP == "G002C007")
+{
+    string format = "";
+    switch (Model.ColData.PEL_FORL)
+    {
+        case "C001": format = "#,##0"; break;
+        case "C002": format = "#,##0.#0"; break;
+        case "C003": format = "#,###.##0"; break;
+        case "C004": format = "#,###.###0"; break;
+        case "C005": format = "#,##0.#####0"; break;
+        default: format = ""; break;
+    }
+    // set format number
+    // Default
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL)).DataType(GridColumnDataType.Number).Format(format)
+        .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+        .CalculateCellValue(
+@<text>
+    function(data) {
+    if('@Model.ColData.PEL_EXP_TEXT' != null && '@Model.ColData.PEL_EXP_TEXT' != ''){
+    return data.@Model.ColData.PEL_ID_REAL = eval(@Html.Raw(Model.ColData.PEL_EXP_TEXT));
+    }
+    else{return data.@Model.ColData.PEL_ID_REAL;}
+    }
+
+</text>
+)
+.Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+.Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+.Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+.ValidationRules(vr =>
+{
+    // Check required field
+    if (Model.ColData.PEL_IS_REQUIRED == true)
+    {
+        vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+    }
+})
+;
+}
+// Bit Boolean
+else if (Model.ColData.PEL_TYP == "G002C009")
+{
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL)).DataType(GridColumnDataType.Boolean)
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+    .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+    .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+    .ValidationRules(vr =>
+    {
+        // Check required field
+        if (Model.ColData.PEL_IS_REQUIRED == true)
+        {
+            vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+        }
+    })
+    ;
+}
+// Date
+else if (Model.ColData.PEL_TYP == "G002C008")
+{
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL)).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd")
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+    .AllowEditing((Model.ColData.IS_EDIT == true && Model.ColData.IS_EDIT != null) ? true : false) // Editable or not
+    .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+    .ValidationRules(vr =>
+    {
+        // Check required field
+        if (Model.ColData.PEL_IS_REQUIRED == true)
+        {
+            vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+        }
+    })
+    ;
+}
+// Date time
+else if (Model.ColData.PEL_TYP == "G002C010")
+{
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL)).DataType(GridColumnDataType.DateTime).Format("yyyy-MM-dd HH:mm:sss")
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+    .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+    .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+    .ValidationRules(vr =>
+    {
+        // Check required field
+        if (Model.ColData.PEL_IS_REQUIRED == true)
+        {
+            vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+        }
+    })
+    ;
+}
+// Combobox - not done
+else if (Model.ColData.PEL_TYP == "G002C003")
+{
+    if (Model.ColData.GRP_CD != null)
+    {
+        // Get by group code setting
+        Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL))
+        .Lookup(lookup => lookup
+        .DataSource(d => d.Mvc().Controller("Admin").LoadAction("GetComboboxValueDynamicByGroupCodeAndConnectionForGrid")
+        .LoadParams(new { GRP_CD = Model.ColData.GRP_CD, CONNECTION_NM = Model.ColData.CONNECTION_NM })
+            .Key("ID"))
+            .DisplayExpr("Name")
+            .ValueExpr("ID").AllowClearing(true)
+            .DataSourceOptions(o => o.Paginate(true).PageSize(100)))//async load more)
+        .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+        .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+        .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+        .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+        //.SetCellValue("setStateValue")
+        .ValidationRules(vr =>
+        {
+            // Check required field
+            if (Model.ColData.PEL_IS_REQUIRED == true)
+            {
+                vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+            }
+        });
+    }
+    else
+    {
+        // Get by group code custom SP
+        Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL))
+        .Lookup(lookup => lookup
+        .DataSource(d => d.Mvc().Controller("Admin")
+            .LoadAction("GetComboboxValueDynamicByCustomSPAndConnection")
+            .LoadParams(new { GRP_CD_CUSTOM = Model.ColData.GRP_CD_CUSTOM, CONNECTION_NM = Model.ColData.CONNECTION_NM })
+            .Key("ID"))
+            .DisplayExpr("Name")
+            .ValueExpr("ID").AllowClearing(true)
+            .DataSourceOptions(o => o.Paginate(true).PageSize(100)))
+        .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+        .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+        .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+        .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+        .ValidationRules(vr =>
+        {
+            // Check required field
+            if (Model.ColData.PEL_IS_REQUIRED == true)
+            {
+                vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+            }
+        });
+    }
+
+}
+//Combobox custom
+else if (Model.ColData.PEL_TYP == "G002C020")
+{
+    // Get by group code setting
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL))
+    .Lookup(lookup => lookup
+        .DataSource(d => d.Mvc().Controller("Admin")
+        //.LoadMode(DataSourceLoadMode.Raw)
+        .LoadAction("GetComboboxValueDynamicCustom")
+        .LoadParams(new { GRP_CD_CUSTOM = Model.ColData.GRP_CD_CUSTOM, CONNECTION_NM = Model.ColData.CONNECTION_NM })
+        .Key("ID"))
+        .DisplayExpr("Name")
+        .ValueExpr("ID").AllowClearing(true)
+        .DataSourceOptions(o => o.Paginate(true).PageSize(10))//async load more
+        )
+    .SetCellValue("SetCellValue_" + Model.ColData.PAG_ID + "_" + Model.ColData.PEL_ID_REAL)// set cell value to another column
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+    .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+    .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+    //.SetCellValue("setStateValue")
+    .ValidationRules(vr =>
+    {
+        // Check required field
+        if (Model.ColData.PEL_IS_REQUIRED == true)
+        {
+            vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+        }
+    });
+
+}
+
+// Popup text - not done
+else if (Model.ColData.PEL_TYP == "G002C005")
+{
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL))
+    .EditCellTemplate(
+@<text>
+    @(Html.DevExtreme().TextBox()
+                                    .ID(Model.ColData.PEL_ID_REAL)
+                                     .Value(new JS("value"))
+                                    // .Placeholder(Model.PEL_ID)
+                                    .Mode(TextBoxMode.Text).OnValueChanged("function(e) { setValue(e.value); }")
+                                        //.StylingMode(EditorStylingMode.)
+                                        .Buttons(buttons =>
+                                        {
+                                            buttons.Add()
+                                                .Name("Search")
+                                                .Location(TextEditorButtonLocation.After)
+                                                .Widget(w => w.Button()
+                                                    .Type(ButtonType.Normal)
+                                                    .Icon("find")
+                                                    .OnClick("RUN_" + Model.ColData.PEL_CLICK + "_" + Model.ColData.PAG_ID)
+                                                    );
+                                        })
+                    )
+</text>
+    )
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+    .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+
+    ;
+}
+//File Upload
+else if (Model.ColData.PEL_TYP == "G002C012")
+{
+
+    Model.ColInfo.Add().Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL)).Buttons(b =>
+    {
+        b.Add().Icon("inactivefolder").Hint("Popup files")
+    .OnClick("showPopupFiles_" + Model.ColData.PAG_ID + "_" + Model.ColData.PEL_ID_REAL);
+    });
+}
+//Editor
+//TextArea
+//Button custom
+else if (Model.ColData.PEL_TYP == "G002C014")
+{
+    Model.ColInfo.Add().Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL))
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+@*.CalculateCellValue(
+        @<text>
+                var dataParam = $("#GRID").dxDataGrid('instance').getSelectedRowsData();
+               return rowData
+
+        </text>
+    )*@
+    .CellTemplate(
+@<text>
+    @*<%= var dataParam = $("#GRID").dxDataGrid('instance').getSelectedRowsData()[0];  %>*@
+    @*<% var dataParam = $("#GRID").dxDataGrid('instance').getSelectedRowsData(); %>*@
+    <button type="button" class="btn btn-success" onclick="buttonColumnEvent(this)">@Model.ColData.PEL_LBL</button>
+    @*@(Html.DevExtreme().Button().ID(Model.ColData.PEL_ID).ActiveStateEnabled(true)
+            .Icon("check")
+            .Text(Model.ColData.PEL_LBL)
+            .Type(ButtonType.Success).HoverStateEnabled(false)
+            //.OnOptionChanged("buttonColumnEventOnOptionChanged('" + Model.ColData.PEL_ID + "'," + Model.ColData.PAG_ID + ")")
+            .OnClick("buttonColumnEvent('" + Model.ColData.PEL_ID + "'," + Model.ColData.PAG_ID+")")
+            //.Disabled(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == "True" ? true : false) // Hidden Column False: hidden, True: Display
+        )*@
+</text>
+    )
+    ;
+}
+// Default
+else
+{
+    Model.ColInfo.Add().DataField(Model.ColData.PEL_ID_REAL).Caption(_loc.GetLocalizedString(Model.ColData.PEL_LBL))
+    .Fixed(Model.ColData.PEL_FIX != null && Model.ColData.PEL_FIX == true ? true : false)// Fix column
+    .Visible(Model.ColData.PEL_VIS != null && Model.ColData.PEL_VIS == true ? true : false) // Hidden Column False: hidden, True: Display
+    .AllowEditing((Model.ColData.IS_KEY == false && Model.ColData.IS_EDIT == true) ? true : false) // Editable or not
+    .Alignment((HorizontalAlignment)Model.ColData.ALIGN_COLUMN_PARSE)
+    .ValidationRules(vr =>
+    {
+        // Check required field
+        if (Model.ColData.PEL_IS_REQUIRED == true)
+        {
+            vr.AddRequired().Message(_loc.GetLocalizedString("Required"));
+        }
+    })
+    ;
+}
+

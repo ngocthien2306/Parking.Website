@@ -1,0 +1,1507 @@
+﻿@model Modules.Pleiger.Models.MES_SaleProject
+@using InfrastructureCore.Models.Menu
+@using Modules.Pleiger.Models
+@using Modules.Admin.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    //pageSetting.CREATE_YN = true;
+    pageSetting.SAVE_YN = true;
+
+    string gridListFileProductionPlan = "gridListFileProductionPlan" + ViewBag.thread;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Back";
+    info.ID = "btnBack";
+    info.Icon = "<i class='fas fa-undo'></i>";
+    lstNewToolbar.Add(info);
+    ToolbarInfo infoStart = new ToolbarInfo();
+    //infoStart.Name = "Start Work";
+    infoStart.Name = (_loc.GetLocalizedString("Start Work"));
+    infoStart.ID = "btnStart";
+    infoStart.Icon = "<i class='fas fa-cubes'></i>";
+    lstNewToolbar.Add(infoStart);
+    List<MES_ProductLine> lstProdLines = (List<MES_ProductLine>)ViewBag.lstProdLines;
+    string RequestDate = "#RequestDate" + ViewBag.Thread;
+    string GridProductLine = "#GridProductLine" + ViewBag.Thread;
+    string OrderQuantity = "#OrderQuantity" + ViewBag.Thread;
+}
+<style>
+    @RequestDate
+    .dx-texteditor-container
+    .dx-texteditor-input-container
+    .dx-texteditor-input {
+        color: red;
+        font-weight: bold;
+        background-color: yellow;
+    }
+
+    @OrderQuantity
+        .dx-texteditor-container
+        .dx-texteditor-input-container
+        .dx-texteditor-input {
+            color: red;
+            font-weight: bold;
+            background-color:yellow;
+        }
+
+    .required:before {        
+        content: "* ";
+        color: red;
+    }
+
+</style>
+<script>
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        ReziePageProductionPlanningDetail();
+        setValue_@(Model.ID)('@Model.FileID');
+        LoadingPage(0);
+    });
+    //============================= Add List File =================================================
+    var FileMasterID = '@Model.FileID'
+
+    var fileID_@(Model.ID) = '';
+
+    function setValue_@(Model.ID)(fileId) {
+        debugger;
+        setValueGrid_@(Model.ID)(fileId);
+        fileID_@(Model.ID) = fileId;
+        //updateIdFile(fileId);
+        if ('@Model.Upload_File' == true) {
+            debugger;
+            $.ajax({
+                url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+                type: "GET",
+                data: { fileId: fileId },
+                success: function (result) {
+                    debugger;
+                    var container = $(".dx-fileuploader-files-container");
+                    container.empty();
+                    var arrTemp = [];
+                    $.each(result.data, function (index, item) {
+                        arrTemp.push(item.FileDetail);
+
+                        var strHTML = '<div class="dx-fileuploader-file-container">' +
+                            '<div class="dx-fileuploader-button-container">' +
+                            '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                            '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                            '</div>' +
+                            '</div>' +
+                            container.append(strHTML);
+                    });
+                    debugger;
+                    $('#@(gridListFileProductionPlan)').dxDataGrid('option', 'dataSource', arrTemp);
+                    $("#@(gridListFileProductionPlan)").dxDataGrid("instance").refresh();
+                }
+            });
+        }
+        else {
+            $.ajax({
+                url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+                type: "GET",
+                data: { fileId: fileId },
+                success: function (result) {
+                    debugger;
+                    var container = $(".dx-fileuploader-files-container");
+                    container.empty();
+                    var arrTemp = [];
+                    $.each(result.data, function (index, item) {
+                        arrTemp.push(item.FileDetail);
+
+                        var strHTML = '<div class="dx-fileuploader-file-container">' +
+                            '<div class="dx-fileuploader-button-container">' +
+                            '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                            '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                            '</div>' +
+                            '</div>' +
+                            container.append(strHTML);
+                    });
+                    $('#@(gridListFileProductionPlan)').dxDataGrid('option', 'dataSource', arrTemp);
+                    $("#@(gridListFileProductionPlan)").dxDataGrid("instance").refresh();
+                }
+            });
+
+        }
+
+    }
+
+    function setValueGrid_@(Model.ID)(fileId) {
+        fileID_@(Model.ID) = fileId;
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result) {
+                var arrTemp = [];
+                $.each(result.data, function (index, item) {
+                    arrTemp.push(item.FileDetail);
+                });
+                debugger;
+                $('#@(gridListFileProductionPlan)').dxDataGrid('option', 'dataSource', arrTemp);
+
+            }
+        });
+    }
+
+    function DeletegridListFilePopupProduct(e) {
+        CheckSession();
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $(e).parent().parent().parent().parent().parent().parent().remove();
+                $.ajax({
+                    url: '@Url.Action("DeleteFile", "FilesUpload")',
+                    type: "POST",
+                    data: { fileguid: data.FileGuid },
+                    success: function (result) {
+                        if (result.result == false) {
+                            debugger;
+                            DevExpress.ui.dialog.alert("Delete fail", "Error");
+                        }
+                        else {
+                            debugger;
+                            ReloadListFile();
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                            $("#@(gridListFileProductionPlan)").dxDataGrid("instance").refresh();
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+
+    function ReloadListFile() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetDetailByProjectCode", "MESDrawing")',
+            type: 'GET',
+            data: { projectCode: '@Model.ProjectCode' },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                //updateIdFile(result.FileID);
+                FileMasterID = result.FileID;
+                fileID_@(Model.ID) = result.FileID;
+                setValueGrid_@(Model.ID)(result.FileID);
+                setValue_@(Model.ID)(result.FileID);
+            }
+        });
+    }
+    //============================= Add List File =================================================
+    $(function () {
+        CheckSession();
+        SetDataGridProductLine@(ViewBag.Thread)();
+            // Get list Request Type
+        $.ajax({
+            url: '@Url.Action("GetListCommonCode", "MESProductionRequest")',
+            type: 'GET',
+            async: false,
+            data: { groupCode: "RQTP00" },
+            dataType: 'json',
+            success: function (result) {
+                $("#ddlPopRequestType@(ViewBag.Thread)").dxSelectBox("option", "dataSource", result);
+                $("#ddlPopRequestType@(ViewBag.Thread)").dxSelectBox("option", "value", '@Model.RequestType');
+            }
+        });
+    })
+
+    function getProjectCode@(ViewBag.Thread)() {
+            return '@Model.ProjectCode';
+    }
+
+    $("#btnBack_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        let urlBack = '/MESProductionMagt/ProductionPlanning';
+        $.ajax({
+            url: '@Url.Action("GetMenuIDByBoadID", "Menu")',
+            type: "POST",
+            data: { strUrl: urlBack },
+            dataType: "json",
+            success: function (result) {
+                GenerateTabConmonBoard(result.MenuName, urlBack, result.MenuID, false); // current menu id
+            }
+        });
+    });
+
+    function MaterWHCodeOnChange(data) {
+        CheckQtyOfEachItemIsEnoughInWarehouse(data.value);
+    }
+
+    function CheckQtyOfEachItemIsEnoughInWarehouse(data) {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("CheckQtyOfEachItemIsEnoughInWarehouse", "MESProductionMagt")',
+            type: "POST",
+            data: {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                RequestCode: "@Model.RequestCode",
+                MaterialWarehouse: data,// on value change wh code
+                OrderQty:"@Model.OrderQuantity"
+            },
+            dataType: "json",
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    let mess = "@(_loc.GetLocalizedString("OutOfStockWarehouse"))";
+                    DevExpress.ui.dialog.alert(mess, "Error");
+
+                    //$("#btnStart").attr("disabled", true);
+                }
+                else {
+                    //$("#btnStart").attr("disabled", false);
+                }
+            }
+        });
+    }
+
+    $("#btnStart_@(ViewBag.Thread)").on("click", function () {
+        debugger;
+        CheckSession();
+        let dataGrid = $("#GridProductLine@(ViewBag.Thread)").dxDataGrid("instance");
+        // check grid need save first before Start
+        let dataSource = dataGrid.getDataSource().items();
+        if (dataSource.length == 0) {
+            //DevExpress.ui.dialog.alert("Product line name cannot be null!", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input data to production lines and save first!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        // just input, still not save
+        let lstData = dataGrid.getVisibleRows();
+        let sum = 0
+        let isProdLineNameNull = false;
+        let isLineManagerNull = false
+        $.each(lstData, function (index, item) {
+            if (item.data.ProdcnLineCode == null || item.data.ProdcnLineCode == "") {
+                isProdLineNameNull = true;
+            }
+            else if (item.data.LineManager == null || item.data.LineManager == "") {
+                isLineManagerNull = true;
+            }
+
+            if (item.removed !== true) {
+                sum += item.data.AssignedQty;
+            }
+        });
+
+        if (isProdLineNameNull) {
+            //DevExpress.ui.dialog.alert("Product line name cannot be null!", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Product line name cannot be null!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (isLineManagerNull) {
+            //DevExpress.ui.dialog.alert(" Line Manager cannot be null!", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Line Manager cannot be null!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+
+        if (sum != @Model.OrderQuantity) {
+            //DevExpress.ui.dialog.alert("요청 수량을 초과 할 수 없습니다.", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("AssignedQty to product line should be equal OrderQuantity!"))", "@(_loc.GetLocalizedString("Error"))");
+        }
+        else {
+            //$("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("show");
+            onUpdateWorkPlan();
+        }
+
+});
+
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('/');
+    }
+
+    $("#btnSave_@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        debugger;
+        let dataGrid = $("#GridProductLine@(ViewBag.Thread)").dxDataGrid("instance");
+
+        var dataSource = dataGrid.getDataSource();
+        let lstData = dataGrid.getVisibleRows();
+        let sum = 0
+        let isProdLineNameNull = false;
+        let isLineManagerNull = false
+        $.each(lstData, function (index, item) {
+            if (item.data.ProdcnLineCode == null || item.data.ProdcnLineCode == "") {
+                isProdLineNameNull = true;
+            }
+            else if (item.data.LineManager == null || item.data.LineManager == "") {
+                isLineManagerNull = true;
+            }
+            //if (item.removed !== true) {
+                sum += item.data.AssignedQty;
+            //}
+        });
+
+        if (isProdLineNameNull) {
+            //DevExpress.ui.dialog.alert("Product line name cannot be null!", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Product line name cannot be null!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (isLineManagerNull) {
+            //DevExpress.ui.dialog.alert(" Line Manager cannot be null!", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Line Manager cannot be null!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+
+
+        var materWH = $("#MaterWHCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        var ProdcnMessage = $("#ProdcnMessage@(ViewBag.Thread)").dxTextBox("option", "value");
+        var PlanningDoneDate = $("#PlanningDoneDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        if (PlanningDoneDate !== '' || PlanningDoneDate !== null) {
+            var FormatPlanningDoneDate = formatDate(PlanningDoneDate);
+        }
+
+        var RequestDate = $("#RequestDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        if (materWH === "" || materWH === null) {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please select material warehouse!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (PlanningDoneDate === "" || PlanningDoneDate === null) {
+
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Planning Done Date cannot be null!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (FormatPlanningDoneDate < RequestDate)
+        {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Planning Done Date cannot be less than Request Date!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (ValidationProdcnLineCode(lstData) === false) {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("ProdcnLineCode is duplicate!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (ValidationAssignedQty(lstData) === false) {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("AssignedQty is not null!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else if (ValidationAssignedQtySum(lstData) === false) {
+            //DevExpress.ui.dialog.alert("AssignedQty to product line should be equal OrderQuantity!", "Error");
+            //DevExpress.ui.dialog.alert("요청 수량을 초과 할 수 없습니다.", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("AssignedQty to product line should be equal OrderQuantity!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        } else if (sum !== @Model.OrderQuantity) {
+            //DevExpress.ui.dialog.alert("AssignedQty to product line should be equal OrderQuantity!", "Error");
+            //DevExpress.ui.dialog.alert("요청 수량을 초과 할 수 없습니다.", "Error");
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("AssignedQty to product line should be equal OrderQuantity!"))", "@(_loc.GetLocalizedString("Error"))");
+            return;
+        }
+        else {
+            let lstAdd = [];
+            let lstEdit = [];
+            let lstDelete = [];
+            $.each(lstData, function (index, item) {
+                if (item.isNewRow === true) {
+                    lstAdd.push(item.data);
+                }
+                if (item.modified === true) {
+                    lstEdit.push(item.data);
+                }
+                if (item.removed === true) {
+                    lstDelete.push(item.data);
+                }
+            });
+            var result = DevExpress.ui.dialog.confirm("<i>Do you want save data?</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                        $.ajax({
+                            url: '@Url.Action("onSave", "MESProductionMagt")',
+                            type: 'POST',
+                            async: false,
+                            data:
+                            {
+                                ProjectCode: '@Model.ProjectCode',
+                                ProdcnCode: '@Model.ProdcnCode',
+                                lstAdd: lstAdd,
+                                lstEdit: lstEdit,
+                                lstDelete: lstDelete,
+                                MaterWHCode: materWH,
+                                ProdcnMessage: ProdcnMessage,
+                                PlanDoneDate: FormatPlanningDoneDate
+                            },
+                            dataType: 'json',
+                            success: function (result) {
+                                if (result.Success) {
+                                    DevExpress.ui.dialog.alert(result.Message, "Success", function () {
+                                        SetDataGridProductLine@(ViewBag.Thread)();
+                                    });
+                                }
+                                else {
+                                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                                }
+
+                            }
+                        });
+                }
+            });
+        }
+    });
+
+    function ValidationProdcnLineCode(lstData) {
+        var result = true;
+        $.each(lstData, function (index, item) {
+            if (item.removed !== true) {
+                count = lstData.filter(m => m.data.ProdcnLineCode == item.data.ProdcnLineCode && m.removed !== true);
+                if (count.length > 1) {
+                    result = false;
+                    return false;
+                }
+            }
+        })
+        return result;
+    }
+
+    function ValidationAssignedQty(lstData) {
+        var result = true;
+        $.each(lstData, function (index, item) {
+            if (item.removed !== true) {
+                if (item.data.AssignedQty == "" || item.data.AssignedQty == null) {
+                    result = false;
+                    return result;
+                }
+            }
+        })
+        return result;
+    }
+
+    function ValidationAssignedQtySum(lstData) {
+        var result = true;
+        var sum = 0;
+        $.each(lstData, function (index, item) {
+            //if (item.removed !== true) {
+                sum += item.data.AssignedQty;
+            //}
+        })
+        if (sum !== @Model.OrderQuantity) {
+            result = false;
+            return result;
+        }
+
+        return result;
+    }
+
+    function setDefaultNewRow@(ViewBag.Thread)(e) {
+        debugger;
+        e.data.ProdcnLineState = "PJLN01";
+
+    }
+
+    function OnToolbarPreparing@(ViewBag.Thread)(e) {
+        var toolbarItems = e.toolbarOptions.items;
+        $.each(toolbarItems, function (index, item) {
+            if (item.name == "saveButton" || item.name == "revertButton") {
+                item.visible = false;
+            }
+        });
+
+        //PVN Add
+        //toolbarItems.unshift({
+        //    widget: "dxTextBox",
+        //    location: "before",
+        //    template: function () {
+        //        return $("<div/>")
+        //            .addClass("informer")
+        //            .append(
+        //                $("<h2 />")
+        //                    .addClass("count")
+        //                    .text("Sum: " + 0)
+        //                //    ,
+        //                //$("<span />")
+        //                //    .addClass("name")
+        //                //    .text("Total Count")
+        //            );
+        //    }
+        //});
+
+    }
+
+    function setLineMangerValue@(ViewBag.Thread)(rowData, value) {
+        CheckSession();
+        debugger;
+        $.ajax({
+        url: '@Url.Action("GetDataProdLinesMaster", "MESProductionMagt")',
+        type: 'GET',
+        async: false,
+        data: { prodlineCode: value },
+        dataType: 'json',
+            success: function (result) {
+                debugger;
+                rowData.ProdcnLineCode = result.ProductLineCode;
+                rowData.LineManager = result.Manager;
+
+        }
+        });
+    }
+
+    function SetDataGridProductLine@(ViewBag.Thread)() {
+        CheckSession();
+        debugger;
+        var data = {
+            load: function () {
+                var items = $.Deferred();
+                $.ajax({
+                    type: "GET",
+                    url: '@Url.Action("GetListDataProdLines", "MESProductionMagt")',
+                        data: {
+                        projectCode: '@Model.ProjectCode'
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        items.resolve(result.data);
+                    }
+                });
+
+                    return items.promise();
+                }
+            };
+        var grid = $("#GridProductLine@(ViewBag.Thread)").dxDataGrid("instance");
+        grid.cancelEditData();
+        grid.refresh();
+        grid.option("dataSource", data);
+    }
+
+    function onWorkerAuthen@(ViewBag.Thread)() {
+        debugger;
+        CheckSession();
+        let id = $("#ID@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        let pw = $("#Password@(ViewBag.Thread)").dxTextBox("instance").option("value");
+            $.ajax({
+            url: '@Url.Action("OnWorkLogin", "MESAccount")',
+            type: "POST",
+            data: {
+                id: id,
+                pw:pw
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    onUpdateWorkPlan();
+                }
+                else {
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+    }
+
+    function onUpdateWorkPlan() {
+        CheckSession();
+        var MaterialWarehouse = $("#MaterWHCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        debugger;
+        // check total qty in warehouse
+        $.ajax({
+            url: '@Url.Action("CheckQtyOfEachItemIsEnoughInWarehouse", "MESProductionMagt")',
+            type: "POST",
+            data: {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                RequestCode: "@Model.RequestCode",
+                MaterialWarehouse: MaterialWarehouse,// on value change wh code
+                OrderQty:"@Model.OrderQuantity"
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    let mess = "@(_loc.GetLocalizedString("OutOfStockWarehouse"))";
+                    DevExpress.ui.dialog.alert(mess, "Error");
+                    return;
+                }
+                else {
+                        $.ajax({
+                        url: '@Url.Action("OnUpdateWorkPlan", "MESProductionMagt")',
+                        type: "POST",
+                        data: {
+                            ProjectCode: '@Model.ProjectCode',
+                            ProdcnCode: '@Model.ProdcnCode',
+                            RequestCode: "@Model.RequestCode",
+                            //MaterialWarehouse: "@Model.MaterWHCode",
+                            MaterialWarehouse: MaterialWarehouse,
+                            OrderQty:"@Model.OrderQuantity"
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            if (result.Success) {
+                                $("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("hide");
+                                setTimeout(function () {
+                                    $("#btnBack_@(ViewBag.Thread)").click();
+                                }, 300);
+
+                            }
+                            else {
+                                $("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("hide");
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                }
+            }
+        });
+
+        @*$.ajax({
+            url: '@Url.Action("OnUpdateWorkPlan", "MESProductionMagt")',
+            type: "POST",
+            data: {
+                ProjectCode: '@Model.ProjectCode',
+                ProdcnCode: '@Model.ProdcnCode',
+                RequestCode: "@Model.RequestCode",
+                MaterialWarehouse: "@Model.MaterWHCode",
+                OrderQty:"@Model.OrderQuantity"
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    $("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("hide");
+                    setTimeout(function () {
+                        $("#btnBack_@(ViewBag.Thread)").click();
+                    }, 300);
+
+                }
+                else {
+                    $("#WorkerAuthenticationPop@(ViewBag.Thread)").modal("hide");
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });*@
+    }
+
+    function CheckSumQuantity@(ViewBag.Thread)(e) {
+        debugger;
+        console.log(e);
+        //var Sum = $("#ProductType@(ViewBag.Thread)").dxDataGrid("instance").option("value", '@Model.ProductType');
+    }
+
+    function OnCellClick(e) {
+        debugger
+    }
+
+    function OnEditingStart(e) {
+        debugger
+    }
+
+    function OnRowInserted(e) {
+        debugger
+    }
+    //PVN Add
+    function Test(e, value) {
+        debugger;
+        var sum = 0;
+        var grid = $('#GridProductLine@(ViewBag.Thread)').dxDataGrid("instance");
+        var visibleRows = grid.getVisibleRows();
+
+        e.AssignedQty = value;
+
+        $.each(visibleRows, function (index, item) {
+            sum += item.cells[1].value;
+        })
+
+        $('#GridProductLine@(ViewBag.Thread)').dxDataGrid({
+            OnToolbarPreparing: function (e) {
+                let toolbarItems = e.toolbarOptions.items;
+                console.log(toolbarItems);
+                debugger;
+                toolbarItems.unshift({
+                    widget: "dxTextBox",
+                    location: "before",
+                    template: function () {
+                        return $("<div/>")
+                            .addClass("informer")
+                            .append(
+                                $("<h2 />")
+                                    .addClass("count")
+                                    .text("Sum: " + sum),
+                                $("<span />")
+                                    .addClass("name")
+                                    .text("Total Count")
+                            );
+                    }
+                })
+            }
+        });
+    }
+
+    $(window).resize(function () {
+        //function recalculate resize height
+        ReziePageProductionPlanningDetail();
+
+    });
+    function ReziePageProductionPlanningDetail() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                ReCalResize("content_bodypage_@(ViewBag.Thread)", "ID", "bodypage_@(ViewBag.Thread)", "top_bodypage_@(ViewBag.Thread)", "height");
+               
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div id="divindex_@(ViewBag.Thread)">
+    <div class="row pl-2 pr-2" style="height:100%">
+        <div class="card" style="height:100%">
+            <div class="card-header" id="headerpage_@(ViewBag.Thread)">
+                <div class="form-group row" id="rowBoardDocKey">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("UserProjectCode")</label>
+                    <div class="col-sm-2">
+                        @(Html.DevExtreme().TextBox().Visible(false).ID("ProjectCode" + ViewBag.Thread).Disabled(true).Value(Model.ProjectCode))
+                        @(Html.DevExtreme().TextBox().ID("UserProjectCode" + ViewBag.Thread).Disabled(true).Value(Model.UserProjectCode))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Project Name")</label>
+                    <div class="col-sm-2">
+                        @(Html.DevExtreme().TextBox().ID("ProjectName" + ViewBag.Thread).Disabled(true).Value(Model.ProjectName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Project Status")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ProjectStatus" + ViewBag.Thread).Disabled(true).Value(Model.ProjectStatusName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Product Type")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ProductType" + ViewBag.Thread).Disabled(true).Value(Model.ProductType))
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Customer Name")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("PartnerName" + ViewBag.Thread).Disabled(true).Value(Model.PartnerName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("User Request")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("UserRequest" + ViewBag.Thread).Disabled(true).Value(Model.UserNameRequest))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Request Date")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().DateBox().ID("RequestDate" + ViewBag.Thread).Type(DateBoxType.Date).Value(Model.RequestDate).Disabled(true)
+                                        //.Value(DateTime.Now)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                    )
+                        @*@(Html.DevExtreme().TextBox().ID("RequestDate" + ViewBag.Thread)
+                        .Disabled(true)
+                        .Value(Model.RequestDate.Replace("/", "-")))*@
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Request Type")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().SelectBox()
+                                    .ID("ddlPopRequestType" + ViewBag.Thread)
+                                    .DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE").Disabled(true)
+                                )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Item Code")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ItemCode" + ViewBag.Thread).Disabled(true).Value(Model.ItemCode))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Item Name")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ItemName" + ViewBag.Thread).Disabled(true).Value(Model.ItemName))
+                    </div>
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Order Quantity")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().NumberBox().ID("OrderQuantity" + ViewBag.Thread).Disabled(true).Format("#,##0").Value(Model.OrderQuantity))
+                    </div>
+                    <label class="col-sm-1 col-form-label star">@_loc.GetLocalizedString("Material Warehouse")</label>
+                    <div class="col-md-2">
+                        @{
+                            string MaterWHCode = "MaterWHCode" + ViewBag.Thread;
+                        }
+                        @(Html.DevExtreme().SelectBox()
+                                    .ID(MaterWHCode)
+                                    .DataSource(d => d.Mvc().Controller("MESProductionMagt")
+                                            .LoadAction("GetListWareHouse")
+                                            .Key("WarehouseCode")
+                                        )
+                                    .OnValueChanged("MaterWHCodeOnChange")
+                                    .Value(Model.MaterWHCode)
+                                    .DisplayExpr("WarehouseName")
+                                    .ValueExpr("WarehouseCode")
+                                )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Code")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ProdcnCode" + ViewBag.Thread).Disabled(true).Value(Model.ProdcnCode).Disabled(true))
+                    </div>
+                    @*<label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Date")</label>
+        <div class="col-md-2">
+            @(Html.DevExtreme().DateBox().ID("ProdcnDate" + ViewBag.Thread).Type(DateBoxType.Date).Value(Model.ProdcnDate).Disabled(true)
+                    .Value(DateTime.Now)
+                    .DisplayFormat("yyyy-MM-dd")
+                )
+        </div>*@
+
+                    <label class="col-sm-1 col-form-label star">@_loc.GetLocalizedString("Planning Done Date")</label>
+                    <div class="col-md-2">
+                        @if (Model.PlanDoneDate == null)
+                        {
+                            @(Html.DevExtreme().DateBox().ID("PlanningDoneDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value("")
+                                        .DisplayFormat("yyyy-MM-dd")
+                                    )
+                        }
+                        else
+                        {
+                            @(Html.DevExtreme().DateBox().ID("PlanningDoneDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value(Model.PlanDoneDate).Disabled(true)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                    )
+                        }
+
+                    </div>
+
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Request Message")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().Disabled(true).ID("RequestMessage" + ViewBag.Thread).Value(Model.RequestMessage))
+                    </div>
+
+                    <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Message")</label>
+                    <div class="col-md-2">
+                        @(Html.DevExtreme().TextBox().ID("ProdcnMessage" + ViewBag.Thread).Value(Model.ProdcnMessage))
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0 pl-2 pr-2" id="bodypage_@(ViewBag.Thread)">
+             
+
+                <!--=============================Add List File =================================================-->
+                <div class="row" id="top_bodypage_@(ViewBag.Thread)">
+                    <div class="col-md-12" style="height:100%">
+                        <fieldset class="customFieldset" style="height:100%">
+                            <legend class="customLegend">@_loc.GetLocalizedString("List Files")</legend>
+                            @(Html.DevExtreme().DataGrid<Modules.Common.Models.SYFileUpload>()
+                                        .ID(gridListFileProductionPlan)
+                                        .KeyExpr("FileGuid")
+                                        .ShowBorders(true)
+                                        .ShowColumnLines(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .AllowColumnReordering(true)
+                                        .ColumnAutoWidth(true)
+                                        .Height("100%")
+                                        //.FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                                        //.Editing(editing =>
+                                        //{
+                                        //    editing.AllowDeleting(true);
+                                        //    editing.UseIcons(true);
+                                        //})
+                                        .Columns(c =>
+                                        {
+                                        c.AddFor(x => x.FilePathShowBrowser).Caption("FilePathShowBrowser").Alignment(HorizontalAlignment.Left).Visible(false);
+                                        c.AddFor(x => x.FileName).Caption(_loc.GetLocalizedString("FileName")).Alignment(HorizontalAlignment.Left).Width("50%").CellTemplate
+                                                (
+                                                        @<text>
+                                                            <a href="#" onclick="OpenFileInBrowser(this)" data-pag-id="<%-data.FilePathShowBrowser%>" data-file-guid="<%-data.FileGuid%>">
+                                                                <%-data.FileName%>
+                                                            </a>
+                                                        <script>
+                                                            function OpenFileInBrowser(obj)
+                                                            {
+                                                                let fileguid = $(obj).attr("data-file-guid").trim();
+                                                                var dataFileGuid = (fileguid);
+                                                                var dataFileID = '@Model.FileMasterID';
+                                                                var link = $("<a href='" + getLanguages() + "/FilesUpload/OpenFileInBrowser?fileguid=" + dataFileGuid + "'></a>");
+                                                                window.open(link[0].href);
+                                                            }
+                                                          </script>
+                                                        </text>
+                                                );
+
+                                            c.AddFor(x => x.FileSize).Caption(_loc.GetLocalizedString("FileSize")).Alignment(HorizontalAlignment.Center).Format("#,##0").Width("25%");
+                                            c.AddFor(x => x.FileType).Caption(_loc.GetLocalizedString("FileType")).Alignment(HorizontalAlignment.Left).Width("25%");
+
+                                            //c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                            //{
+                                            //    if(Model.ProjectStatus!= "PJST05" && Model.ProjectStatus != "PJST05")
+                                            //    {
+                                            //        if (Model.Delele_File)
+                                            //        {
+                                            //            //b.Add().Name(GridColumnButtonName.Delete).OnClick("DeletegridListFilePopupProduct");
+
+                                            //        }
+                                            //        else
+                                            //        {
+
+
+                                            //        }
+                                            //    }
+                                            //    //b.Add().Icon("download").Hint("DownLoad").OnClick("gridDownloadFile");
+                                            //});
+
+                                        })
+                                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                        //.HeaderFilter(f => f.Visible(true))
+                                        .Paging(paging => paging.PageSize(20))
+                                        .Pager(pager =>
+                                        {
+                                            pager.ShowPageSizeSelector(false);
+                                            pager.AllowedPageSizes(new[] { 20,20,60});
+                                            pager.ShowInfo(true);
+                                        })
+
+                                        )
+                        </fieldset>
+                    </div>
+                </div>
+
+                <!--=============================End List File =================================================-->
+                <!--=============================Add Production lines=================================================-->
+
+                <div class="row" id="content_bodypage_@(ViewBag.Thread)">
+                    <div class="col-md-12" style="height:100%">
+                        <fieldset class="customFieldset" style="height:100%">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Production Lines")</legend>
+                            @{
+                                string IdGrid = "GridProductLine" + ViewBag.Thread;
+                                string fnLineManger = "setLineMangerValue" + ViewBag.Thread;
+                            }
+
+                            @(Html.DevExtreme().DataGrid<MES_ProjectProdcnLines>()
+                                        .ID(IdGrid)
+                                        //.DataSource(d => d.Mvc().Controller("MESProductionMagt").LoadAction("GetListDataProdLines").LoadParams(new { projectCode = new JS("getProjectCode" + ViewBag.Thread) }).UpdateAction("Put").InsertAction("Post").DeleteAction("Delete"))
+                                        .KeyExpr("ProdcnLineCode")
+                                        .ShowBorders(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .ColumnAutoWidth(true)
+                                        .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Standard))
+
+                                        .Height("100%")
+                                        .Paging(paging =>
+                                        {
+                                            paging.Enabled(true);
+                                            paging.PageSize(10);
+                                        })
+                                        .Pager(p => p
+                                            .ShowPageSizeSelector(true)
+                                            .AllowedPageSizes(new[] { 10, 25, 50, 100 })
+                                        )
+                                        .Editing(editing =>
+                                        {
+                                            editing.Mode(GridEditMode.Batch);
+                                            editing.UseIcons(true);
+                                            editing.AllowAdding(true);
+                                            editing.AllowDeleting(true);
+                                            editing.AllowUpdating(true);
+                                            editing.StartEditAction(GridStartEditAction.Click);
+                                        })
+                                        .RepaintChangesOnly(false)
+                                        .Columns(columns =>
+                                        {
+                                            columns.AddFor(m => m.ProdcnLineCode).Caption(_loc.GetLocalizedString("Production Line Name"))
+                                                .SetCellValue(fnLineManger).Width("25%")
+                                                .Lookup(lookup => lookup
+                                                    .DataSource(lstProdLines)
+                                                    .DisplayExpr("ProductLineName")
+                                                    .ValueExpr("ProductLineCode"));
+                                            columns.AddFor(m => m.AssignedQty).Caption(_loc.GetLocalizedString("Assigned Qty")).Width("20%")
+                                                .DataType(GridColumnDataType.Number)
+                                                .SetCellValue("Test")
+                                                .Format("#,##0");
+                                            columns.AddFor(m => m.LineManager).Caption(_loc.GetLocalizedString("Line Manager")).Width("20%")
+                                                .Lookup(lookup => lookup
+                                                    .DataSource(d => d.Mvc().Controller("MESProductionMagt")
+                                                        .LoadAction("GetListEmployees")
+                                                        .Key("ID")
+                                                    )
+                                                    .DisplayExpr("Name")
+                                                    .ValueExpr("ID")).AllowEditing(false);
+                                            columns.AddFor(m => m.ProdcnLineState).AllowEditing(false).Caption(_loc.GetLocalizedString("Production Line State")).Width("15%")
+                                                .Lookup(lookup => lookup
+                                                    .DataSource((List<MES_ComCodeDtls>)ViewBag.lstStatusProdLines)
+                                                    .DisplayExpr("BASE_NAME1")
+                                                    .ValueExpr("BASE_CODE"));
+
+                                        })
+                                        .OnToolbarPreparing(
+                                            @<text>
+                                                function(e)
+                                                {
+                                                    let toolbarItems = e.toolbarOptions.items;
+                                                    toolbarItems.forEach(function(item, index)
+                                                        {
+                                                            if(item.name == "saveButton")
+                                                            {
+                                                                toolbarItems.splice(index, 1);
+                                                            }
+                                                        });
+                                                }
+                                            </text>
+                                        )
+                                        .Summary(
+
+                                            s=>
+                                            {
+                                                s.RecalculateWhileEditing(true)
+                                                .TotalItems(m => m.AddFor(m1 => m1.AssignedQty).SummaryType(SummaryType.Sum).ValueFormat("#,##0")
+                                                @*.CustomizeText(@<text>
+                                                        function(data) { return "@(_loc.GetLocalizedString("Sum")): " + data.value; }
+                                                    </text>))*@
+                                                .DisplayFormat("Sum: {0}").Column("AssignedQty"));
+                                            }
+                                        //    @*s => s.TotalItems(items => items.Add().Name("AllRowsSummary")
+                                        //                                          .ShowInColumn("AssignedQty")
+                                        //                                          .DisplayFormat("Sum: {0}")
+                                        //                                          .SummaryType(SummaryType.Custom)
+                                        //                     ).CalculateCustomSummary(
+                                        //                     @<text>
+                                        //                        function (options) {
+                                        //                            debugger;
+                                        //                            console.log("PVN Test");
+                                        //                            console.log(options);
+                                        //
+                                        //                            var grid = $('#GridProductLine@(ViewBag.Thread)').dxDataGrid("instance");
+                                        //                            var visibleRow = grid.getVisibleRows();
+                                        //                            console.log(visibleRow);
+                                        //
+                                        //                            if (options.name === "AllRowsSummary") {
+                                        //                                if (options.summaryProcess === "start") {
+                                        //                                    console.log("start", options);
+                                        //                                }
+                                        //                                if (options.summaryProcess === "calculate") {
+                                        //                                    console.log("calculate", options);
+                                        //                                    options.totalValue = options.totalValue + options.value.AssignedQty;
+                                        //                                    if (options.component.isRowSelected(options.value.ID)) {
+                                        //                                        options.totalValue = options.totalValue + options.value.SaleAmount;
+                                        //                                    }
+                                        //                                }
+                                        //                                if (options.summaryProcess === "finalize") {
+                                        //                                    console.log("finalize", options);
+                                        //                                }
+                                        //                            }
+                                        //                        }
+                                        //                    </text>)*@
+                                        )
+                                        //.OnEditingStart("OnEditingStart")//.OnCellClick("OnCellClick")
+                                        //.OnRowInserted("OnRowInserted")
+                                        //.OnFocusedRowChanged("CheckSumQuantity")
+                                        //.OnRowInserting("CheckSumQuantity")
+                                        //PVN Add
+                                        //.OnToolbarPreparing("OnToolbarPreparing" + ViewBag.Thread)
+                                        // .HeaderFilter(f => f.Visible(true))
+                                        .OnInitNewRow("setDefaultNewRow"+ ViewBag.Thread)
+                                        .OnRowUpdated("CheckSumQuantity" + ViewBag.Thread)
+                                    )
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body box-profile">
+                        <div class="form-group row" id="rowBoardDocKey">
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("UserProjectCode")</label>
+                            <div class="col-sm-2">
+                                @(Html.DevExtreme().TextBox().Visible(false).ID("ProjectCode" + ViewBag.Thread).Disabled(true).Value(Model.ProjectCode))
+                                @(Html.DevExtreme().TextBox().ID("UserProjectCode" + ViewBag.Thread).Disabled(true).Value(Model.UserProjectCode))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Project Name")</label>
+                            <div class="col-sm-2">
+                                @(Html.DevExtreme().TextBox().ID("ProjectName" + ViewBag.Thread).Disabled(true).Value(Model.ProjectName))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Project Status")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("ProjectStatus" + ViewBag.Thread).Disabled(true).Value(Model.ProjectStatusName))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Product Type")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("ProductType" + ViewBag.Thread).Disabled(true).Value(Model.ProductType))
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Customer Name")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("PartnerName" + ViewBag.Thread).Disabled(true).Value(Model.PartnerName))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("User Request")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("UserRequest" + ViewBag.Thread).Disabled(true).Value(Model.UserNameRequest))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Request Date")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().DateBox().ID("RequestDate" + ViewBag.Thread).Type(DateBoxType.Date).Value(Model.RequestDate).Disabled(true)
+                                        //.Value(DateTime.Now)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                    )
+                        
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Request Type")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().SelectBox()
+                                    .ID("ddlPopRequestType" + ViewBag.Thread)
+                                    .DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE").Disabled(true)
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Item Code")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("ItemCode" + ViewBag.Thread).Disabled(true).Value(Model.ItemCode))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Item Name")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("ItemName" + ViewBag.Thread).Disabled(true).Value(Model.ItemName))
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Order Quantity")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().NumberBox().ID("OrderQuantity" + ViewBag.Thread).Disabled(true).Format("#,##0").Value(Model.OrderQuantity))
+                            </div>
+                            <label class="col-sm-1 col-form-label star">@_loc.GetLocalizedString("Material Warehouse")</label>
+                            <div class="col-md-2">
+                                @{
+                                    string MaterWHCode = "MaterWHCode" + ViewBag.Thread;
+                                }
+                                @(Html.DevExtreme().SelectBox()
+                                    .ID(MaterWHCode)
+                                    .DataSource(d => d.Mvc().Controller("MESProductionMagt")
+                                            .LoadAction("GetListWareHouse")
+                                            .Key("WarehouseCode")
+                                        )
+                                    .OnValueChanged("MaterWHCodeOnChange")
+                                    .Value(Model.MaterWHCode)
+                                    .DisplayExpr("WarehouseName")
+                                    .ValueExpr("WarehouseCode")
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Code")</label>
+                            <div class="col-md-2">
+                                @(Html.DevExtreme().TextBox().ID("ProdcnCode" + ViewBag.Thread).Disabled(true).Value(Model.ProdcnCode).Disabled(true))
+                            </div>
+                      
+
+                            <label class="col-sm-1 col-form-label star">@_loc.GetLocalizedString("Planning Done Date")</label>
+                            <div class="col-md-2">
+                                @if (Model.PlanDoneDate == null)
+                                {
+                                    @(Html.DevExtreme().DateBox().ID("PlanningDoneDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value("")
+                                        .DisplayFormat("yyyy-MM-dd")
+                                    )
+                                }
+                                else
+                                {
+                                    @(Html.DevExtreme().DateBox().ID("PlanningDoneDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value(Model.PlanDoneDate).Disabled(true)
+                                        .DisplayFormat("yyyy-MM-dd")
+                                    )
+                                }
+
+                            </div>
+                            <label class="col-sm-1 col-form-label">@_loc.GetLocalizedString("Production Message")</label>
+                            <div class="col-md-5">
+                                @(Html.DevExtreme().TextBox().ID("ProdcnMessage" + ViewBag.Thread).Value(Model.ProdcnMessage))
+                            </div>
+                        </div>
+
+                        <!--=============================Add List File =================================================-->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <fieldset class="customFieldset">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("List Files")</legend>
+                                    @(Html.DevExtreme().DataGrid<Modules.Common.Models.SYFileUpload>()
+                                        .ID(gridListFileProductionPlan)
+                                        .KeyExpr("FileGuid")
+                                        .ShowBorders(true)
+                                        .ShowColumnLines(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .AllowColumnReordering(true)
+                                        .ColumnAutoWidth(true)
+                                        .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+                                        //.Editing(editing =>
+                                        //{
+                                        //    editing.AllowDeleting(true);
+                                        //    editing.UseIcons(true);
+                                        //})
+                                        .Columns(c =>
+                                        {
+                                        c.AddFor(x => x.FilePathShowBrowser).Caption("FilePathShowBrowser").Alignment(HorizontalAlignment.Left).Visible(false);
+                                        c.AddFor(x => x.FileName).Caption(_loc.GetLocalizedString("FileName")).Alignment(HorizontalAlignment.Left).Width("50%").CellTemplate
+                                                (
+                                                        @<text>
+                                                            <a href="#" onclick="OpenFileInBrowser(this)" data-pag-id="<%-data.FilePathShowBrowser%>" data-file-guid="<%-data.FileGuid%>">
+                                                                <%-data.FileName%>
+                                                            </a>
+                                                        <script>
+                                                            function OpenFileInBrowser(obj)
+                                                            {
+                                                                let fileguid = $(obj).attr("data-file-guid").trim();
+                                                                var dataFileGuid = (fileguid);
+                                                                var dataFileID = '@Model.FileMasterID';
+                                                                var link = $("<a href='" + getLanguages() + "/FilesUpload/OpenFileInBrowser?fileguid=" + dataFileGuid + "'></a>");
+                                                                window.open(link[0].href);
+                                                            }
+                                                          </script>
+                                                        </text>
+                                                );
+
+                                            c.AddFor(x => x.FileSize).Caption(_loc.GetLocalizedString("FileSize")).Alignment(HorizontalAlignment.Center).Format("#,##0").Width("25%");
+                                            c.AddFor(x => x.FileType).Caption(_loc.GetLocalizedString("FileType")).Alignment(HorizontalAlignment.Left).Width("25%");
+
+                                            //c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                            //{
+                                            //    if(Model.ProjectStatus!= "PJST05" && Model.ProjectStatus != "PJST05")
+                                            //    {
+                                            //        if (Model.Delele_File)
+                                            //        {
+                                            //            //b.Add().Name(GridColumnButtonName.Delete).OnClick("DeletegridListFilePopupProduct");
+
+                                            //        }
+                                            //        else
+                                            //        {
+
+
+                                            //        }
+                                            //    }
+                                            //    //b.Add().Icon("download").Hint("DownLoad").OnClick("gridDownloadFile");
+                                            //});
+
+                                        })
+                                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                        .HeaderFilter(f => f.Visible(true))
+                                        .Paging(paging => paging.PageSize(20))
+                                        .Pager(pager =>
+                                        {
+                                            pager.ShowPageSizeSelector(false);
+                                            pager.AllowedPageSizes(new[] { 20,20,60});
+                                            pager.ShowInfo(true);
+                                        })
+
+                                        )
+                                </fieldset>
+                            </div>
+                        </div>
+
+                        <!--=============================End List File =================================================-->
+                        <!--=============================Add Production lines=================================================-->
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <fieldset class="customFieldset">
+                                    <legend class="customLegend">@_loc.GetLocalizedString("Production Lines")</legend>
+                                    @{
+                                        string IdGrid = "GridProductLine" + ViewBag.Thread;
+                                        string fnLineManger = "setLineMangerValue" + ViewBag.Thread;
+                                    }
+
+                                    @(Html.DevExtreme().DataGrid<MES_ProjectProdcnLines>()
+                                        .ID(IdGrid)
+                                        //.DataSource(d => d.Mvc().Controller("MESProductionMagt").LoadAction("GetListDataProdLines").LoadParams(new { projectCode = new JS("getProjectCode" + ViewBag.Thread) }).UpdateAction("Put").InsertAction("Post").DeleteAction("Delete"))
+                                        .KeyExpr("ProdcnLineCode")
+                                        .ShowBorders(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .ColumnAutoWidth(true)
+                                        .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Standard))
+                                        .FilterRow(filterRow => filterRow
+                                            .Visible(true)
+                                            .ApplyFilter(GridApplyFilterMode.Auto)
+                                        )
+                                        .Paging(paging =>
+                                        {
+                                            paging.Enabled(true);
+                                            paging.PageSize(10);
+                                        })
+                                        .Pager(p => p
+                                            .ShowPageSizeSelector(true)
+                                            .AllowedPageSizes(new[] { 10, 25, 50, 100 })
+                                        )
+                                        .Editing(editing =>
+                                        {
+                                            editing.Mode(GridEditMode.Batch);
+                                            editing.UseIcons(true);
+                                            editing.AllowAdding(true);
+                                            editing.AllowDeleting(true);
+                                            editing.AllowUpdating(true);
+                                            editing.StartEditAction(GridStartEditAction.Click);
+                                        })
+                                        .RepaintChangesOnly(false)
+                                        .Columns(columns =>
+                                        {
+                                            columns.AddFor(m => m.ProdcnLineCode).Caption(_loc.GetLocalizedString("Production Line Name"))
+                                                .SetCellValue(fnLineManger).Width("25%")
+                                                .Lookup(lookup => lookup
+                                                    .DataSource(lstProdLines)
+                                                    .DisplayExpr("ProductLineName")
+                                                    .ValueExpr("ProductLineCode"));
+                                            columns.AddFor(m => m.AssignedQty).Caption(_loc.GetLocalizedString("Assigned Qty")).Width("20%")
+                                                .DataType(GridColumnDataType.Number)
+                                                .SetCellValue("Test")
+                                                .Format("#,##0");
+                                            columns.AddFor(m => m.LineManager).Caption(_loc.GetLocalizedString("Line Manager")).Width("20%")
+                                                .Lookup(lookup => lookup
+                                                    .DataSource(d => d.Mvc().Controller("MESProductionMagt")
+                                                        .LoadAction("GetListEmployees")
+                                                        .Key("ID")
+                                                    )
+                                                    .DisplayExpr("Name")
+                                                    .ValueExpr("ID")).AllowEditing(false);
+                                            columns.AddFor(m => m.ProdcnLineState).AllowEditing(false).Caption(_loc.GetLocalizedString("Production Line State")).Width("15%")
+                                                .Lookup(lookup => lookup
+                                                    .DataSource((List<MES_ComCodeDtls>)ViewBag.lstStatusProdLines)
+                                                    .DisplayExpr("BASE_NAME1")
+                                                    .ValueExpr("BASE_CODE"));
+
+                                        })
+                                        .OnToolbarPreparing(
+                                            @<text>
+                                                function(e)
+                                                {
+                                                    let toolbarItems = e.toolbarOptions.items;
+                                                    toolbarItems.forEach(function(item, index)
+                                                        {
+                                                            if(item.name == "saveButton")
+                                                            {
+                                                                toolbarItems.splice(index, 1);
+                                                            }
+                                                        });
+                                                }
+                                            </text>
+                                        )
+                                        .Summary(
+
+                                            s=>
+                                            {
+                                                s.RecalculateWhileEditing(true)
+                                                .TotalItems(m => m.AddFor(m1 => m1.AssignedQty).SummaryType(SummaryType.Sum).ValueFormat("#,##0")
+                                              
+                                                .DisplayFormat("Sum: {0}").Column("AssignedQty"));
+                                            }
+                                        //    @*s => s.TotalItems(items => items.Add().Name("AllRowsSummary")
+                                        //                                          .ShowInColumn("AssignedQty")
+                                        //                                          .DisplayFormat("Sum: {0}")
+                                        //                                          .SummaryType(SummaryType.Custom)
+                                        //                     ).CalculateCustomSummary(
+                                        //                     @<text>
+                                        //                        function (options) {
+                                        //                            debugger;
+                                        //                            console.log("PVN Test");
+                                        //                            console.log(options);
+                                        //
+                                        //                            var grid = $('#GridProductLine@(ViewBag.Thread)').dxDataGrid("instance");
+                                        //                            var visibleRow = grid.getVisibleRows();
+                                        //                            console.log(visibleRow);
+                                        //
+                                        //                            if (options.name === "AllRowsSummary") {
+                                        //                                if (options.summaryProcess === "start") {
+                                        //                                    console.log("start", options);
+                                        //                                }
+                                        //                                if (options.summaryProcess === "calculate") {
+                                        //                                    console.log("calculate", options);
+                                        //                                    options.totalValue = options.totalValue + options.value.AssignedQty;
+                                        //                                    if (options.component.isRowSelected(options.value.ID)) {
+                                        //                                        options.totalValue = options.totalValue + options.value.SaleAmount;
+                                        //                                    }
+                                        //                                }
+                                        //                                if (options.summaryProcess === "finalize") {
+                                        //                                    console.log("finalize", options);
+                                        //                                }
+                                        //                            }
+                                        //                        }
+                                        //                    </text>)
+                                        )
+                                        //.OnEditingStart("OnEditingStart")//.OnCellClick("OnCellClick")
+                                        //.OnRowInserted("OnRowInserted")
+                                        //.OnFocusedRowChanged("CheckSumQuantity")
+                                        //.OnRowInserting("CheckSumQuantity")
+                                        //PVN Add
+                                        //.OnToolbarPreparing("OnToolbarPreparing" + ViewBag.Thread)
+                                        // .HeaderFilter(f => f.Visible(true))
+                                        .OnInitNewRow("setDefaultNewRow"+ ViewBag.Thread)
+                                        .OnRowUpdated("CheckSumQuantity" + ViewBag.Thread)
+                                    )
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>*@
+<div class="modal fade" tabindex="-1" role="dialog" id="WorkerAuthenticationPop@(ViewBag.Thread)" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @_loc.GetLocalizedString("Worker Authentication")
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <p style="color:red">@_loc.GetLocalizedString("RFID card IDPW")@*RFID Card가 없을 경우 ID, Password 입력 하십시오.*@</p>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label"> ID:</label>
+                    <div class="col-sm-8">
+                        @(Html.DevExtreme().TextBox().ID("ID"+ ViewBag.Thread)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">
+                        Password:
+                    </label>
+                    <div class="col-sm-8">
+                        @(Html.DevExtreme().TextBox().ID("Password"+ ViewBag.Thread).Mode(TextBoxMode.Password)
+
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="onWorkerAuthen@(ViewBag.Thread)()">
+                    Login
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

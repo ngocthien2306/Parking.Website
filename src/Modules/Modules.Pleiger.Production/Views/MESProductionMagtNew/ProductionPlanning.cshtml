@@ -1,0 +1,390 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using InfrastructureCore.Models.Menu
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.CREATE_YN = true;
+    pageSetting.EXCEL_YN = true;
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    string UserProjectCode = "UserProjectCode" + ViewBag.Thread;
+    string ProjectName = "ProjectName" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemName = "ItemName" + ViewBag.Thread;
+    string SalesClassification = "SalesClassification" + ViewBag.Thread;
+    string ProjectOrderType = "ProjectOrderType" + ViewBag.Thread;
+    string SalesOrderProjectName = "SalesOrderProjectName" + ViewBag.Thread;
+    string gridProductionPlanning = "GridProductionPlanning" + ViewBag.Thread;
+    string StartDateSearchProduction = "StartDateSearchProduction" + ViewBag.Thread;
+    string EndDateSearchProduction = "EndDateSearchProduction" + ViewBag.Thread;
+}
+<script>
+    var ProjectOrderType;
+    $(() => {
+        LoadingPage(1);
+        var SalesClassification = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "SCS000");
+        $("#@SalesClassification").dxSelectBox({
+            dataSource: SalesClassification,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        ProjectOrderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        $("#@ProjectOrderType").dxSelectBox({
+            dataSource: ProjectOrderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+        ResizePageProductionPlanning();
+        LoadingPage(0);
+    });
+    $("#btnCreate_@(ViewBag.Thread)").on("click", function () {
+        LoadingPage(1);
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        ShowPopupCreateSalesProject();
+        LoadingPage(0);
+    });
+
+    function ShowPopupCreateSalesProject() {
+        LoadingPage(1);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("ProductionProjectCreatePopup", "MESProductionProject")',
+            type: "GET",
+            data:
+            {
+                projectCode: null,
+                viewbagIndex: '@ViewBag.Thread',
+                menuParent: '@ViewBag.MenuId'
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#modalContent").removeClass("modal-md");
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function ShowProductionDetail(e) {
+        debugger;
+        LoadingPage(1);
+        CheckSession();
+        let projectCodeSelected = e.data.ProjectCode;
+        $.ajax({
+            url: '@Url.Action("ProductionProjectCreatePopup", "MESProductionProject")',
+            type: "GET",
+            data: {
+                projectCode: projectCodeSelected,
+                viewbagIndex: '@ViewBag.Thread',
+                menuParent: '@ViewBag.MenuId'
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+        LoadingPage(0);
+
+    }
+
+    function OpenProductionPlanDetail@(ViewBag.Thread)(projectCode) {
+        LoadingPage(1);
+        CheckSession();
+        //let url = '/MESProductionMagtNew/ProductionPlanningDetail?projectCode=' + projectCode, ?menuid = '@ViewBag.MenuID';
+        let url = `/MESProductionMagtNew/ProductionPlanningDetail?projectCode=${projectCode}&menuid=${@ViewBag.MenuID}&vbParent=${"@ViewBag.Thread"}`;
+        // PushArrayBack(url);
+        GenerateTabConmonBoard('CBDetail', url, menuIDoTabActive, false);
+        // ReadCountCB@(ViewBag.Thread)(getBoardIDOfCB@(ViewBag.Thread)(), boardDocID);
+        LoadingPage(0);
+    }
+
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    // Search function
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        var UserProjectCode = $('#@UserProjectCode').dxTextBox('instance').option('value');
+        var ProjectName = $('#@ProjectName').dxTextBox('instance').option('value');
+        var ItemCode = $('#@ItemCode').dxTextBox('instance').option('value');
+        var ItemName = $('#@ItemName').dxTextBox('instance').option('value');
+        var SalesClassification = $("#SalesClassification@(ViewBag.thread)").dxSelectBox('instance').option('value');
+        var pjOrderType = $("#@ProjectOrderType").dxSelectBox('instance').option('value');
+        var salesOrderProjectName = $("#@SalesOrderProjectName").dxTextBox('instance').option('value');
+        var endDate = ParsingDateyyyyMMdd($("#@(EndDateSearchProduction)").dxDateBox('instance').option('value'));
+        var startDate = ParsingDateyyyyMMdd($("#@(StartDateSearchProduction)").dxDateBox('instance').option('value'));
+
+        $.ajax({
+            url: '@Url.Action("GetListDataWorkPlan", "MESProductionMagtNew")',
+            type: "GET",
+            data: {
+                userProjectCode: UserProjectCode,
+                projectName: ProjectName,
+                itemCode: ItemCode,
+                itemName: ItemName,
+                SalesClassification: SalesClassification,
+                saleOrderProjectName: salesOrderProjectName,
+                projectOrderType: pjOrderType,
+                startDate: startDate,
+                endDate: endDate
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+                var grid = $("#GridProductionPlanning@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+        LoadingPage(0);
+    });
+
+    function getParamsProjectNameSearch() {
+        return $("#ProjectName@(ViewBag.Thread)").val();
+    }
+
+    function getParamsItemCodeSearch() {
+        return $("#ItemCode@(ViewBag.Thread)").val();
+    }
+
+    function getParamsItemNameSearch() {
+        return $("#ItemName@(ViewBag.Thread)").val();
+    }
+
+    function getParamsUserProjectCodeSearch() {
+        return $("#UserProjectCode@(ViewBag.Thread)").val();
+    }
+
+    function getParamsSalesClassification() {
+        return $("#SalesClassification@(ViewBag.thread)").dxSelectBox('instance').option('value');
+
+    }
+    function getprojectOrderTypeSearch() {
+        
+        return $("#ProjectOrderType@(ViewBag.thread)").dxSelectBox('instance').option('value');
+
+    }
+    function getStartDateProduction() {
+    
+        return $("#@(StartDateSearchProduction)").dxDateBox('instance').option('value');
+    }
+    function getEndDateProduction() {
+        return $("#@(EndDateSearchProduction)").dxDateBox('instance').option('value');
+    }
+
+    
+    $(window).resize(function () {
+        ResizePageProductionPlanning();
+
+    });
+    function ResizePageProductionPlanning() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+
+            }
+        }
+    }
+
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        var dataGrid = $("#@gridProductionPlanning");
+        ExportExcelCommon(dataGrid, "Production Planning");
+        LoadingPage(0);
+    });
+    function SaveMtItemGridPlanning() {
+        alert("Saving data");
+
+
+    }
+    function onItemGridToolbarPreparing(e) {
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems[1].options.onClick = SaveMtItemGridPlanning;
+    }
+
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%">
+            <div class="card-header box-profile p-1" id="headerpage_@(ViewBag.Thread)">
+               
+                <div class="row">
+                    <div class="form-group col-md-2 col-xs-12">
+                        <label>@(_loc.GetLocalizedString("Production Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID(UserProjectCode).ShowClearButton(true))
+                    </div>
+                    <div class="form-group col-md-2 col-xs-12">
+                        <label>@(_loc.GetLocalizedString("Production Name Planning"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ProjectName).ShowClearButton(true))
+                    </div>
+                    <div class="form-group col-md-2 col-xs-12">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ItemCode).ShowClearButton(true))
+                    </div>
+                    <div class="form-group col-md-2 col-xs-12">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ItemName).ShowClearButton(true))
+                    </div>
+                
+                    <div class="col-md-4 col-xs-12">
+                        <label>@(_loc.GetLocalizedString("Production Create Date"))</label>
+                        <div class="form-group row">
+                            <div class="col-sm-4 col-xs-4">
+                                @(Html.DevExtreme().DateBox()
+                                    .Type(DateBoxType.Date)
+                                    .ID(StartDateSearchProduction)
+                                    .Value("")
+                                    .DisplayFormat("yyyy-MM-dd")
+                                    .MaxLength(10)
+                                    )
+                            </div>
+                            <div style="align-self: center;">~</div>
+                            <div class="col-sm-4 col-xs-4">
+                                @(Html.DevExtreme().DateBox()
+                                    .Type(DateBoxType.Date)
+                                    .ID(EndDateSearchProduction)
+                                    .Value("")
+                                    .DisplayFormat("yyyy-MM-dd")
+                                    .MaxLength(10)
+                                    )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-xs-12" style="display: none ">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Sales Classification"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                .ID(SalesClassification)
+                                .ShowClearButton(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                )
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-xs-12" style="display: none ">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Order Type"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                .ID(ProjectOrderType)
+                                .ShowClearButton(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                )
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-xs-12" style="display: none ">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Sales Order Project Name"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(SalesOrderProjectName)
+                                .ShowClearButton(true)
+                                )
+                        </div>
+                    </div>
+                </div>
+
+               
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="card-body p-0 pl-2 pr-2 pb-2">
+                @(Html.DevExtreme().DataGrid<MES_SaleProject>()
+                        .ID(gridProductionPlanning)
+                        .DataSource(x => x.Mvc().Controller("MESProductionMagtNew").LoadAction("GetListDataWorkPlan")
+                            .LoadParams(
+                                new {
+                                    userProjectCode = new JS("getParamsUserProjectCodeSearch"),
+                                    projectName = new JS("getParamsProjectNameSearch"),
+                                    itemCode = new JS("getParamsItemCodeSearch"),
+                                    itemName = new JS("getParamsItemNameSearch"),
+                                    SalesClassification = new JS("getParamsSalesClassification"),
+                                    projectOrderType = new JS("getprojectOrderTypeSearch"),
+                                    startDate = new JS("getStartDateProduction"),
+                                    endDate = new JS("getEndDateProduction")
+                                }
+                            )
+                        )
+                        .Selection(m => m.Mode(SelectionMode.Single))
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        //.Editing(e => {
+                        //    e.AllowAdding(true);
+                        //    e.AllowUpdating(true);
+                        //    e.UseIcons(true);
+                        //    e.Mode(GridEditMode.Batch);
+                        //})
+                        .ColumnAutoWidth(true).Height("100%")
+                        .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto)
+                            )
+                        .Columns(c =>
+                        {
+                        c.AddFor(x => x.No).Caption("No").AllowEditing(false);
+                        c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("Production Code")).AllowEditing(false).CellTemplate(
+                                @<text>
+                                <a href="#" onclick="OpenProductionPlanDetail@(ViewBag.Thread)('<%-data.ProjectCode%>')" data-pag-id="<%-data.ProjectCode%>">
+                                    <%-data.UserProjectCode%>
+                                </a>
+                                </text>
+                                );
+                            c.AddFor(x => x.ProjectName).Caption(_loc.GetLocalizedString("Production Name Planning")).AllowEditing(false);
+                            c.AddFor(x => x.ProductType).Caption(_loc.GetLocalizedString("Product Type")).AllowEditing(false);
+                            c.AddFor(x => x.SalesClassificationName).Caption(_loc.GetLocalizedString("Sales Classification")).AllowEditing(false);
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                            c.AddFor(x => x.RequestDate).Caption(_loc.GetLocalizedString("Production Request Date")).AllowEditing(false);
+                            //c.AddFor(x => x.PlanDoneDate).Caption(_loc.GetLocalizedString("Planning Done Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");//Plan Done Date
+                            c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Custommer")).AllowEditing(false);
+                            c.AddFor(x => x.ProdcnCode).Caption(_loc.GetLocalizedString("Production Code")).Visible(false);
+                            c.AddFor(x => x.OrderQuantity).Caption(_loc.GetLocalizedString("Order Quantity")).Format("#,##0").AllowEditing(false);
+                            //c.AddFor(x => x.ProjectOrderType).Caption(_loc.GetLocalizedString("Order Type")).AllowEditing(false);
+                            //c.AddFor(x => x.SalesOrderProjectName).Caption(_loc.GetLocalizedString("Sales Order Project Name"));
+                        })
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(100))
+                        .Pager(pager =>
+                        {
+                            //pager.ShowPageSizeSelector(false);
+                            //pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                            pager.ShowNavigationButtons(true);
+                            pager.ShowInfo(true);
+                        })
+                        .OnRowDblClick("ShowProductionDetail")
+                        )
+
+            </div>
+        </div>
+    </div>
+</div>

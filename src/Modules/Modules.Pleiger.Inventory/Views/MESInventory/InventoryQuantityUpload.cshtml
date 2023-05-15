@@ -1,0 +1,285 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = true;
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+}
+
+@{
+    string gridInventoryCheck = "gridInventoryCheck" + ViewBag.Thread;
+    string TransMonth = "TransMonth" + ViewBag.Thread;
+    string DetailRemark = "DetailRemark" + ViewBag.Thread;
+}
+
+<script>
+
+    // Save
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        debugger;
+        var transMonth = $("#TransMonth@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        var detailRemark = $("#DetailRemark@(ViewBag.Thread)").dxTextBox("instance").option("value");
+        if (transMonth === null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Please select inventory closed month.", "Error");
+            return;
+        }
+
+        var dataInventoryCheck = $('#gridInventoryCheck@(ViewBag.Thread)').dxDataGrid('instance');
+        if (dataInventoryCheck.getDataSource() == null) {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert("Don't have data, please upload file to check inventory.", "Error");
+            return;
+        }
+        else {
+            var data = dataInventoryCheck.getDataSource().items();
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveInventoryCheck", "MESInventory")',
+                        type: 'POST',
+                        data: {
+                            //data: data,
+                            data: JSON.stringify(data),
+                            transMonth: ParsingDateyyyyMMdd(transMonth),
+                            detailRemark: detailRemark
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            debugger
+                            if (result.Success == true) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    //Close popup
+                                    debugger;
+                                    $.unblockUI();
+                                    $("#modalControl").modal("hide");
+
+                                    // reload grid
+                                    var gridTransClosingMst = $("#gridTransClosingMst@(ViewBag.pageThread)").dxDataGrid("instance");
+                                    //gridTransClosingMst.ClearSelection();
+                                    //gridTransClosingMst.refresh();
+                                    var gridTransClosingDtls = $("#gridTransClosingDtls@(ViewBag.pageThread)").dxDataGrid("instance");
+                                    gridTransClosingDtls.refresh();
+                                    var gridTransClosingItems = $("#gridTransClosingItems@(ViewBag.pageThread)").dxDataGrid("instance");
+                                    //$('#btnSearch_@(ViewBag.pageThread)').trigger('click');
+                                    gridTransClosingItems.refresh();
+                                });
+                            }
+                            else {
+                                $.unblockUI();
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }, error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+    });
+
+    function OnUploadAbortedPopupFileInventoryCurrentStock@(ViewBag.Thread)(e) {
+        debugger;
+        console.log(e);
+    }
+
+    function OnUploadedFileInventoryCurrentStock@(ViewBag.Thread)(e) {
+        e.component.__uploadedFilesCount++;
+        
+        var result = JSON.parse(e.request.response);
+        if (result.Success) {
+            var grid = $("#gridInventoryCheck@(ViewBag.Thread)").dxDataGrid("instance");
+            grid.option("dataSource", result.Data);
+            grid.refresh();
+        } else {
+            DevExpress.ui.dialog.alert(result.Message, "Error");
+        }
+
+        if (e.component.option("value").length === e.component.__uploadedFilesCount) {
+            e.component.reset();
+            e.component.__uploadedFilesCount = null;
+        }  
+    }
+
+    function OnUploadErrorFileInventoryCurrentStock@(ViewBag.Thread)(e) {
+        console.log("PVN OnUploadErrorFileInventoryCurrentStock")
+        console.log(e);
+        DevExpress.ui.dialog.alert(e.message, @(_loc.GetLocalizedString("Error")));
+        return;
+    }
+
+    function gridInventoryCheckOnCellPrepared(e) {
+        if (e.rowType == 'data' && e.column.dataField == 'DiffQtyDisplay') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+        }
+    }
+
+    function TransMonthDownloadValueChanged@(ViewBag.Thread)(data) {
+        debugger;
+        //check transmonth have data or no
+        var result = IsTransmonthHaveInventoryClosed(ParsingDateyyyyMMdd(data.value));
+    }
+
+    function IsTransmonthHaveInventoryClosed(data) {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("IsTransmonthHaveInventoryClosed", "MESInventory")',
+            type: "GET",
+            data: {
+                transMonth: data
+            },
+            dataType: 'json',
+            success: function (result) {
+                //return result;
+            }
+        }).done(function (res) {
+            debugger;
+            if (res) {
+                DevExpress.ui.dialog.alert("This month " + ParsingDateyyyyMMdd(data).substring(0, 7) + " have inventory closed data. Excel cannot be exported, and cannot be uploaded.", "Error");
+                return;
+            }
+        });
+    }
+</script>
+<div class="modal-content" id="InventoryCheck">
+    <div class="modal-header">
+        <h5 class="modal-title">@_loc.GetLocalizedString("Inventory Check Upload")</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div id="menutoolbar_@(ViewBag.Thread)">
+        @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+    </div>
+    <form id="form" method="post" enctype="multipart/form-data">
+        <div class="modal-body">
+            <div class="row">
+                <div class="form-group col-md-2">
+                    <label for="TransMonth">@_loc.GetLocalizedString("TransMonth"):</label>
+                    @(Html.DevExtreme().DateBox().ID(TransMonth)
+                                            .Type(DateBoxType.Date)
+                                            //.Value(DateTime.Now)
+                                            .DisplayFormat("yyyy-MM")
+                                            .CalendarOptions(opt =>
+                                                opt.MaxZoomLevel(CalendarZoomLevel.Year)
+                                                .MinZoomLevel(CalendarZoomLevel.Decade)
+                                                .ZoomLevel(CalendarZoomLevel.Year)
+                                                )
+                                            .MaxLength(10)
+                                            .OnValueChanged("TransMonthDownloadValueChanged" + ViewBag.Thread)
+                                        )
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="TransMonth">@_loc.GetLocalizedString("Detail Remark"):</label>
+                    @(Html.DevExtreme().TextBox().ID(DetailRemark)
+                                        )
+                </div>
+                <div class="fileuploader-container">
+                    @(Html.DevExtreme().FileUploader()
+                            .ID("InventoryCheckUploadFile")
+                            .Name("myFile")
+                            //.Multiple(true)
+                            .ChunkSize(10000000)
+                            .MaxFileSize(50000000000)
+                            //.Accept("*")
+                            .AllowedFileExtensions(new[] { ".xls", ".xlsx" })
+                            .UploadMode(FileUploadMode.UseButtons).UploadButtonText(@_loc.GetLocalizedString("Upload"))
+                            .SelectButtonText(@_loc.GetLocalizedString("Select file"))
+                            .UploadUrl(Url.Action("UploadFileInventoryCurrentStock", "MESInventory"))
+                            .OnUploaded("OnUploadedFileInventoryCurrentStock" + ViewBag.Thread)
+                            .OnUploadAborted("OnUploadAbortedPopupFileInventoryCurrentStock" + ViewBag.Thread)
+                            .OnUploadError("OnUploadErrorFileInventoryCurrentStock" + ViewBag.Thread)
+                            .AllowCanceling(true)
+                            //.ShowFileList(true)
+
+                    )
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("Items Stock Changed")</legend>
+                        @(Html.DevExtreme().DataGrid<Modules.Pleiger.CommonModels.MES_InventoryCheckVO>()
+                            .ID(gridInventoryCheck)//.KeyExpr("WHCode").KeyExpr("ItemCode")
+                                                   //.DataSource(x => x.Mvc().Controller("MESInventory")
+                                                   //.LoadAction("GetInventoryCurrentStock").LoadParams(new
+                                                   //{
+                                                   //    warehouseCode = new JS("getParamsWarehouseCode"),
+                                                   //    category = new JS("getParamsCategory"),
+                                                   //    itemCode = new JS("getParamsItemCode"),
+                                                   //    itemName = new JS("getParamsItemName")
+                                                   //})
+                                                   //.Key("WHCode").Key("ItemCode")
+                                                   //)
+                            .KeyExpr("No")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .ColumnAutoWidth(true).Height(300)
+                            .RepaintChangesOnly(false)
+                            //.OnCellPrepared("gridItemSlipDtlOnCellPrepared")
+                            //.OnRowRemoved("gridItemSlipDtlOnRowRemoved")
+                            //.FilterRow(filterRow => filterRow
+                            //    .Visible(true)
+                            //    .ApplyFilter(GridApplyFilterMode.Auto)
+                            //)
+                            //.HeaderFilter(f => f.Visible(true))
+                            .Selection(s => s.Mode(SelectionMode.None))
+                            .OnCellPrepared("gridInventoryCheckOnCellPrepared")
+                            .Columns(c=> {
+                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false).Fixed(true);
+                                c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false).Fixed(true);
+                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false).Fixed(true);
+                                c.AddFor(x => x.WHCode).Caption(_loc.GetLocalizedString("Warehouse Code")).AllowEditing(false);
+                                c.AddFor(x => x.WHName).Caption(_loc.GetLocalizedString("Warehouse Name")).AllowEditing(false);
+                                c.AddFor(x => x.StockQtyUploaded).Caption(_loc.GetLocalizedString("Stock Qty Uploaded")).AllowEditing(false).Format("#,##0");
+                                c.AddFor(x => x.CheckQty).Caption(_loc.GetLocalizedString("Check Qty")).AllowEditing(false).Format("#,##0");
+                                c.AddFor(x => x.CurrentStockQty).Caption(_loc.GetLocalizedString("Current Stock Qty")).AllowEditing(false).Format("#,##0");
+                                c.AddFor(x => x.DiffQty).Caption(_loc.GetLocalizedString("Different Qty")).AllowEditing(false).Format("#,##0").Visible(false);//update stock
+                                c.AddFor(x => x.DiffQtyDisplay).Caption(_loc.GetLocalizedString("Different Qty")).AllowEditing(false).Format("#,##0");// just display
+                                c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark")).AllowEditing(true);
+                            })
+                            .Editing(e => e
+                                .Mode(GridEditMode.Cell)
+                                .AllowUpdating(true)
+                            )
+                            .RemoteOperations(true)
+                            .Scrolling(s => s
+                                .Mode(GridScrollingMode.Standard)
+                            )
+                            .Paging(p => p.PageSize(100))
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                        )
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </form>
+    @*<div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btnSave_@ViewBag.Thread">Save</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+    </div>*@
+</div>
+
+    

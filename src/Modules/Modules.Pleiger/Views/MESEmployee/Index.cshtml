@@ -1,0 +1,323 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models
+@model MESEmployees;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.DELETE_YN = true;
+    pageSetting.SEARCH_YN = true;
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string PartnerCode = "PartnerCode" + ViewBag.Thread;
+
+}
+<script>
+    $(() => {
+        LoadingPage(1);
+        ReziePageMESEmployee();
+         $("#btnDelete_@(ViewBag.thread)").attr('disabled', true);
+        LoadingPage(0);
+    })
+    //Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        setTimeout(function (){ LoadingPage(0); }, 1500);
+    });
+
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+        EmployeeCreatePopup();
+    });
+
+    function EmployeeCreatePopup() {
+        LoadingPage(0);
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("EmployeeDetailPopup", "MESEmployee")',
+            type: "GET",
+            data: {},
+            dataType: "html",
+            success: function (result) {
+                LoadingPage(0);
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function EmployeeUpdatePopup(e) {
+        LoadingPage(1);
+        CheckSession();
+        ///let data = e.data;
+        debugger;
+        let EmployeeNumber = $(e).attr("data-EmployeeNumber").trim();
+        $.ajax({
+            url: '@Url.Action("EmployeeDetailPopup", "MESEmployee")',
+            type: "GET",
+            //data: { EmployeeCode: data.EmployeeNumber},
+            data: { EmployeeCode: EmployeeNumber},
+            dataType: "html",
+            success: function (result) {
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+                LoadingPage(0);
+            }
+        });
+        LoadingPage(0);
+    }
+
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        OnDelete();
+    });
+
+    function OnDelete() {
+        LoadingPage(1);
+        var dataGrid = $("#gridEmployee").dxDataGrid("instance");
+        var listEmployeeInfo = dataGrid.getSelectedRowsData();
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+
+        if (dialogResult) {
+            $.ajax({
+                url: '@Url.Action("DeleteEmployeeInfo", "MESEmployee")',
+                type: "POST",
+                data: { listEmployeeInfo: listEmployeeInfo },
+                dataType: "json",
+                success: function (result) {
+                    LoadingPage(0);
+                    if (result.Success) {
+                        DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success", function () {
+                            $("#btnReload_@ViewBag.Thread").trigger("click");
+                            var grid = $("#gridEmployee").dxDataGrid("instance");
+                            grid.refresh();
+                        });
+                    }
+                    else {
+                        DevExpress.ui.dialog.alert(result.Message, "Error");
+                    }
+                }, error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        }
+        else {
+            LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        $("#frm-Index").submit();
+    });
+
+    $("#frm-Index").submit(function (e) {
+        LoadingPage(1);
+        e.preventDefault();
+        debugger;
+        var dataSearch = new FormData(this);
+        let PartnerCode = $("#PartnerCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        let EmployeeNumber = $("#Employee@(ViewBag.Thread)").val();
+        let EmployeeNameKr = $("#EmployeeNameKr@(ViewBag.Thread)").val();
+        let EmployeeNameEng = $("#EmployeeNameEng@(ViewBag.Thread)").val();
+        let UseYN = $('#RadioGroup@(ViewBag.Thread)').dxRadioGroup('instance').option("value")
+        if (UseYN === "@_loc.GetLocalizedString("전체")")
+        {
+            UseYN = "";
+        }
+        else if (UseYN === "@_loc.GetLocalizedString("거래")")
+        {
+            UseYN = "Y";
+        }
+        else
+        {
+            UseYN = "N";
+        }
+        $.ajax({
+            url: '@Url.Action("ListSearchEmployee", "MESEmployee")',
+            type: "GET",
+            data: { PartnerCode: PartnerCode, EmployeeNumber: EmployeeNumber, EmployeeNameKr: EmployeeNameKr, EmployeeNameEng: EmployeeNameEng, UseYN: UseYN},
+            dataType: "json",
+            success: function (result) {
+                var grid = $("#gridEmployee").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    });
+
+    function radioGroup_valueChanged(e) {
+        var previousValue = e.previousValue;
+    }
+
+    $(window).resize(function () {
+        ReziePageMESEmployee();
+    });
+    function ReziePageMESEmployee() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+
+    function gridEmployeeOnSelectionChanged(selectedItems) {
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+@*@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })*@
+<form id="frm-Index">
+    <div class="row" id="divindex_@(ViewBag.Thread)">
+        <div class="col-md-12" style="height:100%;">
+            <div class="card" style="height:100%">
+                <div class="card-header" id="headerpage_@(ViewBag.Thread)">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Login ID"))</label>
+                                @Html.TextBoxFor(x => x.EmployeeNumber, new { @class = "form-control", @id = "Employee" + ViewBag.Thread, @maxlength = "15", @Value = Model.EmployeeNumber })
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Name Kr"))</label>
+                                @Html.TextBoxFor(x => x.EmployeeNameKr, new { @class = "form-control", @id = "EmployeeNameKr" + ViewBag.Thread, @maxlength = "20", @Value = Model.EmployeeNameKr })
+
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Name En"))</label>
+                                @Html.TextBoxFor(x => x.EmployeeNameEng, new { @class = "form-control", @id = "EmployeeNameEng" + ViewBag.Thread, @maxlength = "20", @Value = Model.EmployeeNameEng })
+                            </div>
+                        </div>
+                        <div class="form-group col-md-2">
+                            <label>@(_loc.GetLocalizedString("Company"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                        .ID(PartnerCode)
+                        .DisplayExpr("PartnerName")
+                        .ValueExpr("PartnerCode")
+                        .DataSource(d => d.Mvc().Controller("MESPartner")
+                        .LoadAction("GetAllPartner")
+                        .Key("PartnerCode")
+                        )
+                        .SearchEnabled(true)
+                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                     )
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Status"))</label>
+                                <div class="dx-field">
+                                    @(Html.DevExtreme().RadioGroup()
+                                .Items(new[] { _loc.GetLocalizedString("전체"), _loc.GetLocalizedString("거래"), _loc.GetLocalizedString("중지") })
+                                .Value(_loc.GetLocalizedString("전체"))
+                                .Layout(Orientation.Horizontal)
+                                .OnValueChanged("radioGroup_valueChanged")
+                                .ID("RadioGroup" + ViewBag.Thread)
+                               )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-2" id="bodypage_@(ViewBag.Thread)">
+                    @(Html.DevExtreme().DataGrid<MESEmployees>()
+                    .ID("gridEmployee")
+                    .DataSource(x => x.Mvc().Controller("MESEmployee").LoadAction("GetListEmployess"))
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .ColumnAutoWidth(true)
+                    .FilterRow(filterRow => filterRow
+                    .Visible(true)
+                    .ApplyFilter(GridApplyFilterMode.Auto))
+                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                    .Selection(s => s.Mode(SelectionMode.Multiple).ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always).SelectAllMode(SelectAllMode.AllPages))
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                        c.AddFor(x => x.EmployeeNumber).Caption(_loc.GetLocalizedString("Login ID"))
+                        .CellTemplate
+                        (
+                            @<text>
+                                    <a href="#" onclick="EmployeeUpdatePopup(this)" data-EmployeeNumber ="<%-data.EmployeeNumber%>">
+                                        <%-data.EmployeeNumber%>
+                                    </a>
+                            </text>
+                        );
+                        c.AddFor(x => x.EmployeeNameKr).Caption(_loc.GetLocalizedString("EmployeeNameKr"));
+                        c.AddFor(x => x.EmployeeNameEng).Caption(_loc.GetLocalizedString("EmployeeNameEng"));
+                        c.AddFor(x => x.UserName).Caption(_loc.GetLocalizedString("UserName")).Visible(false);
+                        c.AddFor(x => x.Level).Caption(_loc.GetLocalizedString("Level"));
+                        c.AddFor(x => x.Company).Caption(_loc.GetLocalizedString("Company 1")).Visible(false);
+                        c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Company"));
+                        c.AddFor(x => x.Birthday).Caption(_loc.GetLocalizedString("Birthday")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd").Visible(false);
+                        c.AddFor(x => x.Address).Caption(_loc.GetLocalizedString("Address"));
+                        c.AddFor(x => x.MobileNumber).Caption(_loc.GetLocalizedString("MobileNumber"));
+                        c.AddFor(x => x.Email).Caption(_loc.GetLocalizedString("Email"));
+                        c.AddFor(x => x.UseYN).Caption(_loc.GetLocalizedString("UseYN"));
+                    })
+
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    .HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(20))
+                    .Pager(pager =>
+                    {
+                        pager.ShowPageSizeSelector(false);
+                        pager.AllowedPageSizes(new[] { 20, 50, 100 });
+                        pager.ShowInfo(true);
+                    })
+                    //.OnRowDblClick("EmployeeUpdatePopup")
+                    .Height("98%")
+                 .OnSelectionChanged("gridEmployeeOnSelectionChanged")
+                 )
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

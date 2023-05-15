@@ -1,0 +1,1762 @@
+﻿@model Modules.Admin.Models.SYPageActions
+@using Modules.Common.Models;
+
+@if (Model.listActionDetail != null)
+{
+<script>
+    function isNotEmpty(value) {
+        return value !== undefined && value !== null && value !== "";
+    }
+    function RUN_@(Model.ACT_ID)_@(Model.PAG_ID)(objData)
+    {
+        LoadingPage(1);
+        CheckSession();
+        var arr;
+        var objName = '';
+        var objMapType = '';
+        var objBatchRunData = [];
+        var gridDataSource;
+        var actionModel = @Html.Raw(Json.Serialize(Model));
+
+
+        @*var promise = new Promise(function (resolve, reject) {
+            debugger;
+            if ('@Model.ACT_NM.Contains("SAVE")' == "True") {
+
+                $(".dx-datagrid-save-button").trigger("click");
+            }
+
+            if (objBatchRunData.length != 0) {
+                resolve();
+            }
+            else {
+                reject();
+            }
+        });*@
+
+        if (actionModel != null) {
+            if (actionModel.ACT_TYPE == "G010C004") {//JS FUNCTION
+                debugger;
+                // Get JS function name From DB
+                var pageActionFunction = @Html.Raw(Json.Serialize(Model.ACT_FN));
+                let selectedRow = {};
+                if (typeof objData.selectedRowsData !== 'undefined') {
+                    selectedRow = objData.selectedRowsData[0];
+                }
+                if (typeof pageActionFunction !== 'undefined') {
+                    // Call JS custom
+                    var functionName = @Html.Raw(Json.Serialize(Model.ACT_FN)) + "('" + JSON.stringify(selectedRow) + "')";
+                    eval(functionName);
+                }
+            }
+        }
+
+        //var store = DevExpress.data.AspNet.createStore({
+        //    key: "ItemCode",
+        //    loadUrl: getLanguages() + '/DynamicMagt/CallSPSelect'
+        //});
+
+        var listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID) = @Html.Raw(Json.Serialize(Model.listActionDetail.OrderBy(m => m.EXEC_SEQ)));
+        var listClearPEL_@(Model.ACT_ID)_@(Model.PAG_ID) = @Html.Raw(Json.Serialize(Model.listClearPEL));
+        console.log("listClearPEL_@(Model.ACT_ID)_@(Model.PAG_ID)");
+        console.log(listClearPEL_@(Model.ACT_ID)_@(Model.PAG_ID));
+        console.log(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID));
+
+        $.each(listClearPEL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+            if (element.PEL_TYP === 'G002C001') {
+                $.each(element.listChild, function (i, item) {
+                    eval('setValue_' + item.PEL_ID + '_' + item.PAG_ID_SRC + '("")');
+                });
+            }
+            else {
+                debugger;
+                var gridData = $('#' + element.PEL_ID + '_' + element.PAG_ID_SRC + '@ViewBag.GridMenuID').dxDataGrid('instance');
+                //var gridData = $('#' + '@ViewBag.GridMenuID' + element.PEL_ID + element.PAG_ID_SRC).dxDataGrid('instance');
+                //gridData.option("dataSource", []);
+                gridData.option("dataSource", null);
+                selectedRowItemsMST = undefined;
+                gridData.clearSelection();
+                gridData.deselectAll();
+                gridData.refresh();
+            }
+        });
+        $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+            if (element.ACT_TYPE === "G010C001") //MAP
+            {
+                debugger;
+                if (element.dataMap != null) {
+                    if (element.dataMap.MAP_SPTYPE === "G006C001") {//SELECT - SINGLE
+                        let lstParam = [];
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                if (item.FLD_IO == 0) {
+                                    debugger;
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+                                    if (item.FLD_TYPE === "G007C001") {
+                                        param.Key = item.MAP_TO;
+                                        eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                    }
+                                    else {
+                                        debugger;
+                                        param.Key = item.MAP_TO;
+                                        console.log("G006C001", objData.selectedRowsData[0]);
+                                        var rowSelected = objData.selectedRowsData[0];
+                                        if (rowSelected !== undefined) {
+                                            if (typeof objData.selectedRowsData !== 'undefined' && objData.selectedRowsData.length > 0) {
+                                                eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                            }
+                                            else {
+                                                eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                            }
+                                        }
+                                    }
+                                    lstParam.push(param);
+                                }
+                            });
+                        }
+
+                        console.log("lstParam 1");
+                        console.log(lstParam);
+                        //debugger;
+                        debugger;
+                        // check lstParm have null of value
+                        //let flaglstParam = false;
+                        //$.each(lstParam, function (index, param) {
+                        //    if (param.Value === "" || param.Value === null || param.Value === undefined) {
+                        //        flaglstParam = true;
+                        //    }
+                        //});
+                        //console.log("flaglstParam: ", flaglstParam);
+                        //if (!flaglstParam) {
+
+                        // Cheat Code By PVN
+                        // Key của Date From To phải là P_DateFromTo và P_DateFromTo cũng là 1 biến dưới câu Store Procedure
+                        // Tình trạng DateFrom > DateTo nhưng khi nhấn nút search dù thông báo lỗi nhưng vẫn reload lại data trên grid.
+                        if (lstParam.filter(x => x.Key == "P_DateFromTo").length == 1) {
+                            debugger;
+                            var dateFromTo = lstParam.filter(x => x.Key == "P_DateFromTo");
+                            if (dateFromTo[0].Value != false) {
+                                LoadingPage(1);
+                                $.ajax({
+                                    url: '@Url.Action("CallSPSelect", "DynamicMagt")',
+                                    type: "POST",
+                                    data: { lstParam: lstParam, spname: element.dataMap.MAP_SPNM, connectionType: element.dataMap.MAP_CNNAME },
+                                    success: function (result) {
+                                        $.ajax({
+                                            url: '@Url.Action("GetPageElementsWithPELID", "DynamicMagt")',
+                                            type: "GET",
+                                            data: { pelID: element.dataMap.MAP_PEL_ID },
+                                            success: function (res) {
+                                                // Form
+                                                if (res.PEL_TYP === "G002C001") {
+                                                    var data = result.data[0];
+                                                    if (data !== undefined) {
+                                                        var arrData = Object.keys(data).map(function (key) {
+                                                            // lower case string from mapping db binding to form
+                                                            return { Key: key.toLowerCase(), Value: data[key] };
+                                                            //return { Key: data[key].Key, Value: data[key].Value };
+                                                        });
+                                                    }
+                                                    $.each(arrData, function (index, item) {
+                                                        if (item.Value != null && item.Value != '') {
+                                                            // Type Date null check
+                                                            if (item.Value == "0001-01-01T00:00:00") {
+                                                                eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                            }
+                                                            else {
+                                                                eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("' + item.Value + '")');
+                                                            }
+                                                        }
+                                                        else {
+                                                            eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                        }
+                                                    });
+                                                    LoadingPage(0);
+                                                }
+                                                // Grid
+                                                if (res.PEL_TYP === "G002C002") {
+                                                    debugger;
+                                                    //eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", result.data);');
+                                                    //console.log(element);
+                                                    var store = DevExpress.data.AspNet.createStore({
+                                                        // key: "ItemCode",
+                                                        loadUrl: getLanguages() + '/DynamicMagt/CallSPSelect',// + 'lstParam=' + lstParam + '&spname=' + element.dataMap.MAP_SPNM + '&connectionType=' + element.dataMap.MAP_CNNAME
+                                                        loadParams: {
+                                                            lstParam: lstParam,
+                                                            spname: element.dataMap.MAP_SPNM,
+                                                            connectionType: element.dataMap.MAP_CNNAME
+                                                        },
+                                                        loadMethod: 'POST',
+                                                        editing: {
+                                                            mode: "cell",
+                                                            allowUpdating: true,
+                                                            allowDeleting: true,
+                                                            allowAdding: true
+                                                        },
+                                                        insert: function (values) {
+                                                            debugger;
+                                                            console.log("insert");
+                                                            return;
+                                                        },
+                                                        remove: function (key) {
+                                                            return;
+                                                            console.log("remove");
+                                                            debugger;
+                                                        },
+                                                        update: function (key, values) {
+                                                            debugger;
+                                                            console.log("update");
+                                                            return;
+                                                        },
+                                                        //onInserted: function (values, key) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onInserting: function (values) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onLoaded: function (result) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onLoading: function (loadOptions) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onModified: function () {
+                                                        //    debugger;
+                                                        //},
+                                                        //onModifying: function () {
+                                                        //    debugger;
+                                                        //},
+                                                        //onPush: function (changes) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onRemoved: function (key) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onRemoving: function (key) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //},
+                                                        //onUpdated: function (key, values) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //    store.push([{ type: "update", values: values, key: key }]);
+                                                        //},
+                                                        //onUpdating: function (key, values) {
+                                                        //    // Your code goes here
+                                                        //    debugger;
+                                                        //    store.push([{ type: "update", values: values, key: key }]);
+                                                        //}
+                                                    });
+
+                                                    // Customr store to handle load large data in dynamic grid
+                                                    gridDataSource = new DevExpress.data.DataSource({
+                                                        load: function (loadOptions) {
+                                                            var d = $.Deferred(),
+                                                                params = {
+                                                                    lstParam: lstParam,
+                                                                    spname: element.dataMap.MAP_SPNM,
+                                                                    connectionType: element.dataMap.MAP_CNNAME
+                                                                };
+                                                            [
+                                                                "skip",
+                                                                "take",
+                                                                "requireTotalCount",
+                                                                "requireGroupCount",
+                                                                "sort",
+                                                                "filter",
+                                                                "totalSummary",
+                                                                "group",
+                                                                "groupSummary"
+                                                            ].forEach(function (i) {
+                                                                if (i in loadOptions && isNotEmpty(loadOptions[i]))
+                                                                    params[i] = JSON.stringify(loadOptions[i]);
+                                                            });
+                                                            $.post(getLanguages() + '/DynamicMagt/CallSPSelect', params)//$.post
+                                                                .done(function (result) {
+                                                                    d.resolve(result.data, {
+                                                                        totalCount: result.totalCount
+                                                                        //summary: result.summary,
+                                                                        //groupCount: result.groupCount
+                                                                    });
+                                                                });
+                                                            return d.promise();
+                                                        },
+                                                        loadMethod: 'POST',
+                                                        editing: {
+                                                            //mode: "cell",
+                                                            allowUpdating: true,
+                                                            allowDeleting: true,
+                                                            allowAdding: true
+                                                        },
+                                                        // ...
+                                                        insert: function (values) {
+                                                            debugger;
+                                                            console.log("insert");
+
+                                                            return;
+                                                        },
+                                                        remove: function (key) {
+                                                            console.log("remove");
+                                                            debugger;
+                                                        },
+                                                        update: function (key, values) {
+                                                            debugger;
+                                                            console.log("update");
+                                                            return;
+                                                        }
+
+                                                    });
+                                                    debugger;
+                                                    eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", gridDataSource);');
+                                                    LoadingPage(0);
+                                                    //eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '").dxDataGrid("instance").option("dataSource", store);');
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                        else {
+                            debugger;
+                            LoadingPage(1);
+                            $.ajax({
+                                url: '@Url.Action("CallSPSelect", "DynamicMagt")',
+                                type: "POST",
+                                data: { lstParam: lstParam, spname: element.dataMap.MAP_SPNM, connectionType: element.dataMap.MAP_CNNAME },
+                                success: function (result) {
+                                    $.ajax({
+                                        url: '@Url.Action("GetPageElementsWithPELID", "DynamicMagt")',
+                                        type: "GET",
+                                        data: { pelID: element.dataMap.MAP_PEL_ID },
+                                        success: function (res) {
+                                            // Form
+                                            if (res.PEL_TYP === "G002C001") {
+                                                var data = result.data[0];
+                                                if (data !== undefined) {
+                                                    var arrData = Object.keys(data).map(function (key) {
+                                                        // lower case string from mapping db binding to form
+                                                        return { Key: key.toLowerCase(), Value: data[key] };
+                                                        //return { Key: data[key].Key, Value: data[key].Value };
+                                                    });
+                                                }
+                                                $.each(arrData, function (index, item) {
+                                                    if (item.Value != null && item.Value != '') {
+                                                        // Type Date null check
+                                                        if (item.Value == "0001-01-01T00:00:00") {
+                                                            eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                        }
+                                                        else {
+                                                            eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("' + item.Value + '")');
+                                                        }
+                                                    }
+                                                    else {
+                                                        eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                    }
+                                                });
+                                                LoadingPage(0);
+                                            }
+                                            // Grid
+                                            if (res.PEL_TYP === "G002C002") {
+                                                debugger;
+                                                //eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", result.data);');
+                                                //console.log(element);
+                                                var store = DevExpress.data.AspNet.createStore({
+                                                    // key: "ItemCode",
+                                                    loadUrl: getLanguages() + '/DynamicMagt/CallSPSelect',// + 'lstParam=' + lstParam + '&spname=' + element.dataMap.MAP_SPNM + '&connectionType=' + element.dataMap.MAP_CNNAME
+                                                    loadParams: {
+                                                        lstParam: lstParam,
+                                                        spname: element.dataMap.MAP_SPNM,
+                                                        connectionType: element.dataMap.MAP_CNNAME
+                                                    },
+                                                    loadMethod: 'POST',
+                                                    editing: {
+                                                        mode: "cell",
+                                                        allowUpdating: true,
+                                                        allowDeleting: true,
+                                                        allowAdding: true
+                                                    },
+                                                    insert: function (values) {
+                                                        debugger;
+                                                        console.log("insert");
+                                                        return;
+                                                    },
+                                                    remove: function (key) {
+                                                        return;
+                                                        console.log("remove");
+                                                        debugger;
+                                                    },
+                                                    update: function (key, values) {
+                                                        debugger;
+                                                        console.log("update");
+                                                        return;
+                                                    },
+                                                    //onInserted: function (values, key) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onInserting: function (values) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onLoaded: function (result) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onLoading: function (loadOptions) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onModified: function () {
+                                                    //    debugger;
+                                                    //},
+                                                    //onModifying: function () {
+                                                    //    debugger;
+                                                    //},
+                                                    //onPush: function (changes) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onRemoved: function (key) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onRemoving: function (key) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //},
+                                                    //onUpdated: function (key, values) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //    store.push([{ type: "update", values: values, key: key }]);
+                                                    //},
+                                                    //onUpdating: function (key, values) {
+                                                    //    // Your code goes here
+                                                    //    debugger;
+                                                    //    store.push([{ type: "update", values: values, key: key }]);
+                                                    //}
+                                                });
+
+                                                // Customr store to handle load large data in dynamic grid
+                                                gridDataSource = new DevExpress.data.DataSource({
+                                                    load: function (loadOptions) {
+                                                        var d = $.Deferred(),
+                                                            params = {
+                                                                lstParam: lstParam,
+                                                                spname: element.dataMap.MAP_SPNM,
+                                                                connectionType: element.dataMap.MAP_CNNAME
+                                                            };
+                                                        [
+                                                            "skip",
+                                                            "take",
+                                                            "requireTotalCount",
+                                                            "requireGroupCount",
+                                                            "sort",
+                                                            "filter",
+                                                            "totalSummary",
+                                                            "group",
+                                                            "groupSummary"
+                                                        ].forEach(function (i) {
+                                                            if (i in loadOptions && isNotEmpty(loadOptions[i]))
+                                                                params[i] = JSON.stringify(loadOptions[i]);
+                                                        });
+                                                        $.post(getLanguages() + '/DynamicMagt/CallSPSelect', params)//$.post
+                                                            .done(function (result) {
+                                                                d.resolve(result.data, {
+                                                                    totalCount: result.totalCount
+                                                                    //summary: result.summary,
+                                                                    //groupCount: result.groupCount
+                                                                });
+                                                            });
+                                                        return d.promise();
+                                                    },
+                                                    loadMethod: 'POST',
+                                                    editing: {
+                                                        //mode: "cell",
+                                                        allowUpdating: true,
+                                                        allowDeleting: true,
+                                                        allowAdding: true
+                                                    },
+                                                    // ...
+                                                    insert: function (values) {
+                                                        debugger;
+                                                        console.log("insert");
+
+                                                        return;
+                                                    },
+                                                    remove: function (key) {
+                                                        console.log("remove");
+                                                        debugger;
+                                                    },
+                                                    update: function (key, values) {
+                                                        debugger;
+                                                        console.log("update");
+                                                        return;
+                                                    }
+
+                                                });
+                                                debugger;
+                                                eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", gridDataSource);');
+                                                LoadingPage(0);
+                                                //eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '").dxDataGrid("instance").option("dataSource", store);');
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                        $(grid).dxDataGrid("instance").cancelEditData();
+                        $(grid).dxDataGrid("instance").refresh();
+                        //}
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C002") {//CREATE
+                        debugger;
+                        let lstParam = [];
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                if (item.FLD_IO == 1) {
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+                                    if (item.FLD_TYPE === "G007C001") {
+                                        param.Key = item.MAP_TO;
+                                        eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                    }
+                                    else {
+                                        param.Key = item.MAP_TO;
+                                        //eval('param.Value = data_' + item.FRM_PEL_ID + '.' + item.PEL_ID + ';');
+                                        console.log("G006C002", objData.selectedRowsData[0]);
+                                        if (typeof objData.selectedRowsData !== 'undefined') {
+                                            eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                        }
+                                        else {
+                                            eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                        }
+                                    }
+                                    lstParam.push(param);
+                                }
+                            });
+                        }
+                        $.ajax({
+                            url: '@Url.Action("CreateDataDynamic", "DynamicMagt")',
+                            type: "POST",
+                            data: {
+                                lstParam: lstParam,
+                                spname: element.dataMap.MAP_SPNM
+
+                            },
+                            success: function (result) {
+                                if (result.data.Success === true) {
+                                    DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+
+                                    });
+                                }
+                                else {
+                                    DevExpress.ui.dialog.alert('@MessageCode.MD0005' + '</br>' + result.data.Message, "Error");
+                                }
+                            }
+                        });
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C003") {//
+
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C004") {//UPDATE
+
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C005") {//Mapping from Grid - Popup
+                        var data = objData.data;
+                        var arrData = Object.keys(data).map(function (key) {
+                            return { Key: key, Value: data[key] };
+                        });
+                        eval('bindFormData_' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_ID + '(arrData)');
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C006") {//Save data ///MAP_SPTYPE = SINGLE/BATCH
+                        objName = "objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID;
+                        objMapType = element.dataMap.PEL_TYP;
+                        if (element.dataMap.PEL_TYP === "G002C002") {
+                            //promise = new Promise(function (resolve, reject) {
+                            //    $(".dx-datagrid-save-button").trigger("click");
+                            //});
+
+                            $(".dx-datagrid-save-button").trigger("click");
+
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.MapId =' + element.dataMap.MAP_ID + ';');
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.PelId ="' + element.dataMap.MAP_PEL_ID + '";');
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.ConnnectionType ="' + element.dataMap.MAP_CNNAME + '";');
+                            eval('objBatchRunData.push(objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + ');');
+                        }
+                        else {
+                            //$(".dx-datagrid-save-button").trigger("click");
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.MapId =' + element.dataMap.MAP_ID + ';');
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.PelId ="' + element.dataMap.MAP_PEL_ID + '";');
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.ConnnectionType ="' + element.dataMap.MAP_CNNAME + '";');
+                            // 20200527 Check page have popup to excute save data of form
+                            if (countPop > 0) {
+                                eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.PostData.FormAction = FormAction_' + element.PAG_KEY + ';');
+                            }
+                            else {
+                                eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.PostData.FormAction = "INSERT";');
+                            }
+                            debugger;
+                            let lstParam = [];
+                            if (element.dataMap.lstMapDetail != null) {
+                                $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                    //  if (item.FLD_IO == 1) {
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+                                    if (item.FLD_TYPE === "G007C001") {
+                                        param.Key = item.MAP_TO;
+                                        eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                    }
+                                    else {
+                                        param.Key = item.MAP_TO;
+                                        //eval('param.Value = data_' + item.FRM_PEL_ID + '.' + item.PEL_ID + ';');
+                                        console.log("G006C006", objData.selectedRowsData[0]);
+                                        if (typeof objData.selectedRowsData !== 'undefined') {
+                                            eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                        }
+                                        else {
+                                            eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                        }
+                                    }
+
+                                    lstParam.push(param);
+                                    //  }
+
+                                });
+                            }
+                            eval('objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '.PostData.FormFields = lstParam;');
+                            eval('objBatchRunData.push(objPagEleData_' + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + ');');
+                        }
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C007") {//Mapping from Form PAGE - Popup
+                        let lstParam = [];
+                        debugger;
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                if (item.FLD_IO == 1) {
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+                                    if (item.FLD_TYPE === "G007C001") {
+                                        param.Key = item.MAP_TO;
+                                        eval('param.Value = getValue_' + item.MAP_TO + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                    }
+                                    else {
+                                        param.Key = item.MAP_TO;
+                                        console.log("G006C007", objData.selectedRowsData[0]);
+                                        if (typeof objData.selectedRowsData !== 'undefined') {
+                                            eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                        }
+                                        else {
+                                            eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                        }
+                                    }
+                                    lstParam.push(param);
+                                }
+                            });
+                            eval('bindFormData_' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_ID + '(lstParam)');
+                        }
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C010")//Mapping from dynamic exoprt excel
+                    {
+                        debugger;
+                        let lstParam = [];
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                debugger;
+                                if (item.FLD_IO == 0) {
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+                                    if (item.FLD_TYPE === "G007C001") {
+                                        param.Key = item.MAP_TO;
+                                        eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                    }
+                                    else {
+                                        param.Key = item.MAP_TO;
+                                        console.log("G006C010", objData.selectedRowsData[0]);
+                                        if (typeof objData.selectedRowsData !== 'undefined') {
+                                            eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                        }
+                                        else {
+                                            eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                        }
+                                    }
+                                    debugger;
+                                    lstParam.push(param);
+                                }
+                            });
+                        }
+                        debugger;
+                        console.log("lstParam 2");
+                        console.log(lstParam);
+                        let dataGrid = '#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '';
+                        var dateFormat = new Date();
+                        var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                        let fileName = menuObject.MenuName + "_" + dateString;
+                        //LoadingPage(1);
+                        $.ajax({
+                            url: getLanguages() + '/DynamicMagt/ExportExcel',
+                            data: {
+                                lstParam: lstParam,
+                                spname: element.dataMap.MAP_SPNM,
+                                connectionType: element.dataMap.MAP_CNNAME,
+                                fileName: fileName
+                            },
+                            async: false,
+                            dataType: 'json',
+                            method: 'POST'
+                        }).done(function (result) {
+                            debugger;
+                            console.log("result");
+                            console.log(result);
+                            if (result.Result) {//success
+                                var link = $("<a href='" + getLanguages() + "/DynamicMagt/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                                location.href = link[0].href;
+                                //DevExpress.ui.dialog.alert("<i>Successfully Export Excel</i>", "Information");
+                                //$.unblockUI();
+                                LoadingPage(0);
+                            }
+                        }).fail(function (xhr, ajaxOptions, thrownError) {
+                            //$.unblockUI();
+                            LoadingPage(0);
+                            console.log("error");
+                            console.log(xhr.status);
+                            console.log(thrownError);
+                        }).always(function () {
+                            LoadingPage(0);
+                            //$.unblockUI();
+                            //$("#popup").dxPopup("hide");
+                        });
+
+                        @*$("#popup").dxPopup({
+                            width: 300,
+                            height: 250,
+                            contentTemplate: function (contentElement) {
+                                //var PopUpBody = document.getElementsByClassName("card-body");
+                                //PopUpBody[0].innerHTML = "Choose An Option To Export Excel";
+                                //PopUpBody[0].innerHTML += "";
+
+                                console.log("contentElement");
+                                console.log(contentElement);
+
+                                var PopUpFooter = document.getElementsByClassName("card-footer");
+                                PopUpFooter[0].innerHTML = "<div id='btnExportExcel' style='margin-right: 5px'></div>";
+                                PopUpFooter[0].innerHTML += "<div id='btnCancel'></div>";
+
+                                var dit = `<p>ạdgasjdghakjd</p>`;
+                                $("#PopupBody").html(dit);
+
+                                return contentElement.append(
+                                    $("<div class='card-body' />").text("Static Content"),
+                                    $("#btnExportExcel").dxButton({
+                                        text: "Outlined",
+                                        type: "normal",
+                                        width: 120,
+                                        onClick: function () {
+                                            debugger
+                                            let lstParam = [];
+                                            if (element.dataMap.lstMapDetail != null) {
+                                                $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                                    if (item.FLD_IO == 0) {
+                                                        let param = {
+                                                            Key: "",
+                                                            Value: ""
+                                                        }
+                                                        if (item.FLD_TYPE === "G007C001") {
+                                                            param.Key = item.MAP_TO;
+                                                            eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                                        }
+                                                        else {
+                                                            param.Key = item.MAP_TO;
+                                                            if (typeof objData.selectedRowsData !== 'undefined') {
+                                                                eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                                            }
+                                                            else {
+                                                                eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                                            }
+                                                        }
+                                                        lstParam.push(param);
+                                                    }
+                                                });
+                                            }
+
+                                            let dataGrid = '#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '';
+                                            var dateFormat = new Date();
+                                            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                                            let fileName = menuObject.MenuName + "_" + dateString;
+
+                                            $.ajax({
+                                                url: getLanguages() + '/DynamicMagt/ExportExcel',
+                                                data: {
+                                                    lstParam: lstParam,
+                                                    spname: element.dataMap.MAP_SPNM,
+                                                    connectionType: element.dataMap.MAP_CNNAME,
+                                                    fileName: fileName
+
+                                                },
+                                                async: false,
+                                                dataType: 'json',
+                                                method: 'GET'
+                                            }).done(function (result) {
+                                                debugger;
+                                                console.log("result");
+                                                console.log(result);
+                                                if (result.Result) {//success
+                                                    var link = $("<a href='" + getLanguages() + "/DynamicMagt/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                                                    location.href = link[0].href;
+                                                }
+                                            }).fail(function (xhr, ajaxOptions, thrownError) {
+                                                console.log("error");
+                                                console.log(xhr.status);
+                                                console.log(thrownError);
+                                            }).always(function () {
+                                                $("#popup").dxPopup("hide");
+                                            });
+                                        }
+                                    }),
+                                    $("#btnCancel").dxButton({
+                                        text: "Cancel",
+                                        type: "normal",
+                                        width: 120,
+                                        onClick: function () {
+                                            $("#popup").dxPopup("hide");
+                                        }
+                                    })
+                                );
+                            },
+                            showTitle: false,
+                            //title: "Information",
+                            visible: false,
+                            dragEnabled: false,
+                            closeOnOutsideClick: true
+                        });
+
+                        $("#popup").dxPopup("show");*@
+
+                        //let lstParam = [];
+                        //if (element.dataMap.lstMapDetail != null) {
+                        //    $.each(element.dataMap.lstMapDetail, function (index, item) {
+                        //        if (item.FLD_IO == 0) {
+                        //            let param = {
+                        //                Key: "",
+                        //                Value: ""
+                        //            }
+                        //            if (item.FLD_TYPE === "G007C001") {
+                        //                param.Key = item.MAP_TO;
+                        //                eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                        //            }
+                        //            else {
+                        //                param.Key = item.MAP_TO;
+                        //                if (typeof objData.selectedRowsData !== 'undefined') {
+                        //                    eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                        //                }
+                        //                else {
+                        //                    eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                        //                }
+                        //            }
+                        //            lstParam.push(param);
+                        //        }
+                        //    });
+                        //}
+
+                        //var customDialog = DevExpress.ui.dialog.custom({
+                        //    title: "Choose An Options",
+                        //    message: "Choose An Option To Export Excel",
+                        //    toolbarItems: [
+                        //        {
+                        //            text: "Export All Data",
+                        //            onClick: function () {
+                        //                let dataGrid = '#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '';
+                        //                var dateFormat = new Date();
+                        //                var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                        //                let fileName = menuObject.MenuName + "_" + dateString;
+                        //                //let pageIndex = $(dataGrid).dxDataGrid('pageIndex') + 1;
+                        //
+                        //                $.ajax({
+                        //                    url: getLanguages() + '/DynamicMagt/ExportExcel',
+                        //                    data: {
+                        //                        lstParam: lstParam,
+                        //                        spname: element.dataMap.MAP_SPNM,
+                        //                        connectionType: element.dataMap.MAP_CNNAME,
+                        //                        fileName: fileName
+                        //
+                        //                    },
+                        //                    async: false,
+                        //                    dataType: 'json',
+                        //                    method: 'GET'
+                        //                }).done(function (result) {
+                        //                    debugger;
+                        //                    console.log("result");
+                        //                    console.log(result);
+                        //                    if (result != null) {
+                        //                        location.href = link[0].href;
+                        //                        return "Sucessfully Export Excel";
+                        //                    }
+                        //                    else {
+                        //                        return "Failed To Export Excel";
+                        //                    }
+                        //                });
+                        //
+                        //
+                        //            }
+                        //        },
+                        //        {
+                        //            text: "Cancel",
+                        //            onClick: function () {
+                        //                return "Cancel Export Excel";
+                        //            }
+                        //        }
+                        //    ]
+                        //});
+                        //
+                        //customDialog.show().done(function (dialogResult) {
+                        //    DevExpress.ui.notify(dialogResult, "info", 1000);
+                        //});
+
+                    }
+                    if (element.dataMap.MAP_SPTYPE === "G006C011") {
+                        $("#btnFileUpload@(Model.PAG_ID)").trigger("click");
+                    }
+                }
+            }
+            if (element.ACT_TYPE === "G010C002") //POP
+            {
+                eval('$("#modal_' + element.dataPage.PAG_KEY + '").modal("show")');
+                //check state when show pop
+                var count = 0;
+                $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index1, element1) {
+                    if (element1.ACT_TYPE === "G010C001") {
+                        if (element1.dataMap.MAP_SPTYPE === "G006C001" || element1.dataMap.MAP_SPTYPE === "G006C007" || element1.dataMap.MAP_SPTYPE === "G006C005") {
+                            count++;
+                        }
+                    }
+                })
+                if (count > 0) {
+                    eval('FormAction_' + `${element.dataPage.PAG_KEY}` + ' = "UPDATE"');
+                }
+                else {
+                    eval('FormAction_' + `${element.dataPage.PAG_KEY}` + ' = "INSERT"');
+                }
+
+            }
+            if (element.ACT_TYPE === "G010C003") //CALLBACK
+            {
+                var dataMap1 = element.dataMap;
+                var data = objData.data;
+                    @*data_dbl_@(Model.PEL_ID) = data;*@
+                var arrData = Object.keys(data).map(function (key) {
+                    return { Key: key, Value: data[key] };
+                });
+                eval('bindFormData_' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_ID + '(arrData)');
+                $("#modal_@Model.PAG_KEY").modal("hide");
+            }
+            if (element.ACT_TYPE === "G010C004") //JS FUNCTION IN Page action detail
+            {
+                debugger;
+                // Get JS function name From DB
+                var pageActionFunction = element.ACT_FN;
+                let selectedRow = {};
+                if (typeof objData.selectedRowsData !== 'undefined' && objData.selectedRowsData.length > 0) {
+                    selectedRow = objData.selectedRowsData[0];
+                }
+                if (typeof selectedRow !== 'undefined' && selectedRow !== undefined) {
+                    if (typeof pageActionFunction !== 'undefined') {
+                        // Call JS custom
+                        //var functionName = pageActionFunction + "('" + JSON.stringify(selectedRow) + "')";
+                        //var functionName = pageActionFunction + "(" + selectedRow + ")";
+
+                        let resultStr = arrayToObjectString(selectedRow);
+                        let functionName = pageActionFunction + "(" + resultStr + ")";
+                        eval(functionName);
+                    }
+                }
+                //if (typeof pageActionFunction !== 'undefined') {
+                //    // Call JS custom
+                //    var functionName = pageActionFunction + "('" + JSON.stringify(selectedRow) + "')";
+                //    eval(functionName);
+                //}
+            }
+            if (element.ACT_TYPE === "G010C005") // Load page Redirect
+            {
+                var lstParamURL = getUrlParameter(); // function create from index page
+                if (element.dataMap != null) {
+                    if (element.dataMap.MAP_SPTYPE === "G006C008") {
+                        let lstParam = [];
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                if (item.FLD_IO == 0) {
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+
+                                    $.each(lstParamURL, function (indexURL, itemURL) {
+                                        if (item.MAP_FROM === itemURL.key) {
+                                            param.Key = item.MAP_TO;
+                                            param.Value = itemURL.value;
+                                            lstParam.push(param);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        //LoadingPage(1);
+                        $.ajax({
+                            url: '@Url.Action("CallSPSelect", "DynamicMagt")',
+                            type: "POST",
+                            data: { lstParam: lstParam, spname: element.dataMap.MAP_SPNM, connectionType: element.dataMap.MAP_CNNAME },
+                            success: function (result) {
+                                $.ajax({
+                                    url: '@Url.Action("GetPageElementsWithPELID", "DynamicMagt")',
+                                    type: "GET",
+                                    data: { pelID: element.dataMap.MAP_PEL_ID },
+                                    success: function (res) {
+                                        // Form
+                                        if (res.PEL_TYP === "G002C001") {
+                                            var data = result.data[0];
+                                            if (data !== undefined) {
+                                                var arrData = Object.keys(data).map(function (key) {
+                                                    // lower case string from mapping db binding to form
+                                                    return { Key: key, Value: data[key] };
+                                                });
+                                            }
+
+                                            $.each(arrData, function (index, item) {
+                                                if (item.Value != null && item.Value != '') {
+                                                    // Type Date null check
+                                                    if (item.Value == "0001-01-01T00:00:00") {
+                                                        eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                    }
+                                                    else {
+                                                        eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("' + item.Value + '")');
+                                                    }
+                                                }
+                                                else {
+                                                    eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                }
+                                            });
+                                            LoadingPage(0);
+                                        }
+
+                                        // Grid
+                                        if (res.PEL_TYP === "G002C002") {
+                                            eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", result.data);');
+                                            LoadingPage(0);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+            if (element.ACT_TYPE === "G010C006") //Redirect
+            {
+                debugger;
+                var strURL = '/DynamicMagt?PageID=' + element.PAG_REDIRECT
+                if (element.dataMap != null) {
+                    if (element.dataMap.MAP_SPTYPE === "G006C008") {
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                strURL = strURL + '&' + item.MAP_TO + '=' + eval('getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '()');
+                                //if (item.FLD_IO == 0) {
+                                //    if (index === 0) {
+                                //        strURL = strURL + '?' + item.MAP_TO + '=' + eval('getValue_' + item.MAP_FROM + '()');
+                                //    }
+                                //    else {
+                                //        strURL = strURL + '&' + item.MAP_TO + '=' + eval('getValue_' + item.MAP_FROM + '()');
+                                //    }
+                                //}
+                            });
+                        }
+                    }
+                }
+                window.location.href = strURL;
+            }
+        });
+
+
+
+
+        // 2020-05-29: Check required validate field
+        var temp = false;
+        LoadingPage(0);
+        $.each(countRequired, function (index, element) {
+            if (element === true) {
+                console.log("count required item: " + element);
+                console.log(element);
+                temp = true;
+                LoadingPage(0);
+                return;
+            }
+        });
+
+        countRequired = []; // reset required field
+
+        if (temp == false) {
+            debugger;
+            var checkNull = setInterval(function () {
+                if (objBatchRunData.length != 0) {
+                    debugger;
+                    if (objBatchRunData[0].PostData.AddedRows.length != 0 || objBatchRunData[0].PostData.DeletedRows.length != 0 || objBatchRunData[0].PostData.UpdatedRows.length != 0) {
+                         //LoadingPage(1);
+                        // ACT_ID == 18 => ItemPartner UI => CRUD Action
+                        // Cheat Validate Data For ItemPartner Table
+                        // PVN cheated
+                        if (@(Model.ACT_ID) == 18) {
+                            debugger;
+                            // PostData just have Delete Or Update Or Both => Execute
+                            if (objBatchRunData[0].PostData.AddedRows.length == 0) {
+                                $.ajax({
+                                    url: '@Url.Action("BatchPost", "DynamicMagt")',
+                                    type: "POST",
+                                    data: { objPostData: JSON.stringify(objBatchRunData) },
+                                    success: function (result) {
+                                        debugger;
+                                        console.log(result);
+                                        if (result.Success) {
+                                            DevExpress.ui.dialog.alert("Save success!", "Success");
+                                        } else {
+                                            DevExpress.ui.dialog.alert("Save fail! <br/>" + result.ErrorMessage, "Error");
+                                        }
+
+                                        $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+                                            if (element.dataMap.PEL_TYP === "G002C002") {
+                                                debugger;
+                                                eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={MapId: '', PelId: '', MapType: 'GRID', PostData: {DeletedRows: [], AddedRows: [],UpdatedRows: []}}");
+                                                if (result.Success === true) {
+                                            @*debugger;
+                                            var resultDialog = DevExpress.ui.dialog.alert("Save success!", "Success");
+                                            resultDialog.done(function (dialogResult) {
+                                                // refresh current grid
+                                                debugger;
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                $(grid).dxDataGrid("instance").refresh();
+                                                return;batc
+                                            });*@
+                                                    let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                    //RefreshTabCRUD(menuObject.MenuID);
+                                                    // eval("RUN_" + _@(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "()");
+
+                                                    $(grid).dxDataGrid("instance").cancelEditData();
+                                                    //$(grid).dxDataGrid("instance").refresh();
+                                                    // Reload grid when save success
+                                                    var btnSearchId = "#btnSearch_" + menuObject.MenuID;
+                                                    $(btnSearchId).trigger("click");
+                                                    LoadingPage(0);
+                                                    return;
+                                                }
+                                                else {
+                                            @*debugger;
+                                            var resultDialog = DevExpress.ui.dialog.alert("Save fail! <br/>" + result.ErrorMessage, "Error");
+                                            resultDialog.done(function (dialogResult) {
+                                                debugger;
+                                                // refresh current tab
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                $(grid).dxDataGrid("instance").refresh();
+                                                return;
+                                            });*@
+                                                    let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                    //eval("RUN_" + _@(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "()");
+                                                    $(grid).dxDataGrid("instance").cancelEditData();
+                                                    //$(grid).dxDataGrid("instance").refresh();
+                                                    //RefreshTabCRUD(menuObject.MenuID);
+                                                    //$(grid).dxDataGrid("instance").cancelEditData();
+                                                    //$(grid).dxDataGrid("instance").refresh();
+                                                    LoadingPage(0);
+                                                    return;
+                                                }
+                                                LoadingPage(0);
+                                            }
+                                            else {
+                                                eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={ MapId: '', PelId: '', MapType: 'FORM', PostData: {FormAction: '',FormFields : []}}");
+                                                LoadingPage(0);
+                                            }
+                                        });
+
+                                        //if (result.Success === true) {
+                                        //    var result = DevExpress.ui.dialog.alert("Save success!!!", "Success");
+                                        //    result.done(function (dialogResult) {
+                                        //        // refresh current tab
+                                        //        RefreshTabCRUD(menuObject.MenuID);
+                                        //        return;
+                                        //    });
+                                        //}
+                                        //else {
+                                        //    var result = DevExpress.ui.dialog.alert("Save fail !!!! <br/>" + result.ErrorMessage, "Error");
+                                        //    result.done(function (dialogResult) {
+                                        //        // refresh current tab
+                                        //        RefreshTabCRUD(menuObject.MenuID);
+                                        //        return;
+                                        //    });
+                                        //}
+                                    }
+                                });
+                                clearInterval(checkNull);
+                            }
+                            else {
+                                var result = eval("FN_Validate_" + @(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "('" + JSON.stringify(objBatchRunData) + "')");
+                                debugger;
+                                if (result != undefined) {
+                                    if (result.result.Success) {
+                                        $.ajax({
+                                            url: '@Url.Action("BatchPost", "DynamicMagt")',
+                                            type: "POST",
+                                            data: { objPostData: JSON.stringify(objBatchRunData) },
+                                            success: function (result) {
+                                                debugger;
+                                                console.log(result);
+                                                if (result.Success) {
+                                                    DevExpress.ui.dialog.alert("Save success!", "Success");
+                                                } else {
+                                                    DevExpress.ui.dialog.alert("Save fail! <br/>" + result.ErrorMessage, "Error");
+                                                }
+
+                                                $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+                                                    if (element.dataMap.PEL_TYP === "G002C002") {
+                                                        debugger;
+                                                        eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={MapId: '', PelId: '', MapType: 'GRID', PostData: {DeletedRows: [], AddedRows: [],UpdatedRows: []}}");
+                                                        if (result.Success === true) {
+                                            @*debugger;
+                                            var resultDialog = DevExpress.ui.dialog.alert("Save success!", "Success");
+                                            resultDialog.done(function (dialogResult) {
+                                                // refresh current grid
+                                                debugger;
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                $(grid).dxDataGrid("instance").refresh();
+                                                return;batc
+                                            });*@
+                                                            let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                            //RefreshTabCRUD(menuObject.MenuID);
+                                                            // eval("RUN_" + _@(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "()");
+
+                                                            $(grid).dxDataGrid("instance").cancelEditData();
+                                                            //$(grid).dxDataGrid("instance").refresh();
+                                                            // Reload grid when save success
+                                                            var btnSearchId = "#btnSearch_" + menuObject.MenuID;
+                                                            $(btnSearchId).trigger("click");
+                                                            LoadingPage(0);
+                                                            return;
+                                                        }
+                                                        else {
+                                            @*debugger;
+                                            var resultDialog = DevExpress.ui.dialog.alert("Save fail! <br/>" + result.ErrorMessage, "Error");
+                                            resultDialog.done(function (dialogResult) {
+                                                debugger;
+                                                // refresh current tab
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                $(grid).dxDataGrid("instance").refresh();
+                                                return;
+                                            });*@
+                                                            let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                            //eval("RUN_" + _@(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "()");
+                                                            $(grid).dxDataGrid("instance").cancelEditData();
+                                                            //$(grid).dxDataGrid("instance").refresh();
+                                                            //RefreshTabCRUD(menuObject.MenuID);
+                                                            //$(grid).dxDataGrid("instance").cancelEditData();
+                                                            //$(grid).dxDataGrid("instance").refresh();
+                                                            LoadingPage(0);
+                                                            return;
+                                                        }
+                                                        LoadingPage(0);
+                                                    }
+                                                    else {
+                                                        eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={ MapId: '', PelId: '', MapType: 'FORM', PostData: {FormAction: '',FormFields : []}}");
+                                                        LoadingPage(0);
+                                                    }
+                                                });
+
+                                                //if (result.Success === true) {
+                                                //    var result = DevExpress.ui.dialog.alert("Save success!!!", "Success");
+                                                //    result.done(function (dialogResult) {
+                                                //        // refresh current tab
+                                                //        RefreshTabCRUD(menuObject.MenuID);
+                                                //        return;
+                                                //    });
+                                                //}
+                                                //else {
+                                                //    var result = DevExpress.ui.dialog.alert("Save fail !!!! <br/>" + result.ErrorMessage, "Error");
+                                                //    result.done(function (dialogResult) {
+                                                //        // refresh current tab
+                                                //        RefreshTabCRUD(menuObject.MenuID);
+                                                //        return;
+                                                //    });
+                                                //}
+                                            }
+                                        });
+                                        clearInterval(checkNull);
+                                    }
+                                    else {
+                                        debugger;
+                                        DevExpress.ui.dialog.alert(result.result.Message, "Failed");
+                                        clearInterval(checkNull);
+                                        $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+                                            if (element.dataMap.PEL_TYP === "G002C002") {
+                                                debugger;
+                                                eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={MapId: '', PelId: '', MapType: 'GRID', PostData: {DeletedRows: [], AddedRows: [],UpdatedRows: []}}");
+                                                LoadingPage(0);
+                                            }
+                                            else {
+                                                eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={ MapId: '', PelId: '', MapType: 'FORM', PostData: {FormAction: '',FormFields : []}}");
+                                                LoadingPage(0);
+                                            }
+                                        });
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            $.ajax({
+                                url: '@Url.Action("BatchPost", "DynamicMagt")',
+                                type: "POST",
+                                data: { objPostData: JSON.stringify(objBatchRunData) },
+                                success: function (result) {
+                                    debugger;
+                                    console.log(result);
+                                    if (result.Success) {
+                                        DevExpress.ui.dialog.alert("Save success!", "Success");
+                                    } else {
+                                        DevExpress.ui.dialog.alert("Save fail! <br/>" + result.ErrorMessage, "Error");
+                                    }
+
+                                    $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+                                        if (element.dataMap.PEL_TYP === "G002C002") {
+                                            debugger;
+                                            eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={MapId: '', PelId: '', MapType: 'GRID', PostData: {DeletedRows: [], AddedRows: [],UpdatedRows: []}}");
+                                            if (result.Success === true) {
+                                            @*debugger;
+                                            var resultDialog = DevExpress.ui.dialog.alert("Save success!", "Success");
+                                            resultDialog.done(function (dialogResult) {
+                                                // refresh current grid
+                                                debugger;
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                $(grid).dxDataGrid("instance").refresh();
+                                                return;batc
+                                            });*@
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                // eval("RUN_" + _@(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "()");
+
+                                                $(grid).dxDataGrid("instance").cancelEditData();
+                                                //$(grid).dxDataGrid("instance").refresh();
+                                                // Reload grid when save success
+                                                var btnSearchId = "#btnSearch_" + menuObject.MenuID;
+                                                $(btnSearchId).trigger("click");
+                                                LoadingPage(0);
+                                                return;
+                                            }
+                                            else {
+                                            @*debugger;
+                                            var resultDialog = DevExpress.ui.dialog.alert("Save fail! <br/>" + result.ErrorMessage, "Error");
+                                            resultDialog.done(function (dialogResult) {
+                                                debugger;
+                                                // refresh current tab
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                $(grid).dxDataGrid("instance").refresh();
+                                                return;
+                                            });*@
+                                                let grid = "#" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + '@ViewBag.GridMenuID';
+                                                //eval("RUN_" + _@(Model.ACT_ID) + "_" + @(Model.PAG_ID) + "()");
+                                                $(grid).dxDataGrid("instance").cancelEditData();
+                                                //$(grid).dxDataGrid("instance").refresh();
+                                                //RefreshTabCRUD(menuObject.MenuID);
+                                                //$(grid).dxDataGrid("instance").cancelEditData();
+                                                //$(grid).dxDataGrid("instance").refresh();
+                                                LoadingPage(0);
+                                                return;
+                                            }
+                                            LoadingPage(0);
+                                        }
+                                        else {
+                                            eval("objPagEleData_" + element.dataMap.MAP_PEL_ID + '_' + element.PAG_ID + "={ MapId: '', PelId: '', MapType: 'FORM', PostData: {FormAction: '',FormFields : []}}");
+                                            LoadingPage(0);
+                                        }
+                                    });
+
+                                    //if (result.Success === true) {
+                                    //    var result = DevExpress.ui.dialog.alert("Save success!!!", "Success");
+                                    //    result.done(function (dialogResult) {
+                                    //        // refresh current tab
+                                    //        RefreshTabCRUD(menuObject.MenuID);
+                                    //        return;
+                                    //    });
+                                    //}
+                                    //else {
+                                    //    var result = DevExpress.ui.dialog.alert("Save fail !!!! <br/>" + result.ErrorMessage, "Error");
+                                    //    result.done(function (dialogResult) {
+                                    //        // refresh current tab
+                                    //        RefreshTabCRUD(menuObject.MenuID);
+                                    //        return;
+                                    //    });
+                                    //}
+                                }
+                            });
+                            clearInterval(checkNull);
+                        }
+                    }
+                }
+            });
+        }
+
+        //promise.then(function () {
+
+        //}).catch(function () {
+
+        //});
+
+
+        // Process when action have function name script
+        // When Page action have Function script
+
+    }
+
+
+    function RUN_ONCLICK_@(Model.ACT_ID)_@(Model.PAG_ID)(objData) {
+        CheckSession();
+        var arr;
+        var objName = '';
+        var objMapType = '';
+        var objBatchRunData = [];
+        var gridDataSource;
+        var actionModel = @Html.Raw(Json.Serialize(Model));
+        var listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID) = @Html.Raw(Json.Serialize(Model.listActionDetail.OrderBy(m => m.EXEC_SEQ)));
+        var listClearPEL_@(Model.ACT_ID)_@(Model.PAG_ID) = @Html.Raw(Json.Serialize(Model.listClearPEL));
+
+        if (actionModel != null) {
+            if (actionModel.ACT_TYPE == "G010C004") {//JS FUNCTION
+                debugger;
+                // Get JS function name From DB
+                var pageActionFunction = @Html.Raw(Json.Serialize(Model.ACT_FN));
+                let selectedRow = undefined;
+                if (typeof objData.selectedRowsData !== 'undefined') {
+                    selectedRow = objData.selectedRowsData[0];
+                }
+                if (typeof pageActionFunction !== 'undefined') {
+                    // Call JS custom
+                    var functionName = @Html.Raw(Json.Serialize(Model.ACT_FN)) + "('" + JSON.stringify(selectedRow) + "')";
+                    eval(functionName);
+                }
+            }
+        }
+        $.each(listClearPEL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+            if (element.PEL_TYP === 'G002C001') {
+                $.each(element.listChild, function (i, item) {
+                    eval('setValue_' + item.PEL_ID + '_' + item.PAG_ID_SRC + '("")');
+                });
+            }
+            else {
+                debugger;
+                var gridData = $('#' + element.PEL_ID + '_' + element.PAG_ID_SRC + '@ViewBag.GridMenuID').dxDataGrid('instance');
+                //var gridData = $('#' + '@ViewBag.GridMenuID' + element.PEL_ID + element.PAG_ID_SRC).dxDataGrid('instance');
+                //gridData.option("dataSource", []);
+                gridData.option("dataSource", []);
+                selectedRowItemsMST = undefined;
+                gridData.clearSelection();
+                gridData.deselectAll();
+                gridData.refresh();
+            }
+        });
+        $.each(listActionDL_@(Model.ACT_ID)_@(Model.PAG_ID), function (index, element) {
+            if (element.ACT_TYPE === "G010C001") //MAP
+            {
+                debugger;
+                if (element.dataMap != null) {
+                    if (element.dataMap.MAP_SPTYPE === "G006C001") {//SELECT - SINGLE
+                        let lstParam = [];
+                        if (element.dataMap.lstMapDetail != null) {
+                            $.each(element.dataMap.lstMapDetail, function (index, item) {
+                                if (item.FLD_IO == 0) {
+                                    debugger;
+                                    let param = {
+                                        Key: "",
+                                        Value: ""
+                                    }
+                                    if (item.FLD_TYPE === "G007C001") {
+                                        param.Key = item.MAP_TO;
+                                        eval('param.Value = getValue_' + item.MAP_FROM + '_' + element.dataMap.MAP_PAG_ID + '();');
+                                    }
+                                    else {
+                                        debugger;
+                                        param.Key = item.MAP_TO;
+                                        console.log("G006C001", objData.selectedRowsData[0]);
+                                        var rowSelected = objData.selectedRowsData[0];
+                                        if (rowSelected !== undefined) {
+                                            if (typeof objData.selectedRowsData !== 'undefined' && objData.selectedRowsData.length > 0) {
+                                                eval('param.Value = objData.selectedRowsData[0].' + item.MAP_FROM + ';');
+                                            }
+                                            else {
+                                                eval('param.Value = objData.data.' + item.MAP_FROM + ';');
+                                            }
+                                        }
+                                    }
+                                    lstParam.push(param);
+                                }
+                            });
+                        }
+
+                        // check lstParm have null of value
+                        let flaglstParam = false;
+                        $.each(lstParam, function (index, param) {
+                            if (param.Value === "" || param.Value === null || param.Value === undefined) {
+                                flaglstParam = true;
+                            }
+                        });
+
+                        if (!flaglstParam) {
+                            $.ajax({
+                                url: '@Url.Action("CallSPSelect", "DynamicMagt")',
+                                type: "POST",
+                                data: { lstParam: lstParam, spname: element.dataMap.MAP_SPNM, connectionType: element.dataMap.MAP_CNNAME },
+                                success: function (result) {
+                                    $.ajax({
+                                        url: '@Url.Action("GetPageElementsWithPELID", "DynamicMagt")',
+                                        type: "GET",
+                                        data: { pelID: element.dataMap.MAP_PEL_ID },
+                                        success: function (res) {
+                                            // Form
+                                            if (res.PEL_TYP === "G002C001") {
+                                                var data = result.data[0];
+                                                if (data !== undefined) {
+                                                    var arrData = Object.keys(data).map(function (key) {
+                                                        // lower case string from mapping db binding to form
+                                                        return { Key: key.toLowerCase(), Value: data[key] };
+                                                        //return { Key: data[key].Key, Value: data[key].Value };
+                                                    });
+                                                }
+                                                $.each(arrData, function (index, item) {
+                                                    if (item.Value != null && item.Value != '') {
+                                                        // Type Date null check
+                                                        if (item.Value == "0001-01-01T00:00:00") {
+                                                            eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                        }
+                                                        else {
+                                                            eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("' + item.Value + '")');
+                                                        }
+                                                    }
+                                                    else {
+                                                        eval('setValue_' + item.Key + '_' + element.dataMap.MAP_PAG_ID + '("")');
+                                                    }
+                                                });
+                                                LoadingPage(0);
+                                            }
+                                            // Grid
+                                            if (res.PEL_TYP === "G002C002") {
+                                                debugger;
+                                                //eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", result.data);');
+                                                //console.log(element);
+                                                var store = DevExpress.data.AspNet.createStore({
+                                                    // key: "ItemCode",
+                                                    loadUrl: getLanguages() + '/DynamicMagt/CallSPSelect',// + 'lstParam=' + lstParam + '&spname=' + element.dataMap.MAP_SPNM + '&connectionType=' + element.dataMap.MAP_CNNAME
+                                                    loadParams: {
+                                                        lstParam: lstParam,
+                                                        spname: element.dataMap.MAP_SPNM,
+                                                        connectionType: element.dataMap.MAP_CNNAME
+                                                    },
+                                                    loadMethod: 'POST',
+                                                    editing: {
+                                                        mode: "cell",
+                                                        allowUpdating: true,
+                                                        allowDeleting: true,
+                                                        allowAdding: true
+                                                    },
+                                                    insert: function (values) {
+                                                        debugger;
+                                                        console.log("insert");
+                                                        return;
+                                                    },
+                                                    remove: function (key) {
+                                                        return;
+                                                        console.log("remove");
+                                                        debugger;
+                                                    },
+                                                    update: function (key, values) {
+                                                        debugger;
+                                                        console.log("update");
+                                                        return;
+                                                    },
+                                                });
+
+                                                // Customr store to handle load large data in dynamic grid
+                                                gridDataSource = new DevExpress.data.DataSource({
+                                                    load: function (loadOptions) {
+                                                        var d = $.Deferred(),
+                                                            params = {
+                                                                lstParam: lstParam,
+                                                                spname: element.dataMap.MAP_SPNM,
+                                                                connectionType: element.dataMap.MAP_CNNAME
+                                                            };
+                                                        [
+                                                            "skip",
+                                                            "take",
+                                                            "requireTotalCount",
+                                                            "requireGroupCount",
+                                                            "sort",
+                                                            "filter",
+                                                            "totalSummary",
+                                                            "group",
+                                                            "groupSummary"
+                                                        ].forEach(function (i) {
+                                                            if (i in loadOptions && isNotEmpty(loadOptions[i]))
+                                                                params[i] = JSON.stringify(loadOptions[i]);
+                                                        });
+                                                        $.post(getLanguages() + '/DynamicMagt/CallSPSelect', params)//$.post
+                                                            .done(function (result) {
+                                                                d.resolve(result.data, {
+                                                                    totalCount: result.totalCount
+                                                                    //summary: result.summary,
+                                                                    //groupCount: result.groupCount
+                                                                });
+                                                            });
+                                                        return d.promise();
+                                                    },
+                                                    loadMethod: 'POST',
+                                                    editing: {
+                                                        //mode: "cell",
+                                                        allowUpdating: true,
+                                                        allowDeleting: true,
+                                                        allowAdding: true
+                                                    },
+                                                    // ...
+                                                    insert: function (values) {
+                                                        debugger;
+                                                        console.log("insert");
+
+                                                        return;
+                                                    },
+                                                    remove: function (key) {
+                                                        console.log("remove");
+                                                        debugger;
+                                                    },
+                                                    update: function (key, values) {
+                                                        debugger;
+                                                        console.log("update");
+                                                        return;
+                                                    }
+
+                                                });
+                                                debugger;
+                                                eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID  + '@ViewBag.GridMenuID' + '").dxDataGrid("instance").option("dataSource", gridDataSource);');
+                                                LoadingPage(0);
+                                                //eval('$("#' + element.dataMap.MAP_PEL_ID + '_' + element.dataMap.MAP_PAG_ID + '").dxDataGrid("instance").option("dataSource", store);');
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            if (element.ACT_TYPE === "G010C004") //JS FUNCTION IN Page action detail
+            {
+                debugger;
+                // Get JS function name From DB
+                var pageActionFunction = element.ACT_FN;
+                let selectedRow = undefined;
+                if (typeof objData.selectedRowsData !== 'undefined' && objData.selectedRowsData.length > 0) {
+                    selectedRow = objData.selectedRowsData[0];
+                }
+                if (typeof selectedRow !== 'undefined' && selectedRow !== undefined) {
+                    if (typeof pageActionFunction !== 'undefined') {
+                        // Call JS custom
+                        //var functionName = pageActionFunction + "('" + JSON.stringify(selectedRow) + "')";
+                        //let object = btoa(selectedRow);// -> encode
+
+                        var resultStr = arrayToObjectString(selectedRow);
+
+                        //console.log(resultStr)
+                        //console.log(JSON.parse(resultStr));
+                        var functionName = pageActionFunction + "(" + resultStr + ")";
+                        
+                        eval(functionName);
+                    }
+                }
+            }
+        });
+    }
+
+    ///Parse JSON contain special Character
+    function arrayToObjectString(arr) {
+        debugger;
+        var returnSrt = "{";
+        for (var key in arr) {
+            returnSrt += "\"" + key + "\" : \"" + arr[key] + "\"";
+            returnSrt += ","
+        }
+        returnSrt = returnSrt.substring(0, returnSrt.length - 1) + "}";
+
+        return returnSrt;
+    }
+
+
+    function RUN_UPLOAD_EXCEL_@(Model.ACT_ID)_@(Model.PAG_ID)() {
+        debugger;
+        var menuName = $('#MenuName@(Model.PAG_ID)').val();
+        $.ajax({
+            url: '@Url.Action("PopupUploadFile", "DynamicMagt")',
+            type: "GET",
+            data: { PageID: '@Model.PAG_ID', PageAct: '@Model.ACT_ID', PageKey: menuName, MenuID : '@ViewBag.MenuId'},
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-md");
+                $('#modalControl').modal('show');
+                LoadingPage(0);
+            },
+            error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+    }
+
+    function GetEditTypeGrid(element) {
+        $.ajax({
+            url: '@Url.Action("GetEditTypeGrid", "DynamicMagt")',
+            type: "GET",
+            data: { pelID: element.dataMap.MAP_PEL_ID, pagID: element.dataMap.MAP_PAG_ID },
+            dataType: "json",
+            async: false,
+            success: function (result) {
+                debugger;
+                return result[0].EDIT_TYPE;
+            }
+        })
+    }
+</script>
+}
+<div id="popup" style="z-index:-1; display:none">
+    <div class="card">
+        <div class="card-body" id="PopupBody">
+
+        </div>
+        <div class="card-footer">
+            <div id="normal-contained"></div>
+        </div>
+    </div>
+</div>

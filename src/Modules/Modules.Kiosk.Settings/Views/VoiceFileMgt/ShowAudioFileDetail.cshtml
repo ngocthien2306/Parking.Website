@@ -1,0 +1,475 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Models
+
+@model KIO_ClientSoundMgt;
+@{
+    Layout = null;
+    string soundNo = "soundNo" + ViewBag.Thread;
+    string soundName = "soundName" + ViewBag.Thread;
+    string soundFileUpload = "soundFileUpload" + ViewBag.Thread;
+    string registDate = "registDate" + ViewBag.Thread;
+    string soundType = "soundType" + ViewBag.Thread;
+    string deployUser = "deployUser" + ViewBag.Thread;
+    string btnCheckExistSoundId = "BtnCheckExistSoundId" + ViewBag.Thread;
+    string pathFileUpload = "pathFileUpload" + ViewBag.Thread;
+
+}
+<style> 
+    .remove_audio {
+        float: right;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #E74C3C;
+        text-shadow: 0 1px 0 #fff;
+        opacity: .5;
+        border: 0;
+        background-color: #fff;
+    }
+</style>
+
+<script> 
+    debugger;
+
+    $(document).ready(function () {
+        LoadingPage(1);
+
+        $('#remove_audio_file').hide();
+        if ("@ViewBag.SoundCheck" === "1") {
+            GetAudioFile("@ViewBag.DataSound");
+        }
+        debugger;
+        if("@Model.soundNo" === "0") {
+            $('#btnDeploy_@(ViewBag.Thread)').prop('disabled', true);
+            $('#btnDelete_@(ViewBag.Thread)').prop('disabled', true);
+        }
+        LoadCommboSoundType("#@soundType");
+        LoadingPage(0);
+    })
+
+    function LoadCommboSoundType(elementId, intial = false) {
+        debugger;
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("SOUN00", url, elementId, intial);
+    }
+    // Region: Check exist records
+    function CheckExistAudioBySoundId() {
+        debugger;
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GetSingleAudioFile", "VoiceFileMgt")',
+            type: METHOD.GET,
+            data: {
+                audioId: GetDataElement("#@soundNo")
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                if (result.data.length > 0) {
+                    SetDataElement("#@soundNo", result.data[0].soundNo);
+                    SetDataElement("#@soundName", result.data[0].soundName);
+                    SetDataElement("#@pathFileUpload", result.data[0].localFileLocation);
+                    SetDataElement("#@registDate", result.data[0].registDate);
+                    SetDataElement("#@deployUser", result.data[0].resitUser);
+                    SetDataElement("#@soundType", result.data[0].soundType);
+                    GetAudioFile(result.source);
+                }
+                else {
+                    SetDataElement("#@soundName", "");
+                    SetDataElement("#@pathFileUpload", "");
+                    SetDataElement("#@registDate", "");
+                    SetDataElement("#@soundType", "SOUN01");
+                    SetDataElement("#@deployUser", "@ViewBag.UserName");
+                    $('#audio_file').hide();
+                    $('#remove_audio_file').hide();
+                }
+
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+    // End Region: Check exist records
+
+    // Region: Btn event
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        SaveAudioFile();
+        LoadingPage(0);
+    });
+    $('#btnDelete_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        DeleteAudioFile();
+        LoadingPage(0);
+    });
+    $('#btnDeploy_@(ViewBag.Thread)').on('click', function() {
+        LoadingPage(1);
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.DEPLOYAUDIO))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+
+            if (dialogResult) {
+                debugger;
+                //var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+                DevExpress.ui.notify(
+                    {
+                        message: '@_loc.GetLocalizedString("Loading ...")',
+                        position: {
+                            my: 'bottom right',
+                            at: 'bottom right'
+                        },
+                        width: '30%'
+                    },
+                    'info',
+                    3000
+                );
+                $.ajax({
+                    url: '@Url.Action("DeployAudio", "VoiceFileMgt")',
+                    type: METHOD.POST,
+                    data: {
+                        soundNo: GetDataElement("#@soundNo")
+                    },
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        debugger;
+                        //DevExpress.ui.dialog.alert(result.Message, "Notice");
+                        if (result.Success) {
+                            DevExpress.ui.notify(
+                                {
+                                    message: '@_loc.GetLocalizedString("Deploying audio to all devices, please wait some minute!")',
+                                    position: {
+                                        my: 'bottom right',
+                                        at: 'bottom right'
+                                    },
+                                    width: '30%'
+                                },
+                                'info',
+                                6000
+                            );
+                        }
+                        else {
+                            DevExpress.ui.notify(
+                                {
+                                    message: result.Message,
+                                    position: {
+                                        my: 'bottom right',
+                                        at: 'bottom right'
+                                    },
+                                    width: '30%'
+                                },
+                                'info',
+                                6000
+                            );
+                        }
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+            }
+        })
+        LoadingPage(0);
+    })
+    // End Region: Btn event
+
+    // Region: Upload file audio
+    function GetAudioFile(sourceAudio) {
+        debugger;
+        var audioSite = document.getElementById("audio_display_site");
+        var audio = "<audio controls id='audio_file' preload='auto' ><source src='" + sourceAudio +"'/></audio>"
+        audioSite.innerHTML = audio;
+        $('#remove_audio_file').show();
+        $("#remove_audio_file").click(function () {
+            $('#audio_file').hide();
+            $('#remove_audio_file').hide();
+            // stop sound
+            var player = document.getElementById('audio_file');
+            player.pause();
+            player.src = "";
+        });
+    }
+    function getFileUploaderInstance() {
+        return $("#@soundFileUpload").dxFileUploader("instance");
+    }
+    function LoadAudioAfterUpload(e) {
+        debugger;
+        var audioSite = document.getElementById("audio_display_site");
+        var result = JSON.parse(e.request.response);
+        var btnRemove = "<button id='remove_audio_file' type='button' class='remove_audio'><span aria-hidden='true'>&times;</span></button>"
+        var audio = "<audio controls id='audio_file' preload='auto' ><source src='" + result.data + "'/></audio>"
+        audioSite.innerHTML = audio;
+        document.querySelectorAll('#@soundFileUpload .dx-fileuploader-content')[0].children[1].classList.remove("dx-fileuploader-files-container");
+
+        setTimeout(function() {
+            SetDataElement("#@pathFileUpload", result.path.toString());
+        }, 300);
+
+        $('#remove_audio_file').show();
+        $("#remove_audio_file").click(function () {
+            debugger;
+            $('#audio_file').hide();
+            $('#remove_audio_file').hide();
+            //setTimeout(function() {
+            //    SetDataElement('#@pathFileUpload', '@ViewBag.Path');
+            //}, 300);
+            $('#@soundFileUpload').dxFileUploader("instance").reset();
+            
+            // stop sound
+            var player = document.getElementById('audio_file');
+            player.pause();
+            player.src = "";
+        });
+    }
+
+    function FileUploader_valueChanged() {
+        debugger;
+        file = getFileUploaderInstance();
+        $.ajax({
+            url: '@Url.Action("UploadAudioFile", "VoiceFileMgt")',
+            type: 'POST',
+            data:
+            {
+                AudioFile: file._files[0]
+            },
+            dataType: false,
+            success: function (result) {
+                debugger;
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+    // End Region: Upload file audio
+
+    // Region: Create - Update - Delete
+    function SaveAudioFile() {
+        if (ValidateInputSaveAudio()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var url = '@Url.Action("SaveAudioFile", "VoiceFileMgt")';
+                    var obj = {
+                        soundNo: GetDataElement("#@soundNo"),
+                        soundName: GetDataElement("#@soundName"),
+                        localFileLocation: GetDataElement("#@pathFileUpload"),
+                        soundType: GetDataElement("#@soundType")
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                    setTimeout(function () {
+                        GetListAudioFile(null, null);
+                    }, 500);
+
+                }
+            })
+        }
+    }
+    function DeleteAudioFile() {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002)) with Sound No " + GetDataElement("#@soundNo") + "?", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+                //var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+
+                var url = '@Url.Action("DeleteAudioFile", "VoiceFileMgt")';
+                var obj = {
+                    soundId: GetDataElement("#@soundNo")
+                }
+                CRUDData(url, obj, METHOD.DELETE);
+                setTimeout(function () {
+                    GetListAudioFile(null, null);
+                }, 500);
+
+            }
+        })
+    }
+    // End Region: Create - Update - Delete
+
+    // Region: Validation data
+    function ValidateInputSaveAudio() {
+        let soundNo = GetDataElement("#@soundNo");
+        if (soundNo == null || soundNo == "" || typeof soundNo === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Sound No")", "Error")
+            ValidateElement("#@soundNo")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@soundNo")
+        }
+
+        let soundName = GetDataElement("#@soundName");
+        if (soundName == null || soundName == "" || typeof soundName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Sound Name")", "Error")
+            ValidateElement("#@soundName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@soundName")
+        }
+
+        let pathFileUpload = GetDataElement("#@pathFileUpload");
+        if (pathFileUpload == null || pathFileUpload == "" || typeof pathFileUpload === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Path Audio File")", "Error")
+            ValidateElement("#@pathFileUpload")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@pathFileUpload")
+        }
+
+        let soundType = GetDataElement("#@soundType");
+        if (soundType == null || soundType == "" || typeof soundType === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Select Sound Type")", "Error")
+            ValidateElement("#@soundType")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@soundType")
+        }
+        return true;
+    }
+    // End Region: Validation data
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Audio File Information"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2">
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Voice File ID"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().NumberBox()
+                        .ID(soundNo)
+                        .Value(Model.soundNo)
+                        .Min(1)
+                        .ShowClearButton(true)
+                        .Buttons(b =>
+                        {
+                            b.Add()
+                            .Name("check_duplicate")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Type(ButtonType.Default)
+                            .Text("Check Duplicate")
+                            .ID(btnCheckExistSoundId)
+                            .Icon("check")                      
+                            .OnClick("CheckExistAudioBySoundId"));
+                        })
+                        )
+                </div>
+                <div class="col-md-6">
+                    <label>@(_loc.GetLocalizedString("Audio File Name"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(soundName)
+                        .Value(Model.soundName == null ? "" : Model.soundName)
+                        .MaxLength(20)
+                        .ShowClearButton(true)
+                        )
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+                <div class="col-md-12">
+                   
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>@(_loc.GetLocalizedString("Source File Upload"))<span class="required-input"> *</span></label>
+                        </div>
+                        <div class="col-md-4">
+                            <button id='remove_audio_file' type='button' class='remove_audio mr-4' style="justify-content: flex-end">
+                                <span aria-hidden='true'>&times;</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                               @(
+                                Html.DevExtreme().FileUploader()
+                                .ID(soundFileUpload)
+                                .Name("UploadFileAudio")
+                                .Multiple(false)
+                                .Accept("*")
+                                
+                                .UploadMode(FileUploadMode.Instantly)
+                                .UploadUrl(Url.Action("UploadAudio", "VoiceFileMgt"))
+                                .AllowedFileExtensions(new[] {".mp4", ".mp3", ".wav", ".ogg" })
+                                //.OnValueChanged("FileUploader_valueChanged")
+                                .OnUploaded("LoadAudioAfterUpload")
+                                )
+                        </div>
+                        <div class="col-md-4" id="audio_display_site" >
+
+                        </div>
+
+                    </div>
+
+                    <span class="note ml-2">Allowed file extensions: <span>.mp4 .mp3 .wav, .ogg</span></span>
+                </div>
+            </div>
+            <div class="row pt-2 pb-2">
+                <div class="col-md-12">
+                    <label>
+                        @(_loc.GetLocalizedString("Upload Folder Path"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(pathFileUpload)
+                        .ShowClearButton(true)
+                        .Value(Model.localFileLocation == null ? "" : Model.localFileLocation)
+                        )
+                </div>
+            </div>
+            <div class="row pt-2 pb-2">
+                <div class="col-md-4">
+                    <label>
+                        @(_loc.GetLocalizedString("Sound Type"))<span class="required-input"> *</span>
+                    </label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(soundType)
+                        .ShowClearButton(true)
+                        .Value(Model.soundType)
+                        .SearchEnabled(true)
+                        )
+                </div>
+                <div class="col-md-4">
+                    <label>
+                        @(_loc.GetLocalizedString("Registered Date"))<span class="required-input"> *</span>
+                    </label>
+                    @(Html.DevExtreme().DateBox()
+                        .ID(registDate)
+                        .ShowClearButton(true)
+                        .Value(Model.registDate == null ? DateTime.Now : Model.registDate)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .ReadOnly(true)
+                        )
+                </div>
+                <div class="col-md-4">
+                    <label>
+                        @(_loc.GetLocalizedString("Deploy User"))<span class="required-input"> *</span>
+                    </label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(deployUser)
+                        .ShowClearButton(true)
+                        .Value(Model.resitUser == null ? ViewBag.UserName : Model.resitUser)
+                        .ReadOnly(true)
+                        )
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnDeploy_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-cogs'></i> @(_loc.GetLocalizedString("Deploy"))</button>
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" id="btnDelete_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

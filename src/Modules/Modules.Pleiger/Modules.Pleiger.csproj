@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Views\MESProductionStatus\**" />
+    <Compile Remove="Views\MESSaleProject\MESSTransClosingStatus\**" />
+    <Content Remove="Views\MESProductionStatus\**" />
+    <Content Remove="Views\MESSaleProject\MESSTransClosingStatus\**" />
+    <EmbeddedResource Remove="Views\MESProductionStatus\**" />
+    <EmbeddedResource Remove="Views\MESSaleProject\MESSTransClosingStatus\**" />
+    <None Remove="Views\MESProductionStatus\**" />
+    <None Remove="Views\MESSaleProject\MESSTransClosingStatus\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Views\MESDrawing\DrawingCreatePopup.cshtml~RF37e4f2d.TMP" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FreeSpire.XLS" Version="10.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExtreme.AspNet.Core" Version="20.1.4" />
+    <PackageReference Include="DevExtreme.AspNet.Data" Version="2.5.1" />
+    <PackageReference Include="Serilog" Version="2.9.0" />
+    <PackageReference Include="System.Management" Version="4.7.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.7.0" />
+    <PackageReference Include="ClosedXML" Version="0.95.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\InfrastructureCore.Web\InfrastructureCore.Web.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\InfrastructureCore.csproj" />
+    <ProjectReference Include="..\..\LazZiya.ExpressLocalization\LazZiya.ExpressLocalization.csproj" />
+    <ProjectReference Include="..\Modules.Admin\Modules.Admin.csproj" />
+    <ProjectReference Include="..\Modules.Common\Modules.Common.csproj" />
+    <ProjectReference Include="..\Modules.FileUpload\Modules.FileUpload.csproj" />
+  </ItemGroup>
+
+</Project>

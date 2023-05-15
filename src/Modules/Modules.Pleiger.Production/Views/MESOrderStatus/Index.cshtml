@@ -1,0 +1,236 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var viewbagId = ViewBag.Thread;
+
+    string StartOrderDate = "StartOrderDate" + ViewBag.Thread;
+    string EndOrderDate = "EndOrderDate" + ViewBag.Thread;
+    string gridStatusOrder = "gridStatusOrder" + ViewBag.Thread;
+    string frmItemName = "frmItemName" + ViewBag.Thread;
+    string txtRemark1 = "txtRemark1" + ViewBag.Thread;
+    string userPOStatus = "userPOStatus" + ViewBag.Thread;
+    string UserPONumber= "UserPONumber" + ViewBag.Thread;
+
+
+}
+
+<script>
+
+    $(document).ready(function () {
+        var orderType = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "POT000");
+        orderType.unshift({
+            BASE_CODE: "All",
+            BASE_NAME: "All"
+        });
+
+        $('#@userPOStatus').dxSelectBox({
+            dataSource: orderType,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE",
+            value: orderType[0].BASE_CODE
+        });
+
+        SearchOrderStatus@(ViewBag.Thread)();
+
+     });
+
+   
+    function SearchOrderStatus@(ViewBag.Thread)() {
+        LoadingPage(1);
+        debugger;
+        const dateStart = ParsingDateyyyyMMdd( $('#@StartOrderDate').dxDateBox('instance').option('value'));
+        const dateEnd = ParsingDateyyyyMMdd(  $('#@EndOrderDate').dxDateBox('instance').option('value'));
+        const userPOStatus = $("#@userPOStatus").dxSelectBox("option", "value");
+        const txtRemark1 = $('#@txtRemark1').dxTextBox("option", "value");
+        const UserPONumber = $('#UserPONumber@(viewbagId)').val();
+        const frmItemName = $('#@frmItemName').dxTextBox("option", "value");
+
+
+        if (!ValidateRangeDate(dateStart, dateEnd)) {
+            LoadingPage(0);
+            return;
+        };
+
+        $.ajax({
+            url: '@Url.Action("SearchOrderStatus", "MESOrderStatus")',
+            type: 'Get',
+            dataType: 'json',
+            data: {
+                StartDate: dateStart,
+                EndDate: dateEnd,
+                POStatus: userPOStatus,
+                PleigerRemark: txtRemark1,
+                UserPONumber: UserPONumber,
+                ItemName: frmItemName,
+            },
+            success: function (result) {
+                debugger;
+                $("#@gridStatusOrder").dxDataGrid("option", "dataSource", result);
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                $("#@gridStatusOrder").dxDataGrid("option", "dataSource", null);
+                LoadingPage(0);
+            }
+        });
+        LoadingPage(0);
+    };
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+       SearchOrderStatus@(ViewBag.Thread)();
+    });
+
+     $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+     $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        var dataGrid = $("#@gridStatusOrder");
+        ExportExcelCommon(dataGrid, "Order Status");
+        LoadingPage(0);
+    });
+
+</script>
+
+
+
+    <div id="divMainPOREquest" style="width:100%;height:100%;">
+        <div id="menutoolbar_@(ViewBag.Thread)">
+            @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+        </div>
+
+
+        <div class="card region-search" id="divindex_@(ViewBag.Thread)">
+            <div class="card-body p-2" style="width:100%;height:100%;">
+                <div id="headerpage_@(ViewBag.Thread)">
+                    <div class="row">
+                        <div class="col-xs-12 col-md-3">
+                            <label>@(_loc.GetLocalizedString("Purchase Date"))</label>
+                            <div class="form-group row">
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox()
+                                .ID(StartOrderDate)
+                                .Type(DateBoxType.Date)
+                                .Value(DateTime.Now.ToString("yyyy-MM-01"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                            )
+                                </div>
+                                <div style="align-self: center;">~</div>
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox()
+                                .ID(EndOrderDate)
+                                .Type(DateBoxType.Date)
+                               .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                                .DisplayFormat("yyyy-MM-dd")
+                                .MaxLength(10)
+                           )
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label for="">@(_loc.GetLocalizedString("UserPONumber"))</label>
+                                <input type="text" class="form-control" id="UserPONumber@(viewbagId)" value="">
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2" id="USRProjectOrderStatus">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Remark Project"))</label>
+                                @(Html.DevExtreme().TextBox().ID(txtRemark1).ShowClearButton(true))
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Status"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                            .ID(userPOStatus)
+                            .SearchEnabled(true).ShowClearButton(true)
+                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                        )
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                                @(Html.DevExtreme().TextBox().ID(frmItemName).ShowClearButton(true))
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row" id="bodypage_@(ViewBag.Thread)">
+                    <div class="col-md-12 pb-2" style="width:100%;height:100%;">
+                        @(Html.DevExtreme().DataGrid<MES_OrderStatus>()
+                    .ID(gridStatusOrder)
+                    .RemoteOperations(true)
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .ColumnAutoWidth(true)
+                    .FilterRow(filterRow => filterRow
+                    .Visible(true)
+                    .ApplyFilter(GridApplyFilterMode.Auto))
+                    .Height("100%")
+                    .Height("80vh")
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.NO).Caption(_loc.GetLocalizedString("No"));
+                        c.AddFor(x => x.POStatus).Caption(_loc.GetLocalizedString("PO Status"));
+                        c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("User PO Number"));
+                        c.AddFor(x => x.PurchaseDate).Caption(_loc.GetLocalizedString("Purchase Date")).Format("yyyy-MM-dd");
+                        c.AddFor(x => x.ArrivalRequestDate).Caption(_loc.GetLocalizedString("Arrival Request Date")).Format("yyyy-MM-dd");
+                        c.AddFor(x => x.SlipDate).Caption(_loc.GetLocalizedString("Slip Date")).Format("yyyy-MM-dd");
+                        c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code"));
+                        c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));
+                       // c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("User Project Code"));
+                        c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code"));
+                        c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name"));
+                        c.AddFor(x => x.ItemUnit).Caption(_loc.GetLocalizedString("Item Unit")).Format("#,##0");
+                        c.AddFor(x => x.ReceiveQty).Caption(_loc.GetLocalizedString("Receive Qty")).Format("#,##0");
+                        c.AddFor(x => x.MonetaryUnit).Caption(_loc.GetLocalizedString("Monetary Unit")).Format("#,##0");
+                        c.AddFor(x => x.ItemPrice).Caption(_loc.GetLocalizedString("Item Cost")).Format("#,##0");
+                        c.AddFor(x => x.TransactionAmount).Caption(_loc.GetLocalizedString("Transaction Amount"));
+                        c.AddFor(x => x.PleigerRemark).Caption(_loc.GetLocalizedString("Pleiger Remark"));
+                    })
+
+                    .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                    .HeaderFilter(f => f.Visible(true))
+                    .Paging(paging => paging.PageSize(100))
+                    .Pager(pager =>
+                    {
+                        pager.Visible(true);
+                        pager.ShowInfo(true);
+                        pager.ShowNavigationButtons(true);
+                    })
+                )
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>

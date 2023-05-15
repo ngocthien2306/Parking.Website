@@ -1,0 +1,180 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Pleiger.PurchaseOrder.Models;
+@model MES_PORequest;
+@{
+    string To = "To" + ViewBag.Thread;
+    string PFEPONumber = "PFEPONumber" + ViewBag.Thread;
+
+    string EmailGrid = "EmailGrid" + ViewBag.Thread;
+}
+<script>
+    var result = [];
+
+    function AddEmail@(ViewBag.Thread)() {
+        var data = $("#@To").dxTextBox("instance").option("value");
+        var email = data.trim();
+        var pattern = /^([\w-\.]+@@([\w-]+\.)+[\w-]{2,4})?$/;
+
+        if (email == "" || email == null) {
+            return DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Please, Input data in email box"))', '@(_loc.GetLocalizedString("Error"))');
+        }
+
+        if (!pattern.test(email)) {
+             return DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("The correct Email format is: abc@gmail.com"))', '@(_loc.GetLocalizedString("Error"))');
+        }
+
+        var no = 1;
+        var objects = { No: no, Email: email };
+
+        if (result.length > 0) {
+            for (var i = 0; i < result.length; i++) {
+                if (result[i].Email === email) {
+                    $("#@To").dxTextBox("instance").option("value", "");
+                    return DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("The Email is existed !"))', '@(_loc.GetLocalizedString("Message"))');
+                }
+                else {
+                    result[i].No = result[i].No + 1;
+                }
+            }
+        }
+
+        $("#@To").dxTextBox("instance").option("value", "");
+        result.reverse();
+        result.push(objects);
+        result.reverse();
+         var grid = $('#@(EmailGrid)').dxDataGrid("instance");
+             grid.option("dataSource", result);
+             grid.refresh();
+
+    }
+
+</script>
+
+
+<div class="modal-dialog modal-xs" id="sendEmail_popUp">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">@_loc.GetLocalizedString("Send Email")</h5>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <div class="card-body p-0">
+            <form id="frm-SaleSetting2">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12 col-md-8">
+                            <label>@(_loc.GetLocalizedString("PFE PO Number"))</label>
+                            @(Html.DevExtreme().TextBox().ID(PFEPONumber).Value(Model.UserPONumber).Disabled(true))
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-8">
+                            <label>@(_loc.GetLocalizedString("To"))</label>
+                            @(Html.DevExtreme().TextBox().ID(To)
+                            )
+                        </div>
+                        <div class="col-xs-12 col-md-4" style="margin-top:27px">
+                            @(Html.DevExtreme().Button()
+                             .ID("Email" + ViewBag.Thread)
+                            .Text(_loc.GetLocalizedString("Add"))
+                            .Type(ButtonType.Default)
+                            .StylingMode(ButtonStylingMode.Contained)
+                            .Width(120)
+                            .OnClick("AddEmail" + ViewBag.Thread)
+                        )
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="form-group">
+                            @(Html.DevExtreme().DataGrid<EmailModel>()
+                                    .ID(EmailGrid)
+                                    .Height("30vh")
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .RepaintChangesOnly(true)
+                                    .RemoteOperations(true)
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Row);
+                                        editing.AllowDeleting(true);
+                                    })
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.No).Caption("No").Width("15%").Visible(false);
+                                        c.AddFor(x => x.Email).Caption((@_loc.GetLocalizedString("Email")));
+                                        c.Add()
+                                            .Type(GridCommandColumnType.Buttons)
+                                            .Width("15%")
+                                            .Buttons(b =>
+                                            {
+                                                b.Add().Name(GridColumnButtonName.Delete);
+                                            });
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .Paging(paging => paging.PageSize(100))
+                                    .HeaderFilter(f => f.Visible(true))
+                                )
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-sm btn-primary" id="btnRequest_@ViewBag.Thread">@(_loc.GetLocalizedString("Send mail"))</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $("#btnRequest_@ViewBag.Thread").on("click", function () {
+        var listData = $("#@EmailGrid").dxDataGrid("instance").getDataSource();
+        if (listData == null) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Please add email to !"))', '@(_loc.GetLocalizedString("Error"))');
+            return;
+        }
+        var listEmail = listData.store()._array;
+        var result = [];
+        for (var i = 0; i < listEmail.length; i++) {
+            result.push(listEmail[i].Email);
+        }
+        ReSendMailPoRequest(result);
+     });
+
+
+    function ReSendMailPoRequest(data) {
+        var result = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString("Are you sure you want to resend the mail?"))", '@(_loc.GetLocalizedString("Confirm changes"))');
+        result.done(function (dialogResult) {
+            LoadingPage(1);
+            if (dialogResult)
+            {
+                LoadingPage(1);
+                $.ajax({
+                    url: '@Url.Action("SendEmailPORequest", "MESPORequest")',
+                    //async: false,
+                    type: "POST",
+                    dataType: "json",
+                    data: {
+                        EmailTo: JSON.stringify(data),
+                        PONumber: '@Model.PONumber',
+                        UserPONumber:'@Model.UserPONumber'
+                    },
+                    success: function (result) {
+                        DevExpress.ui.dialog.alert("Email sending successfully", "Success");
+                        ReloadDetailPORequest();
+                        $('#modalControl').modal('hide');
+                        LoadingPage(0);
+
+                    }, error: function (result) {
+                        LoadingPage(0);
+                    }
+                });
+            }
+        });
+    }
+</script>

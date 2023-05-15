@@ -1,0 +1,134 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Models
+
+@model List<KIO_UseRegisteredStore>;
+@{
+    Layout = null;
+    string gridStore = "gridStore" + ViewBag.Thread;
+
+}
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        GetUserRegisteredStore("@ViewBag.StoreNo","@ViewBag.UId");
+        LoadingPage(0);
+    })
+    // Region: Get, Check data
+    function GetUserRegisteredStore(storeNo, userId) {
+        debugger;
+        var url = '@Url.Action("GetUserRegisteredStore", "AccountMgt")';
+        var obj = {
+            storeNo: storeNo,
+            userId: userId
+        }
+        LoadGridData(url, obj, "#@gridStore", METHOD.GET);
+    }
+    // End Region: Get, Check data
+
+    // Region: Btn event
+    $("#btnDelete_@ViewBag.Thread").on("click", function () {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+
+            }
+        })
+    })
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+
+       
+    })
+    // End Region: Btn event
+
+    // Region: Create - Update - Delete
+    function DeleteUserRegisteredStore(e) {
+        debugger;
+        console.log(e);
+    }
+    // End region: Validate data
+
+    function onItemGridToolbarPreparing(e) {
+        debugger;
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("추가")",
+                    onClick: function () {
+
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+    }
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("장비정보관리"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2">
+                @(
+                    Html.DevExtreme().DataGrid<KIO_UseRegisteredStore>()
+                    .ID(gridStore)
+                    .Height("50vh")
+                    .ShowBorders(true)
+                    .ShowColumnLines(true)
+                    .HeaderFilter(f => f.Visible(true))
+                    .FilterRow(f => f.Visible(true))
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .AllowColumnReordering(true)
+                    .RemoteOperations(true)
+                    .ColumnAutoWidth(true)
+                    .ColumnFixing(c => c.Enabled(true))
+                    .RepaintChangesOnly(true)
+                    .Selection(s => s.Mode(SelectionMode.Single))
+                    
+                    .Columns(c =>
+                    {
+                        c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                        c.AddFor(x => x.storeNo).Caption(_loc.GetLocalizedString("Store No"));
+                        c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                        c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                        c.Add().Type(GridCommandColumnType.Buttons)
+                        .Alignment(HorizontalAlignment.Center)
+                        .Buttons(b =>
+                        {
+                            b.Add().Icon("fas fa-trash")
+                            .Hint("Click to delete user out store")
+                            .OnClick("DeleteUserRegisteredStore");
+                        }).Caption(_loc.GetLocalizedString("관리"));
+                        @*c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");*@
+                    })
+
+                    .Pager(pager =>
+                    {
+                        pager.ShowInfo(true);
+                        pager.ShowNavigationButtons(true);
+                    })
+                    //.OnSelectionChanged("onItemGridSelectionChanged")
+                    //.OnRowClick("ShowDeviceDetailOnGrid")
+                    .OnToolbarPreparing("onItemGridToolbarPreparing")
+                    //.Paging(paging => paging.PageSize(100))
+                    )
+
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" id="btnDelete_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

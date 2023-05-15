@@ -1,0 +1,69 @@
+﻿@using InfrastructureCore.Models.Menu;
+
+@model List<SYMenu>
+@{
+    var listTopMenu = Model.Where(x => x.MenuLevel == 1).ToList();
+    string language = ViewBag.CurrentLanguage;
+}
+
+
+@if (Model.Count > 0)
+{
+    foreach (var item in Model)
+    {
+        if (item.MenuLevel == 1)
+        {
+            var checkSubMenu = Model.Find(x => x.MenuParentID == item.MenuID);
+            if (checkSubMenu == null)
+            {
+                if (item.MenuPath != null && item.MenuPath != "")
+                {
+                    if (language == "ko")
+                    {
+                        <li class="nav-item d-none d-sm-inline-block">
+                            <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(item.MenuName)', '@item.MenuPath', '@item.MenuID')" class="nav-link" menu-id="@item.MenuID">@_loc.GetLocalizedString("MES Site")</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item d-none d-sm-inline-block">
+                            <a is-active-color onclick="GenerateTab('@_loc.GetLocalizedString(item.MenuNameEng)', '@item.MenuPath', '@item.MenuID')" class="nav-link" menu-id="@item.MenuID">@_loc.GetLocalizedString("MES Site")</a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <a is-active-color href="javascript:;" class="nav-link" menu-id="@item.MenuID">@_loc.GetLocalizedString(item.MenuName)</a>
+                    </li>
+                }
+            }
+            else
+            {
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <a is-active-color class="nav-link" onclick="ShowLeftMenu(this)" menu-id="@item.MenuID">@_loc.GetLocalizedString(item.MenuName)</a>
+                    </li>
+            }
+        }
+    }
+}
+
+<script>
+    function LoadLeftMenu(obj) {
+         
+        CheckSession();
+          let menuID = $(obj).attr("menu-id");
+            $.ajax({
+                url: '@Url.Action("LoadLeftMenuComponent", "MenuLogin")',
+                type: 'GET',
+                data: { menuID: menuID },
+                dataType: "html",
+                success: function (result) {
+                    $("#divLeftMenu").html(null);
+                    $("#divLeftMenu").html(result);
+                    DeactiveTopMenu();
+                    ActiveTopMenu(menuID);
+                }
+            });
+    }
+</script>

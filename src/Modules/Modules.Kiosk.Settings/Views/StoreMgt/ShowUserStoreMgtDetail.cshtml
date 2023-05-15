@@ -1,0 +1,437 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@model KIO_UserStore;
+@{
+    Layout = null;
+    // grid info
+    string gridStore = "gridStore" + ViewBag.Thread;
+    string gridUserMgt = "gridUserMgt" + ViewBag.Thread;
+    // info user
+    string username = "username" + ViewBag.Thread;
+    string userId = "userId" + ViewBag.Thread;
+    string password = "password" + ViewBag.Thread;
+    string birthday = "birthday" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string email = "email" + ViewBag.Thread;
+    string btnCheckDuplicateID = "btnCheckDuplicateID" + ViewBag.Thread;
+    string btnChangePassword = "btnChangePassword" + ViewBag.Thread;
+    string btnChangeDefaultPassword = "btnChangeDefaultPassword" + ViewBag.Thread;
+    string storeNo = "storeNo" + ViewBag.Thread;
+
+}
+<style type="text/css" class="cssStyles">
+
+</style>
+
+<script>
+
+    var storeNumber;
+    var checkDefault = 0;
+    $(document).ready(function () {
+        LoadingPage(1);
+        if("@Model.storeNo" == 0) {
+            $("#@btnChangePassword").dxButton("instance").option("disabled", true);
+            $("#@btnChangeDefaultPassword").dxButton("instance").option("disabled", false);
+            SetPasswordDefault();
+            checkDefault = 1;
+            //$("#@btnCheckDuplicateID").dxButton("instance").option("disabled", false);
+        }
+        LoadingPage(0);
+    })
+    // Region: btn click event
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        SaveStoreMgt();
+        LoadingPage(0);
+    });
+
+    // End Region: btn click event
+
+
+    // Region: Get Data
+
+    function CheckDuplicateUserID() {
+        let userId = GetDataElement("#@userId");
+        if (userId == null || userId == "" || typeof userId === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input ID")", "Error")
+            ValidateElement("#@userId")
+        }
+        else {
+            $.ajax({
+                url: '@Url.Action("GetUserById", "StoreMgt")',
+                type: METHOD.POST,
+                data: {
+                    userId: GetDataElement("#@userId")
+                },
+                dataType: 'json',
+                success: function (result) {
+                    debugger;
+                    if (result != null) {
+                        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString("Can be use this ID"))", '@(_loc.GetLocalizedString("Notice"))');
+                        yes_or_no.done(function (dialogResult) {
+                            if (dialogResult) {
+                                debugger;
+                                SetDataElement("#@username", result.userName);
+                                SetDataElement("#@userId", result.userId);
+                                SetDataElement("#@birthday", result.birthday);
+                                SetDataElement("#@phoneNumber", result.phoneNumber);
+                                SetDataElement("#@email", result.email);
+                                SetDataElement("#@password", result.password);
+                                checkDefault = 0;
+                                $("#@btnChangePassword").dxButton("instance").option("disabled", true);
+                                $("#@btnChangeDefaultPassword").dxButton("instance").option("disabled", true);
+                            }
+
+                        })
+
+                        //DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("ID already exist!")", "Notice")
+                    }
+                    else {
+                        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString("Can be use this ID"))", '@(_loc.GetLocalizedString("Notice"))');
+                        yes_or_no.done(function (dialogResult) {
+                            if (dialogResult) {
+                                debugger;
+                                SetDataElement("#@username", "");
+                                SetDataElement("#@birthday", null);
+                                SetDataElement("#@phoneNumber", "");
+                                SetDataElement("#@email", "");
+                                SetDataElement("#@password", "");
+                                SetPasswordDefault();
+                                checkDefault = 1;
+                            }
+                            $("#@btnChangePassword").dxButton("instance").option("disabled", true);
+                            $("#@btnChangeDefaultPassword").dxButton("instance").option("disabled", false);
+                        })
+
+
+                    }
+                    LoadingPage(0);
+                },
+                error: function () {
+                    LoadingPage(0);
+                }
+            });
+            RemoveColorElement("#@userId")
+        }
+    }
+
+
+    function GetManagerStore(storeNo) {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetUserStoreMgt", "StoreMgt")',
+            type: METHOD.POST,
+            data: {
+                storeNo: storeNo
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                if (result != null) {
+                    SetDataElement("#@username", result.userName);
+                    SetDataElement("#@userId", result.userId);
+                    SetDataElement("#@birthday", result.birthday);
+                    SetDataElement("#@phoneNumber", result.phoneNumber);
+                    SetDataElement("#@email", result.email);
+                    SetDataElement("#@password", result.password);
+                    checkDefault = 0;
+                    //$("#@btnChangePassword").dxButton("instance").option("disabled", false);
+                    //$("#@btnChangeDefaultPassword").dxButton("instance").option("disabled", false);
+                    //$("#@btnCheckDuplicateID").dxButton("instance").option("disabled", false);
+
+
+                }
+                else {
+                    SetDataElement("#@username", "");
+                    SetDataElement("#@userId", "");
+                    SetDataElement("#@birthday", "");
+                    SetDataElement("#@phoneNumber", "");
+                    SetDataElement("#@email", "");
+                    SetDataElement("#@password", "");
+                    SetPasswordDefault();
+                    checkDefault = 1;
+                    //$("#@btnChangePassword").dxButton("instance").option("disabled", true);
+                    //$("#@btnChangeDefaultPassword").dxButton("instance").option("disabled", true);
+                    //$("#@btnCheckDuplicateID").dxButton("instance").option("disabled", false);
+
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function SetPasswordDefault() {
+        $.ajax({
+            url: '@Url.Action("GetDefaultPassword", "StoreMgt")',
+            type: METHOD.GET,
+            data: {
+
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                SetDataElement("#@password", result)
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+    // End Region: Get Data
+
+    // Region: Create - Update - Delete
+    function SaveStoreMgt() {
+        if (ValidationInputUser()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    //var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+
+                    var url = '@Url.Action("SaveStoreMgt", "StoreMgt")';
+                    var obj = {
+                        userId: GetDataElement("#@userId"),
+                        password: GetDataElement("#@password"),
+                        userName: GetDataElement("#@username"),
+                        phoneNumber: GetDataElement("#@phoneNumber"),
+                        email: GetDataElement("#@email"),
+                        birthday: ParsingDateyyyyMMdd($("#@birthday").dxDateBox('instance').option("value")),
+                        storeNo: storeNoMaster,
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                    GetGridIntance("#gridUserMgt@(ViewBag.Index)").selectRows();
+                    setTimeout(function() {
+                        GetDataUserMgt(storeNoMaster);
+                    },1000);
+                }
+            })
+        }
+    }
+
+    function ChangePassword() {
+        if (ValidationInputPassword()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MEP001))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    //var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+                    var url = '@Url.Action("ChangesPassword", "StoreMgt")';
+                    var obj = {
+                        userId: GetDataElement("#@userId"),
+                        password: GetDataElement("#@password"),
+                        flag: "1"
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                }
+            })
+        }
+    }
+
+    function ChangeDefaultPassword() {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MEP002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+                if(checkDefault == 1) {
+                    SetPasswordDefault();
+                    return;
+                }
+                //var gridStore = GetGridStoreIntance().getSelectedRowsData()[0].storeNo;
+                var url = '@Url.Action("ChangesPassword", "StoreMgt")';
+                var obj = {
+                    userId: GetDataElement("#@userId"),
+                }
+                $.ajax({
+                    url: url,
+                    type: METHOD.POST,
+                    data: obj,
+                    dataType: 'json',
+                    success: function (result) {
+                        debugger;
+                        DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Change the default password successfully, your password is") " + result.Data, "Notice")
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+                //CRUDData(url, obj, METHOD.POST);
+            }
+        })
+    }
+
+
+
+    // End Region: Create - Update - Delete
+
+
+    // Region: Validation data
+    function ValidationInputPassword() {
+        let password = GetDataElement("#@password");
+        if (password == null || password == "" || typeof password === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Password")", "Error")
+            ValidateElement("#@password")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@password")
+        }
+        return true;
+    }
+    function ValidationInputUser() {
+        let username = GetDataElement("#@username");
+        if (username == null || username == "" || typeof username === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Username")", "Error")
+            ValidateElement("#@username")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@username")
+        }
+
+        let userId = GetDataElement("#@userId");
+        if (userId == null || userId == "" || typeof userId === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input ID")", "Error")
+            ValidateElement("#@userId")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@userId")
+        }
+        return true;
+    }
+        // End Region
+</script>
+
+
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="">@(_loc.GetLocalizedString("Equipment Information Management"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row pt-2 pb-2">
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("Username"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(username)
+                        .Value(Model.userName == null ? "" : Model.userName)
+                        .MaxLength(20)
+                        )
+@*                    @(Html.DevExtreme().TextBox()
+                        .ID(storeNo)
+                        .Value(Model.storeNo == 0 ? "" : Model.storeNo.ToString())
+                        .MaxLength(20)
+                        .Visible(false)
+                        )*@
+                </div>
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("Birthday"))</label>
+                    @(
+                        Html.DevExtreme().DateBox()
+                        .ID(birthday)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Value(Model.birthday == null ? DateTime.Now : Model.birthday)
+                        )
+                </div>
+            </div>
+            <div class="row pt-2 pb-2">
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("ID"))<span class="required-input"> *</span></label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(userId)
+                        .Value(Model.userId == null ? "" : Model.userId)
+                        .MaxLength(20)
+                        .Buttons(b =>
+                        {
+                            b.Add()
+                            .Name("CheckExist")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(button => button.Button()
+                            .Type(ButtonType.Default)
+                            .Text("Search")
+                            .Icon("check")
+                            .ID(btnCheckDuplicateID)
+                            .OnClick("CheckDuplicateUserID")
+                            );
+                        })
+                        )
+
+                </div>
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("Phone Number"))</label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(phoneNumber)
+                        .Value(Model.phoneNumber == null ? "" : Model.phoneNumber)
+                        .MaxLength(15)
+                        )
+
+                </div>
+            </div>
+            <div class="row pt-2 pb-2">
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("Password"))</label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(password)
+                        .Value(Model.password == null ? "" : Model.password)
+
+                        .MaxLength(20)
+                        .Buttons(b =>
+                        {
+                            b.Add()
+                            .Name("ChangePassword")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(button => button.Button()
+                            .Type(ButtonType.Default)
+                            .Text("Change")
+                            .Icon("key")
+                            .ID(btnChangePassword)
+                            .OnClick("ChangePassword")
+                            );
+                            b.Add()
+                            .Name("ChangePasswordDetail")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(button => button.Button()
+                            .Type(ButtonType.Default)
+                            .Text("Reset")
+                            .Icon("fa fa-cog")
+                            .ID(btnChangeDefaultPassword)
+                            .OnClick("ChangeDefaultPassword")
+                            );
+                        })
+                        )
+                </div>
+                <div class="form-group col-md-6">
+                    <label>@(_loc.GetLocalizedString("Email"))</label>
+                    @(
+                        Html.DevExtreme().TextBox()
+                        .ID(email)
+                        .Value(Model.email == null ? "" : Model.email)
+
+                        .MaxLength(30)
+                        )
+
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>
+

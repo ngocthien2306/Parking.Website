@@ -1,0 +1,1292 @@
+﻿@using InfrastructureCore.Models.Menu
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using Modules.Pleiger.CommonModels;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = ViewBag.CREATE_YN;
+    pageSetting.SEARCH_YN = ViewBag.SEARCH_YN;
+    pageSetting.SAVE_YN = ViewBag.SAVE_YN;
+    pageSetting.DELETE_YN = ViewBag.DELETE_YN;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    //ToolbarInfo info1 = new ToolbarInfo();
+    //info1.Name = "Update";
+    //info1.ID = "btnUpdate";
+    //info1.Sort = 10;
+    //info1.Icon = "<i class='fas fa-hand-o-up'></i>";
+    //info1.MenuID = ViewBag.MenuID;
+    //lstNewToolbar.Add(info1);
+
+    ToolbarInfo pdf = new ToolbarInfo();
+    pdf.Name = "Print";
+    pdf.ID = "btnPrintPdf";
+    pdf.Sort = 10;
+    pdf.Icon = "<i class='fas fa-print'></i>";
+    pdf.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(pdf);
+}
+
+<script>
+    var SlipNumberSlt = null;
+    var PONumberSlt = null;
+    var poNumberSlt = null;
+    var partnerCodeSlt = null;
+    var isSuccess = false;
+    var flagCRUD = null;
+    var UserPONumber = null;
+    var ItemDelivery = null;
+    // Check if PO have return CheckedGoodsReturnDetail = 1
+    var CheckedGoodsReturnDetail = false;
+
+    // Page start
+    $(document).ready(function () {
+        LoadingPage(1);
+        ResizeReleaseItemSlipPartner();
+        setPageStart();
+        LoadingPage(0);
+    });
+
+
+
+    $("#btnPrintPdf_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GetDetailPODelivery", "MESItemSlip")',
+            type: 'GET',
+            async: true,
+            data: {
+                PONumber: UserPONumber,
+                Model: JSON.stringify(ItemDelivery)
+            },
+            dataType: 'json'
+        }).done(function (result) {
+            if (result.Result == false)
+            {
+                LoadingPage(0);
+            }
+            else {
+                var files = [];
+                console.log("downloadExcelPath: " + result.downloadExcelPath);
+                console.log("downloadExcelPath1: " + result.downloadExcelPath1 );
+                var link = $("<a href='" + getLanguages() + "/MESItemSlip/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+                var link1 = $("<a href='" + getLanguages() + "/MESItemSlip/Download?fileLink=" + result.downloadExcelPath1 + "&fileName=" + result.fileName + "'></a>");
+                console.log("link0: " + link[0].href);
+                console.log("link1: " + link1[0].href);
+                debugger;
+                files.push(link[0].href);
+                files.push(link1[0].href);
+                for (var i = 0; i < files.length; i++) {
+                    
+                    (files[i]);
+                }
+                LoadingPage(0);
+                DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Your Purchase Order has been printed"))', "Notify");
+            }
+
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            LoadingPage(0);
+            console.log(textStatus + ': ' + errorThrown);
+        });
+
+    });
+
+    var count = 0;
+    var downloadURL = function downloadURL(url) {
+        var hiddenIFrameID = 'hiddenDownloader' + count++;
+        var iframe = document.createElement('iframe');
+        iframe.id = hiddenIFrameID;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        iframe.src = url;
+    }
+
+    function getParamsStartDate() {
+        var value = $("#startDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        return ParsingDateyyyyMMdd(value);
+    }
+
+    function getParamsEndDate() {
+        var value = $("#endDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (value === null || value === "" || value === undefined) {
+            return null;
+        }
+        return ParsingDateyyyyMMdd(value);
+    }
+
+    function getParamsStatus() {
+        //return $("#ddlStatus@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        return null;
+    }
+
+    function getParamsUserProjectCode() {
+        return $("#UserProjectCodeSearch@(ViewBag.Thread)").val();
+        }
+
+    function getParamsUserPONumber() {
+        return $("#UserPONumberSearch@(ViewBag.Thread)").val();
+    }
+
+    function getParamsSlipNumber() {
+        return SlipNumberSlt;
+    }
+
+    function getParamsPoNumber() {
+        return PONumberSlt;
+    }
+
+    function getParamsPartnerCode() {
+        return partnerCodeSlt;
+    }
+
+    function ShowDataItemSlipDetailReleaseItemSlip(e) {
+        LoadingPage(1);
+        CheckSession();
+        var slipNumberSelect = $(e).attr("data-SlipNumber").trim();
+        SlipNumberSlt = slipNumberSelect;
+        PONumberSlt = $(e).attr("data-RelNumber").trim();
+        partnerCodeSlt = $(e).attr("data-PartnerCode").trim();
+        var POStatus = $(e).attr("data-POStatus").trim();
+
+        if (POStatus !== 'ORST05') {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+            //$("#btnUpdate_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+            //$("#btnUpdate_@ViewBag.Thread").attr("disabled", true);
+        }
+
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        flagCRUD = "Edit";
+        SetDataFormDetail(e);
+
+        $.ajax({
+            url: '@Url.Action("GetListMESItemSlipDetailForRelease", "MESItemSlip")',
+            type: "GET",
+            data: {
+                slipNumber: slipNumberSelect,
+                poNumber: PONumberSlt,
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }, error: function (result) {
+                LoadingPage(0);
+                return;
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function SetDataFormDetail(e) {
+
+        let SlipNumber = $(e).attr("data-SlipNumber").trim();
+        let RelNumber = $(e).attr("data-RelNumber").trim();
+        let PartnerCode = $(e).attr("data-PartnerCode").trim();
+        let WHFromCode = $(e).attr("data-WHFromCode").trim();
+        let WHToCode = $(e).attr("data-WHToCode").trim();
+        let PartnerName = $(e).attr("data-PartnerName").trim();
+        let Remark = $(e).attr("data-Remark").trim();
+        let SlipYMD = $(e).attr("data-SlipYMD").trim();
+        let UserPONumber = $(e).attr("data-UserPONumber").trim();
+        let ProjectCode = $(e).attr("data-ProjectCode").trim();
+        let UserProjectCode = $(e).attr("data-UserProjectCode").trim();
+        let PartnerPlanDeliveryDate = $(e).attr("data-PartnerPlanDeliveryDate").trim();
+        let PartnerDeliveryDate = $(e).attr("data-PartnerDeliveryDate").trim();
+
+
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", WHFromCode);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", WHToCode);
+        $("#SlipNumber@(ViewBag.Thread)").val(SlipNumber);
+        $("#PartnerCode@(ViewBag.Thread)").val(PartnerCode);
+        $("#PartnerName@(ViewBag.Thread)").val(PartnerName);
+        $("#Remark@(ViewBag.Thread)").val(Remark != null ? Remark : "");
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(SlipYMD));
+        $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(PartnerPlanDeliveryDate));
+        $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(PartnerDeliveryDate));
+
+        $("#PONumberPopup@(ViewBag.Thread)").val(RelNumber);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(UserPONumber);
+        $("#ProjectCode@(ViewBag.Thread)").val(ProjectCode);
+        $("#UserProjectCode@(ViewBag.Thread)").val(UserProjectCode);
+        // set attribute readonly
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+
+        $("#Remark@(ViewBag.Thread)").prop("disabled", false);
+        //$("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+
+    }
+
+    function SelectRowSetDataFormDetail(data) {
+
+        let SlipNumber = data[0].SlipNumber;
+        let RelNumber = data[0].RelNumber;
+        let PartnerCode = data[0].PartnerCode;
+        let WHFromCode = data[0].WHFromCode;
+        let WHToCode = data[0].WHToCode;
+        let PartnerName = data[0].PartnerName;
+        let Remark = data[0].Remark;
+        let SlipYMD = data[0].SlipYMD;
+
+        let PartnerPlanDeliveryDate = data[0].PartnerPlanDeliveryDate;
+        let PartnerDeliveryDate = data[0].PartnerDeliveryDate;
+
+        let UserPONumber = data[0].UserPONumber;
+        let ProjectCode = data[0].ProjectCode;
+        let UserProjectCode = data[0].UserProjectCode;
+
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", WHFromCode);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", WHToCode);
+        $("#SlipNumber@(ViewBag.Thread)").val(SlipNumber);
+        $("#PartnerCode@(ViewBag.Thread)").val(PartnerCode);
+        $("#PartnerName@(ViewBag.Thread)").val(PartnerName);
+        $("#Remark@(ViewBag.Thread)").val(Remark != null ? Remark : "");
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(SlipYMD));
+        $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(PartnerPlanDeliveryDate));
+        $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value", ParsingDateyyyyMMdd(PartnerDeliveryDate));
+
+        $("#PONumberPopup@(ViewBag.Thread)").val(RelNumber);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(UserPONumber);
+        $("#ProjectCode@(ViewBag.Thread)").val(ProjectCode);
+        $("#UserProjectCode@(ViewBag.Thread)").val(UserProjectCode);
+
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+
+    }
+    // Reload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        CheckSession();
+        RefreshTab(this);
+    });
+
+    // search
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        setPageStart();
+        clearGridItemSlipDetail();
+
+        if (getParamsStartDate() != null)
+        {
+            if (ValidateRangeDate(getParamsStartDate(), getParamsEndDate())) {
+                SearchAll();
+            }
+        }
+        else
+        {
+            SearchAll();
+        }
+
+    });
+
+    // create
+    $('#btnCreate_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        //set mask button
+        $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        clearInputFormData();
+        clearGridItemSlipDetail();
+        GetItemSlipMaster();
+        flagCRUD = "Insert";
+    });
+
+    // save
+    $('#btnSave_@ViewBag.Thread').on("click", function ()
+    {
+        CheckSession();
+        var PlanDeliveryDate = $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        var DeliveryDate = $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        var result = DevExpress.ui.dialog.confirm('@(_loc.GetLocalizedString("Are you sure to save data?"))', "Confirm changes");
+        result.done(function (dialogResult)
+        {
+            if (dialogResult)
+            {
+                LoadingPage(1);
+                $.blockUI();
+                if (ValidateInputFormData()) {
+                    // Form Master
+                    let itemSlipMaster = {
+                        SlipNumber: $("#SlipNumber@(ViewBag.Thread)").val(),
+                        SlipYMD: ParsingDateyyyyMMdd($("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value")),
+                        SlipType: '7',
+                        PartnerCode: $("#PartnerCode@(ViewBag.Thread)").val(),
+                        WHFromCode: $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                        WHToCode: $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value"),
+                        TotalAmt: '',
+                        TaxAmt: '',
+                        Remark: $("#Remark@(ViewBag.Thread)").val(),
+                        RelNumber: $("#PONumberPopup@(ViewBag.Thread)").val(),
+                        PartnerPlanDeliveryDate: ParsingDateyyyyMMdd($("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value")),
+                        PartnerDeliveryDate: ParsingDateyyyyMMdd($("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value"))
+                    };
+
+                    var gridItemSlipDetailData = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance').getDataSource().items()
+                    $.ajax({
+                        url: '@Url.Action("SavePartnerPODelivery", "MESItemSlip")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: flagCRUD,
+                            itemSlipMaster: JSON.stringify(itemSlipMaster),
+                            itemSlipDetail: JSON.stringify(gridItemSlipDetailData)
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Save data successfully."))', "Success", function () {
+                                    isSuccess = true;
+                                    setPageStart();
+                                    clearGridItemSlipDetail();
+                                    SearchAll();
+                                });
+                            }
+                            else {
+                                $.unblockUI();
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }, error: function (result) {
+                            LoadingPage(0);
+                            return;
+                        }
+                    });
+                }
+                else
+                {
+                    LoadingPage(0);
+                }
+            }
+            else
+            {
+                LoadingPage(0);
+                return;
+            }
+        });
+    });
+
+
+    // delete
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+        var dataGridMst = $('#gridItemSlipMst@(ViewBag.Thread)').dxDataGrid('instance');
+        var dataGridDtl = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance');
+        debugger;
+        var dataMst = dataGridMst.getSelectedRowsData();
+        var dataDtl = dataGridDtl.getDataSource().items();
+        if ((typeof dataMst !== 'undefined' && dataMst.length >= 0) || (typeof dataDtl !== 'undefined' && dataDtl.length >= 0)) {
+            var result = DevExpress.ui.dialog.confirm('@(_loc.GetLocalizedString("Are you sure to save data?"))',"Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    $.ajax({
+                        url: '@Url.Action("CheckStatusPOClose", "MESPORequest")',
+                        data: {
+                            PONumber: dataMst[0].RelNumber
+                        },
+                        dataType: "json",
+                        type: "GET"
+                    }).done(function (result) {
+                        if (result.Success) {
+                            $.ajax({
+                                url: '@Url.Action("DeleteItemSlip", "MESItemSlip")',
+                                type: "POST",
+                                data: { dataMst: dataMst, dataDtl: dataDtl },
+                                dataType: "json",
+                                success: function (rs) {
+                                    if (rs.Success == true) {
+                                        LoadingPage(0);
+                                        DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Save data successfully."))', "Success", function () {
+                                            isSuccess = true;
+                                            setPageStart();
+                                            clearGridItemSlipDetail();
+                                            debugger;
+                                            SearchAll();
+                                        });
+                                    }
+                                    else {
+                                        LoadingPage(0);
+                                        $.unblockUI();
+                                    }
+                                }, error: function (result) {
+                                    LoadingPage(0);
+                                    return;
+                                }
+                            });
+                            if (isSuccess) {
+                                LoadingPage(0);
+                                $.unblockUI();
+                            }
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("The status has changed. Can't delete rows"))', "Warning");
+                            return;
+                        }
+                    });
+
+
+                }
+                else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+        }
+        else {
+            LoadingPage(0);
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Please make sure data are changed"))', "Warning");
+        }
+    });
+
+    function GridItemSlipMstOnSelectionChangedPartner(selectedItems) {
+        var data = selectedItems.selectedRowsData;
+        ItemDelivery = data;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            UserPONumber = selectedItems.selectedRowsData[0].UserPONumber
+            if (data[0].POStatus !== 'ORST05') {
+                $("#btnDelete_@ViewBag.Thread").attr("disabled", false);
+                $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+                $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+                $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+                $("#Remark@(ViewBag.Thread)").prop("disabled", true);
+            }
+            else {
+                $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+                $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+                $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+                $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+                $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+                $("#btnSave_@(ViewBag.Thread)").attr("disabled", true);
+                $("#Remark@(ViewBag.Thread)").prop("disabled", true);
+
+            }
+            $("#btnPrintPdf_@(ViewBag.Thread)").attr("disabled", false);
+        // Select row get data Item slip Detail
+        LoadingPage(1);
+        CheckSession();
+        flagCRUD = "Edit";
+        SelectRowSetDataFormDetail(data);
+            $.ajax({
+                url: '@Url.Action("GetListMESItemSlipDetailForReleasePartner", "MESItemSlip")',
+                type: "GET",
+                data: {
+                    slipNumber: data[0].SlipNumber,
+                    poNumber: data[0].RelNumber
+                },
+                dataType: 'json',
+                success: function (result) {
+                    var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                    grid.option("dataSource", result.data);
+                    grid.refresh();
+
+                }, error: function (result) {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+
+    }
+
+    function GridItemSlipDtlSelectionChangedPartner(selectedItems) {
+        var data = selectedItems.selectedRowsData;
+    }
+
+    function ValidateInputFormData() {
+
+        var checkSave = true;
+        // PO number
+        let PONumber = $("#PONumberPopup@(ViewBag.Thread)").val();
+        if (PONumber == null || PONumber == undefined || PONumber == "") {
+            DevExpress.ui.dialog.alert("Please choose PFE PO Number", "Error");
+            checkSave = false;
+            return checkSave;
+        }
+        // WHPartnerCode
+        let WHPartnerCode = $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        if (WHPartnerCode == null || WHPartnerCode == undefined || WHPartnerCode == "") {
+            DevExpress.ui.dialog.alert("Please select Warehouse Partner!", "Error");
+            checkSave = false;
+            return checkSave;
+        }
+
+        // WHPleigerCode
+        let WHPleigerCode = $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+        if (WHPleigerCode == null || WHPleigerCode == undefined || WHPleigerCode == "") {
+            DevExpress.ui.dialog.alert("Please select Warehouse Pleiger!", "Error");
+            checkSave = false;
+            return checkSave;
+        }
+        var PlanDeliveryDate = $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        @*if (PlanDeliveryDate == "" || PlanDeliveryDate == undefined || PlanDeliveryDate == null)
+        {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input Plan Delivery Date"))", "Error");
+            checkSave = false;
+            return checkSave;
+        }*@
+        var DeliveryDate = $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (DeliveryDate == "" || DeliveryDate == undefined || DeliveryDate == null)
+        {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input Delivery Date"))", "Error");
+            checkSave = false;
+            return checkSave;
+        }
+        var SlipDate = $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value");
+        if (SlipDate == "" || SlipDate == undefined || SlipDate == null)
+        {
+            DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input Slip Date"))", "Error");
+            checkSave = false;
+            return checkSave;
+        }
+        
+        var gridItemSlipDetailData = $('#gridItemSlipDtl@(ViewBag.Thread)').dxDataGrid('instance').getDataSource().items()
+        if (gridItemSlipDetailData != null) {
+            $.each(gridItemSlipDetailData, function (index, item) {
+
+                if (gridItemSlipDetailData[index].Qty > gridItemSlipDetailData[index].POQty ||
+                    gridItemSlipDetailData[index].Qty > gridItemSlipDetailData[index].TotalPOQty) {
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Receive Qty cannot higher than Total PO Qty or PO Qty Remainning."))", "Error");
+                    checkSave = false;
+                    return checkSave;
+                }
+                if (gridItemSlipDetailData[index].Qty <= 0) {
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("Please input positive number or different zero."))", "Error");
+                    checkSave = false;
+                    return checkSave;
+                }
+            });
+        }
+
+        return checkSave;
+    }
+
+    function clearInputFormData() {
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", false);
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", false);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", false);
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#Remark@(ViewBag.Thread)").prop("disabled", false);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+        $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+        $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", false);
+
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", false);
+        $("#PartnerCode@(ViewBag.Thread)").val(null);
+        $("#PartnerName@(ViewBag.Thread)").val(null);
+        $("#ProjectCode@(ViewBag.Thread)").val(null);
+        $("#UserProjectCode@(ViewBag.Thread)").val(null);
+        $("#SlipNumber@(ViewBag.Thread)").val(null);
+        $("#Remark@(ViewBag.Thread)").val(null);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", new Date());
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '0001');
+        $("#PONumberPopup@(ViewBag.Thread)").val(null);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(null);
+        $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value",'');
+
+    }
+
+    function clearFormWhenChangePONumber() {
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", null);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '0001');
+        $("#PONumberPopup@(ViewBag.Thread)").val(null);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(null);
+        $("#Remark@(ViewBag.Thread)").val(null);
+    }
+
+    function setPageStart() {
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("disabled", true);
+        $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+        $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+        $("#Remark@(ViewBag.Thread)").prop("disabled", true);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+        $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("disabled", true);
+
+        $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+        $("#PartnerCode@(ViewBag.Thread)").val(null);
+        $("#PartnerName@(ViewBag.Thread)").val(null);
+        $("#ProjectCode@(ViewBag.Thread)").val(null);
+        $("#UserProjectCode@(ViewBag.Thread)").val(null);
+        $("#Remark@(ViewBag.Thread)").val(null);
+        $("#SlipNumber@(ViewBag.Thread)").val(null);
+        $("#SlipDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '');
+        $("#PartnerPlanDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '');
+        $("#PartnerDeliveryDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '');
+        $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+        $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+        $("#PONumberPopup@(ViewBag.Thread)").val(null);
+        $("#UserPONumberPopup@(ViewBag.Thread)").val(null);
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        $("#btnDelete_@ViewBag.Thread").attr("disabled", true);
+        //$("#btnUpdate_@(ViewBag.Thread)").attr("disabled", true);
+        $("#btnPrintPdf_@(ViewBag.Thread)").attr("disabled", true);
+
+
+    }
+
+    function clearGridItemSlipDetail() {
+        var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+        grid.option("dataSource", null);
+        grid.refresh();
+    }
+
+    function createGridItemSlipDtlByPONumber() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("CreateGridItemSlipDtlByPONumber", "MESItemSlip")',
+            type: "GET",
+            data: {
+                poNumber: poNumberSlt
+            },
+            dataType: 'json',
+            success: function (result) {
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    function isNotEmpty(value) {
+        return value !== undefined && value !== null && value !== "";
+    }
+
+    function SearchAll() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetListMESItemSlipMasterForReleasePartner", "MESItemSlip")',
+            type: "GET",
+            data: {
+                startDate: getParamsStartDate(),
+                endDate: getParamsEndDate(),
+                status: getParamsStatus(),
+                userProjectNo: getParamsUserProjectCode(),
+                userPoNumber: getParamsUserPONumber()
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                var grid = $("#gridItemSlipMst@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.deselectAll();
+                grid.refresh();
+            }
+        });
+    }
+
+    function GetItemSlipMaster() {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("GetItemSlipMasterKey", "MESItemSlip")',
+            type: "GET",
+            data: {},
+            dataType: 'json',
+            success: function (result) {
+                $("#SlipNumber@(ViewBag.Thread)").val(result);
+            }
+        });
+    }
+
+    function PONumberValueChanged(data) {
+        CheckSession();
+
+        let dataSelected = data.value;
+        poNumberSlt = dataSelected;
+            //get data refer
+            $.ajax({
+                url: '@Url.Action("GetDataReferByPONumberForRelease", "MESItemSlip")',
+                type: "GET",
+                data: { PONumber: dataSelected},
+                dataType: 'json',
+                success: function (result) {
+                    SetDataFormDetailByPONumberValueChanged(result.data);
+                }
+            });
+            // get Item detail by POnumber
+            createGridItemSlipDtlByPONumber();
+
+    }
+
+    function SetDataFormDetailByPONumberValueChanged(data) {
+
+            // set attribute readonly
+            $("#PartnerCode@(ViewBag.Thread)").prop("disabled", true);
+            $("#PartnerName@(ViewBag.Thread)").prop("disabled", true);
+            $("#ProjectCode@(ViewBag.Thread)").prop("disabled", true);
+            $("#UserProjectCode@(ViewBag.Thread)").prop("disabled", true);
+            $("#PONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+            $("#UserPONumberPopup@(ViewBag.Thread)").prop("disabled", true);
+            $("#btnShowPopupSearchPo@(ViewBag.Thread)").prop("disabled", true);
+            // set value
+            $("#PartnerCode@(ViewBag.Thread)").val(data != null ? data.PartnerCode : "");
+            $("#PartnerName@(ViewBag.Thread)").val(data != null ? data.PartnerName : "");
+            $("#ProjectCode@(ViewBag.Thread)").val(data != null ? data.ProjectCode : "");
+            $("#UserProjectCode@(ViewBag.Thread)").val(data != null ? data.UserProjectCode : "");
+
+            partnerCodeSlt = data != null ? data.PartnerCode : "";
+
+            // reset value
+            var WHPartnerCodeValue = $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+            var WHPleigerCode = $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value");
+
+            if (WHPartnerCodeValue == null || WHPartnerCodeValue == undefined || WHPartnerCodeValue == "") {
+                $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+            }
+            if (WHPleigerCode == null || WHPleigerCode == undefined || WHPleigerCode == "") {
+                $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+            }
+
+        }
+
+    function validateQtyInputNumber(e) {
+
+        if (e.data.Qty > e.data.POQty) {
+            e.rule.message = "Qty cannot higher than POQty.";
+            return false;
+        }
+        if (e.data.Qty <= 0) {
+            e.rule.message = "Please input positive number or different zero.";
+            return false;
+        }
+        return true;
+    }
+
+    // Quan add 2020/09/23
+    $("#btnShowPopupSearchPo@(ViewBag.Thread)").on("click", function () {
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("PopupSearchPOPartner", "MESItemSlip")',
+            type: "GET",
+            data:
+            {
+                Index: "@(ViewBag.Thread)"
+            },
+            dataType: "html",
+            success: function (result) {
+                // parent popup
+                $("#modalContent").html(result);
+                $("#modalContent").addClass("modal-xl");
+                $('#modalControl').modal('show');
+            }
+        });
+    });
+
+    function onchangePONumberPartner(e) {
+        CheckSession();
+
+        var PONumberChange = $("#PONumberPopup@(ViewBag.Thread)").val();
+        var PartnerCodeChange = $("#PONumberPopup@(ViewBag.Thread)").val();
+
+        //get data refer
+        $.ajax({
+            url: '@Url.Action("GetDataReferByPONumberForRelease", "MESItemSlip")',
+            type: "GET",
+            data: { PONumber: PONumberChange },
+            dataType: 'json',
+            success: function (result) {
+
+                //reset value
+                $("#WHPartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+                $("#WHPleigerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '');
+                $("#PartnerCode@(ViewBag.Thread)").val(null);
+                $("#PartnerName@(ViewBag.Thread)").val(null);
+                $("#ProjectCode@(ViewBag.Thread)").val(null);
+                $("#UserProjectCode@(ViewBag.Thread)").val(null);
+                $("#SlipNumber@(ViewBag.Thread)").val(null);
+                var grid = $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance");
+                grid.option("dataSource", result.data);
+                grid.refresh();
+            }
+        });
+    }
+
+    function SetCellValueDeliveryQty(rowdata, value, currentRowData) {
+        console.log("cellvalue", value)
+        rowdata.Qty = value;
+    }
+
+    $(window).resize(function () {
+        ResizeReleaseItemSlipPartner();
+    });
+
+    var setintervalReleaseItemSlip = setInterval(IntervalReleaseItemSlipPartner, 25);
+    var demmReleaseItemSlip = 0;
+
+    function IntervalReleaseItemSlipPartner()
+        {
+        ++demmReleaseItemSlip;
+        if (demmReleaseItemSlip == 100) {
+            clearInterval(setintervalReleaseItemSlip);
+        }
+        else {
+            ResizeReleaseItemSlipPartner();
+        }
+    }
+
+    function ResizeReleaseItemSlipPartner() {
+
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "rowleft_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+                ReCalResize("bdpage_@(ViewBag.Thread)", "ID", "rowright_@(ViewBag.Thread)", "hdpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+
+    function PartnerCodeOnchange_@(ViewBag.Thread) () {
+        //
+        //console.log("PartnerCodeOnchange_");
+    }
+
+    function onItemSlipDetailCellPreparedPartner(e) {
+        //
+        if (e.rowType == 'data' && e.column.dataField == 'Qty') {
+            e.cellElement.css("color", "red");
+            e.cellElement.css('backgroundColor', "yellow");
+        }
+
+        if (e.rowType == "data") {
+            if (e.data.POStatus === "ORST05") // your condition goes here
+            {
+                e.cellElement.find(".dx-link-delete").remove();
+            }
+        }
+    }
+
+    function onItemSlipDetailRowRemovedPartner(e) {
+        debugger;
+        LoadingPage(1);
+        // When Create Goods Receipt PONumber = Null
+        // Not delete row on server
+        let PONumber = e.data.RelNumber;
+        if (PONumber != null) {
+            $.ajax({
+                url: '@Url.Action("CheckStatusPOClose", "MESPORequest")',
+                data: {
+                    PONumber: PONumber
+                },
+                dataType: "json",
+                type: "GET"
+            }).done(function (result) {
+                if (result.Success) {
+
+                    $.ajax({
+                        url: '@Url.Action("DeleteItemSlipDetail", "MESItemSlip")',
+                        data: {
+                            dataDtl: e.data
+                        },
+                        dataType: "json",
+                        type: "POST"
+                    }).done(function (result) {
+                        if (result.Success) {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Save data successfully."))', "Success", function () {
+                                isSuccess = true;
+                                setPageStart();
+                                clearGridItemSlipDetail();
+                                SearchAll();
+                            });
+                            return;
+                        }
+                        else {
+                            LoadingPage(0);
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                            return;
+                        }
+                    })
+                }
+                else {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert("@(_loc.GetLocalizedString("The status has changed. Can't delete rows."))", "Error");
+                    return;
+                }
+            })
+        }
+        LoadingPage(0);
+    }
+
+    // not editing Qty when update
+    function GridItemSlipDtlOnCellClickPartner(e) {
+        if (e.rowType == "data" && e.row.data.SlipNumber != undefined)
+        {
+            $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance").columnOption("Qty", "allowEditing", false);
+            $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance").columnOption("Remark", "allowEditing", false);
+        }
+        else {
+            $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance").columnOption("Qty", "allowEditing", true);
+            $("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid("instance").columnOption("Remark", "allowEditing", true);
+        }
+    }
+
+</script>
+
+@{
+    string idStatusDDL = "ddlStatus" + ViewBag.Thread;
+    string gridItemSlipMst = "gridItemSlipMst" + ViewBag.Thread;
+    string gridItemSlipDtl = "gridItemSlipDtl" + ViewBag.Thread;
+    string PONumberDDL = "PONumber" + ViewBag.Thread;
+    string WHPartnerCodeDDL = "WHPartnerCode" + ViewBag.Thread;
+    string WHPleigerCodeDDL = "WHPleigerCode" + ViewBag.Thread;
+}
+
+<div>
+    <div id="menutoolbar_@(ViewBag.Thread)">
+        @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+    </div>
+
+    <div class="row" id="divindex_@(ViewBag.Thread)">
+        <div class="col-md-6" style="height:100%">
+            <div class="card" style="height:100%;" id="rowleft_@(ViewBag.Thread)">
+                <div class="card-header p-2" id="headerpage_@(ViewBag.Thread)">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>@(_loc.GetLocalizedString("Delivery Date"))</label>
+                            <div class="form-group row">
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID("startDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                         .Value(DateTime.Now.AddMonths(-2).ToString("yyyy-MM-01"))
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                    )
+                                </div>
+                                <div style="align-self: center;">~</div>
+                                <div class="col-sm-5 col-xs-5">
+                                    @(Html.DevExtreme().DateBox().ID("endDate" + ViewBag.Thread)
+                                        .Type(DateBoxType.Date)
+                                        .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                                        .DisplayFormat("yyyy-MM-dd")
+                                        .MaxLength(10)
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3" hidden>
+                            <div class="form-group" >
+                                <label for="UserProjectCodeSearch">@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                                <input type="text" class="form-control" id="UserProjectCodeSearch@(ViewBag.Thread)">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="UserPONumberSearch">@(_loc.GetLocalizedString("PFE PO Number"))</label>
+                                <input type="text" class="form-control" id="UserPONumberSearch@(ViewBag.Thread)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0 pl-2 pr-2 pt-2" id="bodypage_@(ViewBag.Thread)">
+                    <div class="row" style="height:100%">
+                        <div class="col-sm-12 col-xs-12" style="height:100%">
+                            <fieldset class="customFieldset" style="height:97%">
+                                <legend class="customLegend">@_loc.GetLocalizedString("ItemSlipMaster")</legend>
+                                @(Html.DevExtreme().DataGrid<MES_ItemSlipMaster>()
+                                    .ID(gridItemSlipMst)
+                                    .DataSource(
+                                        x=>x.Mvc().Controller("MESItemSlip")
+                                         .LoadAction("GetListMESItemSlipMasterForReleasePartner")
+                                         .LoadParams(new
+                                         {
+                                             startDate = new JS("getParamsStartDate"),
+                                             endDate = new JS("getParamsEndDate"),
+                                             status = new JS("getParamsStatus"),
+                                             userProjectNo = new JS("getParamsUserProjectCode"),
+                                             userPoNumber = new JS("getParamsUserPONumber")
+                                         })
+                                        .Key("SlipNumber")
+                                    )
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .ColumnAutoWidth(true)
+                                    .Height("100%")
+                                    //.OnCellPrepared("SetColorRowIsReturn")
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Columns(c=>
+                                    {
+
+                                        //c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("UserPONumber")).AllowEditing(false);
+                                        c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                                        c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("PFE PO Number")).AllowEditing(false);
+                                        c.AddFor(x => x.PartnerPlanDeliveryDate).Caption(_loc.GetLocalizedString("PlanDeliveryDate")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                        c.AddFor(x => x.PartnerDeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                        c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));
+                                        c.AddFor(x => x.POStatus).Caption(_loc.GetLocalizedString("POStatus"));
+                                        c.AddFor(x => x.SlipNumber).Caption(_loc.GetLocalizedString("GoodReceiptSlipNumber"));
+                                        c.AddFor(x => x.SlipYMD).Caption(_loc.GetLocalizedString("Slip Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                        c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).AllowEditing(false).Visible(false);
+                                        c.AddFor(x => x.RelNumber).Caption(_loc.GetLocalizedString("PO Number")).Visible(false);
+                                        c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code")).Visible(false);
+                                        c.AddFor(x => x.WHToName).Caption(_loc.GetLocalizedString("Warehouse")).Visible(false);// Pleiger
+                                        c.AddFor(x => x.TotalTaxAmt).Caption(_loc.GetLocalizedString("Total Tax Amt")).Format("#,##0.#0").Visible(false);
+                                        c.AddFor(x => x.WHFromCode).Caption(_loc.GetLocalizedString("Warehouse Partner")).Visible(false);
+                                        c.AddFor(x => x.UserCreated).Caption(_loc.GetLocalizedString("UserCreated")).Visible(false);
+                                        c.AddFor(x => x.RegistNumber).Caption(_loc.GetLocalizedString("RegistNumber")).Visible(false);
+                                        c.AddFor(x => x.PartnerAddress).Caption(_loc.GetLocalizedString("PartnerAddress")).Visible(false);
+                                        c.AddFor(x => x.Ceo).Caption(_loc.GetLocalizedString("CEO")).Visible(false);
+
+                                    })
+                                    .RemoteOperations(true)
+                                    .Scrolling(s => s
+                                        .Mode(GridScrollingMode.Standard)
+                                    )
+                                    .Paging(p => p.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                    .OnSelectionChanged("GridItemSlipMstOnSelectionChangedPartner")
+                                )
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6" style="height:100%">
+            <div class="card" style="height:100%">
+                <div class="card-body p-1" style="height:100%">
+                    <div class="row" style="height:100%">
+                        <div class="col-sm-12 col-xs-12" style="height:100%" id="rowright_@(ViewBag.Thread)">
+                            <div class="row" style="height:100%">
+                                <div class="col-12" id="hdpage_@(ViewBag.Thread)">
+                                    <fieldset class="customFieldset" style="height:100%">
+                                        <legend class="customLegend">@_loc.GetLocalizedString("ItemSlipMaster")</legend>
+                                        <div class="form-group row">
+                                            <div class="form-group col-md-3" hidden="hidden">
+                                                <label for="PONumber">@(_loc.GetLocalizedString("PO Number"))</label>
+                                                <div class="input-group mb-3">
+                                                    <input type="text" id="PONumberPopup@(ViewBag.Thread)" onchange="onchangePONumberPartner()" class="form-control">
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label>@(_loc.GetLocalizedString("PFE PO Number"))</label>
+                                                <div class="input-group mb-3">
+                                                    <input type="text" id="UserPONumberPopup@(ViewBag.Thread)" onchange="onchangePONumberPartner()" class="form-control">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary" id="btnShowPopupSearchPo@(ViewBag.Thread)" type="button">
+                                                            <i class="fa fa-search"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-2" hidden>
+                                                <label for="PartnerCode">@(_loc.GetLocalizedString("Partner Code"))</label>
+                                                <input type="text" class="form-control" id="PartnerCode@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-5">
+                                                <label for="PartnerName">@(_loc.GetLocalizedString("Partner Name"))</label>
+                                                <input type="text" class="form-control" id="PartnerName@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3" hidden>
+                                                <label for="ProjectCode">@(_loc.GetLocalizedString("Project Code"))</label>
+                                                <input type="text" class="form-control" id="ProjectCode@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3" hidden>
+                                                <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                                                <input type="text" class="form-control" id="UserProjectCode@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3" hidden="hidden">
+                                                <label for="WHPartnerName">@(_loc.GetLocalizedString("WHPartnerName"))</label>
+                                                @(Html.DevExtreme().SelectBox()
+                                                            .ID(WHPartnerCodeDDL)
+                                                            .DisplayExpr("Name")
+                                                            .ValueExpr("ID")
+                                                            .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                                                .LoadAction("GetAllPartnerMaterialWarehouse").LoadParams(new { PartnerCode = new JS("getParamsPartnerCode") })
+                                                                .Key("ID")
+                                                            )
+                                                            .SearchEnabled(true)
+                                                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="WHPleigerName">@(_loc.GetLocalizedString("WHPleiger"))</label>
+                                                @(Html.DevExtreme().SelectBox()
+                                                            .ID(WHPleigerCodeDDL)
+                                                            .DisplayExpr("Name")
+                                                            .ValueExpr("ID")
+                                                            .DataSource(d => d.Mvc().Controller("MESWarehouse")
+                                                                .LoadAction("GetAllPleigerMaterialWarehouse")
+                                                                .Key("ID")
+                                                            )
+                                                            .SearchEnabled(true)
+                                                            .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                                )
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="SlipNumber">@(_loc.GetLocalizedString("GoodReceiptSlipNumber"))</label>
+                                                <input type="text" class="form-control" readonly id="SlipNumber@(ViewBag.Thread)">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="SlipDate">@(_loc.GetLocalizedString("Slip Date"))</label>
+                                                @(Html.DevExtreme().DateBox().ID("SlipDate" + ViewBag.Thread)
+                                                    .Type(DateBoxType.Date).DisplayFormat("yyyy-MM-dd")
+                                                    .MaxLength(10)
+                                                )
+                                            </div>
+                                            @* Quan add new*@
+                                            <div class="form-group col-md-3" hidden>
+                                                <label>@(_loc.GetLocalizedString("Plan Delivery Date"))</label>
+                                                @(Html.DevExtreme().DateBox().ID("PartnerPlanDeliveryDate" + ViewBag.Thread)
+                                                    .Type(DateBoxType.Date).DisplayFormat("yyyy-MM-dd")
+                                                    .MaxLength(10)
+                                                    //.Min(DateTime.Now)
+                                                )
+                                            </div>
+
+                                            <div class="form-group col-md-3">
+                                                <label>@(_loc.GetLocalizedString("Delivery Date"))</label>
+                                                @(Html.DevExtreme().DateBox().ID("PartnerDeliveryDate" + ViewBag.Thread)
+                                                    .Type(DateBoxType.Date).DisplayFormat("yyyy-MM-dd")
+                                                    .MaxLength(10)
+                                                    //.Min(DateTime.Now)
+                                                )
+                                            </div>
+
+                                            <div class="form-group col-md-12">
+                                                <label for="Remark">@(_loc.GetLocalizedString("Remark"))</label>
+                                                <input type="text" class="form-control" id="Remark@(ViewBag.Thread)">
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                                <div class="col-12" id="bdpage_@(ViewBag.Thread)">
+                                    <fieldset class="customFieldset" style="height:100%">
+                                        <legend class="customLegend">@(_loc.GetLocalizedString("ItemSlipDetail"))</legend>
+                                        @(Html.DevExtreme().DataGrid<MES_ItemSlipDetail>()
+                                                .ID(gridItemSlipDtl)
+                                                .KeyExpr("ItemCode")
+                                                .DataSource(x => x.Mvc().Controller("MESItemSlip")
+                                                    .LoadAction("GetListMESItemSlipDetailForRelease").LoadParams(new
+                                                    {
+                                                        slipNumber = new JS("getParamsSlipNumber"),
+                                                        poNumber =  new JS("getParamsPoNumber")
+                                                    })
+                                                    .Key("ItemCode")
+                                                )
+                                                .ShowBorders(true)
+                                                .ShowColumnLines(true)
+                                                .ShowRowLines(true)
+                                                .AllowColumnResizing(true)
+                                                .AllowColumnReordering(true)
+                                                .ColumnAutoWidth(true).Height("100%")
+                                                .RepaintChangesOnly(false)
+                                                .Columns(c=> {
+                                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No")).AllowEditing(false);
+                                                c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                                                c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                                                c.AddFor(x => x.Unit).Caption(_loc.GetLocalizedString("Unit")).AllowEditing(false);
+                                                c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Plan Delivery Date")).DataType(GridColumnDataType.Date).Format("yyyy-MM-dd").AllowEditing(false);
+                                                c.AddFor(x => x.Qty).Caption((_loc.GetLocalizedString("Delivery Qty"))).DataType(GridColumnDataType.Number).Format("#,##0").SetCellValue("SetCellValueDeliveryQty");
+                                                c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("PO Qty Remaining")).Format("#,##0").AllowEditing(false);
+                                                c.AddFor(x => x.TotalPOQty).Caption(_loc.GetLocalizedString("Total PO Qty")).Format("#,##0").AllowEditing(false);
+                                                c.AddFor(x => x.Cost).Caption(_loc.GetLocalizedString("Item Cost")).Format("#,##0.#0").AllowEditing(false).Visible(false);
+                                                c.AddFor(x => x.POStatus).Caption(_loc.GetLocalizedString("PO Status")).AllowEditing(false).Visible(false);
+                                                c.AddFor(x => x.Amt).Caption(_loc.GetLocalizedString("Amt")).Format("#,##0.#0").AllowEditing(false).Visible(false)
+                                                .CalculateCellValue(
+                                                        @<text>
+                                                                function(data) {
+                                                                    return data.Amt = data.Qty * data.Cost;
+                                                                }
+                                                        </text>
+                                                    );
+                                                c.AddFor(x => x.Tax).Caption(_loc.GetLocalizedString("Tax")).Format("#,##0.#0").AllowEditing(false).CalculateCellValue(
+                                                        @<text>
+                                                                function(data) {
+                                                                    return data.Tax = data.Amt * 0.1;
+                                                                }
+                                                        </text>
+                                                    ).Visible(false);
+                                                c.AddFor(x => x.TaxAmt).Caption(_loc.GetLocalizedString("TaxAmt")).Format("#,##0.#0").AllowEditing(false).CalculateCellValue  (
+                                                        @<text>
+                                                                function(data) {
+                                                                    return data.TaxAmt = data.Amt + data.Tax;
+                                                                }
+                                                        </text>
+                                                    ).Visible(false);
+                                                    c.AddFor(x => x.Remark).Caption(_loc.GetLocalizedString("Remark"));
+                                                    c.AddFor(x => x.PleigerRemark).Caption(_loc.GetLocalizedString("Pleiger Remark")).AllowEditing(false);
+                                                    c.AddFor(x => x.PleigerRemark2).Caption(_loc.GetLocalizedString("Pleiger Remark2")).AllowEditing(false);
+
+                                                })
+                                                .RemoteOperations(true)
+                                                .Scrolling(s => s
+                                                    .Mode(GridScrollingMode.Standard)
+                                                )
+                                                .Editing(e => e
+                                                    .Mode(GridEditMode.Cell)
+                                                    .AllowUpdating(true).UseIcons(true)
+                                                    .AllowDeleting(ViewBag.DELETE_YN).UseIcons(true)
+                                                  )
+                                                .Paging(p => p.PageSize(100))
+                                                .Pager(pager =>
+                                                {
+                                                    pager.ShowInfo(true);
+                                                    pager.ShowNavigationButtons(true);
+                                                })
+                                                .OnSelectionChanged("GridItemSlipDtlSelectionChangedPartner")
+                                                .OnCellPrepared("onItemSlipDetailCellPreparedPartner")
+                                                .OnRowRemoved("onItemSlipDetailRowRemovedPartner")
+                                                .OnCellClick("GridItemSlipDtlOnCellClickPartner")
+                                            )
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

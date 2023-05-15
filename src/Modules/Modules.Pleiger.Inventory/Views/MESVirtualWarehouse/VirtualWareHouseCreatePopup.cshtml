@@ -1,0 +1,379 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+
+@model MES_VirtualWarehouse;
+@{
+    Layout = null;
+}
+@{
+    string VirtualWareHouseId = "VirtualWareHouseId" + ViewBag.Thread;
+    string VirtualWareHouseName = "VirtualWareHouseName" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string ItemQty = "ItemQty" + ViewBag.Thread;
+    string Description = "Description" + ViewBag.Thread;
+    string CreateDate = "CreateDate" + ViewBag.Thread;
+    string Creater = "Creater" + ViewBag.Thread;
+    string Status = "Status" + ViewBag.Thread;
+    string CloseDate = "CloseDate" + ViewBag.Thread;
+
+}
+<script>
+
+    $(document).ready(function () {
+        LoadingPage(1);
+
+        let VirtualWHId = @Model.VirtualWareHouseId;
+
+        if ('@ViewBag.Status' == "Done")
+        {
+            $("#btnSave_@ViewBag.Thread").prop("disabled", true);
+            $("#btnDelete_@ViewBag.Thread").prop("disabled", true);
+        }
+        else
+        {
+            $("#btnSave_@ViewBag.Thread").prop("disabled", false);
+            $("#btnDelete_@ViewBag.Thread").prop("disabled", false);
+        }
+        if (VirtualWHId == null || VirtualWHId == 0)
+        {
+            $("#btnDelete_@ViewBag.Thread").prop("disabled", true);
+
+        }
+        if ('@Model.ItemCode' != '' && '@Model.ItemCode' != null) {
+            $("#ItemCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.ItemCode');
+        }
+
+        @*if ('@Model.CreateDate' != '' && '@Model.CreateDate' != null) {
+
+            $("#CreateDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '@Model.CreateDate');
+            $("#CreateDate@(ViewBag.Thread)").prop("readonly", true);
+        }
+
+        if ('@Model.CloseDate' != '' && '@Model.CloseDate' != null) {
+                $("#CloseDate@(ViewBag.Thread)").dxDateBox("instance").option("value", '@Model.CloseDate');
+        }*@
+
+        if ('@Model.Status' != '' && '@Model.Status' != null) {
+            $("#Status@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.Status');
+        }
+        LoadingPage(0);
+    });
+
+    function productTypeOnValueChanged(data) {
+        CheckSession();
+        debugger;
+        var itemClassCode = data.value;
+        var arrJson;
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("GetItemCodeNameByItemClassCode", "MESSaleProject")',
+            data: { itemClassCode: itemClassCode },
+            dataType: "json",
+            async: true
+        }).done(function (resp) {
+            debugger;
+            arrJson = resp.data;
+            console.log(arrJson);
+            $("#ItemCode").dxSelectBox({
+                disabled: false,
+                dataSource: arrJson,
+                displayExpr: "NameEng",
+                valueExpr: "ItemCode"
+            });
+        });
+    }
+
+</script>
+
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="VirtualWareHouseCreatePopup">@(_loc.GetLocalizedString("Virtual WareHouse Detail"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row">
+                <div class="form-group col-md-3" hidden="hidden">
+                    <label>@(_loc.GetLocalizedString("Virtual WareHouse Id"))</label>
+                    @Html.TextBoxFor(x => x.VirtualWareHouseId, new { @class = "form-control", @readonly = "readonly", @id = "VirtualWareHouseId" + ViewBag.Thread, @Value = Model.VirtualWareHouseId })
+                </div>
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Virtual Warehouse Name"))</label>
+                    @Html.TextBoxFor(x => x.VirtualWareHouseName, new { @class = "form-control", @id = "VirtualWareHouseName" + ViewBag.Thread, @Value = Model.VirtualWareHouseName })
+                </div>
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                    @*@Html.TextBoxFor(x => x.ItemCode, new { @class = "form-control", @id = "ItemCode" + ViewBag.Thread, @maxlength = "200", @Value = Model.ItemCode })*@
+                    @(Html.DevExtreme().SelectBox()
+                                    .ID(ItemCode)
+                                    .DisplayExpr("NameKor").ValueExpr("ItemCode")
+                                    .DataSource(d => d.Mvc().Controller("MESVirtualWarehouse")
+                                        .LoadAction("GetItemClassCodeByCategory")
+                                        .Key("ItemCode")
+                                    )
+                                    .ShowClearButton(true)
+                                    .OnValueChanged("productTypeOnValueChanged")
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                              )
+                </div>
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Item Quantity"))</label>
+                    @*@Html.TextBoxFor(x => x.ItemQty, new { @class = "form-control", @id = "InCharge" + ViewBag.Thread, @maxlength = "128", @Value = Model.ItemQty })*@
+                    @(Html.DevExtreme().NumberBox().ID("ItemQty" + ViewBag.Thread)
+                        .Value(Model.ItemQty)
+                        .Format("#,##0")//Fortmat decimal(3,1)#,###.###0
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(99999))
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Create Date"))</label>
+                        @(Html.DevExtreme().DateBox().ReadOnly(true)
+                        .ID("CreateDate" + ViewBag.Thread)
+                        .Value(Model.CreateDate)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Name("CreateDate")
+                        .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                        .MaxLength(10)
+                        
+
+                    )
+                    </div>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Close Date"))</label>
+                    @(Html.DevExtreme().DateBox()
+                        .ID("CloseDate" + ViewBag.Thread)
+                        .Value(Model.CloseDate)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Name("CloseDate")
+                        .MaxLength(10)
+
+                    )
+                </div>
+                @{
+
+                    var priorities = new List<SelectListItem>(); //new[] { _loc.GetLocalizedString("Done"), _loc.GetLocalizedString("Use"), _loc.GetLocalizedString("Not Use") };
+                    priorities.Add(new SelectListItem(_loc.GetLocalizedString("Done"), "Done"));
+                    priorities.Add(new SelectListItem(_loc.GetLocalizedString("Use"), "Use"));
+                    priorities.Add(new SelectListItem(_loc.GetLocalizedString("Not Use"), "Not Use"));
+
+                }
+                <div class="form-group col-md-4">
+                    <label>@(_loc.GetLocalizedString("Use/Not Use"))</label>
+
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(Status)
+                                .DataSource(priorities)
+                                .DisplayExpr("Text")
+                                .ValueExpr("Value")
+                                .Value(_loc.GetLocalizedString("Use"))
+                            )
+                </div>
+
+                <div class="form-group col-md-4" hidden>
+                    <label>@(_loc.GetLocalizedString("Creater"))</label>                   
+                    @Html.TextBoxFor(x => x.Creater, new { @class = "form-control", @readonly = "readonly", @id = "Creater" + ViewBag.Thread, @Value = Model.Creater })
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="form-group col-md-12">
+                    <label>@(_loc.GetLocalizedString("Description"))</label>
+                    @Html.TextAreaFor(x => x.Description, new { @class = "form-control", @id = "Description" + ViewBag.Thread, @maxlength = "100", @Value = Model.Description })
+                </div>
+            </div>
+
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-primary" id="btnSave_@ViewBag.Thread"><i class="fa fa-save"></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" class="btn btn-sm btn-primary" id="btnDelete_@ViewBag.Thread"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>
+
+<script>
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+
+        debugger;
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+        if (validateForm()) {
+            $("#frm-SaleSetting2").submit();
+        }
+    });
+
+    $('#btnDelete_@ViewBag.Thread').on("click", function () {
+        CheckSession();
+        debugger;
+        let VirtualWareHouseId = @Model.VirtualWareHouseId;
+        
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (resultdialog) {
+                if (resultdialog) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteVirtualWareHouses", "MESVirtualWarehouse")',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: { VirtualWareHouseId: VirtualWareHouseId},
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert("<i>@MessageCode.MD0008</i>", "Success");
+                                $("#gridVirtualWarehouse").dxDataGrid("instance").refresh();                              
+                                $('#modalControl').modal('hide');
+
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+
+
+    });
+
+    function validateForm() {
+
+        let VirtualWareHouseName = $("#VirtualWareHouseName@(ViewBag.Thread)").val();
+        if (VirtualWareHouseName == null || VirtualWareHouseName == "" || typeof VirtualWareHouseName === undefined) {
+            DevExpress.ui.dialog.alert("Please select VirtualWareHouseName!", "Error");
+            return false;
+        }
+   
+        let ItemCode = $("#ItemCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (ItemCode == null || ItemCode == "" || typeof ItemCode === undefined) {
+            DevExpress.ui.dialog.alert("Please select ItemCode!", "Error");
+            return false;
+        }
+
+        let ItemQty = $("#ItemQty@(ViewBag.Thread)").dxNumberBox("option", "value");
+        if (ItemQty == null || ItemQty == "" || typeof ItemQty === undefined) {
+            if (ItemQty < 0) {
+                DevExpress.ui.dialog.alert("ItemQty cannot have negative number!", "Error");
+                return false;
+            }
+            DevExpress.ui.dialog.alert("Please select ItemQty!", "Error");
+            return false;
+        }
+
+        debugger;
+
+        let CreateDate = ParsingDateyyyyMMdd($("#CreateDate@(ViewBag.Thread)").dxDateBox("option", "value"));
+        let CloseDate = ParsingDateyyyyMMdd($("#CloseDate@(ViewBag.Thread)").dxDateBox("option", "value"));
+        if (CloseDate < CreateDate) {
+            DevExpress.ui.dialog.alert("CloseDate cannot be less than CreateDate!", "Error");
+            return false;
+        }
+
+        let Status = $("#Status@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (Status == null || Status == "" || typeof Status === undefined) {
+            DevExpress.ui.dialog.alert("Please select Status!", "Error");
+            return false;
+        }
+
+        return true;
+    }
+
+    $("#frm-SaleSetting2").submit(function (e) {
+        e.preventDefault();
+
+        debugger;
+        var data = new FormData(this);
+
+        let VirtualWarehouseId = $("#VirtualWareHouseId@(ViewBag.Thread)").val();
+        data.append("VirtualWarehouseId", VirtualWarehouseId);
+
+        let CreateDate = $("#CreateDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("CreateDate", CreateDate);
+
+        let CloseDate = $("#CloseDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("CloseDate", CloseDate);
+
+        let ItemCode = $("#ItemCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("ItemCode", ItemCode);
+
+        let ItemQty = $("#ItemQty@(ViewBag.Thread)").dxNumberBox("option", "value");
+        data.append("ItemQty", ItemQty);
+
+        let Status = $("#Status@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("Status", Status);
+
+        let VirtualWareHouseName = $("#VirtualWareHouseName@(ViewBag.Thread)").val();
+        data.append("VirtualWareHouseName", VirtualWareHouseName);
+
+        let Description = $("#Description@(ViewBag.Thread)").val();
+        data.append("Description", Description);
+
+        let Creater = $("#Creater@(ViewBag.Thread)").val();
+        data.append("Creater", Creater);
+
+
+        var arrObj = {};
+
+        $.each($(this).serializeArray(), function (inx, item) {
+            console.log(item);
+            arrObj[item.name] = item.value;
+        });
+
+        arrObj["CreateDate"] = CreateDate;
+        arrObj["VirtualWarehouseId"] = VirtualWarehouseId;
+        arrObj["CloseDate"] = CloseDate;
+        arrObj["ItemCode"] = ItemCode;
+        arrObj["ItemQty"] = ItemQty;
+        arrObj["Status"] = Status;
+        arrObj["VirtualWareHouseName"] = VirtualWareHouseName;
+        arrObj["Description"] = Description;
+        arrObj["Creater"] = Creater;
+        debugger;
+
+        let param = {
+            CreateDate: ParsingDateyyyyMMdd(CreateDate),
+            CloseDate: ParsingDateyyyyMMdd(CloseDate),
+            ItemCode: ItemCode,
+            ItemQty: ItemQty,
+            Status: Status,
+            VirtualWareHouseName: VirtualWareHouseName,
+            Description: Description,
+            Creater: Creater,
+            VirtualWarehouseId: VirtualWarehouseId
+
+        };
+        $.ajax({
+            url: '@Url.Action("SaveVirtualWarehouse", "MESVirtualWarehouse")',
+            type: 'POST',
+            data: { data: JSON.stringify(param) },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                    $('#modalControl').modal('hide');
+                    $("#gridVirtualWarehouse").dxDataGrid("instance").refresh();
+
+                }
+                else {
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+
+                }
+            }
+        });
+    });
+
+</script>

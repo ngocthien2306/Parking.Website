@@ -1,0 +1,1028 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+@{
+    string ProjectStatus = "ProjectStatus" + ViewBag.Thread;
+    string ItemCode = "ItemCode" + ViewBag.Thread;
+    string PartnerCode = "PartnerCode" + ViewBag.Thread;
+    string ProductType = "ProductType" + ViewBag.Thread;
+    string DomesticForeign = "DomesticForeign" + ViewBag.Thread;
+    string MonetaryUnit = "MonetaryUnit" + ViewBag.Thread;
+    string VatType = "VatType" + ViewBag.Thread;
+    string OrderTeamCode = "OrderTeamCode" + ViewBag.Thread;
+    string SystemUserType = ViewBag.SystemUserType;
+    //ViewBag.SystemUserType == 'G000C002' || @ViewBag.SystemUserType == 'G000C004'
+    string[] AllowedFileExtensions = new String[] { ".pdf", ".PDF" };
+    string[] listFile = new String[] { };
+
+
+}
+<style>
+    .fileuploader-container {
+        border: 1px solid #d3d3d3;
+        margin: 15px 15px 10px 10px;
+    }
+
+    .btn-dowloadfile {
+        justify-content: flex-end; 
+        padding-left: 980px;
+    }
+</style>
+<script>
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        debugger;
+        setValue_@(Model.ID)('@Model.FileMasterID');
+
+        getValue_@(Model.ID)('@Model.FileMasterID');
+
+        SetReadOnlyControl();
+
+        @*if ('@Model.ProjectStatus' == "PJST05" || '@Model.ProjectStatus' == "PJST06" || ViewBag.SystemUserType != 'G000C002' || @ViewBag.SystemUserType != 'G000C004') {*@
+
+        debugger;
+        //if (ViewBag.SystemUserType != 'G000C002' || @ViewBag.SystemUserType != 'G000C004') {
+        if ('@Model.ProjectStatus' == "PJST05" || '@Model.ProjectStatus' == "PJST06" ) {
+            var FileUploader = $('#@Model.ID').dxFileUploader({
+                disabled: true
+            })
+            debugger;
+            var FileGridColumns = $('#gridListFileDrawing').dxDataGrid('instance').option("columns");
+            FileGridColumns[4].allowEditing = false;
+
+        }
+        else {
+
+        }
+
+        if ('@Model.UserProjectCode' != null && '@Model.UserProjectCode' != '') {
+            $("#UserProjectCode@(ViewBag.Thread)").prop("readonly", true);
+
+        }
+        else {
+            $("#UserProjectCode@(ViewBag.Thread)").prop("readonly", false);
+
+        }
+        if ('@Model.ItemCode' != '' && '@Model.ItemCode' != null) {
+            $("#ItemCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.ItemCode');
+        }
+
+        if ('@Model.PartnerCode' != '' && '@Model.PartnerCode' != null) {
+                $("#PartnerCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.PartnerCode');
+        }
+
+        if ('@Model.ProductType' != '' && '@Model.ProductType' != null) {
+              $("#ProductType@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.ProductType');
+        }
+
+        if ('@Model.DomesticForeign' != '' && '@Model.DomesticForeign' != null) {
+            $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.DomesticForeign');
+        }
+
+        if ('@Model.MonetaryUnit' != '' && '@Model.MonetaryUnit' != null) {
+            $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.MonetaryUnit');
+        }
+
+        if ('@Model.VatType' != '' && '@Model.VatType' != null) {
+            $("#VatType@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.VatType');
+        }
+
+        if ('@Model.ExchangeRate' != '' && '@Model.ExchangeRate' != null) {
+
+        $("#ExchangRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.ExchangeRate');
+        }
+        debugger;
+        if ('@Model.VatRate' != '' && '@Model.VatRate' != null) {
+
+         $("#VatRate@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.VatRate');
+        }
+        if ('@Model.OrderPrice' != '' && '@Model.OrderPrice' != null) {
+            $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.OrderPrice');
+        }
+
+        if ('@Model.OrderTeamCode' != '' && '@Model.OrderTeamCode' != null) {
+            $("#OrderTeamCode@(ViewBag.Thread)").dxSelectBox("instance").option("value", '@Model.OrderTeamCode');
+        }
+        if ('@Model.OrderQuantity' != '' && '@Model.OrderQuantity' != null) {
+
+            $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value", '@Model.OrderQuantity');
+        }
+        LoadingPage(0);
+    });
+
+    function productTypeOnValueChanged(data) {
+        debugger;
+        var itemClassCode = data.value;
+        var arrJson;
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("GetItemByItemClassCode", "MESSaleProject")',
+            data: { itemClassCode: itemClassCode },
+            dataType: "json",
+            async: true
+        }).done(function (resp) {
+             debugger;
+            arrJson = resp.data;
+            console.log(arrJson);
+            $("#ItemCode@(ViewBag.Thread)").dxSelectBox({
+                disabled: false,
+                dataSource: arrJson,
+                displayExpr: "NameEng",
+                valueExpr: "ItemCode"
+            });
+        });
+    }
+
+    var Pag_ID = '@Model.Pag_ID';
+    var Pag_Name = '@Model.Pag_Name';
+    var FileMasterID='@Model.FileMasterID'
+    var fileID_@(Model.ID) = '';
+
+    function onUploadError() {
+        DevExpress.ui.dialog.alert("File is too large or not allowed file extension", "Error");
+    }
+
+    function SetReadOnlyControl() {
+        $("#UserProjectCode@(ViewBag.Thread)").attr("readonly", true);
+        $("#ProjectName@(ViewBag.Thread)").attr("readonly", true);
+        $("#InCharge@(ViewBag.Thread)").attr("readonly", true);
+        $("#PlanDeliveryDate@(ViewBag.Thread)").prop("readonly", true);
+        $("#ProductType@(ViewBag.Thread)").attr("readonly", true);
+        $("#ItemCode@(ViewBag.Thread)").attr("readonly", true);
+        $("#OrderNumber@(ViewBag.Thread)").attr("readonly", true);
+
+    }
+
+    function OnValueChangedFile(e) {
+        debugger;
+        var files = e.value;
+        if (files.length > 0)
+        {
+            listFile = files;
+        }
+    }
+
+    function onUploadTaskDrawing(e) {
+        debugger;
+        LoadingPage(1);
+        var result = JSON.parse(e.request.response);
+        e.file.fileGuid = result.data.FileGuid;
+        fileID_@(Model.ID) = result.fileID;
+        updateIdFile(result.fileID);
+        ReloadListFile();
+
+        setTimeout(function () {
+            var buttonHtml = '<div class="dx-fileuploader-button-container btn-custom-file">' +
+                '<div class="dx-fileuploader-button dx-widget dx-button-has-icon">' +
+                '<div class="dx-button-content">' +
+                '<a href="#" onClick="deleteFilePopup(this,\''+ result.data.FileGuid +'\')">'+
+                '<i class="dx-icon dx-icon-remove"></i>' +
+                '</a>'+
+                '</div>' +
+                '</div>' +
+                '</div>';
+            var container = $(".dx-fileuploader-files-container");
+            var child = $(".dx-fileuploader-file-container");
+            var temp = $(".dx-fileuploader-files-container").find(child);
+            $.each(temp, function (i, item) {
+
+                var link = $("<a href='" + getLanguages() +"/FilesUpload/DownloadFile?fileguid=" + result.data.FileGuid + "'></a>");
+                var temp1 = item.children[1].children[0];
+
+                var temp2 = temp1.children[0];
+                link.append(temp2);
+                $(temp1).prepend(link);
+                var temp3 = $(temp1).find(".btn-custom-file");
+                if (temp3.length === 0) {
+                    $(temp1).append(buttonHtml)
+                }
+            });
+        }, 3000000);
+
+
+        //PVN Add
+        e.component.__uploadedFilesCount++;
+        if (e.component.option("value").length === e.component.__uploadedFilesCount) {
+            e.component.reset();
+            e.component.__uploadedFilesCount = null;
+        }
+        LoadingPage(0);
+    }
+
+    function OnUploadAbortedPopup(e) {
+        debugger;
+        console.log(e);
+    }
+
+    function deleteFilePopup(e, fileguid) {
+        $(e).parent().parent().parent().parent().parent().parent().remove();
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("DeleteFile", "FilesUpload")',
+                    type: "POST",
+                    data: { fileguid: fileguid },
+                    success: function (result) {
+                        if (result.result == false) {
+                            debugger;
+                            DevExpress.ui.dialog.alert("Delete file fail", "Error");
+                        }
+                        else {
+                            ReloadListFile();
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                            debugger;
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+
+    function getValue_@(Model.ID)() {
+        return fileID_@(Model.ID);
+    }
+
+    function updateIdFile(value) {
+        debugger;
+
+        // if (value != "" ) {
+            var uploader = $("#@Model.ID").dxFileUploader("instance");
+            var url = uploader.option("uploadUrl");
+            url = updateQueryStringParameterPopup(url, "idFile", value);
+            uploader.option("uploadUrl", url);
+        //}
+    }
+
+    function updateQueryStringParameterPopup(uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        if (uri.match(re)) {
+
+            setValueGrid_@(Model.ID)(value);
+            return uri.replace(re, '$1' + key + "=" + value + '$2');
+        }
+        else {
+            return uri + separator + key + "=" + value;
+        }
+    }
+
+    function setValue_@(Model.ID)(fileId) {
+        debugger;
+
+        setValueGrid_@(Model.ID)(fileId);
+        fileID_@(Model.ID) = fileId;
+        //updateIdFile(fileId);
+        if ('@Model.Upload_File' == true) {
+            debugger;
+            updateIdFile(fileId);
+            debugger;
+            $.ajax({
+                url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+                type: "GET",
+                data: { fileId: fileId },
+                success: function (result) {
+                    debugger;
+                    @*if (result.data.length == 0) {
+                        fileID_@(Model.ID) = "";
+                        updateIdFile("");
+                    }*@
+                    var container = $(".dx-fileuploader-files-container");
+                    //container.empty();
+                    var arrTemp = [];
+                    if (result.data != null || result.data != undefined){
+                        $.each(result.data, function (index, item) {
+                            arrTemp.push(item.FileDetail);
+
+                            var strHTML = '<div class="dx-fileuploader-file-container">' +
+                                '<div class="dx-fileuploader-button-container">' +
+                                '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                                '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                                '</div>' +
+                                '</div>' +
+                                container.append(strHTML);
+                        });
+
+                    }
+
+                    debugger;
+                    $('#gridListFileDrawing').dxDataGrid('option', 'dataSource', arrTemp);
+                    $("#gridListFileDrawing").dxDataGrid("instance").refresh();
+                    LoadingPage(0);
+                }
+            });
+        }
+        else {
+            debugger;
+            $.ajax({
+                url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+                type: "GET",
+                data: { fileId: fileId },
+                success: function (result) {
+                    debugger;
+                    @*if (result.data.length == 0) {
+                        fileID_@(Model.ID) = "";
+                        updateIdFile("");
+                    }*@
+
+                    var container = $(".dx-fileuploader-files-container");
+                    //container.empty();
+                    var arrTemp = [];
+                    if (result.data != null || result.data != undefined) {
+                        $.each(result.data, function (index, item) {
+                            arrTemp.push(item.FileDetail);
+
+                            var strHTML = '<div class="dx-fileuploader-file-container">' +
+                                '<div class="dx-fileuploader-button-container">' +
+                                '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">' +
+                                '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>' +
+                                '</div>' +
+                                '</div>' +
+                                container.append(strHTML);
+                        });
+                    }
+
+                    debugger;
+                    $('#gridListFileDrawing').dxDataGrid('option', 'dataSource', arrTemp);
+                    $("#gridListFileDrawing").dxDataGrid("instance").refresh();
+                    LoadingPage(0);
+                }
+            });
+
+        }
+
+    }
+
+    function setValueGrid_@(Model.ID)(fileId) {
+        fileID_@(Model.ID) = fileId;
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "FilesUpload")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result) {
+                var arrTemp = [];
+                $.each(result.data, function (index, item) {
+                    arrTemp.push(item.FileDetail);
+                });
+                debugger;
+                $('#gridListFileDrawing').dxDataGrid('option', 'dataSource', arrTemp);
+
+                if (arrTemp.length == 0) {
+                    $('#ButtonDownloadAllFile').attr('disabled', 'disabled');
+                     @*fileID_@(Model.ID) = "";*@
+                }
+                else
+                {
+                    $('#ButtonDownloadAllFile').removeAttr('disabled');
+                }
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function DeletegridListFilePopup(e) {
+        var data = (e.row.data);
+        var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+        result.done(function (dialogResult) {
+            if (dialogResult) {
+                $(e).parent().parent().parent().parent().parent().parent().remove();
+                $.ajax({
+                    url: '@Url.Action("DeleteFile", "FilesUpload")',
+                    type: "POST",
+                    data: { fileguid: data.FileGuid },
+                    success: function (result) {
+                        if (result.result == false) {
+                            debugger;
+                            DevExpress.ui.dialog.alert("Delete fail", "Error");
+                        }
+                        else {
+                            debugger;
+                            updateIdFile("");
+                            ReloadListFile();
+                            DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0008', "Success");
+                            $("#gridListFileDrawing").dxDataGrid("instance").refresh();
+                        }
+                    }
+                });
+            }
+            else {
+                return;
+            }
+        });
+    }
+
+    function gridDownloadFile(e) {
+        debugger;
+        var dataFileGuid = (e.row.data.FileGuid);
+        var dataFileID = '@Model.FileMasterID';
+        var link = $("<a href='" + getLanguages() + "/FilesUpload/DownloadFile?fileguid=" + dataFileGuid + "'></a>");
+        //window.open(link[0].href);
+        window.open(link[0].href, '_blank');
+
+    }
+     function OpenFileInBrowser(e) {
+        debugger;
+        var dataFileGuid = (e.row.data.FileGuid);
+        var dataFileID = '@Model.FileMasterID';
+        var link = $("<a href='" + getLanguages() + "/FilesUpload/DownloadFile?fileguid=" + dataFileGuid + "'></a>");
+         window.open(link[0].href, '_blank');
+    }
+    function DownloadAllFile() {
+
+        var link = $("<a href='" + getLanguages() + "/FilesUpload/DownloadFileZip?fileid=" + FileMasterID + "'></a>");
+
+        location.href = link[0].href;
+    }
+
+    function ReloadListFile() {
+        $.ajax({
+            url: '@Url.Action("GetDetailByProjectCode", "MESDrawing")',
+            type: 'GET',
+            data: { projectCode: Pag_ID },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                updateIdFile(result.FileID);
+                FileMasterID = result.FileID;
+                fileID_@(Model.ID) = result.FileID;
+                setValueGrid_@(Model.ID)(result.FileID);
+                setValue_@(Model.ID)(result.FileID);
+            }
+        });
+    }
+
+    function acceptOption_changed(e) {
+        debugger;
+        getFileUploaderInstance().option("accept", e.value);
+    }
+
+    function getFileUploaderInstance() {
+        debugger;
+        return $("#file-uploader").dxFileUploader("instance");
+    }
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="DrawingCreatePopup">@(_loc.GetLocalizedString("Task Drawing Management"))</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-Drawing">
+        <div class="modal-body" style="padding: 12px;">
+            <div class="row" style="pointer-events: none">
+                <div class="form-group col-md-3" hidden="hidden">
+                    <label>@(_loc.GetLocalizedString("Project Code"))</label>
+                    @Html.TextBoxFor(x => x.ProjectCode, new { @class = "form-control", @readonly = "readonly", @id = "ProjectCode" + ViewBag.Thread, @Value = Model.ProjectCode })
+                </div>
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                    @(Html.DevExtreme().TextBox()
+                                    .ID("UserProjectCode" + ViewBag.Thread)
+                                    .Value(Model.UserProjectCode)
+                    )
+                </div>
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("Projectname"))</label>
+                    @(Html.DevExtreme().TextBox()
+                                    .ID("ProjectName" + ViewBag.Thread)
+                                    .Value(Model.ProjectName)
+                                    .MaxLength(200)
+                    )
+                </div>              
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("InCharge"))</label>
+                    @(Html.DevExtreme().TextBox()
+                                    .ID("InCharge" + ViewBag.Thread)
+                                    .Value(Model.InCharge)
+                                    .MaxLength(128)
+                    )
+                </div>
+                <div class="form-group col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("PlanDeliveryDate"))</label>
+                        @(Html.DevExtreme().DateBox()
+                        .ID("PlanDeliveryDate" + ViewBag.Thread)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Value(Model.PlanDeliveryDate)
+                        .Name("PlanDeliveryDate")
+                        .MaxLength(10)
+                    )
+                    </div>
+                </div>
+
+            </div>
+            <div class="row" style="pointer-events: none">
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("ProductType"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                    .ID(ProductType)
+                                    .DisplayExpr("ClassNameKor").ValueExpr("ItemClassCode")
+                                    .DataSource(d => d.Mvc().Controller("MESItemClass")
+                                        .LoadAction("GetItemClassByCategory")
+                                        .Key("ItemClassCode")
+                                    )
+                                    .OnValueChanged("productTypeOnValueChanged")
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                              )
+                </div>
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("Product"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(ItemCode)
+                                .Disabled(true)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                     )
+                </div>
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("Custommer"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(PartnerCode)
+                                .DisplayExpr("PartnerName")
+                                .ValueExpr("PartnerCode")
+                                .DataSource(d => d.Mvc().Controller("MESPartner")
+                                .LoadAction("GetPartnerDetailByTwoPartnerType")
+                                    .LoadParams(new { PartnerType1 = "ACCT01", PartnerType2 = "ACCT03" })
+                                    .Key("PartnerCode")
+                                )
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                     )
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="OrderNumber">@(_loc.GetLocalizedString("OrderNumber"))</label>
+                    @(Html.DevExtreme().TextBox()
+                                    .ID("OrderNumber" + ViewBag.Thread)
+                                    .Value(Model.OrderNumber)
+                                    .MaxLength(100)
+                    )
+                </div>
+            </div>
+            <div class="form-group row" style="display: none;">
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("DomesticForeign"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(DomesticForeign)
+                                //.DisplayExpr("BASE_NAME1")
+                                //.ValueExpr("BASE_CODE")
+                                //    .DataSource(d => d.Mvc().Controller("MESComCode")
+                                //    .LoadAction("GetListComCodeDTL")
+                                //    .LoadParams(new { groupCD= "CTTP00" })
+                                //    .Key("BASE_CODE")
+                                //)
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                     )
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="OrderQuantity">@(_loc.GetLocalizedString("Order Quantity"))</label>
+                    @(Html.DevExtreme().NumberBox().ID("OrderQuantity" + ViewBag.Thread).Format("#,##0")//Fortmat decimal(3,1)#,###.###0
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(999999)
+                    )
+                </div>
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("Monetary Unit"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(MonetaryUnit)
+                                .DisplayExpr("BASE_NAME1")
+                                .ValueExpr("BASE_CODE")
+                                .DataSource(d => d.Mvc().Controller("MESComCode")
+                                .LoadAction("GetListComCodeDTL")
+                                    .LoadParams(new { groupCD= "MOUT00" })
+                                    .Key("BASE_CODE")
+                                )
+                                .SearchEnabled(true)
+                                .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                     )
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="OrderPrice">@(_loc.GetLocalizedString("OrderPrice"))</label>
+                    @*@Html.TextBoxFor(x => x.OrderPrice, new { @class = "form-control", @id = "txtOrderPrice" + ViewBag.Thread, @Value = Model.OrderPrice })*@
+                    @(Html.DevExtreme().NumberBox().ID("OrderPrice" + ViewBag.Thread).Format("#,##00.00000")//Fortmat decimal(3,1)#,###.###0
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(9999999999999999)
+                    )
+                </div>
+            </div>
+            <div class="form-group row" style="display: none;">
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("VatType"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(VatType)
+                                .DisplayExpr("BASE_NAME1")
+                                .ValueExpr("BASE_CODE")
+                                .DataSource(d => d.Mvc().Controller("MESComCode")
+                                .LoadAction("GetListComCodeDTL")
+                                .LoadParams(new { groupCD ="VAT000" })
+                                .Key("BASE_CODE"))
+                    .SearchEnabled(true)
+                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                </div>
+                <div class="form-group col-md-2">
+                    <label>@(_loc.GetLocalizedString("VatRate"))</label>
+                    @(Html.DevExtreme().NumberBox().ID("VatRate" + ViewBag.Thread).Format("#,##00.0")//Fortmat decimal(3,1)#,###.###0
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(99)
+                    )
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="ExchangeRate">@(_loc.GetLocalizedString("ExchangeRate"))</label>
+                    @(Html.DevExtreme().NumberBox().ID("ExchangRate" + ViewBag.Thread).Format("#,##0.000") //Fortmat decimal decimal(5, 3)#,##0.##0"
+                        .ShowSpinButtons(true)
+                        .Min(0)
+                        .Max(99)
+                    )
+                </div>
+                <div class="form-group col-md-2">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("ExchangeRateDate"))</label>
+                        @(Html.DevExtreme().DateBox()
+                        .ID("ExchangeRateDate" + ViewBag.Thread)
+                        .DisplayFormat("yyyy-MM-dd")
+                        .Value(DateTime.Now.ToString("yyyy-MM-dd"))
+                        .Name("ExchangeRateDate")
+                        .MaxLength(10)
+                    )
+                    </div>
+                </div>
+                <div class="form-group col-md-3">
+                    <label>@(_loc.GetLocalizedString("OrderTeamCode"))</label>
+                    @(Html.DevExtreme().SelectBox()
+                                .ID(OrderTeamCode)
+                                .DisplayExpr("BASE_NAME1")
+                                .ValueExpr("BASE_CODE")
+                                .DataSource(d => d.Mvc().Controller("MESComCode")
+                                .LoadAction("GetListComCodeDTL")
+                                .LoadParams(new { groupCD ="ORG000" })
+                                .Key("BASE_CODE"))
+                    .SearchEnabled(true)
+                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                    )
+                </div>
+            </div>
+        </div>
+        <div>
+            @if(Model.Upload_File)
+            {
+                <div class="fileuploader-container">
+                    @(Html.DevExtreme().FileUploader()
+                         .ID(Model.ID)
+                         .Name("myFile")
+                         .ShowFileList(true)
+                         .ChunkSize(10000000)
+                         .MaxFileSize(50000000000)
+                         .Accept("*")
+                         .UploadMode(FileUploadMode.UseButtons).UploadButtonText(@_loc.GetLocalizedString("Upload"))
+                         .SelectButtonText(@_loc.GetLocalizedString("Select file"))
+                         .UploadUrl(Url.Action("UploadChunk_Popup", "FilesUpload", new { idFile = "", pagID = Model.Pag_ID, spName = Model.Sp_Name, idFileMaster = Model.FileMasterID , listFile = listFile }))
+                         .OnUploaded("onUploadTaskDrawing")
+                         .OnUploadStarted(@<text>
+                             //PVN Add
+                             function (e) {
+                                if (!e.component.__uploadedFilesCount) {   //this is just a custom option that is not used by dxFileUploader
+                                    e.component.__uploadedFilesCount = 0;
+                                }
+                            }
+                         </text>)
+                         .OnValueChanged("OnValueChangedFile")
+                         .OnUploadAborted("OnUploadAbortedPopup")
+                         .AllowCanceling(true)
+                         .ShowFileList(true)
+                         .Multiple(true)
+                         .AllowedFileExtensions(AllowedFileExtensions)
+
+                )
+                </div>
+            }
+            else
+            {
+
+            }
+            <div class="modal-footer" style="display: none;">
+                <button type="button" id="ButtonDownloadAllFile" onclick="DownloadAllFile()" class="btn btn-sm btn-secondary">@(_loc.GetLocalizedString("DownloadAllFile"))</button>
+            </div>
+        </div>
+        <div class="fileuploader-container">
+            @(Html.DevExtreme().DataGrid<Modules.Common.Models.SYFileUpload>()
+            .ID("gridListFileDrawing")
+            .KeyExpr("FileGuid")
+            .ShowBorders(true)
+            .ShowColumnLines(true)
+            .ShowRowLines(true)
+            .AllowColumnResizing(true)
+            .AllowColumnReordering(true)
+            .ColumnAutoWidth(true)
+            .FilterRow(filterRow => filterRow.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+            .Editing(editing =>
+            {
+                editing.AllowDeleting(true);
+                editing.UseIcons(true);
+            })
+            .Columns(c =>
+            {
+            c.AddFor(x => x.FilePathShowBrowser).Caption("FilePathShowBrowser").Alignment(HorizontalAlignment.Left).Visible(false);
+            c.AddFor(x => x.FileName).Caption(_loc.GetLocalizedString("FileName")).Alignment(HorizontalAlignment.Left).CellTemplate
+                    (
+                            @<text>
+
+                                 <a href="#" onclick="OpenFileInBrowser(this)" data-pag-id="<%-data.FilePathShowBrowser%>" data-file-guid="<%-data.FileGuid%>">
+                                    <%-data.FileName%>
+                                </a>
+                              <script>
+                                  function OpenFileInBrowser(obj) {
+                                      let fileguid = $(obj).attr("data-file-guid").trim();
+
+                                      var dataFileGuid = (fileguid);
+                                      var dataFileID = '@Model.FileMasterID';
+                                     // var link = $("<a href='" + getLanguages() + "/FilesUpload/DownloadFile?fileguid=" + dataFileGuid + "'></a>");
+                                      var link = $("<a href='" + getLanguages() + "/FilesUpload/OpenFileInBrowser?fileguid=" + dataFileGuid + "'></a>");
+                                       window.open(link[0].href);
+                                      debugger;
+                                  }
+                              </script>
+                                @*<a href="#" onclick="OpenFileInBrowser(this)" data-pag-id="<%-data.FilePathShowBrowser%>" data-file-guid="<%-data.FileGuid%>">
+                                   <%-data.FileName%>
+                                </a>*@
+                                @*<script>
+                                    function OpenFileInBrowser(obj) {
+                                        debugger;
+                                        let fileguid = $(obj).attr("data-file-guid").trim();
+                                        $.ajax({
+                                            url: '@Url.Action("OpenFileInBrowser", "FilesUpload")',
+                                            type: 'GET',
+                                            data: { fileguid: fileguid },
+                                            dataType: 'json',
+                                            success: function (result) {
+                                                debugger;
+                                                window.open(result[0].href, '_blank');
+                                            }
+                                        });
+                                    }
+                                </script>*@
+                            </text>
+                    );
+
+                c.AddFor(x => x.FileSize).Caption(_loc.GetLocalizedString("FileSize")).Alignment(HorizontalAlignment.Center).Format("#,##0");
+                c.AddFor(x => x.FileType).Caption(_loc.GetLocalizedString("FileType")).Alignment(HorizontalAlignment.Left);
+                c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                {
+                    if((Model.ProjectStatus != "PJST05" && Model.ProjectStatus != "PJST06"))
+                    {
+
+                        if (ViewBag.SystemUserType == "G000C002" || ViewBag.SystemUserType == "G000C004")
+                        {
+                            if(Model.Delele_File)
+                            {
+                                b.Add().Name(GridColumnButtonName.Delete).OnClick("DeletegridListFilePopup");
+                            }
+                            else
+                            {
+                                b.Add().Name("");
+
+                            }
+
+                        }
+                        else
+                        {
+                            b.Add().Name("");
+                        }
+                    }
+                    else
+                    {
+                        b.Add().Name("");
+                    }
+                });
+
+            })
+            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+            .HeaderFilter(f => f.Visible(true))
+            .Paging(paging => paging.PageSize(20))
+            .Pager(pager =>
+            {
+                pager.ShowPageSizeSelector(false);
+                pager.AllowedPageSizes(new[] { 20,20,60});
+                pager.ShowInfo(true);
+            })
+
+            )
+        </div>
+    </form>
+    <div class="modal-footer">
+        @*<button type="button" class="btn btn-primary" id="btnSave_@ViewBag.Thread">@(_loc.GetLocalizedString("Save"))</button>*@
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>
+<script>
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        if (validateForm()) {
+            $("#frm-Drawing").submit();
+        }
+
+    });
+
+    function validateForm() {
+
+        let UserProjectCode = $('#UserProjectCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        if (UserProjectCode == null || UserProjectCode == "" || typeof UserProjectCode === undefined) {
+            DevExpress.ui.dialog.alert("Please Input UserProjectCode!", "Error");
+            return false;
+        }
+
+        let ProjectName = $('#ProjectName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        if (ProjectName == null || ProjectName == "" || typeof ProjectName === undefined) {
+            DevExpress.ui.dialog.alert("Please select ProjectName!", "Error");
+            return false;
+        }
+
+        var InCharge = $('#InCharge@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        if (InCharge == null || InCharge == "" || typeof InCharge === undefined) {
+            DevExpress.ui.dialog.alert("Please input InCharge!", "Error");
+            return false;
+        }
+
+        let PlanDeliveryDate = $("#PlanDeliveryDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        if (PlanDeliveryDate == null || PlanDeliveryDate == "" || typeof PlanDeliveryDate === undefined) {
+            DevExpress.ui.dialog.alert("Please select PlanDeliveryDate!", "Error");
+            return false;
+        }
+
+        let ProductType = $("#ProductType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (ProductType == null || ProductType == "" || typeof ProductType === undefined) {
+            DevExpress.ui.dialog.alert("Please select ProductType!", "Error");
+            return false;
+        }
+
+        let ItemCode = $("#ItemCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (ItemCode == null || ItemCode == "" || typeof ItemCode === undefined) {
+            DevExpress.ui.dialog.alert("Please select Product!", "Error");
+            return false;
+        }
+
+        let PartnerCode = $("#PartnerCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (PartnerCode == null || PartnerCode == "" || typeof PartnerCode === undefined) {
+            DevExpress.ui.dialog.alert("Please select Custommer!", "Error");
+            return false;
+        }
+
+        let OrderQuantity = $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        if (OrderQuantity == null || OrderQuantity == "" || typeof OrderQuantity === undefined) {
+            DevExpress.ui.dialog.alert("Please input OrderQuantity!", "Error");
+            return false;
+        }
+
+        let DomesticForeign = $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (DomesticForeign == null || DomesticForeign == "" || typeof DomesticForeign === undefined) {
+            DevExpress.ui.dialog.alert("Please select DomesticForeign!", "Error");
+            return false;
+        }
+
+        let MonetaryUnit = $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox("option", "value");
+        if (MonetaryUnit == null) {
+            DevExpress.ui.dialog.alert("Please select MonetaryUnit!", "Error");
+            return false;
+        }
+
+        let OrderNumber = $('#OrderNumber@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        if (OrderNumber == null || OrderNumber == "" || typeof OrderNumber === undefined) {
+            DevExpress.ui.dialog.alert("Please input OrderNumber!", "Error");
+            return false;
+        }
+        let OrderPrice = $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+        if (OrderPrice == null || OrderPrice == "" || typeof OrderPrice === undefined) {
+            DevExpress.ui.dialog.alert("Please input OrderPrice!", "Error");
+            return false;
+        }
+        return true;
+    }
+
+    $("#frm-Drawing").submit(function (e) {
+        e.preventDefault();
+
+        var data = new FormData(this);
+
+        let PlanDeliveryDate = $("#PlanDeliveryDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("PlanDeliveryDate", PlanDeliveryDate);
+
+        let ExchangeRateDate = $("#ExchangeRateDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("ExchangeRateDate", ExchangeRateDate);
+
+        let CreateDate = $("#CreateDate@(ViewBag.Thread)").dxDateBox("option", "value");
+        data.append("CreateDate", CreateDate);
+
+        let ProductType = $("#ProductType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("ProductType", ProductType);
+
+        let ItemCode = $("#ItemCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("ItemCode", ItemCode);
+
+        let PartnerCode = $("#PartnerCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("PartnerCode", PartnerCode);
+
+        let OrderQuantity = $("#OrderQuantity@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let DomesticForeign = $("#DomesticForeign@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("DomesticForeign", DomesticForeign);
+
+        let MonetaryUnit = $("#MonetaryUnit@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("MonetaryUnit", MonetaryUnit);
+
+        let VatType = $("#VatType@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("VatType", VatType);
+
+        let ProjectCode = $("#ProjectCode@(ViewBag.Thread)").val();
+        data.append("ProjectCode", ProjectCode);
+
+        let UserProjectCode = $('#UserProjectCode@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        data.append("UserProjectCode", UserProjectCode);
+
+        let ProjectName = $('#ProjectName@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        data.append("ProjectName", ProjectName);
+
+        let InCharge = $('#InCharge@(ViewBag.Thread)').dxTextBox('instance').option('value');
+        data.append("InCharge", InCharge);
+
+        let OrderTeamCode = $("#OrderTeamCode@(ViewBag.Thread)").dxSelectBox("option", "value");
+        data.append("OrderTeamCode", VatType);
+
+        let OrderNumber = $('#OrderNumber@(ViewBag.Thread)').dxTextBox('instance').option('value');
+
+        let ExchangeRate = $("#ExchangRate@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let VatRate = $("#VatRate@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        let OrderPrice = $("#OrderPrice@(ViewBag.Thread)").dxNumberBox("instance").option("value");
+
+        var arrObj = {};
+
+        $.each($(this).serializeArray(), function (inx, item) {
+            console.log(item);
+            arrObj[item.name] = item.value;
+        });
+        arrObj["ProductType"] = ProductType;
+        arrObj["ItemCode"] = ItemCode;
+        arrObj["PartnerCode"] = PartnerCode ;
+        arrObj["DomesticForeign"] = DomesticForeign;
+        arrObj["MonetaryUnit"] = MonetaryUnit;
+        arrObj["OrderTeamCode"] = OrderTeamCode;
+
+        let param = {
+                ProjectCode: ProjectCode,
+                UserProjectCode: UserProjectCode,
+                ProjectName: ProjectName,
+                InCharge: InCharge,
+                PlanDeliveryDate: PlanDeliveryDate,
+                ProductType: ProductType,
+                ItemCode: ItemCode,
+                ProducCode: '',
+                PartnerCode: PartnerCode,
+                OrderNumber: OrderNumber,
+                DomesticForeign: DomesticForeign,
+                OrderQuantity: OrderQuantity,
+                DeliveredQty: '',
+                MonetaryUnit: MonetaryUnit,
+                OrderPrice: OrderPrice,
+                ExchangeRate: ExchangeRate,
+                ExchangRateDate: ExchangeRateDate,
+                VatType: VatType,
+                VatRate: VatRate,
+                OrderTeamCode: OrderTeamCode,
+
+        };
+        $.ajax({
+            url: '@Url.Action("SaveSalesProject", "MESSaleProject")',
+            type: 'POST',
+            data: { data: JSON.stringify(param) },
+            dataType: 'json',
+            success: function (result) {
+                if (result.Success) {
+                    DevExpress.ui.dialog.alert('@Modules.Common.Models.MessageCode.MD0004', "Success");
+                    $('#modalControl').modal('hide');
+                    //$('@ViewBag.gridDrawing').dxDataGrid("instance").refresh();
+
+                }
+                else {
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+    });
+
+</script>

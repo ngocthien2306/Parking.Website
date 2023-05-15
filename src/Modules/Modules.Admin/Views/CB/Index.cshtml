@@ -1,0 +1,318 @@
+﻿@model Modules.Admin.Models.SYBoardInfo
+@using Modules.Admin.Models
+@using InfrastructureCore.Models.Menu
+@{
+    Layout = null;
+    BoardType dataBoardType = new BoardType(Model.BoardType);
+    List<SYBoardBranchNames> lstBranch = (List<SYBoardBranchNames>)ViewBag.lstBranch;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.DELETE_YN = true;
+
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Back";
+    info.ID = "btnBack";
+    info.Icon = "<i class='fas fa-undo'></i>";
+    lstNewToolbar.Add(info);
+
+    //Add Readload Button
+    ToolbarInfo btnReload = new ToolbarInfo();
+    btnReload.Name = "Reload";
+    btnReload.ID = "btnReload";
+    btnReload.Icon = "<i class='fas fa-sync'></i>";
+    btnReload.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(btnReload);
+
+}
+<script>
+        $(document).ready(function () {
+            if ('@ViewBag.UserType' == 'G000C001' || '@ViewBag.UserType' == 'G000C002') {
+                $("#GridCommonBoardManagement@(ViewBag.Thread)").dxTreeList({
+                    selection: {
+                        mode: "multiple",
+                        allowSelectAll: false,
+                        recursive: true,
+
+                    }
+                });
+            }
+        })
+
+        var boardIDofCB@(ViewBag.Thread) = '@Model.BoardID';
+
+        function getBoardIDOfCB@(ViewBag.Thread)() {
+            return boardIDofCB@(ViewBag.Thread);
+        }
+
+        $(function () {
+            LoadingPage(1);
+            SetBackButton@(ViewBag.Thread)();
+            LoadingPage(0);
+        })
+
+        $("#btnCreate_@(ViewBag.Thread)").on("click", function () {
+            LoadingPage(1);
+                CheckSession();
+            let url = '/CB/Detail?bid=' + getBoardIDOfCB@(ViewBag.Thread)() + '&bdid=0' + '&ViewBagIndex=' + '@ViewBag.Thread' + '&MenuIDParent=' + '@ViewBag.MenuId';
+            GenerateTabConmonBoard('CBDetail', url, menuIDoTabActive, false);
+            LoadingPage(0);
+        });
+
+        $("#btnBack_@(ViewBag.Thread)").on("click", function () {
+            LoadingPage(1);
+                CheckSession();
+                let urlBack = '/BoardManagement';
+                $.ajax({
+                    url: '@Url.Action("GetMenuIDByBoadID", "Menu")',
+                    type: "POST",
+                    data: { strUrl: urlBack },
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        GenerateTabConmonBoard(result.MenuName, urlBack, result.MenuID, false); // current menu id
+                    }
+                });
+            LoadingPage(0);
+        });
+
+        function OpenEditCommonBoardPop@(ViewBag.Thread)(boardDocID,BoardID) {
+          LoadingPage(1);
+            CheckSession();
+            //let url = '/CB/Detail?bid=' + boardID + '&bdid=' + boardDocID + '&ViewBagIndex=' + '@ViewBag.Thread' + '&MenuIDParent=' + '@ViewBag.MenuId';
+            let url = '/CB/Detail?bid=' + BoardID + '&bdid=' + boardDocID + '&ViewBagIndex=' + '@ViewBag.Thread' + '&MenuIDParent=' + '@ViewBag.MenuId';
+
+            PushArrayBack(url);
+            GenerateTabConmonBoard('CBDetail', url, menuIDoTabActive, false)
+            ReadCountCB@(ViewBag.Thread)(getBoardIDOfCB@(ViewBag.Thread)(), boardDocID);
+            LoadingPage(0);
+        }
+
+        function ReadCountCB@(ViewBag.Thread)(boadID, boardDocID) {
+            LoadingPage(1);
+                CheckSession();
+                $.ajax({
+                    url: '@Url.Action("OnReadCount", "CB")',
+                    type: "POST",
+                    data: {
+                        BoardID: boadID,
+                        BoardDocID: boardDocID,
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        LoadingPage(0);
+                        if (result.Success) {
+                            var grid = $("#GridCommonBoardManagement@(ViewBag.Thread)").dxTreeList("instance");
+                            if (grid !== undefined) {
+                                grid.refresh();
+                            }
+
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                    }
+                });
+            LoadingPage(0);
+        }
+
+        function DownloadCBFile@(ViewBag.Thread)(e) {
+            var data = e.row.data;
+            location.href = '/ko/FilesUpload/DownloadFileZip?fileid=' + data.FileID;
+        }
+
+        function SetBackButton@(ViewBag.Thread)() {
+            LoadingPage(1);
+            if ('@ViewBag.IsBack' === 'True') {
+                $("#btnBack_@(ViewBag.Thread)").removeClass("d-none");
+            }
+            else {
+                $("#btnBack_@(ViewBag.Thread)").addClass("d-none");
+            }
+            LoadingPage(0);
+
+        }
+
+        var VisibleDownloadCBButton = function (e) {
+        if (e.row.data.FileID == "") {
+            return false;
+        }
+        else {
+            return true;
+        }
+        }
+
+        //Quan add 2020/10/27
+        $("#btnDelete_@(ViewBag.Thread)").on("click", function () {
+            let GridCommonBoardManagement = $('#GridCommonBoardManagement@(ViewBag.Thread)').dxTreeList("instance").getVisibleRows();
+            let listBoardDataDelete = [];
+
+            $.each(GridCommonBoardManagement, function (index, item) {
+                if (GridCommonBoardManagement[index].isSelected == true) {
+                    listBoardDataDelete.push(item.data)
+                }
+            });
+             
+            if (listBoardDataDelete.length == 0) {
+                DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select the row to delete")", "Error");
+                return;
+
+            }
+            //CheckSession();
+            var result = DevExpress.ui.dialog.confirm("<i>@Modules.Common.Models.MessageCode.MD0002</i>", "Confirm changes");
+            result.done(function (resultdialog) {
+                if (resultdialog) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteBoardContent", "BoardManagement")',
+                        type: "POST",
+                        data: {
+                            ListBoardContentInfo: listBoardDataDelete
+                        },
+                        dataType: "json",
+                        success: function (result) {
+                            LoadingPage(0);
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('Save success', "Success", function ()
+                                {
+                                    // Quan add 2021-01-19
+                                    // Refresh TreeList notice when delete
+                                    var grid = $("#GridCommonBoardManagement@(ViewBag.Thread)").dxTreeList("instance");
+                                    if (grid != undefined) {
+                                        grid.refresh();
+                                    }
+                                });
+                            }
+                            else {
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                }
+                else {
+                    return
+                }
+            });
+
+        });
+
+        //Reaload tab
+        $("#btnReload_@ViewBag.Thread").on("click", function () {
+            LoadingPage(1);
+            RefreshTab(this);
+            LoadingPage(0);
+
+        });
+</script>
+
+@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+@{
+    string IdGrid = "GridCommonBoardManagement" + ViewBag.Thread;
+}
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary card-outline">
+                    <div class="card-body box-profile">
+                        <div class="row">
+                            <div class="col-md-12">
+                                @(Html.DevExtreme().TreeList<SYBoardContent>()
+                                        .ID(IdGrid)
+                                        .DataSource(d => d.Mvc().Controller("CB").LoadAction("GetListData").LoadParams(new { bid = new JS("getBoardIDOfCB"+ ViewBag.Thread) }))
+                                        .KeyExpr("BoardDocID")
+                                        .ParentIdExpr("ParentReplyNum")
+                                        .ShowBorders(true)
+                                        .ShowRowLines(true)
+                                        .AllowColumnResizing(true)
+                                        .AutoExpandAll(true)
+                                        .Scrolling(scrolling => scrolling.Mode(TreeListScrollingMode.Standard))
+                                        .FilterRow(filterRow => filterRow
+                                            .Visible(true)
+                                            .ApplyFilter(GridApplyFilterMode.Auto)
+                                        )
+                                        .Editing(editing =>
+                                        {
+                                            editing.UseIcons(true);
+                                        })
+                                        .Columns(columns =>
+                                        {
+                                            if (dataBoardType.SubjectURLYN != true)
+                                            {
+                                                if (dataBoardType.AdminYN ==true)
+                                                {
+                                                    if (ViewBag.UserType =="G000C002"|| ViewBag.UserType == "G000C001")
+                                                    {
+                                                        columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("제목")).Alignment(HorizontalAlignment.Left).Width("55%").CellTemplate(
+                                                        @<text>
+                                                        <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>','<%-data.BoardID%>')" data-pag-id="<%-data.BoardDocID%>">
+                                                            <%-data.Subject%>
+                                                        </a>
+                                                        </text>
+                                                        );
+                                                    }
+                                                    else
+                                                    {
+                                                        columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("제목")).Alignment(HorizontalAlignment.Left).Width("55%").CellTemplate(
+                                                        @<text>
+                                                        <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>','<%-data.BoardID%>')" data-pag-id="<%-data.BoardDocID%>">
+                                                            <%-data.Subject%>
+                                                        </a>
+                                                        </text>
+                                                        );
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("제목")).Alignment(HorizontalAlignment.Left).Width("55%").CellTemplate(
+                                                    @<text>
+                                                    <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>','<%-data.BoardID%>')" data-pag-id="<%-data.BoardDocID%>">
+                                                        <%-data.Subject%>
+                                                    </a>
+                                                    </text>
+                                                );
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("제목")).Alignment(HorizontalAlignment.Left).Width("55%").CellTemplate(
+                                                      @<text>
+                                                            <a href="<%-data.ReferenceUrl%>" target="_blank" data-pag-id="<%-data.BoardDocID%>">
+                                                                <%-data.Subject%>
+                                                            </a>
+                                                    </text>
+                                                );
+                                        }
+                                        if(dataBoardType.BranchUseYN==true)
+                                        {
+                                            columns.AddFor(m => m.BranchName).Caption(_loc.GetLocalizedString("BranchName")).Alignment(HorizontalAlignment.Center).Width("15%").Lookup(lookup => lookup
+                                                                                    .DataSource(lstBranch)
+                                                                                    .DisplayExpr("BranchNameDesc")
+                                                                                    .ValueExpr("BranchNameID")).Visible(false);
+                                        }
+                                        columns.AddFor(m => m.OwnerName).Caption(_loc.GetLocalizedString("InsertID")).Width("15%").Alignment(HorizontalAlignment.Center);
+                                        columns.AddFor(m => m.DocDT).Caption(_loc.GetLocalizedString("DocDT")).Width("15%").Alignment(HorizontalAlignment.Center)
+                                            .DataType(GridColumnDataType.Date).Format("yyyy-MM-dd");
+                                        columns.AddFor(m => m.ReadCount).Caption(_loc.GetLocalizedString("ViewsCount")).Width("10%");
+                                        columns.AddFor(m => m.FileID).Caption(_loc.GetLocalizedString("파일 ID")).Width("10%").Visible(false);
+                                        columns.AddFor(m => m.SortOrder).Caption(_loc.GetLocalizedString("Sort")).Width("15%").SortOrder(SortOrder.Asc).Visible(false);
+                                        columns.Add().Caption(_loc.GetLocalizedString("Attachment")).Width("10%").Type(TreeListCommandColumnType.Buttons).Buttons(b =>
+                                        {
+                                            b.Add().Icon("inactivefolder").Hint("DownLoad").OnClick("DownloadCBFile"+ ViewBag.Thread).Visible(new JS("VisibleDownloadCBButton"));
+                                        });
+                                        })
+                                        .HeaderFilter(f => f.Visible(true))
+
+                                    )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*@await Html.PartialAsync("~/Views/CB/_Detail.cshtml",Model)*@
+
+

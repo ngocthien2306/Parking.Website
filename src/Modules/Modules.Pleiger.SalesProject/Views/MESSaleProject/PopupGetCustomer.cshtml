@@ -1,0 +1,196 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+
+@{
+    string gridCustomer = "gridCustomer" + ViewBag.Thread;
+    string cbbCustomerType = "CustomerType" + ViewBag.Thread;
+    string txtCustomerName = "CustomerName" + ViewBag.Thread;
+    string btnSaveItems = "btnSave_" + ViewBag.Thread;
+}
+<script>
+
+    $(document).ready(function ()
+    {
+        var customertype = MES_ComCodeDtls.filter(grCd => grCd.GROUP_CD == "ACCT00");
+        var Listcustomertype = customertype.filter(grCate => grCate.BASE_CODE == "ACCT01" || grCate.BASE_CODE == "ACCT03");
+        $("#@cbbCustomerType").dxSelectBox({
+            dataSource: Listcustomertype,
+            displayExpr: "BASE_NAME",
+            valueExpr: "BASE_CODE"
+        });
+
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+
+    });
+
+    $("#btnSearch_@ViewBag.Thread").on("click", function () {
+            SearchCustomerByType();
+    });
+
+    function SearchCustomerByType() {
+        CheckSession();
+        LoadingPage(1);
+        $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        let gridCustomer = $('#@gridCustomer').dxDataGrid('instance');
+        gridCustomer.deselectAll()
+
+        let CustomerType = $('#@cbbCustomerType').dxSelectBox('option', 'value');
+        let CustomerName = $('#@txtCustomerName').dxTextBox('instance').option('value');
+
+        $.ajax({
+            url: '@Url.Action("GetCustomerByType", "MESPartner")',
+            type: 'GET',
+            async: false,
+            data:
+            {
+                CustomerType: CustomerType,
+                CustomerName: CustomerName
+            },
+            dataType: 'json',
+            success: function (result) {
+                LoadingPage(0);
+                $('#@gridCustomer').dxDataGrid({
+                    dataSource: result.data
+                })
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+        LoadingPage(0);
+    }
+
+    function gridCustomerPopupSelectionChanged(selectedItems)
+    {
+        var data = selectedItems.selectedRowsData;
+        if (typeof data !== 'undefined' && data.length > 0) {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", false);
+        }
+        else {
+            $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+        }
+        LoadingPage(0);
+    }
+
+</script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Customer List"))</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-sm btn-secondary btn-action" title="Search" menu-id="btnSearch_@ViewBag.Thread" id="btnSearch_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                <button class="btn btn-sm btn-primary btn-action" title="Add Item" menu-id="btnSave_@ViewBag.Thread" id="btnSave_@ViewBag.Thread" style="margin-right:5px;background-color: #009fe3"><i class="fa fa-plus"></i> @_loc.GetLocalizedString("Choose Customer")</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+
+            </div>
+        </div>
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-md-12">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("Search Customer")</legend>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group ">
+                                <label>@(_loc.GetLocalizedString("Customer Type"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                                        .ID(cbbCustomerType)
+                                        .ShowClearButton(true)
+                                        //.OnValueChanged("cbbCustomerTypeOnValueChange")
+                                        .SearchEnabled(true)
+                                        .DataSourceOptions(o => o.Paginate(true).PageSize(100))//async load more
+                                        .AcceptCustomValue(true)
+                                    )
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="form-group ">
+                                <label>@(_loc.GetLocalizedString("Customer Name"))</label>
+                                @(Html.DevExtreme().TextBox()
+                                        .ID(txtCustomerName)
+                                        //.Disabled(true)
+                                    )
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <div class="form-group">
+            <fieldset class="customFieldset">
+                <legend class="customLegend">@_loc.GetLocalizedString("Customer List")</legend>
+                @(Html.DevExtreme().DataGrid<MES_Partner>()
+                                    .ID(gridCustomer)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true).Height(540)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto))
+                                    .Width("100%")
+                                    .RepaintChangesOnly(true)
+                                    .ColumnAutoWidth(true).AllowColumnResizing(true)
+                                    .Editing(editing =>
+                                    {
+                                        editing.Mode(GridEditMode.Cell);
+                                        editing.AllowUpdating(true);
+
+                                    })
+                                    .Selection(s => s.Mode(SelectionMode.Single)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=>
+                                    {
+                                        c.AddFor(x => x.PartnerTypeName).Caption((@_loc.GetLocalizedString("Customer Type"))).Width("20%").AllowEditing(false);
+                                        c.AddFor(x => x.PartnerCode).Caption((@_loc.GetLocalizedString("Customer Code"))).Width("20%").AllowEditing(false);
+                                        c.AddFor(x => x.PartnerName).Caption((@_loc.GetLocalizedString("Customer Name"))).Width("60%").AllowEditing(false);
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(100))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                .OnSelectionChanged("gridCustomerPopupSelectionChanged")
+                                )
+            </fieldset>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    $("#btnSave_@ViewBag.Thread").on("click", function () {
+        if (!CheckSession()) {
+            window.location.reload(true);
+        }
+
+        var dataGrid = $('#@gridCustomer').dxDataGrid('instance');
+        var data = dataGrid.getSelectedRowsData();
+        $("#PartnerCode@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].PartnerCode);
+        $("#PartnerName@(ViewBag.idParent)").dxTextBox("instance").option("value", data[0].PartnerName);
+
+        $('#modalControlChild').modal('hide');
+
+        LoadingPage(0);
+    });
+
+
+</script>

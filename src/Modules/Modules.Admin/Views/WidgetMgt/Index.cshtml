@@ -1,0 +1,251 @@
+﻿@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.CREATE_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.DELETE_YN = true;
+   
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var listWidgetMst = ViewBag.ListWidgetMst;
+}
+<style>
+
+    .slide-side {
+        width: 25%;
+        position: fixed;
+        top: 0;
+        right: -500px;
+        height: 100vh;
+        z-index: 9999;
+        background: #6d7fcc;
+        color: #fff;
+        transition: all 0.3s;
+        overflow-y: scroll;
+        overflow-x:hidden;
+        box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+    }
+    .slide-side.active {
+        right:0;
+    }
+    .overlay {
+        display: none;
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 998;
+        opacity: 0;
+        transition: all 0.5s ease-in-out;
+    }
+    .overlay.active {
+        display: block;
+        opacity: 1;
+        position: fixed;
+        top: 0;
+    }
+
+</style>
+
+<script>
+    $("#dismiss").on("click", function () {
+        $(".slide-side").toggleClass("active");
+    })
+
+</script>
+<script>
+    function onRowUpdatedDtl(e) {
+        console.log(e);
+    }
+    function onRowInsertedDtl(e) {
+        console.log(e);
+    }
+    function onRowRemovedDtl(e) {
+        console.log(e);
+    }
+    function onEditorPreparedDtl(e) {
+        console.log(e);
+    }
+    function onCellPreparedDtl(e) {
+        console.log(e);
+    }
+    function onEditorPreparingDtl(e) {
+        console.log(e);
+    }
+    function selectionChanged(e) {
+        var widgetNumber = e.selectedRowsData[0].WidgetNumber;
+        var gridWidgetDtl = $("#GridWidgetDtl").dxDataGrid("instance");
+
+        $.ajax({
+            url: '@Url.Action("GetWidgetDtl", "WidgetMgt")',
+            type: "GET",
+            data: {
+                WidgetNumber: widgetNumber
+            },
+            dataType: "json",
+            success: function (result) {
+                 
+                gridWidgetDtl.option("dataSource", result);
+
+                LoadingPage(0);
+            }, error: function (result) {
+                LoadingPage(0);
+            }
+        });
+    }
+    function InsertWidgetMst(e) {
+        console.log(e);
+    }
+    function showDtlWidget(e) {
+       // console.log(e)
+      //  console.log(e.row.key.WidgetNumber);
+        var widgetNumber = e.row.key.WidgetNumber;
+      //  $(".slide-side").toggleClass("active");
+       // var url = "/WidgetMgt/IndexVC?WidgetNumber=" + widgetNumber + "";
+         $.ajax({
+            url: '@Url.Action("IndexVC","WidgetMgt")',
+            type: "GET",
+            data: {
+                WidgetNumber: widgetNumber
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#ViewComponentChild").html(result);
+                $(".slide-side").toggleClass("active");
+            }
+        });
+        //$("#ViewComponentChild").load(url);
+    }
+
+</script>
+
+
+@await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+<div class="row">
+    <div class="col-xs-12 col-md-5">
+        <div class="card">
+            <div class="card-header">
+                Available Widget Master
+            </div>
+            <div class="card-body">
+                @(Html.DevExtreme().DataGrid<SYWidgetElement>()
+                            .ID("GridWidgetMST")
+                            .ShowBorders(true)
+                            .DataSource(d => d.Mvc()
+                                .Controller("WidgetMgt")
+                                .LoadAction("GetListWidgetMST")
+                                .InsertAction("InsertWidgetMst")
+                                .Key("WidgetNumber"))
+                            .Columns(columns => {
+                                columns.AddFor(x => x.Id).Visible(false);
+                                columns.AddFor(x => x.WidgetNumber);
+                                columns.AddFor(x => x.Name);
+                                columns.AddFor(x => x.SPName);
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                {
+                                    b.Add().Icon("detailslayout");
+                                });
+                            })
+
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .OnSelectionChanged("selectionChanged")
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Cell);
+                                editing.AllowUpdating(true);
+                                editing.UseIcons(true);
+                            })
+                  )
+            </div>
+        </div>
+    </div>
+    <div class="col-xs-12 col-md-7">
+        <div class="card">
+            <div class="card-header">
+                Detail Element
+            </div>
+            <div class="card-body">
+                @(Html.DevExtreme().DataGrid<SYWidgetElementDetail>()
+                            .ID("GridWidgetDtl")
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.WidgetNumber).Caption("Widget Number");
+                                columns.AddFor(m => m.Type).Caption("Type");
+                                columns.AddFor(m => m.Title).Caption("Title");
+                                columns.AddFor(m => m.IsExport).Caption("IsExport");
+                                columns.AddFor(m => m.Row).Caption("Row");
+                                columns.AddFor(m => m.Widget_xs).Caption("Widget_xs");
+                                columns.AddFor(m => m.Widget_sm).Caption("Widget_sm");
+                                columns.AddFor(m => m.Widget_md).Caption("Widget_md");
+                                columns.AddFor(m => m.Widget_lg).Caption("Widget_lg");
+                                columns.AddFor(m => m.Widget_lg).Caption("Widget_lg");
+                                columns.AddFor(m => m.IsUse).Caption("IsUse");
+                                columns.AddFor(m => m.NumberOfSeries).Caption("NumberOfSeries");
+                                columns.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                                {
+                                    b.Add().Icon("contentlayout").OnClick("showDtlWidget");
+                                }).Fixed(true);
+                            })
+                            .ShowBorders(true)
+                            .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto)
+                                )
+                                .RepaintChangesOnly(true)
+                                  // .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                                  .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .OnSelectionChanged("selectionChanged")
+                            .OnRowUpdated("onRowUpdatedDtl")
+                            .OnRowInserted("onRowInsertedDtl")
+                            .OnRowRemoved("onRowRemovedDtl")
+                            .OnEditorPrepared("onEditorPreparedDtl")
+                            .OnCellPrepared("onCellPreparedDtl")
+                            .OnEditorPreparing("onEditorPreparingDtl")
+                            .ColumnWidth(100)
+                            .Editing(editing =>
+                            {
+                                editing.Mode(GridEditMode.Row);
+                                editing.AllowUpdating(true);
+                                editing.UseIcons(true);
+                            })
+                      )
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xs-12 col-md-7">
+        <div class="card">
+
+        </div>
+    </div>
+</div>
+<div class="slide-side">
+    <div class="row">
+        <div class="col-md-2">
+            <div id="dismiss">
+                <i class="fas fa-arrow-right bg-warning p-1"></i>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12" id="ViewComponentChild" >
+            @*@await Component.InvokeAsync("WidgetDtl", new { WidgetNumber = "asd"})*@
+        </div>
+    </div>
+</div>

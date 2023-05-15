@@ -1,0 +1,410 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.MasterData.Models;
+@{
+    Layout = null;
+
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+    pageSetting.SAVE_YN = true;
+    pageSetting.EXCEL_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    string GridProductLine = "GridProductLine" + ViewBag.Thread;
+
+    string InternalExternal = "InternalExternal" + ViewBag.Thread;
+    string MaterialWarehouse = "MaterialWarehouse" + ViewBag.Thread;
+    string ProductionLineNameEn = "ProductionLineNameEn" + ViewBag.Thread;
+    string ProductionLineNameKor = "ProductionLineNameKor" + ViewBag.Thread;
+
+    string ProductionLineCode = "ProductionLineCode" + ViewBag.Thread;
+
+    var InitialCode = new[] { "All", "Internal", "External" };
+
+}
+
+<script>
+    var ArrUpdate = [];
+    var ArrInsert = [];
+    var ArrDelete = [];
+
+    var ItemSpecifyArrUpdate = [];
+    var ItemSpecifyArrInsert = [];
+    var ItemSpecifyArrDelete = [];
+
+    var ItemWareHouseArrUpdate = [];
+    var ItemWareHouseArrInsert = [];
+    var ItemWareHouseArrDelete = [];
+
+    function ResetArr() {
+        ArrUpdate = [];
+        ArrInsert = [];
+        ArrDelete = [];
+    }
+
+    $(document).ready(function () {
+        debugger;
+        //var obj = {};
+        //obj.WarehouseName = '@_loc.GetLocalizedString("All")';
+        //obj.WarehouseCode = 'All';
+
+        //MES_Material_Warehouse.data.unshift(obj);
+
+        //$("#@MaterialWarehouse").dxSelectBox({
+        //    dataSource: MES_Material_Warehouse.data,
+        //    displayExpr: "WarehouseName",
+        //    valueExpr: "WarehouseCode",
+        //    value: "All"
+        //});
+        searchProductLines();
+    });
+
+
+    $("#btnExcel_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        var dataGrid = $('#@(GridProductLine)');
+        ExportExcelCommon(dataGrid, "Production Line");
+        LoadingPage(0);
+
+    });
+
+
+    $('#btnReload_@(ViewBag.Thread)').on('click', function () {
+        CheckSession();
+        RefreshTab(this);
+    });
+
+    function searchProductLines() {
+        debugger;
+        var internalExternal = $("#@(InternalExternal)").dxRadioGroup("instance").option("value");
+        var materialWarehouse = $("#@(MaterialWarehouse)").dxSelectBox("instance").option("value");
+        var productionLineNameEn = $("#@(ProductionLineNameEn)").dxTextBox("instance").option("value");
+        var productionLineNameKor = $("#@(ProductionLineNameKor)").dxTextBox("instance").option("value");
+        var productionLineCode = $("#@(ProductionLineCode)").dxTextBox("instance").option("value");
+        LoadingPage(1);
+         $.ajax({
+            url: '@Url.Action("SearchProductLine", "MESProductionLine")',
+            type: 'Get',
+            dataType: 'json',
+            data: {
+                InternalExternal: internalExternal,
+                MaterialWarehouseCode: materialWarehouse,
+                ProductionLineNameEng: productionLineNameEn,
+                ProductionLineNameKor: productionLineNameKor,
+                ProductionLineCode: productionLineCode,
+            },
+            success: function (result) {
+                debugger;
+                $("#@GridProductLine").dxDataGrid("option", "dataSource", result);
+                LoadingPage(0);
+            },
+            error: function (error) {
+                DevExpress.ui.dialog.alert("Getting data error!", "Error");
+                $("#@GridProductLine").dxDataGrid("option", "dataSource", null);
+                LoadingPage(0);
+            }
+        });
+        LoadingPage(0);
+    }
+
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        searchProductLines();
+    });
+
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        saveProductLineGrid();
+    });
+
+    function PushDataIntoArr() {
+        debugger;
+        ResetArr();
+        let ItemGrid = $('#@GridProductLine').dxDataGrid('instance');
+        let listData = ItemGrid.getVisibleRows();
+        let flagcheck = true;
+        $.each(listData, function (index, item)
+        {
+            debugger;
+            let newItem = listData[index];
+            // Delete Array
+            if (listData[index].removed !== undefined && listData[index].removed == true ) {
+                ArrDelete.push(item.data);
+            }
+
+            if (listData[index].modified !== undefined && listData[index].modified == true) {
+
+                if (newItem.data.ProductLineCode === "" || newItem.data.ProductLineCode === undefined || newItem.data.ProductLineCode === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Product Line Code!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.ProductLineName === "" || newItem.data.ProductLineName === undefined || newItem.data.ProductLineName === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Product Line Name Kor!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.ProductLineNameEng === "" || newItem.data.ProductLineNameEng === undefined || newItem.data.ProductLineNameEng === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Product Line Name Eng!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.MaterialWarehouseCode === "" || newItem.data.MaterialWarehouseCode === undefined || newItem.data.MaterialWarehouseCode === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select Material Warehouse Code!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.FinishWarehouseCode === "" || newItem.data.FinishWarehouseCode === undefined || newItem.data.FinishWarehouseCode === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select Finish Warehouse Code!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                ArrUpdate.push(item.data);
+            }
+
+            // Insert Array
+            if (listData[index].isNewRow !== undefined && listData[index].isNewRow == true) {
+
+                 if (newItem.data.ProductLineCode === "" || newItem.data.ProductLineCode === undefined || newItem.data.ProductLineCode === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Product Line Code!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.ProductLineName === "" || newItem.data.ProductLineName === undefined || newItem.data.ProductLineName === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Product Line Name Kor!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.ProductLineNameEng === "" || newItem.data.ProductLineNameEng === undefined || newItem.data.ProductLineNameEng === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please input Product Line Name Eng!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.MaterialWarehouseCode === "" || newItem.data.MaterialWarehouseCode === undefined || newItem.data.MaterialWarehouseCode === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select Material Warehouse Code!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                if (newItem.data.FinishWarehouseCode === "" || newItem.data.FinishWarehouseCode === undefined || newItem.data.FinishWarehouseCode === null) {
+                    DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please select Finish Warehouse Code!")", "@_loc.GetLocalizedString("Notice")");
+                    ResetArr();
+                    return flagcheck = false;
+                }
+
+                ArrInsert.push(item.data);
+            }
+        });
+        return flagcheck;
+    }
+
+    function saveProductLineGrid() {
+        LoadingPage(1);
+        if (PushDataIntoArr())
+        {
+            $.ajax({
+                url: '@Url.Action("SaveProductLine", "MESProductionLine")',
+                data: {
+                    ArrIns: JSON.stringify(ArrInsert),
+                    ArrUpd: JSON.stringify(ArrUpdate),
+                    ArrDel: JSON.stringify(ArrDelete)
+                },
+                dataType: 'json',
+                type: 'POST'
+            }).done(function (result) {
+                if (result.Success) {
+                    DevExpress.ui.dialog.alert(result.Message, "@_loc.GetLocalizedString("Notice")");
+                    LoadingPage(1);
+                    $('#btnSearch_@(ViewBag.Thread)').trigger('click');
+                    $('#@(GridProductLine)').dxDataGrid('instance').cancelEditData();
+                    $('#@GridProductLine').dxDataGrid('instance').refresh();
+                   // clearAllGrid();
+                    LoadingPage(0);
+                } else {
+                    DevExpress.ui.dialog.alert(result.Message, "@_loc.GetLocalizedString("Notice")");
+                    $('#btnSearch_@(ViewBag.Thread)').trigger('click');
+                    $('#@GridProductLine').dxDataGrid('instance').refresh();
+                   // clearAllGrid();
+                    LoadingPage(0);
+                }
+            });
+        }
+        else {
+            LoadingPage(0);
+            return;
+        }
+    }
+
+    function onItemGridToolbarPreparing(e) {
+        return e.toolbarOptions.items[1].visible = false;
+    }
+    function CheckProductionLineUsed(e) {
+
+        if(e.row.data.NumOfLineUsed > 0) {
+            return false;
+        }
+        return true;
+    }
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div class="row pr-1" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row ml-2">
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Internal External"))</label>
+                        @(Html.DevExtreme().RadioGroup()
+                                .Items(InitialCode)
+                                .Value("All")
+                                .Layout(Orientation.Horizontal)
+                                .ID(InternalExternal)
+
+                            )
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Material Warehouse"))</label>
+                        @(Html.DevExtreme().SelectBox()
+                            .ID(MaterialWarehouse)
+                            .DataSource(d => d.Mvc()
+                                .Controller("MESProductionMagtNew")
+                                .LoadAction("GetListWareHouse")
+                                .Key("WarehouseCode"))
+                            .DisplayExpr("WarehouseName")
+                            .ValueExpr("WarehouseCode")
+                            .Value("All")
+                        )
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Production Line Name(En)"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ProductionLineNameEn).Value(""))
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Production Line Name(Kor)"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ProductionLineNameKor).Value(""))
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Production Line Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID(ProductionLineCode).Value(""))
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="card-body">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-12" style="height:100%">
+                        <fieldset class="customFieldset" style="height:100%">
+                            <legend class="customLegend">@_loc.GetLocalizedString("Production Line")</legend>
+                            @(Html.DevExtreme().DataGrid<MES_ProductLine>()
+                                .ID(GridProductLine)
+                                .ShowBorders(true)
+                                .ShowColumnLines(true)
+                                .Height("100%")
+                                .ShowRowLines(true)
+                                .AllowColumnResizing(true)
+                                .AllowColumnReordering(true)
+                                .RemoteOperations(true)
+                                .ColumnAutoWidth(true)
+                                .ColumnFixing(c => c.Enabled(true))
+                                .RepaintChangesOnly(true)
+                                .Selection(s => s.Mode(SelectionMode.Single))
+                                .Editing(e =>
+                                {
+                                    e.AllowAdding(true);
+                                    e.AllowDeleting(new JS("CheckProductionLineUsed"));
+                                    e.AllowUpdating(true);
+                                    e.UseIcons(true);
+                                    e.Mode(GridEditMode.Batch);
+                                })
+                                .Columns(c =>
+                                {
+                                    c.AddFor(z => z.No).Caption(_loc.GetLocalizedString("No")).Width("5%").AllowEditing(false);
+                                    c.AddFor(x => x.ProductLineCode).Caption(_loc.GetLocalizedString("생산라인 코드")).Width("5%").AllowEditing(true);
+                                    c.AddFor(x => x.ProductLineName).Caption(_loc.GetLocalizedString("생산라인명")).Width("15%").AllowEditing(true);
+                                    c.AddFor(x => x.ProductLineNameEng).Caption(_loc.GetLocalizedString("생산라인 영문명")).Width("15%").AllowEditing(true);
+
+                                    c.AddFor(x => x.MaterialWarehouseCode).Caption(_loc.GetLocalizedString("자재 창고"))
+                                        .ValidationRules(vr =>
+                                        {
+                                            vr.AddRequired().Message(_loc.GetLocalizedString("Material Warehouse is required!"));
+                                        })
+                                        .AllowEditing(true)
+                                        .Lookup(m => m.DataSource(d => d.Mvc().Controller("MESProductionLine").LoadAction("MaterialWarehouseCodeCombobox").Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID"))
+                                        .Width("10%");
+
+                                    c.AddFor(x => x.FinishWarehouseCode).Caption(_loc.GetLocalizedString("완제품창고"))
+                                        .ValidationRules(vr =>
+                                        {
+                                            vr.AddRequired().Message(_loc.GetLocalizedString("Finish Warehouse is required!"));
+                                        })
+                                        .AllowEditing(true)
+                                        .Lookup(m => m.DataSource(d => d.Mvc().Controller("MESProductionLine").LoadAction("FinishWarehouseCodeCombobox").Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID"))
+                                        .Width("10%");
+
+                                    c.AddFor(x => x.InternalExternal).Caption(_loc.GetLocalizedString("내부외부 구분"))
+                                        .AllowEditing(true)
+                                        .Lookup(m => m.DataSource(d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "INEX00" }).Key("BASE_CODE"))
+                                        .DisplayExpr("BASE_NAME1")
+                                        .ValueExpr("BASE_CODE"))
+                                        .Width("10%");
+
+                                    c.AddFor(x => x.Manager).Caption(_loc.GetLocalizedString("생산라인 담당자"))
+                                        .AllowEditing(true)
+                                        .Lookup(m => m.DataSource(d => d.Mvc().Controller("MESProductionLine").LoadAction("ProductManagerLineCombobox").Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID"))
+                                        .Width("10%");
+
+                                    c.AddFor(x => x.Status).Caption(_loc.GetLocalizedString("상태"))
+                                        .AllowEditing(true)
+                                        .Lookup(m => m.DataSource(d => d.Mvc().Controller("MESComCode").LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "USE000" }).Key("BASE_CODE"))
+                                        .DisplayExpr("BASE_NAME1")
+                                        .ValueExpr("BASE_CODE"))
+                                        .Width("10%");
+
+                                    c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("파트너 이름"))
+                                        .AllowEditing(true)
+                                        .Lookup(m => m.DataSource(d => d.Mvc().Controller("MESProductionLine").LoadAction("GetPartnerComboboxCombobox").Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID"))
+                                        .Width("10%");
+                                })
+                                .Pager(pager =>
+                                {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                })
+                                .Paging(paging => paging.PageSize(100))
+                                .OnToolbarPreparing("onItemGridToolbarPreparing")
+                            )
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

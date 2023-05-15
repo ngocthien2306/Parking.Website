@@ -1,0 +1,107 @@
+﻿
+@using LazZiya.ExpressLocalization;
+@inject ISharedCultureLocalizer _loc;
+@using Modules.Admin.Models;
+@model EMailResponse;
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        #newListItem {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+            #newListItem td, #customers th {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+
+            #newListItem tr:hover {
+                background-color: #ddd;
+            }
+
+            #newListItem th {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                text-align: left;
+                background-color: #7878a7;
+                color: white;
+            }
+    </style>
+
+</head>
+
+<body>
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <span class="modal-title">Send Email : </span><span>@Model.EmailFrom</span><br />
+            <span class="modal-title">To Email: </span><span>@Model.EmailTo</span><br />
+            <span class="modal-title">Title: </span><span >@Model.UserPONumber</span><br />
+        </div>
+
+        <div class="modal-body">
+            <div class="row">
+                <div class="row mt-2">
+                    <br />                   
+                    <span>Email content</span>
+                    <br />
+                    <br />
+                    <span>프라이그파이스트의 구매발주 내역입니다.</span><br />
+                    <span>아래의 Click을 반드시 클릭하시어 발주에 대한 정보를 확인 하여 주십시오</span><br />
+                    <span>PFE의 시스템에서 수락 또는 기타 의견을 기재하여 주시기 바랍니다</span><br />
+                    <span>만약 발주에 대한 기타 의견이 있으시면 비고란에 관련 메시지를 입력 후 저장하여"</span><br />
+                    <span>주시거나 당사의 구매담당자에게 연락을 주시기 바랍니다.</span><br />
+                    <span> * 브라우저는 반드시 표준 브라우저를 사용하여 주십시오.</span><br />
+                    <span> (인터넷 익스플로러는 사용 할 수 없습니다).</span><br />
+                    <br />
+                    <table id="newListItem">
+                        <tbody>
+                            <tr>
+                                    <td style="text-align:center"> PFE PO 번호: </td>
+                                    <td style="text-align:center"> 품번(푸명): </td>
+                                    <td style="text-align:center"> 수량: </td>
+                                    <td style="text-align:center"> PO 생성일: </td>
+                                    <td style="text-align:center"> 납기일: </td>
+                                    <td style="text-align:center"> PO 담당자: </td>
+                            </tr>
+                            @foreach (var item in Model.listItem)
+                            {
+                                <tr>
+                                    <td style="text-align:left">@Model.UserPONumber</td>
+                                    <td style="text-align:left">@item.ItemCode - @item.ItemName</td>
+                                    <td style="text-align:right">@String.Format("{0:N0}", item.POQty)</td>
+                                    @if (item.Created_At.HasValue)
+                                    {
+                                        <td style="text-align:center"> @item.Created_At.Value.ToString("yyyy-MM-dd")</td>
+                                    }
+                                    else
+                                    {
+                                        <td style="text-align:center">@item.Created_At</td>
+                                    }
+
+                                    @if (item.ArrivalRequestDate.HasValue)
+                                    {
+                                        <td style="text-align:center">@item.ArrivalRequestDate.Value.ToString("yyyy-MM-dd")</td>
+                                    }
+                                    else
+                                    {
+                                        <td style="text-align:center">@item.ArrivalRequestDate</td>
+                                    }
+
+                                    <td style="text-align:left"> @item.UserCreate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table><br /><br />
+
+                    <span><a href=@Model.Url>PO 정보 열람:</a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

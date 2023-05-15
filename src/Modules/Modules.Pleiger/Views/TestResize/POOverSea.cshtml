@@ -1,0 +1,41 @@
+﻿@using Modules.Pleiger.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@using Modules.Pleiger.Models;
+@model MES_Partner
+@{
+    Layout = null;
+    string OrderConfirmNumber = "OrderConfirmNumber" + ViewBag.Thread;
+    string HullNo = "HullNo" + ViewBag.Thread;
+    string BusinessType = "BussinessType" + ViewBag.Thread;
+    string ConnectionToDemand = "ConnectionToDemand" + ViewBag.Thread;
+    string Yard = "Yard" + ViewBag.Thread;
+    string Schedule = "Schedule" + ViewBag.Thread;
+    string Mon = "Mon" + ViewBag.Thread;
+    string SPPR = "SPPR" + ViewBag.Thread;
+    string SPPriceRef = "SPPriceRef" + ViewBag.Thread;
+    string RequestShipMode = "RequestShipMode" + ViewBag.Thread;
+    string FinalShipmentMode = "FinalShipmentMode" + ViewBag.Thread;
+    string BLCode = "BLCode" + ViewBag.Thread;
+    string Invoice = "Invoice" + ViewBag.Thread;
+    string InvoiceIssuedDate = "InvoiceIssuedDate" + ViewBag.Thread;
+    string PartnerUser = "PartnerUser" + ViewBag.Thread;
+    string Packing = "Packing" + ViewBag.Thread;
+    string RefNumber = "RefNumber" + ViewBag.Thread;
+    string TermDelivery = "TermDelivery" + ViewBag.Thread;
+    string TermPayment = "TermPayment" + ViewBag.Thread;
+    string RealArrivalReqDate = "RealArrivalReqDate" + ViewBag.Thread;
+
+     MES_PORequest PORequest = ViewBag.PORequest != null ? ViewBag.PORequest : null;
+}
+
+ 
+
+
+@if (Model.CountryType.Equals("CTTP01"))
+{
+
+}else if (Model.CountryType.Equals("CTTP02"))
+{
+
+}

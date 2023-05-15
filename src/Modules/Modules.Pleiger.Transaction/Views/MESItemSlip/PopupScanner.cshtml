@@ -1,0 +1,90 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Pleiger.CommonModels;
+@model MES_SaleProject;
+@{
+    Layout = null;
+}
+
+<style>
+    .center {
+        margin: auto;
+        width: 50%;
+        border: 3px solid green;
+        padding: 10px;
+    }
+</style>
+<div class="modal-content center">
+    <div class="modal-header">
+         <label>@(_loc.GetLocalizedString("Scanner QR Code"))</label>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div id="qr-reader"></div>
+        <div id="qr-reader-results"></div>
+    </form>
+</div>
+
+<script>
+    function docReady(fn) {
+        // see if DOM is already available
+        debugger;
+        if (document.readyState === "complete"
+            || document.readyState === "interactive") {
+            // call on next available tick
+            setTimeout(fn, 1);
+        } else {
+            document.addEventListener("DOMContentLoaded", fn);
+        }
+    }
+
+    docReady(function () {
+        var resultContainer = document.getElementById('qr-reader-results');
+        var lastResult, countResults = 0;
+        function onScanSuccess(decodedText, decodedResult) {
+            if (decodedText !== lastResult) {
+                ++countResults;
+                lastResult = decodedText;
+                // Handle on success condition with the decoded message.
+                //console.log(`Scan result ${decodedText}`, decodedResult);
+
+                var theindexrowkey = $("#gridItemSlipMst@(ViewBag.Index)").dxDataGrid("instance").getRowIndexByKey(decodedText);
+                if (theindexrowkey >= 0) {
+                    $("#gridItemSlipMst@(ViewBag.Index)").dxDataGrid("instance").selectRowsByIndexes(theindexrowkey);
+                    html5QrcodeScanner.clear();
+
+                    $('#modalControl').modal('hide');
+                }
+                else {
+                    DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Receipt code does not exist, please check your QR Code."))', "Notice");
+                }
+            }
+            @*else {
+                var theindexrowkey = $("#gridItemSlipMst@(ViewBag.Index)").dxDataGrid("instance").getRowIndexByKey(decodedText);
+                if (theindexrowkey >= 0) {
+                    $("#gridItemSlipMst@(ViewBag.Index)").dxDataGrid("instance").selectRowsByIndexes(theindexrowkey);
+                    html5QrcodeScanner.clear();
+
+                    $('#modalControl').modal('hide');
+                }
+                else {
+                    DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString("Receipt code does not exist, please check your QR Code."))', "Notice");
+                }
+            }*@
+        }
+
+        var html5QrcodeScanner = new Html5QrcodeScanner(
+            "qr-reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
+        $('#qr-reader__dashboard_section_swaplink').hide();
+        $('#qr-reader__dashboard_section_csr').hide();
+        $('#qr-reader__dashboard_section').hide();
+        $('#qr-reader__camera_permission_button').trigger('click')
+
+
+        function onScanError(errorMessage) {
+        }
+    });
+</script>

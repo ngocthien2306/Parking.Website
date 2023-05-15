@@ -1,0 +1,16 @@
+﻿@using InfrastructureCore.Models.Site;
+@model SYSite
+
+<footer class="main-footer" style="background-color : @(Model.FooterBackgroundColor == null ? "white": Model.FooterBackgroundColor )">
+    @*<strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong>
+        All rights reserved.
+        <div class="float-right d-none d-sm-inline-block">
+            <b>Version</b> 3.0.3-pre
+        </div>*@
+    <strong>@Model.FooterLeftText</strong>
+     All rights reserved.
+    <div class="float-right d-none d-sm-inline-block">
+        @*<b>Version</b> 0.1 Beta*@
+        <b>@Model.FooterRightText</b>
+    </div>
+</footer>

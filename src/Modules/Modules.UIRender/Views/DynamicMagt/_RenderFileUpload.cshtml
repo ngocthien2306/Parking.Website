@@ -1,0 +1,182 @@
+﻿@model Modules.Admin.Models.SYPageLayElements
+<style>
+    #fileuploader-container {
+        border: 1px solid #d3d3d3;
+        margin: 20px 20px 0 20px;
+    }
+</style>
+
+<script>
+    //$(function () {
+    //    setValue_FILE('dfd63114-4b03-489b-a747-5e7902123303');
+    //})
+    var fileID_@(Model.PEL_ID) = '';
+    function onUploadError() {
+        DevExpress.ui.dialog.alert("File is too large or not allowed file extension", "Error");
+    }
+    function onUploaded(e) {
+        var result = JSON.parse(e.request.response);
+        e.file.fileGuid = result.data.FileGuid;
+        fileID_@(Model.PEL_ID) = result.fileID;
+        updateIdFile(result.fileID);
+        setTimeout(function () {
+            var buttonHtml = '<div class="dx-fileuploader-button-container btn-custom-file">' +
+                '<div class="dx-fileuploader-button dx-widget dx-button-has-icon">' +
+                '<div class="dx-button-content">' +
+                '<a href="#" onClick="deleteFile(this,\''+ result.data.FileGuid +'\')">'+
+                '<i class="dx-icon dx-icon-remove"></i>' +
+                '</a>'+
+                '</div>' +
+                '</div>' +
+                '</div>';
+            var container = $(".dx-fileuploader-files-container");
+            var child = $(".dx-fileuploader-file-container");
+            var temp = $(".dx-fileuploader-files-container").find(child);
+            $.each(temp, function (i,item) {
+                var link = $("<a href='/Files/DownloadFile?fileguid=" + result.data.FileGuid + "'></a>");
+                var temp1 = item.children[1].children[0];
+
+                var temp2 = temp1.children[0];
+                link.append(temp2);
+                $(temp1).prepend(link);
+                var temp3 = $(temp1).find(".btn-custom-file");
+                if (temp3.length === 0) {
+                    $(temp1).append(buttonHtml)
+                }
+
+            });
+        }, 300);
+    }
+    function OnUploadAborted(e) {
+        console.log(e);
+    }
+    function deleteFile(e,fileguid) {
+        $(e).parent().parent().parent().parent().parent().parent().remove();
+         $.ajax({
+            url: '@Url.Action("DeleteFile", "Files")',
+            type: "POST",
+            data: { fileguid: fileguid },
+             success: function (result) {
+                 if (result.result == false) {
+                     DevExpress.ui.dialog.alert("Delete fail", "Error");
+                 }
+            }
+        });
+    }
+    @*function getValue_@(Model.PEL_ID)() {
+        var file = $("#@(Model.PEL_ID)").dxFileUploader("instance").option("value");
+        var fileGuid = [];
+        $.each(file, function (index, item) {
+            fileGuid.push(item.fileGuid);
+        });
+        return fileGuid;
+    }*@
+    function getValue_@(Model.PEL_ID)() {
+        return fileID_@(Model.PEL_ID);
+    }
+    function updateIdFile(value) {
+            var uploader = $("#@Model.PEL_ID").dxFileUploader("instance");
+            var url = uploader.option("uploadUrl");
+            url = updateQueryStringParameter(url, "idFile", value);
+            uploader.option("uploadUrl", url);
+    }
+    function updateQueryStringParameter(uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        if (uri.match(re)) {
+            return uri.replace(re, '$1' + key + "=" + value + '$2');
+        }
+        else {
+            return uri + separator + key + "=" + value;
+        }
+    }
+    function setValue_@(Model.PEL_ID)(fileId) {
+        fileID_@(Model.PEL_ID) = fileId;
+        updateIdFile(fileId);
+        $.ajax({
+            url: '@Url.Action("GetSYFileUploadWithFileID", "Files")',
+            type: "GET",
+            data: { fileId: fileId },
+            success: function (result) {
+                var container = $(".dx-fileuploader-files-container");
+                $.each(result.data, function (index, item) {
+                    var strHTML = '<div class="dx-fileuploader-file-container">'+
+                        '<div class="dx-fileuploader-button-container">'+
+                            '<div class="dx-fileuploader-button dx-fileuploader-cancel-button dx-button dx-button-normal dx-button-mode-contained dx-widget dx-button-has-icon dx-state-invisible" aria-label="close" tabindex="0" role="button" aria-hidden="true">'+
+                                '<div class="dx-button-content"><i class="dx-icon dx-icon-close"></i></div>'+
+                            '</div>'+
+                        '</div>'+
+                        '<div class="dx-fileuploader-file">'+
+                            '<div class="dx-fileuploader-file-info">'+
+                                '<a href="/Files/DownloadFile?fileguid=' + item.FileGuid+'">'+
+                                '<div class="dx-fileuploader-file-name" style="max-width: 477.083px;">' +
+                                    item.FileDetail.FileName +
+                                '</div>'+
+                        '</a>' +
+                        '<div class="dx-fileuploader-file-size">' + (parseInt(item.FileDetail.FileSize) / 1024).toFixed(1) + 'kb</div>' +
+                                '<div class="dx-fileuploader-button-container btn-custom-file">'+
+                                    '<div class="dx-fileuploader-button dx-widget dx-button-has-icon">'+
+                                        '<div class="dx-button-content">'+
+                                            '<a href="#" onclick="deleteFile(this,' + item.FileGuid +')">'+
+                                                '<i class="dx-icon dx-icon-remove"></i>'+
+                                            '</a>'+
+                                        '</div>'+
+                                    '</div>'+
+                                '</div>'+
+                            '</div>'+
+                            '<div class="dx-fileuploader-file-status-message" style="">Uploaded</div>'+
+                        '</div>'+
+                        '</div>';
+                    container.append(strHTML);
+                });
+            }
+        });
+    }
+
+</script>
+<div class="form-group col-lg-@Model.PEL_LG col-md-@Model.PEL_MD col-sm-@Model.PEL_SM col-xs-@Model.PEL_XS" style="@(Model.PEL_VIS==true?"display:block":"display:none")">
+    <div id="fileuploader-container">
+        @(Html.DevExtreme().FileUploader()
+        .ID(Model.PEL_ID)
+        .Name("myFile")
+        .Multiple(true)
+        .ChunkSize(200000)
+        .MaxFileSize(20000000)
+        .Accept("*")
+        .UploadMode(FileUploadMode.Instantly)
+        .UploadUrl(Url.Action("UploadChunk", "Files", new { idFile = "" }))
+        .OnUploaded("onUploaded")
+        .OnUploadAborted("OnUploadAborted")
+        .AllowCanceling(true)
+        .ShowFileList(true)
+
+        //.OnValueChanged("fileUploader_valueChanged")
+        )
+    </div>
+    @*<div>
+            <div class="dx-fileuploader-files-container">
+                <a href="/Files/DownloadFile?fileguid=5e6918c1-cf1a-ad37-c3aa-bdb32d44fd99">
+                    <div class="dx-fileuploader-file-container">
+                        <div class="dx-fileuploader-file">
+                            <div class="dx-fileuploader-file-info">
+                                <div class="dx-fileuploader-file-name" style="max-width: 278.038px;">
+                                    96773152_2661686774109799_3957947315431407616_n.jpg
+                                </div>
+                                <div class="dx-fileuploader-file-size">68 kb</div>
+                            </div>
+                            <div class="dx-fileuploader-file-status-message" style="">Uploaded</div>
+                        </div>
+                        <div class="dx-fileuploader-button-container">
+                            <div class="dx-fileuploader-button dx-widget dx-button-has-icon">
+                                <div class="dx-button-content">
+                                    <i class="dx-icon dx-icon-remove"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </a>
+
+            </div>
+        </div>*@
+</div>

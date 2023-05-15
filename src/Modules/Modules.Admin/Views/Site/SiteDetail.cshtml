@@ -1,0 +1,558 @@
+﻿@using InfrastructureCore.Models.Site;
+@using Modules.Common.Models;
+
+@model SYSite
+@{
+    Layout = null;
+}
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        let menuType = $("#ddlMenuType option:selected").val();
+        if (menuType == 'TopLeft') {
+            $(".top-menu").removeAttr("hidden");
+        }
+        else {
+            $('.top-menu').attr("hidden", true);
+        }
+
+        let footerVisible = $("#ddlFooterVisible option:selected").val();
+        if (footerVisible == "True") {
+            $(".divFooter").css("display", "block");
+        }
+        else {
+            $(".divFooter").css("display", "none");
+        }
+
+        let showLeftMenuBottom = $("#ddlShowLeftMenuBottom option:selected").val();
+        if (showLeftMenuBottom == "True") {
+            $("#divLeftMenuBottom").css("display", "block");
+        }
+        else {
+            $("#divLeftMenuBottom").css("display", "none");
+        }
+        LoadingPage(0);
+    });
+
+    // Logo background color
+    $("#txtLogoBackgroundColor").change(function () {
+        let value = $(this).val();
+
+        $(".brand-link").css("background-color", value);
+    });
+
+    // Menu type
+    $("#ddlMenuType").change(function () {
+        let menuType = $(this).val();
+        if (menuType == 'TopLeft') {
+            $(".top-menu").removeAttr("hidden");
+        }
+        else {
+            $('.top-menu').attr("hidden", true);
+        }
+    });
+
+    // Side menu theme - dark/light
+    $("#ddlBarSideType").change(function () {
+        let sideBarType = $(this).val();
+        if (sideBarType == 'Light') {
+            $(".main-sidebar").removeClass("sidebar-dark-primary");
+            $(".main-sidebar").addClass("sidebar-light-primary");
+        }
+        else {
+            $(".main-sidebar").addClass("sidebar-dark-primary");
+            $(".main-sidebar").removeClass("sidebar-light-primary");
+        }
+    });
+
+    // Top Menu
+    // Top menu background color
+    $("#txtTopBackgroundColor").blur(function () {
+        let value = $(this).val();
+
+        $(".main-header").css("background-color", value);
+    });
+
+    // Top menu active background color
+    $("#txtTopBackgroundActiveColor").blur(function () {
+        let value = $(this).val();
+
+        $("a.nav-link.active").css("background-color", value);
+    });
+
+    // Top menu hover background color
+    $("#txtTopBackgroundHoverColor").blur(function () {
+        let value = $(this).val();
+
+        $(".nav-link:hover").css("background-color", value);
+    });
+
+    // Top menu text color
+    $("#txtTopTextColor").blur(function () {
+        let value = $(this).val();
+
+        $(".navbar-light .navbar-nav .nav-link").css("color", value);
+    });
+
+    // Side menu active color
+    $("#txtSideActiveColor").blur(function () {
+        let value = $(this).val();
+
+        $("a.nav-link.side-link.active").css("background-color", value);
+        $("a.nav-link.side-link.active").addClass("important");
+    });
+
+    // Left Menu Bottom
+    $("#ddlShowLeftMenuBottom").change(function () {
+         
+        let value = $(this).val();
+
+        if (value == "True") {
+            $("#divLeftMenuBottom").css("display", "block");
+        }
+        else {
+            $("#divLeftMenuBottom").css("display", "none");
+        }
+    });
+
+    // Footer visible
+    $("#ddlFooterVisible").change(function () {
+        let value = $(this).val();
+
+        if (value == "True") {
+            $(".divFooter").css("display", "block");
+        }
+        else {
+            $(".divFooter").css("display", "none");
+        }
+    });
+
+    // Footer background color
+    $("#txtFooterBackgroundColor").blur(function () {
+        let value = $(this).val();
+
+        $("footer").css("background-color", value);
+    });
+
+    function ValidateSiteSetting() {
+        let showLeftMenuBottom = $("#ddlShowLeftMenuBottom option:selected").val();
+        let leftMenuBottomComponentName = $("#txtSideMenuBottomComponentName").val();
+        let changePassPeriod = $("#txtChangePassPeriod").val();
+        let failedWaitTime = $("#txtFailedWaitTime").val();
+        let maxLogFail = $("#txtMaxLogFail").val();
+        let sessionTimeout = $("#txtSessionTimeout").val();
+
+        if (showLeftMenuBottom == "True") {
+            if (leftMenuBottomComponentName == null || leftMenuBottomComponentName == "") {
+                DevExpress.ui.dialog.alert("Please input Left Menu Bottom Component Name!", "Error");
+                return;
+            }
+        }
+
+        if (isNaN(sessionTimeout)) {
+            DevExpress.ui.dialog.alert("Change Session Timeout is a number!", "Error");
+            return;
+        }
+        if (parseInt(sessionTimeout) <=0) {
+            DevExpress.ui.dialog.alert("Session Timeout is invalid!", "Error");
+            return;
+        }
+
+        if (isNaN(changePassPeriod)) {
+            DevExpress.ui.dialog.alert("Change Pass Period is a number!", "Error");
+            return;
+        }
+        else {
+            if (Number.isInteger(parseFloat(changePassPeriod)) == false) {
+                DevExpress.ui.dialog.alert("Change Pass Period is a Integer!", "Error");
+                return;
+            }
+            else {
+                if (parseInt(changePassPeriod) <= 0) {
+                    DevExpress.ui.dialog.alert("Change Pass Period is invalid!", "Error");
+                    return;
+                }
+            }
+        }
+
+        if (isNaN(failedWaitTime)) {
+            DevExpress.ui.dialog.alert("Failed Wait Time is a number!", "Error");
+            return;
+        }
+        else {
+            if (Number.isInteger(parseFloat(failedWaitTime)) == false) {
+                DevExpress.ui.dialog.alert("Failed Wait Time is a Integer!", "Error");
+                return;
+            }
+            else {
+                if (parseInt(failedWaitTime) <= 0) {
+                    DevExpress.ui.dialog.alert("Failed Wait Time is invalid!", "Error");
+                    return;
+                }
+            }
+        }
+
+        if (isNaN(maxLogFail)) {
+            DevExpress.ui.dialog.alert("Max Log Time is a number!", "Error");
+            return;
+        }
+        else {
+            if (Number.isInteger(parseFloat(maxLogFail)) == false) {
+                DevExpress.ui.dialog.alert("Max Log Time is a Integer!", "Error");
+                return;
+            }
+            else {
+                if (parseInt(maxLogFail) <= 0) {
+                    DevExpress.ui.dialog.alert("Max Log Time is invalid!", "Error");
+                    return;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    $("#btnSave_@ViewBag.MenuId").on("click", function () {
+        CheckSession();
+         
+        $("#frm-SiteSetting").submit();
+    });
+
+    // Save Site Setting
+    $("#frm-SiteSetting").submit(function (e) {
+        e.preventDefault();
+        var data = new FormData(this);
+        if (ValidateSiteSetting()) {
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    LoadingPage(1);
+                    $.ajax({
+                        url: '@Url.Action("UpdateData", "Site")',
+                        type: 'POST',
+                        contentType: false,
+                        cache: false,
+                        processData: false,
+                        data: data,
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    $("#btnReFresh").click();
+                                });
+                            }
+                            else {
+                                LoadingPage(0);
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                } else {
+                    LoadingPage(0);
+                    return;
+                }
+            });
+            LoadingPage(0);
+        }
+    });
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-sm btn-secondary btn-action" title="Reload" id="btnReFresh" onclick="RefreshTab(this)" menu-id="@ViewBag.MenuId" style="margin-right:5px"><i class="fas fa-sync"></i> Reload</button>
+                        <button class="btn btn-sm btn-secondary btn-action" title="Save" id="btnSave_@ViewBag.MenuId" style="margin-right:5px"><i class="fa fa-save"></i> Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <form id="frm-SiteSetting">
+            <div class="card border-top-custom">
+                <div class="card-body">
+                    @Html.HiddenFor(x => x.SiteID)
+                    @Html.HiddenFor(x => x.SiteName)
+                    @Html.HiddenFor(x => x.LoginBackgroundImage)
+                    @Html.HiddenFor(x => x.LogoPath)
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3>Login Page</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Login Background Image</label>
+                                <input type="file" class="form-control" id="txtLoginBackgroundImage" name="loginBackgroundImage" accept="image/png, image/jpeg, image/jpg" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Login Title</label>
+                                @Html.TextBoxFor(x => x.LoginTitle, new { @class = "form-control", @id = "txtLoginTitle" })
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Login Text Color</label>
+                                @Html.TextBoxFor(x => x.LoginTextColor, new { @class = "form-control", @id = "txtLoginTextColor" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3>Logo</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Icon Page</label>
+                                <input type="file" class="form-control" id="txtIconPage" name="icon" accept="image/ico" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Logo Image</label>
+                                <input type="file" class="form-control" id="txtLogoImage" name="file" accept="image/png, image/jpeg, image/jpg" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Logo Name</label>
+                                @Html.TextBoxFor(x => x.LogoName, new { @class = "form-control", id = "txtLogoName" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Logo Background Color</label>
+                                @Html.TextBoxFor(x => x.LogoBackgroundColor, new { @class = "form-control", id = "txtLogoBackgroundColor" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Logo Component Name</label>
+                                @Html.TextBoxFor(x => x.LogoComponentName, new { @class = "form-control", id = "txtLogoComponentName", @placeholder = "Logo" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>User Login Component Name</label>
+                                @Html.TextBoxFor(x => x.AccountComponentName, new { @class = "form-control", id = "txtAccountComponentName", @placeholder = "UserLogin" })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3>Menu</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Menu Type</label>
+                                @Html.DropDownListFor(x => x.MenuType, (List<SelectListItem>)ViewBag.ListMenuType, new { @class = "form-control", id = "ddlMenuType" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Sidebar Type</label>
+                                @Html.DropDownListFor(x => x.SideBarType, (List<SelectListItem>)ViewBag.ListSideBarType, new { @class = "form-control", id = "ddlBarSideType" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Left Parent Menu Active Color</label>
+                                @Html.TextBoxFor(x => x.SideParentActiveBackgroundColor, new { @class = "form-control", @id = "txtSideParentActiveBackgroundColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Left Menu Active Color</label>
+                                @Html.TextBoxFor(x => x.SideActiveBackgroundColor, new { @class = "form-control", @id = "txtSideActiveColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Left Menu Hover Background Color</label>
+                                @Html.TextBoxFor(x => x.SideHoverBackgroundColor, new { @class = "form-control", @id = "txtSideHoverBackgroundColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Left Menu Component Name</label>
+                                @Html.TextBoxFor(x => x.SideMenuComponentName, new { @class = "form-control", @id = "txtSideMenuComponentName", @placeholder = "LeftMenu" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Show Left Menu Bottom</label>
+                                @Html.DropDownListFor(x => x.ShowLeftMenuBottom, (List<SelectListItem>)ViewBag.ListVisibleFooter, new { @class = "form-control", id = "ddlShowLeftMenuBottom" })
+                            </div>
+                        </div>
+                        <div class="col-md-3" id="divLeftMenuBottom">
+                            <div class="form-group">
+                                <label>Left Menu Bottom Component Name</label>
+                                @Html.TextBoxFor(x => x.SideMenuBottomComponentName, new { @class = "form-control", @id = "txtSideMenuBottomComponentName" })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+
+                        </div>
+                    </div>
+                    <div class="row top-menu">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Background Color</label>
+                                @Html.TextBoxFor(x => x.TopBackgroundColor, new { @class = "form-control", @id = "txtTopBackgroundColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Background Active Color</label>
+                                @Html.TextBoxFor(x => x.TopBackgroundHoverColor, new { @class = "form-control", @id = "txtTopBackgroundHoverColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Hover Background Color</label>
+                                @Html.TextBoxFor(x => x.TopBackgroundActiveColor, new { @class = "form-control", @id = "txtTopBackgroundActiveColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Background Active Hover Color</label>
+                                @Html.TextBoxFor(x => x.TopBackgroundActiveHoverColor, new { @class = "form-control", @id = "txtTopBackgroundActiveHoverColor" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row top-menu">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Text Color</label>
+                                @Html.TextBoxFor(x => x.TopTextColor, new { @class = "form-control", @id = "txtTopTextColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Text Hover Color</label>
+                                @Html.TextBoxFor(x => x.TopTextHoverColor, new { @class = "form-control", @id = "txtTopTextHoverColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Active Color</label>
+                                @Html.TextBoxFor(x => x.TopTextActiveColor, new { @class = "form-control", @id = "txtTopTextActiveColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Top Menu Active Hover Color</label>
+                                @Html.TextBoxFor(x => x.TopTextActiveHoverColor, new { @class = "form-control", @id = "txtTopTextActiveHoverColor" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3>Footer</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Is Visible</label>
+                                @Html.DropDownListFor(x => x.FooterVisible, (List<SelectListItem>)ViewBag.ListVisibleFooter, new { @class = "form-control", id = "ddlFooterVisible" })
+                            </div>
+                        </div>
+                        <div class="col-md-3 divFooter">
+                            <div class="form-group">
+                                <label>Footer Component Name</label>
+                                @Html.TextBoxFor(x => x.FooterComponentName, new { @class = "form-control", @id = "txtFooterComponentName" })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 divFooter">
+                            <div class="form-group">
+                                <label>Background Color</label>
+                                @Html.TextBoxFor(x => x.FooterBackgroundColor, new { @class = "form-control", @id = "txtFooterBackgroundColor" })
+                            </div>
+                        </div>
+                        <div class="col-md-3 divFooter">
+                            <div class="form-group">
+                                <label>Left Text</label>
+                                @Html.TextBoxFor(x => x.FooterLeftText, new { @class = "form-control", @id = "txtFooterLeftText" })
+                            </div>
+                        </div>
+                        <div class="col-md-3 divFooter">
+                            <div class="form-group">
+                                <label>Right Text</label>
+                                @Html.TextBoxFor(x => x.FooterRightText, new { @class = "form-control", @id = "txtFooterRightText" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3>Account Policy</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Password Change Period (day)@*비밀번호 변경 기간 (day)*@</label>
+                                @Html.TextBoxFor(x => x.ChangePassPeriod, new { @class = "form-control", @id = "txtChangePassPeriod" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Waiting Time Login Failure (min)@*로그인 실패 후 대기 시간 (min)*@</label>
+                                @Html.TextBoxFor(x => x.FailedWaitTime, new { @class = "form-control", @id = "txtFailedWaitTime" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Max Login Fail@*로그인 실패 허용 횟수*@</label>
+                                @Html.TextBoxFor(x => x.MaxLogFail, new { @class = "form-control", @id = "txtMaxLogFail" })
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Login Session Timeout (min)</label>
+                                @Html.TextBoxFor(x => x.SessionTimeOut, new { @class = "form-control", @id = "txtSessionTimeout" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+

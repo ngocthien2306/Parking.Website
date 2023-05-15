@@ -1,0 +1,107 @@
+﻿
+@using Modules.Pleiger.CommonModels
+
+@{
+    string IdGrid = "GridProductLine" + ViewBag.Thread;
+    string fnLineManger = "setLineMangerValue" + ViewBag.Thread;
+
+    List<MES_ProductLine> lstProdLines = (List<MES_ProductLine>)ViewBag.lstProdLines;
+}
+
+<div class="modal fade" id="modal-prouction-lines" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header c-modal-header">
+                <h5 class="modal-title c-modal-title">@_loc.GetLocalizedString("Production Lines")</h5>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body">
+                @(Html.DevExtreme().DataGrid<MES_ProjectProdcnLines>()
+                    .ID(IdGrid)
+                    .KeyExpr("ProdcnLineCode")
+                    .ShowBorders(true)
+                    .ShowRowLines(true)
+                    .AllowColumnResizing(true)
+                    .ColumnAutoWidth(true)
+                    .Scrolling(scrolling => scrolling.Mode(GridScrollingMode.Standard))
+
+                    .Height("100%")
+                    .Paging(paging =>
+                    {
+                        paging.Enabled(true);
+                        paging.PageSize(10);
+                    })
+                    .Pager(p => p
+                        .ShowPageSizeSelector(true)
+                        .AllowedPageSizes(new[] { 10, 25, 50, 100 })
+                    )
+                    .Editing(editing =>
+                    {
+                        editing.Mode(GridEditMode.Batch);
+                        editing.UseIcons(true);
+                        editing.AllowAdding(true);
+                        editing.AllowDeleting(true);
+                        editing.AllowUpdating(true);
+                        editing.StartEditAction(GridStartEditAction.Click);
+                    })
+                    .RepaintChangesOnly(false)
+                    .Columns(columns =>
+                    {
+                        columns.AddFor(m => m.ProdcnLineCode).Caption(_loc.GetLocalizedString("Production Line Name"))
+                            .SetCellValue(fnLineManger).Width("25%")
+                            .Lookup(lookup => lookup
+                                .DataSource(lstProdLines)
+                                .DisplayExpr("ProductLineName")
+                                .ValueExpr("ProductLineCode"));
+                        columns.AddFor(m => m.AssignedQty).Caption(_loc.GetLocalizedString("Assigned Qty")).Width("20%")
+                            .DataType(GridColumnDataType.Number)
+                            .SetCellValue("Test")
+                            .Format("#,##0");
+                        columns.AddFor(m => m.LineManager).Caption(_loc.GetLocalizedString("Line Manager")).Width("20%")
+                            .Lookup(lookup => lookup
+                                .DataSource(d => d.Mvc().Controller("MESProductionMagt")
+                                    .LoadAction("GetListEmployees")
+                                    .Key("ID")
+                                )
+                                .DisplayExpr("Name")
+                                .ValueExpr("ID")).AllowEditing(false);
+                        columns.AddFor(m => m.ProdcnLineState).AllowEditing(false).Caption(_loc.GetLocalizedString("Production Line State")).Width("15%")
+                            .Lookup(lookup => lookup
+                                .DataSource((List<MES_ComCodeDtls>)ViewBag.lstStatusProdLines)
+                                .DisplayExpr("BASE_NAME1")
+                                .ValueExpr("BASE_CODE"));
+
+                    })
+                    .OnToolbarPreparing(
+                        @<text>
+                            function(e)
+                            {
+                                let toolbarItems = e.toolbarOptions.items;
+                                toolbarItems.forEach(function(item, index)
+                                    {
+                                        if(item.name == "saveButton")
+                                        {
+                                            toolbarItems.splice(index, 1);
+                                        }
+                                    });
+                            }
+                        </text>
+                    )
+                    .Summary(
+                        s=>
+                        {
+                            s.RecalculateWhileEditing(true)
+                            .TotalItems(m => m.AddFor(m1 => m1.AssignedQty).SummaryType(SummaryType.Sum).ValueFormat("#,##0")
+                            .DisplayFormat("Sum: {0}").Column("AssignedQty"));
+                        }
+                    )
+                    .OnInitNewRow("setDefaultNewRow"+ ViewBag.Thread)
+                    .OnRowUpdated("CheckSumQuantity" + ViewBag.Thread)
+                //.onFocusedCellChanging("CheckValidateAddColorAndFocus" + ViewBag.Thread)
+                )
+            </div>
+            
+        </div>
+    </div>
+</div>

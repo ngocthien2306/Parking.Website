@@ -1,0 +1,16 @@
+﻿@using InfrastructureCore.Models.Site;
+@model SYSite
+@{
+    Layout = null;
+}
+
+     @*<a href="@Url.Action("Index", "Home")" class="brand-link">*@
+      <a href="@Url.Action("Index", "MESHome")" class="brand-link">
+            @if (Model != null)
+            {
+                <img src="@(Model.LogoPath != null ? "../../LogoImage/" + Model.LogoPath : null)" alt="Site Logo">
+                @*<img src="@(Model.LogoPath!=null? "../LogoImage/"+Model.LogoPath : null)" alt="Site Logo" class="brand-image elevation-3" style="opacity: .8">*@
+                @*<span class="brand-text font-weight-light">@(Model.LogoName!=null? Model.LogoName : Model.SiteName)</span>*@
+
+            }
+        </a>

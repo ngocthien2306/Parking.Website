@@ -1,0 +1,265 @@
+﻿@using Modules.Pleiger.CommonModels;
+@model MES_SaleProject;
+@{
+    Layout = null;
+    var priorities = new[] { "True", "False" };
+}
+@{
+    string gridItemPoMst = "gridItemPoMst" + ViewBag.Thread;
+    string UserPONumber = "UserPONumber" + ViewBag.Thread;
+    string PartnerName = "PartnerName" + ViewBag.Thread;
+
+    string btnChoosePO = "btnChoosePO" + ViewBag.Thread;
+}
+    <script>
+
+        $(document).ready(function () {
+                LoadingPage(1);
+                $("#btnSave_@ViewBag.Thread").attr("disabled", true);
+                CheckSession();
+                $.ajax({
+                    url: '@Url.Action("GetPONumberHaveReceiptSearch", "MESItemSlip")',
+                    type: 'GET',
+                    async: false,
+                    data:
+                    {
+                        UserPONumber: "",
+                        PartnerCode: "",
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        LoadingPage(0);
+                        var grid = $("#gridItemPoMst@(ViewBag.Thread)").dxDataGrid("instance");
+                        grid.option("dataSource", result.data);
+
+                    }, error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+            });
+
+        function SearchItemPoMst() {
+                LoadingPage(1);
+                CheckSession();
+                var UserPONumber = $('#@UserPONumber').dxTextBox('option', 'value');
+                var PartnerName = $('#@PartnerName').dxTextBox('option', 'value');
+
+                $.ajax({
+                    url: '@Url.Action("GetPONumberHaveReceiptSearch", "MESItemSlip")',
+                    type: 'GET',
+                    async: false,
+                    data:
+                    {
+                        UserPONumber: UserPONumber,
+                        PartnerName: PartnerName
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        LoadingPage(0);
+                        var grid = $("#gridItemPoMst@(ViewBag.Thread)").dxDataGrid("instance");
+                        grid.option("dataSource", result.data);
+                    }, error: function (result) {
+                        LoadingPage(0);
+                        return;
+                    }
+                });
+                LoadingPage(0);
+            }
+
+        function ItemReturnSelectionChanged(e) {
+            CheckSession();
+            var rowdata = e.data;
+            //Set data from Popup to Index
+            $('#PONumberPopup@(ViewBag.Index)').val(rowdata.RelNumber);
+            $('#UserPONumberPopup@(ViewBag.Index)').val(rowdata.UserPONumber);
+            $('#PartnerCode@(ViewBag.Index)').val(rowdata.PartnerCode);
+            $('#PartnerName@(ViewBag.Index)').val(rowdata.PartnerName);
+            $('#ProjectCode@(ViewBag.Index)').val(rowdata.ProjectCode);
+            $('#UserProjectCode@(ViewBag.Index)').val(rowdata.UserProjectCode);
+            $('#SlipNumberGoodReceipt@(ViewBag.Index)').val(rowdata.SlipNumber);
+            //set wh
+            $('#WHPleigerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", rowdata.WHToCode);
+            $('#WHPartnerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", rowdata.WHFromCode);
+            partnerCodeSlt = rowdata.PartnerCode;
+            let remark = "";
+            if (rowdata != null) {
+                if (rowdata.ProjectCode != "") {
+                    remark += "Based on Sale Orders " + rowdata.ProjectCode + ".\n";
+                }
+                remark += "Based on Purchase Orders " + rowdata.RelNumber + ".\n";
+                remark += "Based on Goods Receipt PO " + rowdata.RelNumber + ".\n";
+                $("#Remark@(ViewBag.index)").val(remark);
+            }
+            //select Podetail
+            $.ajax({
+                url: '@Url.Action("CreateGridItemSlipDtlByPONumberInGoodsReturn", "MESItemSlip")',
+                type: "GET",
+                data: {
+                    PONumber: rowdata.RelNumber,
+                    SlipNumber: rowdata.SlipNumber
+                },
+                dataType: 'json',
+                success: function (result) {
+                    //if (result.data.length > 0)
+                    //{
+                    //    result.data[0].MaximumreturnQty = rowdata.Qty;
+                    //}
+                    var gridItemSlipDetail = $("#gridItemSlipDtl@(ViewBag.Index)").dxDataGrid("instance");
+                    gridItemSlipDetail.option("dataSource", result.data);
+                }
+            });
+            //close popup
+            $('#modalControl').modal('hide');
+        }
+
+        $('#btnChoosePO@(ViewBag.Thread)').on("click", function () {
+                var dataGrid = $('#@gridItemPoMst').dxDataGrid('instance');
+                var rowdata = dataGrid.getSelectedRowsData();
+                // var listItemSelect = dataGrid.getSelectedRowsData();
+                if (rowdata.length == 0) {
+                    DevExpress.ui.dialog.alert("Please select row!", "Error");
+                    return;
+                }
+                else
+                {
+                    $('#PONumberPopup@(ViewBag.Index)').val(rowdata[0].RelNumber);
+                    $('#UserPONumberPopup@(ViewBag.Index)').val(rowdata[0].UserPONumber);
+                    $('#PartnerCode@(ViewBag.Index)').val(rowdata[0].PartnerCode);
+                    $('#PartnerName@(ViewBag.Index)').val(rowdata[0].PartnerName);
+                    $('#ProjectCode@(ViewBag.Index)').val(rowdata[0].ProjectCode);
+                    $('#UserProjectCode@(ViewBag.Index)').val(rowdata[0].UserProjectCode);
+                    $('#SlipNumberGoodReceipt@(ViewBag.Index)').val(rowdata[0].SlipNumber);
+                    @*$('#UserPONumberPopup@(ViewBag.Index)').val(rowdata.UserPONumber);
+                    $('#PartnerCode@(ViewBag.Index)').val(rowdata.PartnerCode);
+                    $('#PartnerName@(ViewBag.Index)').val(rowdata.PartnerName);
+                    $('#ProjectCode@(ViewBag.Index)').val(rowdata.ProjectCode);
+                    $('#UserProjectCode@(ViewBag.Index)').val(rowdata.UserProjectCode);
+                    $('#SlipNumberGoodReceipt@(ViewBag.Index)').val(rowdata.SlipNumber);*@
+                    //set wh
+                    $('#WHPleigerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", rowdata[0].WHToCode);
+                    $('#WHPartnerCode@(ViewBag.Index)').dxSelectBox("instance").option("value", rowdata[0].WHFromCode);
+                    partnerCodeSlt = rowdata[0].PartnerCode;
+                    //select Podetail
+                    $.ajax({
+                        @*url: '@Url.Action("CreateGridItemSlipDtlByPONumber", "MESItemSlip")',
+                        type: "GET",
+                        data: { PONumber: rowdata[0].PONumber },*@
+                          url: '@Url.Action("CreateGridItemSlipDtlByPONumberInGoodsReturn", "MESItemSlip")',
+                            type: "GET",
+                            data: {
+                                PONumber: rowdata[0].RelNumber,
+                                SlipNumber: rowdata[0].SlipNumber
+                            },
+                            dataType: 'json',
+                            success: function (result) {
+                            var gridItemSlipDetail = $("#gridItemSlipDtl@(ViewBag.Index)").dxDataGrid("instance");
+                            gridItemSlipDetail.option("dataSource", result.data);
+                        }
+                    });
+                    //close popup
+                    $('#modalControl').modal('hide');
+                }
+            });
+
+    </script>
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Purchase Order List"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body pt-0">
+            <div class="card py-1 mb-0">
+                <div class="row">
+                    <div class="col-xs-12 col-md-12">
+                        <button class="btn btn-sm btn-primary btn-action" type="button" onclick="SearchItemPoMst()" style="margin-right:5px"><i class="fa fa-search"></i> @_loc.GetLocalizedString("Search")</button>
+                        <button class="btn btn-sm btn-primary btn-action" type="button" id="@(btnChoosePO)" style="margin-right:5px"><i class="fa fa-check"></i> @_loc.GetLocalizedString("Choose")</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("Production Information")</legend>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("GoodsReceiptNumber"))</label>
+                                    @(Html.DevExtreme().TextBox().ID(UserPONumber))
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group ">
+                                    <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                                    @(Html.DevExtreme().TextBox().ID(PartnerName))
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label style="visibility:hidden">@(_loc.GetLocalizedString("UserProjectCode"))</label>
+                                    @*@(Html.DevExtreme().Button()
+                                        .Text(_loc.GetLocalizedString("Search")).Icon("fa fa-search")
+                                        .Type(ButtonType.Normal)
+                                        .Width(150)
+                                        .StylingMode(ButtonStylingMode.Contained).OnClick("SearchItemPoMst"))*@
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="form-group">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("Purchase Order List")</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemSlipMaster>()
+                            .ID(gridItemPoMst)
+                            .ShowBorders(true)
+                            .ShowColumnLines(true).Height(450)
+                            .ShowRowLines(true)
+                            .ColumnAutoWidth(true)
+                            .FilterRow(filterRow => filterRow
+                            .Visible(true)
+                            .ApplyFilter(GridApplyFilterMode.Auto))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single)
+                            .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                            .SelectAllMode(SelectAllMode.AllPages))
+                            .Columns(c=>
+                            {
+                                c.AddFor(x => x.No).Caption(_loc.GetLocalizedString("No"));
+                                c.AddFor(x => x.UserPONumber).Caption(_loc.GetLocalizedString("GoodsReceiptNumber"));
+                                c.AddFor(x => x.SlipNumber).Caption(_loc.GetLocalizedString("SlipNumber")).Visible(true);//PROJECT CODE
+                                c.AddFor(x => x.SlipYMD).Caption(_loc.GetLocalizedString("Slip Date")).Visible(true).Format("yyyy-MM-dd HH:mm:ss");//Slip date make goods receipt
+                                c.AddFor(x => x.Qty).Caption(_loc.GetLocalizedString("Total Qty Received")).Visible(true);//Receipt Qty when make goods receipt
+                                
+                                c.AddFor(x => x.RelNumber).Caption(_loc.GetLocalizedString("PONumber")).Visible(false);//PO NUMBER
+                                c.AddFor(x => x.TotalTaxAmt).Caption(_loc.GetLocalizedString("TotalPrice")).Format("#,##0.#0").Visible(false);//total
+                                c.AddFor(x => x.PartnerCode).Caption(_loc.GetLocalizedString("Partner Code"));//PARTNER CODE
+                                c.AddFor(x => x.PartnerName).Caption(_loc.GetLocalizedString("Partner Name"));//PARTNER NAME
+                                c.AddFor(x => x.ProjectCode).Caption(_loc.GetLocalizedString("Project Code")).Visible(false);//PROJECT CODE
+                                c.AddFor(x => x.UserProjectCode).Caption(_loc.GetLocalizedString("UserProjectCode")).Visible(false);// USER PROJECT CODE
+
+                            })
+                            .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                            .HeaderFilter(f => f.Visible(true))
+                            .Paging(paging => paging.PageSize(100))
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            .OnRowDblClick("ItemReturnSelectionChanged")
+                  )
+                </fieldset>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

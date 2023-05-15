@@ -1,0 +1,220 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@{
+    string dropdownPartner = "dropdownPartner" + ViewBag.Thread;
+    string gridRegisterItemPartner = "gridRegisterItemPartner" + ViewBag.Thread;
+    string btnSaveItems = "btnSaveItems" + ViewBag.Thread;
+    string partnerCode = ViewBag.PartnerCode;
+    string partnerName = ViewBag.PartnerName;
+}
+@model List<MES_ItemPartner>
+
+<script>
+    $(document).ready(function () {
+        debugger;
+        var partnerCode = '@(ViewBag.PartnerCode)';
+        //render ra textbox để xem
+
+
+        if (partnerCode !== null || partnerCode !== "") {
+               $.ajax({
+                url: '@Url.Action("getListItemByPartner", "MESPORequest")',
+                type: "GET",
+                async: false,
+                   data: {
+                    flag:'getListItems',
+                    partnerCode: partnerCode
+                },
+                dataType: "json"
+               }).done(function (result) {
+                    debugger;
+                    var gridRegisterItemPartner = $("#gridRegisterItemPartner@(ViewBag.Thread)").dxDataGrid("instance");
+                    gridRegisterItemPartner.option("dataSource", result.data);
+                });
+        }
+    });
+    var arrItemsSelected = [];
+    function ItemRegisterPopupSelectionChanged(selectedItems) {
+        console.log(selectedItems);
+        debugger;
+         arrItemsSelected = selectedItems.selectedRowsData;
+    }
+    $("#@(btnSaveItems)").on("click", function () {
+        debugger;
+
+        var dataGrid = $('#@gridRegisterItemPartner').dxDataGrid('instance');
+        var flagselectItem =  dataGrid.getSelectedRowsData();
+        var listItemSelect = dataGrid.getSelectedRowsData();
+
+        var GridDetailItemPO = $("#GridDetailItemPO").dxDataGrid("instance");
+        if (GridDetailItemPO == null) {
+            GridDetailItemPO = [];
+        }
+        var ItemListRequest = GridDetailItemPO.getDataSource().items();
+
+        $.each(ItemListRequest, function (index, item) {
+            console.log(item)
+            listItemSelect.push(item)
+        });
+
+        //Check remove row dublicate
+        var ListItemFinal = {};
+        var Cell = {};
+        listItemSelect.forEach(function (item) {
+            Cell = ListItemFinal[item.ItemCode] = ListItemFinal[item.ItemCode] || {};
+            //grade[item.Domain] = true;
+            //Cell["No"] = item.No;
+            Cell["ItemCode"] = item.ItemCode;
+            Cell["ItemName"] = item.ItemName;
+            Cell["ItemPrice"] = item.ItemPrice;
+            Cell["POQty"] = item.POQty;
+            Cell["LeadTime"] = item.LeadTime;
+            Cell["LeadTimeType"] = item.LeadTimeType;
+            Cell["LeadTimeTypeName"] = item.LeadTimeTypeName;
+            Cell["MonetaryUnit"] = item.MonetaryUnit;
+            Cell["MonetaryUnitName"] = item.MonetaryUnitName;
+            Cell["PartnerCode"] = item.PartnerCode;
+            Cell["PartnerName"] = item.PartnerName;
+            Cell["TotalPrice"] = item.TotalPrice;
+
+            Cell["ItemStatus"] = item.ItemStatus;
+            Cell["ItemStatusName"] = item.ItemStatusName;
+            Cell["PleigerRemark"] = item.PleigerRemark;
+            Cell["PORemark"] = item.PORemark;
+        });
+        let listItemFinish = [];
+        $.each(ListItemFinal, function (index, item) {
+            listItemFinish.push(item);
+        });
+        debugger;
+
+        // Set dataSource to GridDetailItemPO in index
+        var mainGridItems = $("#GridDetailItemPO").dxDataGrid("instance");
+        // Check if select item
+        if (flagselectItem.length == 0)
+        {
+            DevExpress.ui.dialog.alert("Please select an item!", "Error");
+        }
+        else
+        {
+             mainGridItems = mainGridItems.option("dataSource", listItemFinish);
+            $('#modalControl').modal('hide');
+        }
+        // End
+
+        //if (arrItemsSelected !== null && arrItemsSelected.length > 0) {
+        //    var mainGridItems = $("#GridDetailItemPO").dxDataGrid("instance");
+        //    mainGridItems = mainGridItems.option("dataSource", arrItemsSelected);
+        //    $('#modalControl').modal('hide');
+        //    $("#btn_SaveDataPORequest").attr("disabled", false);
+        //} else {
+        //    DevExpress.ui.dialog.alert("Please choose Item or close !", "Warning");
+        //}
+    });
+    //search item
+    $("#btnSearchItem").on("click", function () {
+        CheckSession();
+        debugger;
+            var itemName = $("#txtItem_Name").dxTextBox("option", "value");
+               $.ajax({
+                type: "GET",
+                url: '@Url.Action("getListItemByPartner", "MESPORequest")',
+                   data: {
+                    flag: 'search',
+                    itemName: itemName,
+                    partnerCode: '@(ViewBag.PartnerCode)'
+                },
+                dataType: "json"
+               }).done(function (resp) {
+                   var grid = $("#@(gridRegisterItemPartner)").dxDataGrid("instance");
+                   grid.option("dataSource", resp.data);
+                   //grid.refresh();
+            });
+        });
+
+</script>
+
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("ItemPartList"))</h5>@*--영업프젝트관리*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-xs-12 col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID("txtPO_Partner")
+                            .Value(partnerName).Disabled(true))
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-3">
+                    <div class="form-group">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox()
+                        .ID("txtItem_Name")
+                        )
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-2 offset-md-4 d-flex flex-column justify-content-center align-items-end pb-4">
+                    <label style="color:transparent!important">a</label>
+                    @(Html.DevExtreme().Button()
+                            .ID("btnSearchItem")
+                            .Icon("search")
+                            .Text($"{_loc.GetLocalizedString("Search")}")
+                        )
+                </div>
+            </div>
+            <div class="form-group">
+                <fieldset class="customFieldset">
+                    <legend class="customLegend">@_loc.GetLocalizedString("List Item Request")</legend>
+                    @(Html.DevExtreme().DataGrid<MES_ItemPartner>()
+                                    .ID(gridRegisterItemPartner)
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true).Height(450)
+                                    .ShowRowLines(true)
+                                    .ColumnAutoWidth(true)
+                                    .FilterRow(filterRow => filterRow
+                                    .Visible(true)
+                                    .ApplyFilter(GridApplyFilterMode.Auto))
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Multiple)
+                                    .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always)
+                                    .SelectAllMode(SelectAllMode.AllPages))
+                                    .Columns(c=> {
+                                        c.AddFor(x => x.No).Caption("No");
+                                        c.AddFor(x => x.ItemCode).Caption((@_loc.GetLocalizedString("Item Code")));
+                                        c.AddFor(x => x.ItemName).Caption((@_loc.GetLocalizedString("Item Name")));
+                                        c.AddFor(x => x.ItemPrice).Caption((@_loc.GetLocalizedString("Item Price")));
+                                        c.AddFor(x => x.LeadTimeType).Caption((@_loc.GetLocalizedString("Lead Time Type"))).Visible(false);
+                                        c.AddFor(x => x.LeadTimeTypeName).Caption((@_loc.GetLocalizedString("Lead Time Type")));
+                                        c.AddFor(x => x.LeadTime).Caption((@_loc.GetLocalizedString("Lead Time")));
+                                        c.AddFor(x => x.MonetaryUnit).Caption((@_loc.GetLocalizedString("Monetary Unit"))).Visible(false);
+                                        c.AddFor(x => x.MonetaryUnitName).Caption((@_loc.GetLocalizedString("Monetary Unit")));
+                                    })
+                                    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+                                    .HeaderFilter(f => f.Visible(true))
+                                    .Paging(paging => paging.PageSize(15))
+                                    .Pager(pager =>
+                                    {
+                                        pager.ShowPageSizeSelector(false);
+                                        pager.AllowedPageSizes(new[] { 5, 20, 100 });
+                                        pager.ShowInfo(true);
+                                        pager.ShowNavigationButtons(true);
+                                    })
+                                .OnSelectionChanged("ItemRegisterPopupSelectionChanged")
+                                )
+                </fieldset>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="@(btnSaveItems)">@(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

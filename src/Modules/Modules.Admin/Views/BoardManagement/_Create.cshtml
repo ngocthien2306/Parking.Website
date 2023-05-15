@@ -1,0 +1,289 @@
+﻿@model Modules.Admin.Models.SYBoardInfo
+@using Modules.Common.Models
+@{
+
+    List<DropDownString> lstBoardStatus = new List<DropDownString>()
+{
+        new DropDownString() { Text= "사용", Value= "Y"},
+        new DropDownString() { Text = "사용안함", Value = "N" }
+    };
+    string UserType = "UserType" + ViewBag.Thread;
+
+}
+<script>
+    var tempBoardID;
+    $(document).ready(function () {
+        LoadingPage(1);
+        $.ajax({
+            url: '@Url.Action("GenergateGUUID", "BoardManagement")',
+            type: "GET",
+            dataType: "json",
+            success: function (result) {
+                tempBoardID = result;
+            }
+        });
+        LoadingPage(0);
+    });
+    function GetInsertDT() {
+        var value = $("#InsertDT").dxDateBox("instance").option("value");
+        if (typeof value !== 'undefined' && value != "") {
+            var dateFormat = new Date(value);
+            var dateString = new Date(dateFormat.getTime() - (dateFormat.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+            return dateString;
+        }
+        return null;
+    }
+
+    function getBoardType() {
+        var _tBoardType1 = $("#boardType1").dxCheckBox("instance").option("value") == true? "Y" : "N";
+        var _tBoardType2 = $("#boardType2").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardType3 = $("#boardType3").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardType4 = $("#boardType4").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardType5 = $("#boardType5").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardType6 = $("#boardType6").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardType7 = $("#boardType7").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardType8 = $("#boardType8").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        //var _tBoardType9 = $("#boardType9").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        //var _tBoardType10 = $("#boardType10").dxCheckBox("instance").option("value") == true ? "Y" : "N";
+        var _tBoardTypeValue = _tBoardType1 + _tBoardType2 + _tBoardType3 + _tBoardType4 + _tBoardType5 + _tBoardType6 + _tBoardType7 + _tBoardType8;
+        return _tBoardTypeValue;
+    }
+    function onSave111() {
+        LoadingPage(1);
+        CheckSession();
+        var _tBoardID = $("#BoardID").dxTextBox("instance").option("value");
+        var _tInsertDT = GetInsertDT;
+        var _tCreatorID = $("#CreatorID").dxTextBox("instance").option("value");
+        var _tCreator = $("#Creator").dxTextBox("instance").option("value");
+        var _tBoardName = $("#BoardName").dxTextBox("instance").option("value");
+        var _tBoardTitle = $("#BoardTitle").dxTextBox("instance").option("value");
+        var _tBoardStatus = $("#BoardStatus").dxSelectBox("instance").option("value");
+        var _tBoardType = getBoardType();
+        var _tBoardDesc = $("#BoardDesc").dxTextArea("instance").option("value");
+        var boardInfo = {
+            BoardID: _tBoardID,
+            BoardName: _tBoardName,
+            InsertDT: _tInsertDT,
+            CreatorID: _tCreatorID,
+            Creator: _tCreator,
+            BoardTitle: _tBoardTitle,
+            BoardStatus: _tBoardStatus,
+            BoardType: _tBoardType,
+            BoardDesc: _tBoardDesc
+        }
+        $.ajax({
+            url: '@Url.Action("OnSave", "BoardManagement")',
+            type: "POST",
+            data: {
+                boardInfo: boardInfo, tempBoardID: tempBoardID
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.Success) {
+                    LoadingPage(0);
+                     
+                    DevExpress.ui.dialog.alert('Save success', "Success", function () {
+                        var grid = $("#GridBoardManagement").dxDataGrid("instance");
+                        grid.refresh();
+                        $("#CreateBoardMagtPop").modal("hide");
+                        ResetCreateBoardMagtPop();
+                        @*$.ajax({
+                            url: '@Url.Action("GenergateGUUID", "BoardManagement")',
+                            type: "GET",
+                            dataType: "json",
+                            success: function (result) {
+                                tempBoardID = result;
+                            }
+                        });*@
+                    });
+                }
+                else {
+                    LoadingPage(0);
+                    DevExpress.ui.dialog.alert(result.Message, "Error");
+                }
+            }
+        });
+        LoadingPage(0);
+    }
+    function OpenBoardBranchPop(bid) {
+        var bid = $("#BoardID").dxTextBox("instance").option("value");
+        $("#boardIDOfBranch").dxTextBox("instance").option("value", bid);
+
+         SetDataBranchPop(bid);
+
+        $("#BoardBranchMagtPop").modal("show");
+    }
+    function SetDataBranchPop(bid) {
+        CheckSession();
+        $.ajax({
+        url: '@Url.Action("GetListBoardBranchData", "BoardManagement")',
+        type: "GET",
+        data: {
+            bid:bid
+        },
+        dataType: "json",
+            success: function (result) {
+                var grid = $("#GridBoardBranchManagement").dxDataGrid("instance");
+                grid.refresh();
+                grid.option("dataSource", result.data);
+        }
+    });
+    }
+    function boardType10ValueChanged(data) {
+        console.log(data.value);
+    }
+</script>
+<div class="modal fade" tabindex="-1" role="dialog" id="CreateBoardMagtPop" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@_loc.GetLocalizedString("Board Information")</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("BoardID")</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().TextBox().ID("BoardID")
+                            .Disabled(true) // Editable or not readonly
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("LastModifiedDate")</label>
+                    <div class="col-sm-4">
+                        @(Html.DevExtreme().DateBox().ID("InsertDT").Type(DateBoxType.Date)
+                            .Value(DateTime.Now)
+                            .DisplayFormat("yyyy-MM-dd").MaxLength(10)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("OwnerID")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("CreatorID").Value(ViewBag.UserID)
+                            .Disabled(true) // Editable or not readonly
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("OwnerName")</label>@*게게시판생성자이름*@
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("Creator").Value(ViewBag.UserName).Disabled(true)
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("BoardName")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("BoardName")
+                        )
+                    </div>
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("BoardTitle")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().TextBox().ID("BoardTitle")
+                        )
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("BoardStatus")</label>
+                    <div class="col-md-4">
+                        @(Html.DevExtreme().SelectBox()
+                        .ID("BoardStatus").DisplayExpr("Text").DataSource(lstBoardStatus)
+                        .ValueExpr("Value")
+                        )
+                    </div>
+                    @*<div class="col-md-4">
+                        <label>@(_loc.GetLocalizedString("User Type"))</label>
+                        <div class="dx-field">
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DropDownBox()
+                            .ID(UserType)
+                            .ValueExpr("DTL_CD")
+                            .DisplayExpr("COD_NM")
+                            .DataSource(d => d.Mvc()
+                                .Controller("User")
+                                .LoadAction("GetListRole")
+                                .Key("DTL_CD")
+                            )
+                            //.Placeholder("Select a value...")
+                            .ShowClearButton(true)
+                            //.OnValueChanged("gridBox_valueChanged")
+                            //.ContentTemplate(new TemplateName("EmbeddedDataGridMultiple"))
+                        )
+                            </div>
+                        </div>
+                    </div>*@
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("BoardSetting")</label>
+                    <div class="col-md-10">
+                        <div class="row">
+                            @(Html.DevExtreme().CheckBox().ID("boardType1")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType1")</span>
+
+                            @(Html.DevExtreme().CheckBox().ID("boardType2")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType2")</span>
+
+                            @(Html.DevExtreme().CheckBox().ID("boardType3")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType3")</span>
+
+                            @(Html.DevExtreme().CheckBox().ID("boardType4")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType4")</span>
+                        </div>
+                        <div class="row mt-2">
+                            @(Html.DevExtreme().CheckBox().ID("boardType5")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType5")</span>
+
+                            @(Html.DevExtreme().CheckBox().ID("boardType6")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType6")</span>
+
+                            @(Html.DevExtreme().CheckBox().ID("boardType7")
+                                .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType7")</span>
+
+                            @(Html.DevExtreme().CheckBox().ID("boardType8").OnValueChanged("boardType10ValueChanged")
+                            .Value(true)
+                            )
+                            <span class="pl-1 pr-3">@_loc.GetLocalizedString("boardType8")</span>
+
+                            <button type="button" style="margin-top: 10px;" class="btn btn-sm btn-primary" onclick="OpenBoardBranchPop()">@_loc.GetLocalizedString("DefineCategory")</button>@*분류명리스트*@
+                        </div>
+                    </div>
+                </div>
+                @*<div class="form-group row"> ko thay use o dau het
+                        <label class="col-sm-2 col-form-label"> 게시판담당자</label>
+                        <div class="col-md-10">
+                            @(Html.DevExtreme().TextBox().ID("CaptainEmpCode")
+                                .Disabled(true) // Editable or not readonly
+                            )
+                        </div>
+                    </div>*@
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"> @_loc.GetLocalizedString("Remark")</label>
+                    <div class="col-md-10">
+                        @(Html.DevExtreme().TextArea().ID("BoardDesc")
+                            .Height(90)
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-primary" onclick="onSave111()"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">@(_loc.GetLocalizedString("Close"))</button>
+            </div>
+        </div>
+    </div>
+</div>

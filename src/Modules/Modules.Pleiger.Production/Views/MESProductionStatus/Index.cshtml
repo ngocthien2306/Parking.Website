@@ -1,0 +1,179 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Http.Extensions;
+@using InfrastructureCore.Models.Site;
+@using InfrastructureCore.Extensions;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+
+    pageSetting.SEARCH_YN = true;
+    pageSetting.EXCEL_YN = true;
+    pageSetting.CREATE_YN = true;
+    pageSetting.IMPORT_EXCEL_YN = true;
+    string OrderTeamCode = "OrderTeamCode" + ViewBag.Thread;
+    string UserProjectCode = "UserProjectCode" + ViewBag.Thread;
+
+    //Add Readload Button
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+
+
+    var priorities = new[] { "All", "True", "False" };
+
+}
+<script>
+
+
+    $(document).ready(function () {
+        ReziePageSaleProject();
+     })
+    function GetChartData() {
+        $.ajax({
+        url: '@Url.Action("GetChartData", "MESProductionStatus")',
+        type: "GET",
+        data: {},
+        dataType: "json",
+        })
+        .done(function (data)
+        {
+          
+            debugger;
+            var  indexChart = 0;
+            for (let i = 0; i < data.length; i++)
+            {
+                if (data[i].MES_ProjectProdcnLinesChart.length > 0)
+                {
+                    for (let ii = 0; ii < data[i].MES_ProjectProdcnLinesChart.length; ii++)
+                    {
+                        if (data[i].MES_ProjectProdcnLinesChart[ii].MES_ProjectProdcnWorkResultsChart.length>0)
+                        {
+                            for (let iii = 0; iii < data[i].MES_ProjectProdcnLinesChart[ii].MES_ProjectProdcnWorkResultsChart.length; iii++)
+                            {
+                                debugger;
+                                let listItemRequestFinal = [];
+
+                                $.each(data[i].MES_ProjectProdcnLinesChart[ii].MES_ProjectProdcnWorkResultsChart[iii], function (index, item) {
+                                    listItemRequestFinal.push(item);
+                                });
+                                $("#chart" + indexChart).dxChart({
+                                    dataSource: data[i].MES_ProjectProdcnLinesChart[ii].MES_ProjectProdcnWorkResultsChart,
+                                });
+                                indexChart++;
+                            }
+
+                        }
+
+                    }
+                }
+            }
+           
+        })
+        .fail(function (data)
+        {
+
+        });
+
+    }
+     //Reaload tab
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        RefreshTab(this);
+        LoadingPage(0);
+
+    });
+
+
+    $('#btnSearch_@ViewBag.Thread').on("click", function () {
+        GetChartData();
+    });
+
+    $(window).resize(function () {
+        ReziePageSaleProject();
+
+    });
+
+    function ReziePageSaleProject() {
+        ReCalResize("divindex_@(ViewBag.Thread)", "ID", "tab-menu-content", "menutoolbar_@(ViewBag.Thread)", "height");
+        if (CheckMobiNew()) {
+        }
+        else {
+            if ($("#divindex_@(ViewBag.Thread)").is(':visible')){
+                ReCalResize("bodypage_@(ViewBag.Thread)", "ID", "divindex_@(ViewBag.Thread)", "headerpage_@(ViewBag.Thread)", "height");
+            }
+        }
+    }
+</script>
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+<div class="row pr-1" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <div class="row">
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("User Project"))</label>
+                        @(Html.DevExtreme().TextBox().ID("UserProjectCode" + ViewBag.Thread).ShowClearButton(true))
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Item Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID("txtItemCode" + ViewBag.Thread).ShowClearButton(true))
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Item Name"))</label>
+                        @(Html.DevExtreme().TextBox().ID("txtItemName" + ViewBag.Thread).ShowClearButton(true))
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>@(_loc.GetLocalizedString("Production Line Code"))</label>
+                        @(Html.DevExtreme().TextBox().ID("txtProductionLineCode" + ViewBag.Thread).ShowClearButton(true))
+                    </div>
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="card-body p-0 pl-2 pr-2 pb-2">
+                @for (int i = 0; i < 110; i++)
+                {
+                    @(Html.DevExtreme().Chart().DataSource(new JS("GetChartData"))
+                        .ID("chart"+i)
+                        .Palette(VizPalette.Violet)
+                        .Title("Project Name")
+                        .CommonSeriesSettings(s => s
+                            .ArgumentField("CreateAt")
+                            .Type(SeriesType.RangeBar)
+                        ).Series(s =>
+                        {
+
+                            s.Add().RangeValue1Field("OriginalNumber").RangeValue2Field("WorkDoneQty").Name("WorkDoneQty");
+                            //s.Add().RangeValue1Field("AssignedQty").RangeValue2Field("ProdDoneQty").Name("Assigned Qty");
+                            //s.Add().RangeValue1Field("AssignedQty").RangeValue2Field("ProdDoneQty").Name("ProdDone Qty");
+                        })
+                        .ValueAxis(a => a
+                            .Add()
+                            .Title(t => t.Text("$ per barrel"))
+                        )
+                        .ArgumentAxis(a => a.Label(l => l.Format(Format.Day)))
+                        .Export(e => e.Enabled(true))
+                        .Legend(l => l
+                            .VerticalAlignment(VerticalEdge.Bottom)
+                            .HorizontalAlignment(HorizontalAlignment.Center)
+                     ))
+               }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+

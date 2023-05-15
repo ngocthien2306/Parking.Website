@@ -1,0 +1,15 @@
+﻿@using InfrastructureCore.Models.Menu;
+@using Modules.Admin.Models;
+@model List<SYWidgetElementDetail>
+@{
+//var listTopMenu = Model.Where(x => x.MenuLevel == 1).ToList();
+}
+
+
+detail 
+@foreach(var item in Model)
+{
+    <h3>@item.WidgetNumber</h3>
+
+}
+

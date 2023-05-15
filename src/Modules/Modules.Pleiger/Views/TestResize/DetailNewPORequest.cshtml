@@ -1,0 +1,1733 @@
+﻿@using Modules.Pleiger.Models;
+@using Modules.Common.Models;
+@model MES_PORequest
+@{
+    Layout = null;
+    var ListPartner = ViewBag.ListPartner;
+    string GridDetailItemPO = "GridDetailItemPO";
+    string txtPartnerCode = "txtPartnerCode";
+    var listPartnerDetail = ViewBag.listPartnerDTL;
+
+    MES_PORequest PORequest = ViewBag.PORequest;
+
+    string OrderConfirmNumber = "OrderConfirmNumber" + ViewBag.Thread;
+    string HullNo = "HullNo" + ViewBag.Thread;
+    string BusinessType = "BussinessType" + ViewBag.Thread;
+    string ConnectionToDemand = "ConnectionToDemand" + ViewBag.Thread;
+    string Yard = "Yard" + ViewBag.Thread;
+    string Schedule = "Schedule" + ViewBag.Thread;
+    string Mon = "Mon" + ViewBag.Thread;
+    string SPPR = "SPPR" + ViewBag.Thread;
+    string SPPriceRef = "SPPriceRef" + ViewBag.Thread;
+    string RequestShipMode = "RequestShipMode" + ViewBag.Thread;
+    string FinalShipmentMode = "FinalShipmentMode" + ViewBag.Thread;
+    string BLCode = "BLCode" + ViewBag.Thread;
+    string Invoice = "Invoice" + ViewBag.Thread;
+    string InvoiceIssuedDate = "InvoiceIssuedDate" + ViewBag.Thread;
+    string PartnerUser = "PartnerUser" + ViewBag.Thread;
+    string Packing = "Packing" + ViewBag.Thread;
+    string RefNumber = "RefNumber" + ViewBag.Thread;
+    string TermDelivery = "TermDelivery" + ViewBag.Thread;
+    string TermPayment = "TermPayment" + ViewBag.Thread;
+    string RealArrivalReqDate = "RealArrivalReqDate" + ViewBag.Thread;
+}
+
+<script>
+    //var poRequest_ListItem;
+    var listItemRemove = [];
+    var poRequest_ListLeadTimeType;
+        var listItemPO = @Html.Raw(Json.Serialize(Model.ListItemPORequest));
+
+   $(document).ready(function () {
+       debugger;
+       var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+       btnRegisterItem.option("disabled", true);
+
+       if ('@(Model.State)' === 'Create') {
+                 if('@(ViewBag.SystemUserType)' === 'G000C002') {
+               //admin of pleiger => hide form oversea
+               $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+               } else {
+                     //partner => show form oversea
+                     $("#areaPartnerOverSea@(ViewBag.Thread)").show();
+               }
+       }
+       if ('@(Model.State)' === 'Detail') {
+            if('@(Model.partnerCountry)' === '')  {
+            $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+
+            } else
+            if ('@(Model.partnerCountry)' === 'CTTP02') {
+                $("#areaPartnerOverSea@(ViewBag.Thread)").show();
+            }
+            else  if ('@(Model.partnerCountry)' === 'CTTP01') {
+                $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+            }
+       }
+
+        if('@(Model.PartnerCode)' !== null && '@(Model.PartnerCode)' !== "" && '@(Model.PartnerCode)' !== undefined && ('@(Model.ProjectCode)' === null || '@(Model.ProjectCode)'==='' ) ) {
+           // debugger;
+            //console.log("model ko project code");
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("value", '@(Model.PartnerCode)');
+
+            //adsdas
+        }
+        debugger;
+        if ('@(Model.PartnerCode)' !== null && '@(Model.PartnerCode)' !== "" && '@(Model.PartnerCode)' !== undefined && '@(Model.ProjectCode)' !== null && '@(Model.ProjectCode)'!=='' ) {
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("disabled", false);
+            //jax to render all partner From  project code
+                $.ajax({
+                url: '@Url.Action("GetListPartner", "MESPORequest")',
+                type: "GET",
+                async: false,
+                data: { projectCode: '@(Model.ProjectCode)' },
+                dataType: "json"
+                }).done(function (result){
+                    //filter result => distinct items .
+                    var listFullPartner = result.listFullPartner;
+                    var listDistinctPartner = result.listDistinctPartner;
+                    var gridItemPartner = $("#GridDetailItemPO").dxDataGrid("instance");
+                    debugger;
+                    $("#txtPartnerCode").dxSelectBox({
+                        dataSource: new DevExpress.data.DataSource({
+                            store: listDistinctPartner ,
+                            paginate: true,
+                            pageSize: 100
+                        }),
+                        value:'@(Model.PartnerCode)',
+                        displayExpr: "PartnerName",
+                        valueExpr: "PartnerCode",
+                        onValueChanged: function (data) {
+                            debugger;
+                            var partnerCode = data.value;
+
+                            var arr = listFullPartner.filter(function (el) {
+                                return el.PartnerCode === partnerCode ;
+                            });
+                            gridItemPartner.option("dataSource", arr);
+                            if (partnerCode !== null && partnerCode !== "") {
+                                $("#showPopupItemsOfPartner").dxButton("instance").option("disable", false);
+                            } else {
+                                $("#showPopupItemsOfPartner").dxButton("instance").option("disable", true);
+                            }
+                            $("#btn_SaveDataPORequest").attr("disabled", true);
+                        }
+                    }).dxSelectBox("instance");
+                });
+        } else {
+            var listFullPartner = null;
+            //ajax get list partner ACCT02 ACCT03
+              $.ajax({
+                url: '@Url.Action("GetListPartnerNoParams", "MESPORequest")',
+                type: "GET",
+                async: false,
+                dataType: "json"
+              }).done(function (result) {
+                  debugger;
+                  listFullPartner = result;
+              });
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("disabled", false);
+
+            $("#txtPartnerCode").dxSelectBox({
+                    dataSource: new DevExpress.data.DataSource({
+                        store: listFullPartner ,
+                        paginate: true,
+                        pageSize: 100
+                    }),
+                    value:'@(Model.PartnerCode)',
+                    displayExpr: "PartnerName",
+                    valueExpr: "PartnerCode",
+                    onValueChanged: function (data) {
+                        debugger;
+                            // Quan add onvaluechange cbb PartNerName
+                            var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+                            btnRegisterItem.option("disabled", false);
+                             var GridDetailItemPO = $("#GridDetailItemPO").dxDataGrid("instance");
+                                 GridDetailItemPO.option("dataSource", []);
+                            // Set display button Register Items
+                            var partnerCode = data.value;
+                            //if partner over sea => render more field
+                            if (partnerCode === null || partnerCode === '' || partnerCode === undefined)
+                            {
+                                // Quan add set display
+                                var btnRegisterItem = $("#showPopupItemsOfPartner").dxButton("instance");
+                                btnRegisterItem.option("disabled", true);
+                                $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                                 // Set display button Register Items
+                                return;
+                            }
+
+                            RenderPartnerOverSea(partnerCode);
+
+                            $("#btn_SaveDataPORequest").attr("disabled", false);
+                    }
+            }).dxSelectBox("instance");
+        }
+       CheckModelStatus();
+       function RenderPartnerOverSea(partnerCode) {
+           debugger;
+           var sysuserty ='@(ViewBag.partnerCountry)';
+           debugger;
+                if (partnerCode !== null || partnerCode !== "" || partnerCode !== undefined) {
+                    $.ajax({
+                        url: '@Url.Action("CheckPartnerOverSea", "MESPORequest")',
+                        type: "GET",
+                        async: false,
+                        data: {
+                            threadId: '@(ViewBag.Thread)',
+                            partnerCode: partnerCode
+                        },
+                        dataType: "json"
+                    }).done(function (resp) {
+                        debugger;
+                        console.log(resp);
+                        if (resp ===null || resp.CountryType === null) {
+                             $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                        }else if (resp.CountryType === 'CTTP02') {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").removeClass('d-none');
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").show();
+                        } else {
+                            $("#areaPartnerOverSea@(ViewBag.Thread)").hide();
+                        }
+
+                    });
+                }
+            }
+
+        let poRequestStatus = '@Model.StatusCode';
+        if (listItemPO !== null && listItemPO !== "" && listItemPO !== undefined) {
+            var grid = $('#@(GridDetailItemPO)').dxDataGrid("instance");
+            grid.option("dataSource", listItemPO);
+            grid.refresh();
+        }
+   });
+    //show PO over sea when click xem detail -> bỏ
+    if ('@(Model.isShowPOOversea)' === 'True') {
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetOverSeaDetail", "MESPORequest")',
+            type: "GET",
+            async: false,
+            data: {
+                threadId: '@(ViewBag.Thread)',
+                partnerCode: '@(Model.PartnerCode)',
+                projectCode: '@(Model.ProjectCode)',
+                poNumber :'@(Model.PONumber)'
+            },
+            dataType: "html"
+        }).done(function (resp) {
+            $("#areaPartnerOverSea").html(null);
+            $("#areaPartnerOverSea").html(resp);
+        });
+    }
+    //show pop up to search PJ code
+    function ShowProjectPopup() {
+         return   $.ajax({
+                        url: '@Url.Action("ShowPopupProjectCode", "MESPORequest")',
+                        type: "GET",
+                        data: { threadId: '@(ViewBag.Thread)' },
+                        async: false,
+                        dataType: "html"
+                    }).done(function (result) {
+                        $("#modalContent").html(result);
+                        $("#modalContent").addClass("modal-xl");
+                        $('#modalControl').modal('show');
+          })
+    }
+    $("#btnShowPopup@(ViewBag.Thread)").on("click", function () {
+        var projectCode = $("#btnShowPopup@(ViewBag.Thread)").val();
+        var partnerCode = $("#@(txtPartnerCode)").dxSelectBox("instance").option("value");
+        if (!projectCode && !partnerCode) {
+            ShowProjectPopup()
+        }
+        if ( !projectCode && partnerCode) {
+            var result = DevExpress.ui.dialog.confirm("Are you sure to changes Project Code !", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult === true) {
+                     ShowProjectPopup()
+                } else {
+                    return;
+                }
+            });
+        }
+
+    });
+    function CheckModelStatus() {
+        debugger;
+        if ('@(Model.StatusCode)' === null || '@(Model.StatusCode)' === "" || '@(Model.StatusCode)' === undefined) {
+            $("#btn_UpdatePORequest").prop("disabled", true);
+            $("#btn_RequestPORequest").prop("disabled", true);
+            $("#btn_PrintDetailPORequest").prop("disabled", true);
+        }
+        function LockAllOverSea() {
+            var BusinessType = $("#@(BusinessType)").dxSelectBox("instance");
+            BusinessType.option("disabled", true);
+
+            var ConnectionToDemand = $("#@(ConnectionToDemand)").dxSelectBox("instance");
+            ConnectionToDemand.option("disabled", true);
+
+            var Yard = $("#@(Yard)").dxSelectBox("instance");
+            Yard.option("disabled", true);
+
+            var RequestShipMode = $("#@(RequestShipMode)").dxSelectBox("instance");
+            RequestShipMode.option("disabled", true);
+
+            var FinalShipmentMode = $("#@(FinalShipmentMode)").dxSelectBox("instance");
+            FinalShipmentMode.option("disabled", true);
+
+            var Packing = $("#@(Packing)").dxSelectBox("instance");
+            Packing.option("disabled", true);
+
+            var TermDelivery = $("#@(TermDelivery)").dxSelectBox("instance");
+            TermDelivery.option("disabled", true);
+
+            var TermPayment = $("#@(TermPayment)").dxSelectBox("instance");
+            TermPayment.option("disabled", true);
+
+            var OrderConfirmNumber = $("#@(OrderConfirmNumber)").dxTextBox("instance");
+            OrderConfirmNumber.option("disabled", true);
+
+            var HullNo = $("#@(HullNo)").dxTextBox("instance");
+            HullNo.option("disabled", true);
+
+            var Schedule = $("#@(Schedule)").dxTextBox("instance");
+            Schedule.option("disabled", true);
+
+            var Mon = $("#@(Mon)").dxNumberBox("instance");
+            Mon.option("disabled", true);
+
+            var SPPR = $("#@(SPPR)").dxTextBox("instance");
+            SPPR.option("disabled", true);
+
+            var SPPriceRef = $("#@(SPPriceRef)").dxTextBox("instance");
+            SPPriceRef.option("disabled", true);
+
+            var BLCode = $("#@(BLCode)").dxTextBox("instance");
+            BLCode.option("disabled", true);
+
+            var Invoice = $("#@(Invoice)").dxTextBox("instance");
+            Invoice.option("disabled", true);
+
+            var PartnerUser = $("#@(PartnerUser)").dxTextBox("instance");
+            PartnerUser.option("disabled", true);
+
+            var RefNumber = $("#@(RefNumber)").dxTextBox("instance");
+            RefNumber.option("disabled", true);
+
+            var RealArrivalReqDate = $("#@(RealArrivalReqDate)").dxDateBox("instance");
+            RealArrivalReqDate.option("disabled", true);
+
+            var InvoiceIssuedDate = $("#@(InvoiceIssuedDate)").dxDateBox("instance");
+            InvoiceIssuedDate.option("disabled", true);
+
+        }
+
+            //if the PO is Create
+        if ('@(Model.StatusCode)' !== null && '@(Model.StatusCode)' === 'ORST06') {
+            debugger;
+            //lock the request button and print button
+            $("#btn_SaveDataPORequest").prop("disabled", true);
+            $("#btn_PrintDetailPORequest").prop("disabled", true);
+            $("#btn_AcceptPORequest").prop("disabled", true);
+            $("#btn_RejectPORequest").prop("disabled", true);
+            $("#btn_RequestPORequest").prop("disabled", false);
+            $("#btnShowPopup@(ViewBag.Thread)").prop("disabled", true);
+
+            if ('@(Model.PartnerCode)' !== null && '@(Model.PartnerCode)' !== "") {
+                $("#btn_RequestPORequest").prop("disabled", false);
+            } else {
+                $("#btn_RequestPORequest").prop("disabled", true);
+            }
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("disabled", true);
+
+            //lock button show items partner
+            var btnItemsPartner = $("#showPopupItemsOfPartner").dxButton("instance");
+            btnItemsPartner.option("disabled", false);
+
+            return;
+        }
+
+        if ('@(Model.StatusCode)' !== null && '@(Model.StatusCode)' === 'ORST01'|| '@(Model.StatusCode)' === 'ORST06') {
+            //if the PO is Requested
+            //lock => prevent edit
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("disabled", true);
+            //lock => prevent edit
+            $("#btn_SaveDataPORequest").prop("disabled", true);
+            $("#btnShowPopup@(ViewBag.Thread)").prop("disabled", true);
+            $("#btn_PrintDetailPORequest").prop("disabled", true);
+            $("#btn_RequestPORequest").prop("disabled", true);
+            $("#btn_UpdatePORequest").prop("disabled", true);
+            $("#btn_AcceptPORequest").prop("disabled", false);
+            $("#btn_RejectPORequest").prop("disabled", false);
+            var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+            partnerField.option("disabled", true);
+            var arrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("instance");
+            arrivalRequestDate.option("disabled", true);
+            //lock all the input
+            LockAllOverSea();
+            //
+            //lock button show items partner
+            var btnItemsPartner = $("#showPopupItemsOfPartner").dxButton("instance");
+            btnItemsPartner.option("disabled", true);
+
+            return;
+         }
+
+         if ('@(Model.StatusCode)' !== null && ('@(Model.StatusCode)' === 'ORST02' || '@(Model.StatusCode)' === 'ORST03')) {
+             //if the PO being Accept Or Reject => then hidden 2 button accep , reject
+             //lock 2 button
+             $("#btn_SaveDataPORequest").prop("disabled", true);
+             $("#btn_UpdatePORequest").prop("disabled", true);
+             $("#btn_AcceptPORequest").prop("disabled", true);
+             $("#btn_RejectPORequest").prop("disabled", true);
+             $("#btn_RequestPORequest").prop("disabled", true);
+             $("#btn_PrintDetailPORequest").prop("disabled", false);
+             $("#btn_SaveDataPORequest").prop("disabled", true);
+             $("#btn_UpdatePODetail_Partner").prop("disabled", true);
+             //lock the partner to prevent edit
+             $('#btnShowPopup@(ViewBag.Thread)').prop("disabled", true);
+             var partnerField = $("#txtPartnerCode").dxSelectBox("instance");
+             partnerField.option("disabled", true);
+             var arrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("instance");
+             arrivalRequestDate.option("disabled", true);
+             LockAllOverSea();
+             //lock button show items partner
+             var btnItemsPartner = $("#showPopupItemsOfPartner").dxButton("instance");
+             btnItemsPartner.option("disabled", true);
+             return;
+        }
+
+    }
+    function colorTheStatusOfItem(e) {
+        //khi nó đc request thì cho màu đỏ
+        if ('@(Model.StatusCode)' == "ORST01") {
+            if (e.rowType == 'data' && e.column.dataField == 'POQty') {
+                e.cellElement.css("color", "red");
+                e.cellElement.css('backgroundColor', "yellow");
+            }
+            if (e.rowType == 'data' && e.column.dataField == 'ItemStatusName') {
+                e.cellElement.css("color", "red");
+                e.cellElement.css('backgroundColor', "yellow");
+            }
+        } else if ('@(Model.StatusCode)' == "ORST02") {
+            if (e.rowType == 'data' && e.column.dataField == 'ItemStatusName') {
+                e.cellElement.css("color", "white");
+                e.cellElement.css("fontWeight", "bold");
+                e.cellElement.css('backgroundColor', "#46a0f0");
+            }
+        } else if ('@(Model.StatusCode)' == "ORST03") {
+            if (e.rowType == 'data' && e.column.dataField == 'ItemStatusName') {
+                e.cellElement.css("color", "white");
+                e.cellElement.css("fontWeight", "bold");
+                e.cellElement.css('backgroundColor', "#6d1919");
+            }
+        } else {
+
+        }
+    }
+    // Back to master PO Request
+        $("#btn_BackToPORequest").on("click", function () {
+            CheckSession();
+            BackToMainPORequest();
+        });
+    // Reload detail PO Request
+        $("#btn_ReloadDetailPORequest").on("click", function () {
+            CheckSession();
+            ReloadDetailPORequest();
+        });
+    function CheckNullOrEmpty(value) {
+        if (value !== null || value !== "" || value !== undefined) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    //Quan add delete Po
+    $("#btn_DeletePoMst").on("click", function () {
+
+    });
+    function CheckValid() {
+            debugger;
+            var flag = true;
+            var listItemDetail = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+
+            var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+            if (userPONumber === null || userPONumber === "" || userPONumber === undefined) {
+                flag = false;
+                DevExpress.ui.dialog.alert("Please insert User PONumber !", "Error");
+                return flag;
+            }
+            let arrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "text");
+            if (arrivalRequestDate === null || arrivalRequestDate === "" || arrivalRequestDate === undefined) {
+                flag = false;
+                DevExpress.ui.dialog.alert("Please select Arrival Request Date!", "Error");
+                return flag;
+            }
+            //let countItemPORequest = $('#tblPORequest_ItemPO tbody tr[class="item_po-request"]').length;
+            let PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value");
+            if (PartnerCode === null || PartnerCode === "" || PartnerCode === undefined) {
+                flag = false;
+                DevExpress.ui.dialog.alert("Partner Code is required", "Error");
+                return flag;
+            }
+            //Quan add check Input Qty
+            var listItem = $('#GridDetailItemPO').dxDataGrid('instance').getDataSource().items()
+            if (listItem != null) {
+                $.each(listItem, function (index, item) {
+                    debugger;
+                    //  if (listItem[index].Qty > listItem[index].POQty)
+                    //  {
+                    //      DevExpress.ui.dialog.alert("Qty cannot higher than POQty.", "Error");
+                    //      heckSave = false;
+                    //      return checkSave;
+                    //      return false;
+                    //  }
+                    if (listItem[index].POQty == undefined) {
+                        DevExpress.ui.dialog.alert("Please input positive number or different zero.", "Error");
+                        flag = false;
+                        return flag;
+                    }
+                    if (listItem[index].POQty <= 0) {
+                        DevExpress.ui.dialog.alert("Please input positive number or different zero.", "Error");
+                        flag = false;
+                        return flag;
+                    }
+                });
+            }
+
+            return flag;
+    }
+    function ReloadDetailWhenSaveANewPO(projectCode ,poNumber, partnerCode) {
+        debugger;
+        CheckSession();
+        $.ajax({
+            url: '@Url.Action("ShowDetailPORequest", "MESPORequest")',
+            type: "GET",
+            data: {
+                projectCode : projectCode,
+                poNumber: poNumber,
+                partnerCode: partnerCode
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#divPORequestDetail").html(null);
+                $("#divPORequestDetail").html(result);
+                $.unblockUI();
+            }
+        });
+    }
+     //save
+    $("#btn_SaveDataPORequest").on("click", function () {
+        CheckSession();
+            debugger;
+        if (CheckValid()) {
+            var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+            var userRequest = $("#txtPO_UserReq").dxTextBox("option", "value");
+            var ArrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "value");
+            ArrivalRequestDate = ParsingDateyyyyMMdd(ArrivalRequestDate);
+            var PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value");
+            var ProjectCode = $("#ProjectCode").val();
+            var listItem = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+            debugger;
+            var ObjPORequest = {
+                ProjectCode: ProjectCode,
+                PartnerCode: PartnerCode,
+                UserPONumber: userPONumber,
+                UserRequest: userRequest,
+                ArrivalRequestDate: ParsingDateyyyyMMdd(ArrivalRequestDate),
+                ListItemPO: JSON.stringify(listItem),
+                //oversea
+                BusinessType: GetBusinessType(),
+                ConnectionToDemand: GetConnectionToDemand(),
+                Yard: GetYard(),
+                RequestShipMode: GetRequestShipMode(),
+                FinalShipmentMode: GetFinalShipmentMode(),
+                Packing: GetPacking(),
+                TermDelivery: GetTermDelivery(),
+                TermPayment: GetTermPayment(),
+                OrderConfirmNumber: GetOrderConfirmNumber(),
+                HullNo: GetHullNo(),
+                Schedule: GetSchedule(),
+                Mon: GetMon(),
+                SPPR: GetSPPR(),
+                SPPriceRef: GetSPPriceRef(),
+                PartnerUser: GetPartnerUser(),
+                BLCode: GetBLCode(),
+                Invoice: GetInvoice(),
+                RefNumber: GetRefNumber(),
+                RealArrivalReqDate: GetRealArrivalReqDate(),
+                InvoiceIssuedDate: GetInvoiceIssuedDate()
+            };
+            debugger;
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: "Insert",
+                            PORequest: ObjPORequest
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            debugger;
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $.unblockUI();
+                                var poNumberNew = result.Data;
+                                ReloadDetailWhenSaveANewPO(ProjectCode,poNumberNew, PartnerCode);
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                    //if (isSuccess) {
+                    //    $.unblockUI();
+                    //}
+                } else {
+                    return;
+                }
+            });
+        } else {
+            return;
+        }
+    });
+    //Update
+        $("#btn_UpdatePORequest").on("click", function () {
+            CheckSession();
+        if (CheckValid()) {
+            var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+            var userRequest = $("#txtPO_UserReq").dxTextBox("option", "value");
+            var ArrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "value");
+            ArrivalRequestDate = ParsingDateyyyyMMdd(ArrivalRequestDate);
+            var PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value");
+            var ProjectCode = $("#ProjectCode").val();
+            var listItem = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+
+            if ('@(ViewBag.SystemUserType)' === "G000C005" ) {
+                var flagDeliveryDate = true;
+                for (let i = 0; i < listItem.length; ++i) {
+                    if (listItem[i].DeliveryDate === null || listItem[i].DeliveryDate === "" || listItem[i].DeliveryDate === undefined) {
+                        flagDeliveryDate = false;
+                        break;
+                    }
+                }
+                if (flagDeliveryDate === false) {
+                    DevExpress.ui.dialog.alert("Please Update DeliveryDate !", "Invalid");
+                    return;
+                }
+            }
+            debugger;
+            var ObjPORequest = {
+                PONumber : '@(Model.PONumber)',
+                ProjectCode: ProjectCode,
+                PartnerCode: PartnerCode,
+                UserPONumber: userPONumber,
+                UserRequest: userRequest,
+                ArrivalRequestDate: ParsingDateyyyyMMdd(ArrivalRequestDate),
+                ListItemPO: JSON.stringify(listItem),
+                //oversea
+                BusinessType: GetBusinessType(),
+                ConnectionToDemand: GetConnectionToDemand(),
+                Yard: GetYard(),
+                RequestShipMode: GetRequestShipMode(),
+                FinalShipmentMode: GetFinalShipmentMode(),
+                Packing: GetPacking(),
+                TermDelivery: GetTermDelivery(),
+                TermPayment: GetTermPayment(),
+                OrderConfirmNumber: GetOrderConfirmNumber(),
+                HullNo: GetHullNo(),
+                Schedule: GetSchedule(),
+                Mon: GetMon(),
+                SPPR: GetSPPR(),
+                SPPriceRef: GetSPPriceRef(),
+                PartnerUser: GetPartnerUser(),
+                BLCode: GetBLCode(),
+                Invoice: GetInvoice(),
+                RefNumber: GetRefNumber(),
+                RealArrivalReqDate: GetRealArrivalReqDate(),
+                InvoiceIssuedDate: GetInvoiceIssuedDate()
+            };
+            debugger;
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+          result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: "Update",
+                            PORequest: ObjPORequest
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $.unblockUI();
+                                var poNumber = result.Data;
+                                ReloadDetailWhenSaveANewPO(ProjectCode, poNumber, PartnerCode);
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        $.unblockUI();
+                    }
+                } else {
+                    return;
+                }
+            });
+        } else {
+            return;
+        }
+    });
+    //Request PO
+        $("#btn_RequestPORequest").on("click", function () {
+            CheckSession();
+            debugger;
+        var listItemDetail = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+        var flagPOQtyValid = true;
+
+        if (CheckValid()) {
+            var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+            var userRequest = $("#txtPO_UserReq").dxTextBox("option", "value");
+            var userRequest = $("#txtPO_UserReq").dxTextBox("option", "value");
+            var ArrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "value");
+            ArrivalRequestDate = ParsingDateyyyyMMdd(ArrivalRequestDate);
+            var PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value");
+            var ProjectCode = $("#ProjectCode").val();
+            var listItem = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+            debugger;
+            var POQtyflag = true;
+            var itemIdx = -1;
+            for (let i = 0; i < listItem.length; ++i) {
+                if (listItem[i].POQty <= 0) {
+                    POQtyflag = false;
+                    itemIdx = i;
+                    break;
+                }
+            }
+            if (POQtyflag === false) {
+                DevExpress.ui.dialog.alert(`Please Check POQty Is Invalid In Line ${itemIdx+1}!`, "Error");
+                return;
+            }
+            debugger;
+            var ObjPORequest = {
+                PONumber : '@(Model.PONumber)',
+                ProjectCode: ProjectCode,
+                PartnerCode: PartnerCode,
+                UserPONumber: userPONumber,
+                UserRequest: userRequest,
+                ArrivalRequestDate: ArrivalRequestDate,
+                ListItemPO: JSON.stringify(listItem)
+            };
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: "Update-Request",
+                            PORequest: ObjPORequest
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $.unblockUI();
+                                ReloadDetailPORequest();
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        $.unblockUI();
+                    }
+                } else {
+                    return;
+                }
+            });
+        } else {
+           // DevExpress.ui.dialog.alert('Data not valid', "Error");
+            return;
+        }
+    });
+    // Accept PO Request
+        $("#btn_AcceptPORequest").on("click", function () {
+            CheckSession();
+            if (CheckValid()) {
+            var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+            var userRequest = $("#txtPO_UserReq").dxTextBox("option", "value");
+            var ArrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "value");
+            ArrivalRequestDate = ParsingDateyyyyMMdd(ArrivalRequestDate);
+            //var PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value"); load ko dc nen lấy trong list
+            var ProjectCode = $("#ProjectCode").val();
+            var listItem = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+            var flagDeliveryDate = true;
+            for (let i = 0; i < listItem.length; ++i) {
+                if (listItem[i].DeliveryDate === null || listItem[i].DeliveryDate === "" || listItem[i].DeliveryDate === undefined) {
+                    flagDeliveryDate = false;
+                    break;
+                }
+            }
+            if (flagDeliveryDate === false) {
+                DevExpress.ui.dialog.alert("Please Update DeliveryDate !", "Invalid");
+                return;
+            }
+            debugger;
+            var ObjPORequest = {
+                PONumber : '@(Model.PONumber)',
+                ProjectCode: ProjectCode,
+                PartnerCode: listItemPO.PartnerCode,
+                UserPONumber: userPONumber,
+                UserRequest: userRequest,
+              //  ArrivalRequestDate: ArrivalRequestDate,
+                ListItemPO: JSON.stringify(listItem)
+            };
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: "Update-Accept",
+                            PORequest: ObjPORequest
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $.unblockUI();
+                                ReloadDetailPORequest();
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        $.unblockUI();
+                    }
+                } else {
+                    return;
+                }
+            });
+        } else {
+            // not valid
+            // DevExpress.ui.dialog.alert('Data not valid', "Error");
+            return;
+        }
+    });
+    // Reject PO Request
+        $("#btn_RejectPORequest").on("click", function () {
+            CheckSession();
+            if (CheckValid()) {
+            var userPONumber = $("#txtPO_User_PONumber").dxTextBox("option", "value");
+            var userRequest = $("#txtPO_UserReq").dxTextBox("option", "value");
+            var ArrivalRequestDate = $("#dtpPO_ArrivalReqDate").dxDateBox("option", "value");
+            ArrivalRequestDate = ParsingDateyyyyMMdd(ArrivalRequestDate);
+            //var PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value"); load ko dc nen lấy trong list
+            var ProjectCode = $("#ProjectCode").val();
+                 var listItem = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+
+
+            debugger;
+            var ObjPORequest = {
+                PONumber : '@(Model.PONumber)',
+                ProjectCode: ProjectCode,
+                PartnerCode: listItemPO.PartnerCode,
+                UserPONumber: userPONumber,
+                UserRequest: userRequest,
+               // ArrivalRequestDate: ArrivalRequestDate,
+                ListItemPO: JSON.stringify(listItem)
+            };
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("SaveDataPORequest", "MESPORequest")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: "Update-Reject",
+                            PORequest: ObjPORequest
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $.unblockUI();
+                                ReloadDetailPORequest();
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        $.unblockUI();
+                    }
+                } else {
+                    return;
+                }
+            });
+        } else {
+            //not valid
+           // DevExpress.ui.dialog.alert('Data not valid', "Error");
+            return;
+        }
+    });
+
+        $("#btn_UpdatePODetail_Partner").on("click", function () {
+            CheckSession();
+        var listItem = $("#@(GridDetailItemPO)").dxDataGrid("instance").getDataSource().items();
+        var ProjectCode = $("#ProjectCode").val();
+        var ObjPORequest = {
+            PONumber: '@(Model.PONumber)',
+            ProjectCode: ProjectCode,
+            ListItemPO: JSON.stringify(listItem)
+        };
+        debugger;
+          debugger;
+            var result = DevExpress.ui.dialog.confirm("<i>@MessageCode.MD0003</i>", "Confirm changes");
+            result.done(function (dialogResult) {
+                if (dialogResult) {
+                    $.blockUI();
+                    $.ajax({
+                        url: '@Url.Action("UpdatePODetailpartner", "MESPORequest")',
+                        type: 'POST',
+                        async: false,
+                        data: {
+                            flag: "Update-PODetailPartner",
+                            PORequest: ObjPORequest
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                            if (result.Success) {
+                                DevExpress.ui.dialog.alert('@MessageCode.MD0004', "Success", function () {
+                                    isSuccess = true;
+                                });
+                                $.unblockUI();
+                                var poNumber = result.Data;
+                                //cái này reload dựa theo 3 params...ko chỉ trong save new..
+                                var PartnerCode = listItemPO.PartnerCode;
+                                ReloadDetailWhenSaveANewPO(ProjectCode,'@(Model.PONumber)', '@(Model.PartnerCode)');
+                            }
+                            else {
+                                $.unblockUI();
+                                DevExpress.ui.dialog.alert(result.Message, "Error");
+                            }
+                        }
+                    });
+                    if (isSuccess) {
+                        $.unblockUI();
+                    }
+                } else {
+                    return;
+                }
+            });
+    })
+    //PrintDetailPORequest
+        $('#btn_PrintDetailPORequest').on("click", function () {
+            CheckSession();
+        debugger;
+        $.ajax({
+            url: '@Url.Action("GetDetailPOReq", "MESPORequest")',
+            type: 'GET',
+            async: false,
+            data: {
+                PONumber: '@Model.PONumber'
+            },
+            dataType: 'json'
+        }).done(function (result) {
+            debugger;
+            var link = $("<a href='" + getLanguages() + "/MESPORequest/Download?fileLink=" + result.downloadExcelPath + "&fileName=" + result.fileName + "'></a>");
+            location.href = link[0].href;
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            // If fail
+            console.log(textStatus + ': ' + errorThrown);
+        });
+    })
+
+    // Reload detail PO Request
+        function ReloadDetailPORequest() {
+            CheckSession();
+        debugger;
+        $.ajax({
+            url: '@Url.Action("ShowDetailPORequest", "MESPORequest")',
+            type: "GET",
+            data: {
+                projectCode: '@Model.ProjectCode',
+                poNumber: '@Model.PONumber',
+                partnerCode: '@Model.PartnerCode'
+            },
+            dataType: "html",
+            success: function (result) {
+                $("#divPORequestDetail").html(null);
+                $("#divPORequestDetail").html(result);
+                $.unblockUI();
+                count = 0;
+            }
+        });
+    }
+
+        function BackToMainPORequest() {
+            CheckSession();
+            $("#divPORequestDetail").prop("hidden", true);
+            $("#divMainPOREquest").prop("hidden", false);
+            $("#divPORequestDetail").html(null);
+            debugger;
+            $("#btnReload_@ViewBag.Thread").on("click", function () {
+                 RefreshTab(this);
+            });
+            let projectCode = $("#txtPOSearch_ProjectCode").dxTextBox("option", "value");
+            let poNumber = $("#txtPOSearch_PONumber").dxTextBox("option", "value");
+            let userPONumber = $("#txtUserPONumber").dxTextBox("option", "value");
+            let userProjectCode = $("#txtUserProjectCode@(ViewBag.Thread)").dxTextBox("option", "value");
+            function getParamRequestDateFrom() {
+                var value = $("#dtpPOSearch_RequestDateFrom").dxDateBox("option", "text");
+                return (value !== null && value !== undefined && value!== "" ) ? ParsingDateyyyyMMdd(value)  : "";
+            }
+            function getParamRequestDateTo() {
+                var value = $("#dtpPOSearch_RequestDateTo").dxDateBox("option", "text");
+                return (value !== null && value !== undefined && value !== "") ? ParsingDateyyyyMMdd(value) : "";
+            }
+           $.ajax({
+            url: '@Url.Action("SearchListPORequest","MESPORequest")',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                projectCode: projectCode,
+                poNumber: poNumber,
+                userPONumber: userPONumber,
+                userProjectCode: userProjectCode ,
+                requestDateFrom: getParamRequestDateFrom(),
+                requestDateTo: getParamRequestDateTo()
+            },
+            success: function (result) {
+                $("#gridPORequest").dxDataGrid("option", "dataSource", result);
+            }
+        });
+    }
+    // Reject Item PO Request
+    var poRequest_CountItem = 0;
+    function selectboxValueChanged(data) {
+
+
+        @*$("#gridItemSlipDtl@(ViewBag.Thread)").dxDataGrid({
+            //disabled: true,
+            editing: {
+                mode: "batch",
+                allowUpdating: false,
+                allowAdding: false,
+                allowDeleting: false,
+            },
+            onToolbarPreparing: function (e) {
+                debugger;
+                let toolbarItems = e.toolbarOptions.items;
+                //e.toolbarOptions.items[1].visible = false;
+                toolbarItems.forEach(function (item, index) {
+                    if (item.name == "saveButton") {
+                        toolbarItems.splice(index, 1);
+                    }
+                    if (item.name == "addRowButton") {
+                        item.options.disabled = true;
+                    }
+                })
+            }
+        });*@
+
+        console.log(data);
+    }
+    function validateQtyInputNumber(e) {
+
+         if (e.data.POQty <= 0 || e.data.POQty.toFixed(1) < 1 ) {
+             e.rule.message = "Please input positive number or different zero.";
+            return false;
+         }
+         if (e.data.POQty > 100000) {
+             e.rule.message = "POQty not greater than 100000";
+             return false;
+            }
+            var value = e.data.POQty;
+        if (!Number.isInteger(value)) {
+            e.rule.message = "POQty must be a Integer";
+            return false;
+        }
+        return true;
+    }
+
+      ///////////////over sea
+        function GetBusinessType() {
+            var BusinessType = $("#@(BusinessType)").dxSelectBox("option", "value");
+            return BusinessType ;
+        }
+        function GetConnectionToDemand() {
+            var ConnectionToDemand = $("#@(ConnectionToDemand)").dxSelectBox("option", "value");
+            return ConnectionToDemand;
+        }
+        function GetYard() {
+             var Yard = $("#@(Yard)").dxSelectBox("option", "value");
+            return Yard != null ? Yard : "";
+        }
+        function GetRequestShipMode() {
+             var RequestShipMode = $("#@(RequestShipMode)").dxSelectBox("option", "value");
+            return RequestShipMode != null ? RequestShipMode : "";
+        }
+        function GetFinalShipmentMode() {
+             var FinalShipmentMode = $("#@(FinalShipmentMode)").dxSelectBox("option", "value");
+            return FinalShipmentMode != null ? FinalShipmentMode : "";
+        }
+        function GetPacking() {
+               var Packing = $("#@(Packing)").dxSelectBox("option", "value");;
+            return Packing != null ? Packing : "";
+        }
+        function GetTermDelivery() {
+            var TermDelivery = $("#@(TermDelivery)").dxSelectBox("option", "value");
+            return TermDelivery != null ? TermDelivery : "";
+        }
+        function GetTermPayment() {
+            var TermPayment = $("#@(TermPayment)").dxSelectBox("option", "value");
+            return TermPayment != null ? TermPayment : "";
+        }
+         //field value (text box )
+        function GetOrderConfirmNumber() {
+            var OrderConfirmNumber = $("#@(OrderConfirmNumber)").dxTextBox("option", "value");
+            return OrderConfirmNumber != null ? OrderConfirmNumber : "";
+        }
+        function GetHullNo() {
+            var HullNo = $("#@(HullNo)").dxTextBox("option", "value");
+            return HullNo != null ? HullNo : "";
+        }
+        function GetSchedule() {
+            var Schedule = $("#@(Schedule)").dxTextBox("option", "value");
+            return Schedule != null ? Schedule : "";
+        }
+        function GetMon() {
+             var Mon = $("#@(Mon)").dxNumberBox("option", "value");
+            return Mon != null ? Mon : "";
+        }
+        function GetSPPR() {
+            var SPPR = $("#@(SPPR)").dxTextBox("option", "value");
+            return SPPR != null ? SPPR : "";
+        }
+        function GetSPPriceRef() {
+            var SPPriceRef = $("#@(SPPriceRef)").dxTextBox("option", "value");
+            return SPPriceRef != null ? SPPriceRef : "";
+        }
+        function GetBLCode() {
+            var BLCode = $("#@(BLCode)").dxTextBox("option", "value");
+            return BLCode != null ? BLCode : "";
+        }
+        function GetInvoice() {
+            var Invoice = $("#@(Invoice)").dxTextBox("option", "value");
+            return Invoice != null ? Invoice : "";
+        }
+        function GetPartnerUser() {
+            var PartnerUser = $("#@(PartnerUser)").dxTextBox("option", "value");
+            return PartnerUser != null ? PartnerUser : "";
+        }
+        function GetRefNumber() {
+            var RefNumber = $("#@(RefNumber)").dxTextBox("option", "value");
+            return RefNumber != null ? RefNumber : "";
+        }
+        //field date box
+        function GetRealArrivalReqDate() {
+            debugger
+             var RealArrivalReqDate = $("#@(RealArrivalReqDate)").dxDateBox("option", "value");
+            RealArrivalReqDate = ParsingDateyyyyMMdd(RealArrivalReqDate != "" ? RealArrivalReqDate : null);
+             return RealArrivalReqDate != null ? RealArrivalReqDate : "";
+        }
+        function GetInvoiceIssuedDate() {
+            debugger
+
+             var InvoiceIssuedDate = $("#@(InvoiceIssuedDate)").dxDateBox("option", "value");
+            InvoiceIssuedDate = ParsingDateyyyyMMdd(InvoiceIssuedDate != "" ? InvoiceIssuedDate : null);
+             return InvoiceIssuedDate != null ? InvoiceIssuedDate : "";
+         }
+            //Quan add get row remove
+        function GridDetailItemPORemoving(e) {
+            debugger;
+
+            listItemRemove.push(e.data);
+        }
+        function SetvalueDeliveryDate(row, data) {
+            debugger;
+            row.DeliveryDate = ParsingDateyyyyMMdd(data);
+        }
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-sm btn-secondary btn-action" title="Back to PO Request" id="btn_BackToPORequest" style="margin-right:5px"><i class="fas fa-reply"></i> @(_loc.GetLocalizedString("Back"))</button>
+                        <button class="btn btn-sm btn-secondary btn-action" title="Reload" id="btn_ReloadDetailPORequest" style="margin-right:5px"><i class="fas fa-sync"></i> @(_loc.GetLocalizedString("Reload"))</button>
+                        @if (ViewBag.SystemUserType == "G000C002" || ViewBag.SystemUserType == "G000C003")
+                        {
+
+                            <button class="btn btn-sm btn-secondary btn-action" title="Save" id="btn_SaveDataPORequest" style="margin-right:5px"><i class="fa fa-save"></i> @(_loc.GetLocalizedString("Save"))</button>
+                            <button class="btn btn-sm btn-secondary btn-action" title="Update" id="btn_UpdatePORequest" style="margin-right:5px"><i class="fa fa-save"></i> @(_loc.GetLocalizedString("Update"))</button>
+                            <button class="btn btn-sm btn-secondary btn-action" title="Request" id="btn_RequestPORequest" style="margin-right:5px"><i class="fas fa-share-square"></i> @(_loc.GetLocalizedString("Request"))</button>
+                            <button class="btn btn-sm btn-secondary btn-action" title="Print" id="btn_PrintDetailPORequest" style="margin-right:5px"><i class="fas fa-download"></i> @(_loc.GetLocalizedString("Print")) </button>
+                        }
+                        else if (ViewBag.SystemUserType == "G000C005")
+                        {
+                            <button class="btn btn-sm btn-secondary btn-action" title="UpdatePartner" id="btn_UpdatePODetail_Partner" style="margin-right:5px"><i class="fa fa-check"></i> @(_loc.GetLocalizedString("Update"))</button>
+                            <button class="btn btn-sm btn-secondary btn-action" title="Accept" id="btn_AcceptPORequest" style="margin-right:5px"><i class="fa fa-check"></i> @(_loc.GetLocalizedString("Accept"))</button>
+                            <button class="btn btn-sm btn-secondary btn-action" title="Reject" id="btn_RejectPORequest" style="margin-right:5px"><i class="fa fa-times"></i> @(_loc.GetLocalizedString("Reject"))</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header custom-card-header">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Project Code"))</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="ProjectCode" value='@(Model.ProjectCode!= null ? Model.ProjectCode:"")' class="form-control" readonly>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" id="btnShowPopup@(ViewBag.Thread)" type="button">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Partner Name"))</label>
+                            @(Html.DevExtreme().SelectBox()
+                                    .ID(txtPartnerCode)
+                                    .OnValueChanged("selectboxValueChanged")
+                                        .DisplayExpr("PartnerName")
+                                        .ValueExpr("PartnerCode")
+                                    .ShowClearButton(true)
+                                    .SearchEnabled(true)
+                                    .DataSourceOptions(o => o.Paginate(true).PageSize(100))
+
+                                )
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-none">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("PO Number"))</label>
+                            @(Html.DevExtreme().TextBox().ID("txtPO_PONumber").Value(Model.PONumber).Disabled(true).MaxLength(20))
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("UserPONumber"))</label>
+                            @if (Model.UserPONumber == null)
+                            {
+                                @(Html.DevExtreme().TextBox().ID("txtPO_User_PONumber").Value(Model.UserPONumber).ShowClearButton(true))
+                            }
+                            else
+                            {
+                                @(Html.DevExtreme().TextBox().ID("txtPO_User_PONumber").Value(Model.UserPONumber).ShowClearButton(true).Disabled(true))
+                            }
+
+                        </div>
+                    </div>
+                    @if (Model.StatusCode == "ORST01" || Model.StatusCode == "ORST02" || Model.StatusCode == "ORST03")
+                    {
+                        <div class="col-md-2">
+                            <div class="form-group ">
+                                <label>@(_loc.GetLocalizedString("Request Date")) </label>
+                                @(Html.DevExtreme().DateBox().ID("dtpPO_ReqDate").Value(Model.RequestDate).Disabled(true).DisplayFormat("yyyy-MM-dd"))
+                            </div>
+                        </div>
+                    }
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>@(_loc.GetLocalizedString("Arrival Request Date"))</label>
+                            @(Html.DevExtreme().DateBox()
+                            .ID("dtpPO_ArrivalReqDate")
+                            .Value(Model.ArrivalRequestDate)
+                            .DisplayFormat("yyyy-MM-dd")
+                            .ShowClearButton(true)
+                            .MaxLength(10)
+                            )
+
+                        </div>
+                    </div>
+                    @if (Model.StatusCode == "ORST01" || Model.StatusCode == "ORST02" || Model.StatusCode == "ORST03")
+                    {
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("User Request"))</label>
+                                @(Html.DevExtreme().TextBox().ID("txtPO_UserReq").Value(Model.UserRequest).Disabled(true))
+                            </div>
+                        </div>
+                    }
+                    @* If accepted *@
+                    @if (Model.StatusCode == "ORST02")
+                    {
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Accept Date"))</label>
+                                @(Html.DevExtreme().DateBox()
+                                .ID("dtpPO_StatusDate")
+                                .Value(Model.AcceptDate)
+                                .DisplayFormat("yyyy-MM-dd")
+                                .Disabled(true))
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("User Accept"))</label>
+                                @(Html.DevExtreme().TextBox().ID("#txtPO_UserModify").Value(Model.UserAccept).Disabled(true))
+                            </div>
+                        </div>
+                    }
+                    @* If Rejected *@
+                    @if (Model.StatusCode == "ORST03")
+                    {
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Reject Date"))</label>
+                                @(Html.DevExtreme().DateBox()
+                                .ID("dtpPO_StatusDate")
+                                .Value(Model.RejectDate)
+                                .DisplayFormat("yyyy-MM-dd")
+                                .Disabled(true))
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("User Reject"))</label>
+                                @(Html.DevExtreme().TextBox().ID("#txtPO_UserModify").Value( Model.UserReject).Disabled(true))
+                            </div>
+                        </div>
+                    }
+                </div>
+                @* Start Area của partner OverSea *@
+                <div id="areaPartnerOverSea@(ViewBag.Thread)">
+                    <div class="row">
+                        @* select box area *@
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("BusinessType"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(BusinessType)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "BTP000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.BusinessType)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("ConnectionToDemand"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(ConnectionToDemand)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "CTD000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.ConnectionToDemand)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Yard"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(Yard)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "YRD000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.Yard)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("RequestShipMode"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(RequestShipMode)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "RSP000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.RequestShipMode)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("FinalShipmentMode"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(FinalShipmentMode)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "RSP000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.FinalShipmentMode)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Packing"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(Packing)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "PCK000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.Packing)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("TermDelivery"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(TermDelivery)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "TRD000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true)
+                    .Value(Model.TermDelivery)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("TermPayment"))</label>
+                                @(Html.DevExtreme().SelectBox()
+                    .ID(TermPayment)
+                    .DataSource(d=>d.Mvc().Controller("MESPORequest").Key("BASE_CODE")
+                    .LoadAction("GetListComCodeDTL").LoadParams(new { groupCD = "TRP000" }))
+                    .DisplayExpr("BASE_NAME1")
+                    .ValueExpr("BASE_CODE").ShowClearButton(true).Value(Model.TermPayment)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("RealArrivalReqDate"))</label>
+                                @(Html.DevExtreme().DateBox()
+                     .ID(RealArrivalReqDate)
+                     .DisplayFormat("yyyy-MM-dd").MaxLength(10)
+                     .ShowClearButton(true).Value(Model.RealArrivalReqDate)
+                  )
+                            </div>
+                        </div>
+
+                        @* textbox area *@
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("OrderConfirmNumber"))</label>
+                                @(Html.DevExtreme().TextBox()
+                                .ID(OrderConfirmNumber).Value(Model.OrderConfirmNumber).ShowClearButton(true).MaxLength(50)
+                                )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("HullNo"))</label>
+                                @(Html.DevExtreme().TextBox()
+                                .ID(HullNo).ShowClearButton(true)
+                                .Value(Model.HullNo).MaxLength(50)
+                            )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Schedule"))</label>
+                                @(Html.DevExtreme().TextBox()
+                    .ID(Schedule).ShowClearButton(true)
+                    .Value(Model.Schedule).MaxLength(50)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Mon"))</label>
+                                @(Html.DevExtreme().NumberBox()
+                            .ID(Mon).ShowClearButton(true)
+                            .Value(Model.Mon)
+                            )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("SPPR"))</label>
+                                @(Html.DevExtreme().TextBox()
+                                .ID(SPPR).ShowClearButton(true)
+                                .Value(Model.SPPR).MaxLength(20)
+                                )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("SPPriceRef"))</label>
+                                @(Html.DevExtreme().TextBox()
+                                .ID(SPPriceRef).ShowClearButton(true)
+                                .Value(Model.SPPriceRef).MaxLength(20)
+                             )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("BLCode"))</label>
+                                @(Html.DevExtreme().TextBox()
+                                .ID(BLCode).ShowClearButton(true)
+                                .Value(Model.BLCode).MaxLength(50)
+                            )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("Invoice"))</label>
+                                @(Html.DevExtreme().TextBox()
+                            .ID(Invoice).ShowClearButton(true)
+                            .Value(Model.Invoice).MaxLength(50)
+                            )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("InvoiceIssuedDate"))</label>
+                                @(Html.DevExtreme().DateBox()
+                    .ID(InvoiceIssuedDate).DisplayFormat("yyyy-MM-dd").MaxLength(10)
+                     .ShowClearButton(true)
+                     .Value(Model.InvoiceIssuedDate)
+                 )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("PartnerUser"))</label>
+                                @(Html.DevExtreme().TextBox()
+                    .ID(PartnerUser).ShowClearButton(true)
+                    .Value(Model.PartnerUser)
+                    )
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-2">
+                            <div class="form-group">
+                                <label>@(_loc.GetLocalizedString("RefNumber"))</label>
+                                @(Html.DevExtreme().TextBox()
+                .ID(RefNumber).ShowClearButton(true)
+                .Value(Model.RefNumber)
+                )
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                @* End Area của partner OverSea *@
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+                    @* grid *@
+                    <div class="col-md-12">
+                        @(Html.DevExtreme().DataGrid<MES_ItemPO>()
+                        .ID(GridDetailItemPO)
+                        .ShowBorders(true)
+                        .ShowColumnLines(true)
+                        .ShowRowLines(true)
+                        .AllowColumnResizing(true)
+                        .AllowColumnReordering(true)
+                        .ColumnAutoWidth(true)
+                        .FilterRow(filterRow => filterRow
+                        .Visible(true)
+                        .ApplyFilter(GridApplyFilterMode.Auto))
+                        .Editing(editing =>
+                        {
+                            editing.Mode(GridEditMode.Cell);
+                            editing.AllowUpdating(true);
+                            editing.AllowDeleting(true);
+                            editing.UseIcons(true);
+
+                        })
+                        .Columns(c =>
+                        {
+
+                            c.AddFor(x => x.No).Caption("No").AllowEditing(false);
+                            c.AddFor(x => x.ItemCode).Caption(_loc.GetLocalizedString("Item Code")).AllowEditing(false);
+                            c.AddFor(x => x.ItemName).Caption(_loc.GetLocalizedString("Item Name")).AllowEditing(false);
+                            c.AddFor(x => x.ItemPrice).Caption(_loc.GetLocalizedString("Item Price")).AllowEditing(false).Format("#,##0.##");
+                            if (Model.StatusCode == "ORST06" || Model.StatusCode =="" || Model.StatusCode == null)
+                            {
+                                c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("POQty")).DataType(GridColumnDataType.Number).Format("#,##0").AllowEditing(true);
+                                //.ValidationRules(vr =>
+                                //{
+                                //    vr.AddRequired().Message("Required");
+                                //    vr.AddCustom().ValidationCallback("validateQtyInputNumber").Message("");
+                                //}).AllowEditing(true);
+                            }
+                            else {
+                                c.AddFor(x => x.POQty).Caption(_loc.GetLocalizedString("POQty")).DataType(GridColumnDataType.Number).Format("#,##0").AllowEditing(true);
+                                //.ValidationRules(vr =>
+                                //{
+                                //    vr.AddRequired().Message("Required");
+                                //    vr.AddCustom().ValidationCallback("validateQtyInputNumber").Message("");
+                                //}).AllowEditing(false);
+                            }
+                            c.AddFor(x => x.TotalPrice).Caption(_loc.GetLocalizedString("Total Price"))
+                            .Format("#,##0.#0").AllowEditing(false)
+                            .CalculateCellValue(
+                                    @<text>
+                                            function(data) {
+                                                  let defaultQty = (data.POQty === null || data.POQty ==="" || data.POQty === undefined ) ? 0 : data.POQty;
+                                                  return data.TotalPrice = data.ItemPrice * defaultQty   ;
+                                            }
+                                    </text>
+                                );
+                            if (Model.StatusCode == "ORST06") {
+
+                            }
+                            c.AddFor(x => x.ItemStatus).Caption("StatusCode").Visible(false);
+                            c.AddFor(x => x.ItemStatusName).Caption(_loc.GetLocalizedString("Status")).AllowEditing(false).Visible(Model.Status != null ? true: false);
+
+                            c.AddFor(x => x.LeadTimeType).Caption(_loc.GetLocalizedString("Lead Time Type")).AllowEditing(false).Lookup(lookup => lookup
+                                    .DataSource(d => d.Mvc().Controller("MESPORequest")
+                                    .LoadAction("GetListLeadTimeType")
+                                    .Key("BASE_CODE")).DataSourceOptions(o => o.Paginate(true).PageSize(100))
+                                    .DisplayExpr("BASE_NAME1")
+                                    .ValueExpr("BASE_CODE"));
+
+                            c.AddFor(x => x.LeadTime).Caption(_loc.GetLocalizedString("Lead Time")).AllowEditing(false).Format("#,##0");
+                            c.AddFor(x => x.MonetaryUnit).Caption(_loc.GetLocalizedString("Monetary Unit")).AllowEditing(false);
+                            //pleiger vo thi ko có .partner vo thì có PlanDeliverDate
+                            c.AddFor(x => x.DeliveryDate).Caption(_loc.GetLocalizedString("Delivery Date")).DataType(GridColumnDataType.Date).SetCellValue("SetvalueDeliveryDate")
+                                .Format("yyyy-MM-dd")
+                                .ValidationRules(r => r.AddRange()
+                                        .Max(new DateTime(3000, 1, 1))
+                                        .Message("Date is not valid !"))
+                                .AllowEditing(ViewBag.SystemUserType == "G000C005" && Model.StatusCode=="ORST01" ? true : false)
+                                .Visible((Model.StatusCode=="ORST01" || Model.StatusCode=="ORST02" || Model.StatusCode=="ORST03") ? true : false);
+
+                            c.AddFor(x => x.PleigerRemark).Caption(_loc.GetLocalizedString("Pleiger Remark"))
+                            .AllowEditing( Model.StatusCode =="ORST01" || Model.StatusCode =="ORST02" || Model.StatusCode=="ORST03" || Model.PartnerCode == "G000C005" ?false:true);
+                            c.AddFor(x => x.PORemark).Caption(_loc.GetLocalizedString("PO Remark"))
+                            .AllowEditing( Model.StatusCode=="ORST01" || Model.StatusCode=="ORST02" || Model.StatusCode=="ORST03" || Model.PartnerCode == "G000C005" ?false:true);
+                            c.Add().Type(GridCommandColumnType.Buttons).Buttons(b =>
+                            {
+                                b.Add().Name(GridColumnButtonName.Edit);
+                                //ORST06 created
+                                //ORST01 request
+                                //ORST02 accept
+                                //ORST03 reject
+                                b.Add().Name(GridColumnButtonName.Delete).Visible(Model.StatusCode == "ORST01" || Model.StatusCode == "ORST02" || Model.StatusCode == "ORST03" || Model.PartnerCode == "G000C005" ? false : true);
+                            });
+                        })
+                        .OnCellPrepared("colorTheStatusOfItem")
+                        .Height("500")
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .Selection(s => s.Mode(SelectionMode.Single))
+                        .HeaderFilter(f => f.Visible(true))
+                        .Paging(paging => paging.PageSize(15))
+                        .Pager(pager =>
+                        {
+                            pager.ShowPageSizeSelector(false);
+                            pager.AllowedPageSizes(new[] { 5, 20, 100 });
+                            pager.ShowInfo(true);
+                            pager.ShowNavigationButtons(true);
+                        })
+                        .OnRowRemoving("GridDetailItemPORemoving")
+                        .OnToolbarPreparing
+                        (
+                        @<text>
+                            function(e)
+                            {
+                                let toolbarItems = e.toolbarOptions.items;
+                                toolbarItems.forEach(function(item, index)
+                                    {
+                                        if(item.name == "saveButton")
+                                        {
+                                            toolbarItems.splice(index, 1);
+                                        }
+                                    })
+                                toolbarItems.unshift({
+                                    widget: "dxButton",
+                                    options: {
+                                                text:"@_loc.GetLocalizedString("Register Items")",
+                                                elementAttr: { id: 'showPopupItemsOfPartner' },
+                                                onClick: function(){
+                                                    var PartnerCode = $("#txtPartnerCode").dxSelectBox("option", "value");
+                                                        $.ajax({
+                                                            url: '@Url.Action("ShowPopupItemsPartner", "MESPORequest")',
+                                                            type: "GET",
+                                                            data: {
+                                                                partnerCode : PartnerCode,
+                                                                threadId: '@ViewBag.Thread',
+                                                            },
+                                                            dataType: "html",
+                                                            success: function (result) {
+                                                                // parent popup
+                                                                $("#modalContent").html(result);
+                                                                $("#modalContent").addClass("modal-xl");
+                                                                $('#modalControl').modal('show');
+                                                            }
+                                                        });
+                                                },
+                                                icon: "fa fa-search"
+                                                },
+                                    location: "after"
+                                });
+                            }
+                        </text>
+                            )
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
