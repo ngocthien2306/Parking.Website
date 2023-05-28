@@ -6,9 +6,10 @@ namespace Modules.Pleiger.CommonModels.Parking
 {
     public class ParkingCheckin
     {
+        public int no { get; set; }
         public int trackNumber { get; set; }
-        public DateTime startTime { get; set; }
-        public DateTime endTime { get; set; }
+        public DateTime? startTime { get; set; }
+        public DateTime? endTime { get; set; }
         public double fee { get; set; }
         public int storeNo { get; set; }
         public string storeName { get; set; }
@@ -25,6 +26,8 @@ namespace Modules.Pleiger.CommonModels.Parking
         public string typeTransport { get; set; }
         public string typePlate { get; set; }
         public string vehicleStatus { get; set; }
+        public string trackStatus { get; set; }
+        public DateTime? currentTime { get; set; }
     }
 
     public class tblTrack

@@ -64,9 +64,9 @@ namespace Modules.Parking.Controllers
 
         #region Get Data
         [HttpGet]
-        public ActionResult<List<ParkingCheckin>> GetVehicleCheckin(string startTime, string endTime, string byMin, string storeNo)
+        public ActionResult<List<ParkingCheckin>> GetVehicleCheckin(string startTime, string endTime, string byMin, string storeNo, string status)
         {
-            var checkins = _vehicleCheckin.GetListVehicleCheckin(startTime, endTime, byMin, storeNo);
+            var checkins = _vehicleCheckin.GetListVehicleCheckin(startTime, endTime, byMin, storeNo, status);
             return Json(checkins);
         }
         public IActionResult GetImageTaken(string userId)

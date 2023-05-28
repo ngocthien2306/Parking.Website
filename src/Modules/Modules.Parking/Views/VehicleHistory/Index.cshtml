@@ -3,6 +3,7 @@
 @using Modules.Admin.Models;
 @using InfrastructureCore.Models.Menu;
 @using Modules.Pleiger.CommonModels.Models
+@using Modules.Pleiger.CommonModels.Parking
 @{
     Layout = null;
     SYMenuAccess pageSetting = new SYMenuAccess();
@@ -20,7 +21,7 @@
 
     string lessMonth = "lessMonth" + ViewBag.Thread;
     string onceRecently = "onceRecently" + ViewBag.Thread;
-    string gridStore = "gridStore" + ViewBag.Thread;
+    string gridStore = "gridParkingCheckInPage" + ViewBag.Thread;
     string gridMember = "gridMember" + ViewBag.Thread;
 
 
@@ -45,7 +46,7 @@
     var storeNoMemberScreen = null;
     $(document).ready(function () {
         LoadingPage(1);
-        LoadStoreMaster(null, null, null, "#@gridStore");
+        GetStoreMastersByUser("#@gridStore", { siteType: "SIT001" });
         LoadingPage(0);
     })
     function GridRemoveUserInstance() {
@@ -196,7 +197,7 @@
             lessMonth: GetDataElement("#@lessMonth"),
             onceRecently: GetDataElement("#@onceRecently")
         }
-        var url = '@Url.Action("GetMemberRemove", "RemoveMember")';
+        var url = '@Url.Action("GetMemberInVehicle", "VehicleHistory")';
         LoadGridData(url, obj, "#@gridMember", METHOD.POST);
     }
     // Show popup member detail
@@ -204,15 +205,16 @@
         LoadingPage(1);
         CheckSession();
         debugger;
-        ShowMemberRemoveDetail(e.data.storeNo, e.data.userId);
+        ShowMemberRemoveDetail(e.data.storeNo, e.data.userId, e.data.plateNumber);
         LoadingPage(0);
     }
 
-    function ShowMemberRemoveDetail(storeNo, userId) {
-        var url = '@Url.Action("ShowMemberRemoveDetail", "RemoveMember")';
+    function ShowMemberRemoveDetail(storeNo, userId, lp) {
+        var url = '@Url.Action("GetMemberInVehicleDetail", "VehicleHistory")';
         var obj = {
             storeNo: storeNo,
             userId: userId,
+            lp: lp,
             viewbagIndex: '@ViewBag.Thread',
             menuParent: '@ViewBag.MenuId'
         }
@@ -296,7 +298,7 @@
                     </div>
                     <div class="col-md-9">
                         @(
-                                Html.DevExtreme().DataGrid<KIO_SubscriptionHistory>()
+                                Html.DevExtreme().DataGrid<ParkingVehicleHistory>()
                                 .ID(gridMember)
                                 .Height("70vh")
                                 .ShowBorders(true)
@@ -334,11 +336,13 @@
                                     columns.AddFor(x => x.phoneNumber).Caption(_loc.GetLocalizedString("Phone Number")); // .Width("10%")
                                     columns.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd HH:mm:ss").Alignment(0); // .Width("10%")
                                 });
-                                    c.Add().Caption(_loc.GetLocalizedString("Approval Information")).Alignment(0).Columns(columns =>
+                                c.Add().Caption(_loc.GetLocalizedString("Vehicle Information")).Alignment(0).Columns(columns =>
                                 {
-                                    columns.AddFor(x => x.approvalType).Caption(_loc.GetLocalizedString("Approval Type")); // .Width("7%")
-                                    columns.AddFor(x => x.lastSimilarity).Caption(_loc.GetLocalizedString("Rate Similarity")).Format(Format.FixedPoint); // .Width("7%")
-                                    columns.Add().Caption(_loc.GetLocalizedString("Approve Reject")).CellTemplate(@<text>
+                                columns.AddFor(x => x.plateNumber).Caption(_loc.GetLocalizedString("Plate number")); // .Width("7%")
+                                columns.AddFor(x => x.typeTransport).Caption(_loc.GetLocalizedString("Type Vehicle")).Format(Format.FixedPoint); // .Width("7%")
+                                columns.AddFor(x => x.typePlate).Caption(_loc.GetLocalizedString("Type Plate number")).Format(Format.FixedPoint);
+                                
+                                                                                                                                                                           @*columns.Add().Caption(_loc.GetLocalizedString("Approve Reject")).CellTemplate(@<text>
                                         @(
                                             Html.DevExtreme().RadioGroup()
                                             .DataSource(approveRejectEntities)
@@ -350,153 +354,7 @@
                                             .ReadOnly(false)
                                             )
                                         </text>).AutoExpandGroup(true);
-                                    columns.AddFor(x => x.userStatus).Caption(_loc.GetLocalizedString("Status")); // .Width("5%")
-                                });
-                                })
-
-                            .Pager(pager =>
-                            {
-                                pager.ShowInfo(true);
-                                pager.ShowNavigationButtons(true);
-                            })
-                            //.OnSelectionChanged("onItemGridSelectionChanged")
-                            .OnRowDblClick("GetMemberRemove")
-                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
-                            //.Paging(paging => paging.PageSize(100))
-                            )
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row" id="divindex_@(ViewBag.Thread)">
-    <div class="col-md-12" style="width:100%;height:100%;">
-        <div class="card" style="height:100%;width:100%;">
-            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
-                <label>@(_loc.GetLocalizedString("Recently"))</label>
-                <div class="row mt-1">
-                    <div class="form-group col-md-2">
-                        @(Html.DevExtreme().SelectBox()
-                            .DataSource(lessMonthData)
-                            .Value(0)
-                            .DisplayExpr("name")
-                            .ValueExpr("id")
-                            .ID(lessMonth)
-                            .OnSelectionChanged("SearchMemberLessMonth")
-                            )
-                    </div>
-                    <span class="mt-2">@(_loc.GetLocalizedString("Months of non-entry")) </span>
-                    <span class="mt-2"> ~</span>
-                    <div class="form-group col-md-2">
-                        @(Html.DevExtreme().SelectBox()
-                            .ID(onceRecently)
-                            .DataSource(onceRecentlyData)
-                            .DisplayExpr("name")
-                            .ValueExpr("id")
-                            .Value(0)
-                            .OnSelectionChanged("SearchMemberOnceRecently")
-                            )
-                    </div>
-                    <span class="mt-2">@(_loc.GetLocalizedString("Less than one entry"))</span>
-
-                </div>
-            </div>
-            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
-                <div class="row" style="height:75vh">
-                    <div class="col-md-3">
-                        @(
-                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
-                            .ID(gridStore)
-                            .Height("70vh")
-                            .ShowBorders(true)
-                            .ShowColumnLines(true)
-                            .HeaderFilter(f => f.Visible(true))
-                            .FilterRow(f => f.Visible(true))
-                            .ShowRowLines(true)
-                            .AllowColumnResizing(true)
-                            .AllowColumnReordering(true)
-                            .RemoteOperations(true)
-                            .ColumnAutoWidth(true)
-                            .ColumnFixing(c => c.Enabled(true))
-                            .RepaintChangesOnly(true)
-                            .Selection(s => s.Mode(SelectionMode.Single))
-                            .Columns(c =>
-                            {
-                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
-                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
-                                c.AddFor(x => x.openDate).Caption(_loc.GetLocalizedString("Open Date")).Format("yyyy-MM-dd");
-                            })
-
-                            .Pager(pager =>
-                            {
-                                pager.ShowInfo(true);
-                                pager.ShowNavigationButtons(true);
-                            })
-                            //.OnSelectionChanged("ShowMemberSelection")
-                            .OnRowClick("ShowMemberRemoveSelection")
-                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
-                            //.Paging(paging => paging.PageSize(100))
-                            )
-                    </div>
-                    <div class="col-md-9">
-                        @(
-                                Html.DevExtreme().DataGrid<KIO_SubscriptionHistory>()
-                                .ID(gridMember)
-                                .Height("70vh")
-                                .ShowBorders(true)
-
-                                .ShowColumnLines(true)
-                                .HeaderFilter(f => f.Visible(true))
-                                .FilterRow(f => f.Visible(true))
-                                .ShowRowLines(true)
-                                .AllowColumnResizing(true)
-                                .AllowColumnReordering(true)
-                                .RemoteOperations(true)
-                                .ColumnAutoWidth(true)
-                                .ColumnFixing(c => c.Enabled(true))
-                                .Scrolling(s => s.Mode(GridScrollingMode.Infinite))
-                                .RepaintChangesOnly(true)
-                                .Selection(s => s.Mode(SelectionMode.Multiple))
-                                .Columns(c =>
-                                {
-                                    c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No")); // .Width("5%")
-
-                                    c.Add().Caption(_loc.GetLocalizedString("Store Information")).Alignment(0).Columns(columns =>
-                                {
-                                    columns.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location")); // .Width("8%")
-                                    columns.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name")); // .Width("10%")
-                                });
-                                    c.Add().Caption(_loc.GetLocalizedString("Member Information")).Alignment(0).Columns(columns =>
-                                {
-                                    columns.AddFor(x => x.userName).Caption(_loc.GetLocalizedString("Username")); // .Width("10%")
-                                    columns.AddFor(x => x.birthday).Caption(_loc.GetLocalizedString("Birthday")).Format("yyyy-MM-dd").Alignment(0); // .Width("10%")
-                                    columns.Add().Caption(_loc.GetLocalizedString("Gender")).CalculateCellValue(@<text>
-                                        function(data) {
-                                        return data.gender == true ? "@_loc.GetLocalizedString("Man")" : "@_loc.GetLocalizedString("Women")";
-                                        }
-                                    </text>);
-                                    columns.AddFor(x => x.phoneNumber).Caption(_loc.GetLocalizedString("Phone Number")); // .Width("10%")
-                                    columns.AddFor(x => x.registDate).Caption(_loc.GetLocalizedString("Registered Date")).Format("yyyy-MM-dd HH:mm:ss").Alignment(0); // .Width("10%")
-                                });
-                                    c.Add().Caption(_loc.GetLocalizedString("Approval Information")).Alignment(0).Columns(columns =>
-                                {
-                                    columns.AddFor(x => x.approvalType).Caption(_loc.GetLocalizedString("Approval Type")); // .Width("7%")
-                                    columns.AddFor(x => x.lastSimilarity).Caption(_loc.GetLocalizedString("Rate Similarity")).Format(Format.FixedPoint); // .Width("7%")
-                                    columns.Add().Caption(_loc.GetLocalizedString("Approve Reject")).CellTemplate(@<text>
-                                        @(
-                                            Html.DevExtreme().RadioGroup()
-                                            .DataSource(approveRejectEntities)
-                                            .ValueExpr("id")
-                                            .DisplayExpr("name")
-                                            .Value(new JS("data.approveReject"))
-                                            .Layout(Orientation.Horizontal)
-                                            .OnValueChanged("UpdateApproveRejectRemoveUser")
-                                            .ReadOnly(false)
-                                            )
-                                        </text>).AutoExpandGroup(true);
-                                    columns.AddFor(x => x.userStatus).Caption(_loc.GetLocalizedString("Status")); // .Width("5%")
+                                    columns.AddFor(x => x.userStatus).Caption(_loc.GetLocalizedString("Status")); // .Width("5%")*@
                                 });
                                 })
 

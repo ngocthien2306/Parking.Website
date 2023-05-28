@@ -1,0 +1,196 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Parking
+
+@model ParkingHistoryDetail;
+@{
+    Layout = null;
+
+    string idCartPhoto = "idCartPhoto" + ViewBag.Thread;
+    string takenPhoto = "takenPhoto" + ViewBag.Thread;
+    string btnChangeIdCardPhoto = "btnChangeIdCardPhoto" + ViewBag.Thread;
+    string btnChangeKioskPhoto = "btnChangeKioskPhoto" + ViewBag.Thread;
+    string userName = "userName" + ViewBag.Thread;
+    string gender = "gender" + ViewBag.Thread;
+    string birthday = "birthday" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string gridUserHistory = "gridUserHistory" + ViewBag.Thread;
+    string uploadImageCardId = "uploadImageCardId";
+    string uploadImageTaken = "uploadImageTaken";
+    string imgTakenPath = "imgTakenPath" + ViewBag.Thread;
+    string imgCardPath = "imgCardPath" + ViewBag.Thread;
+    var genderData = new[] {
+        new { id = true, text = _loc.GetLocalizedString("Man") },
+        new { id = false, text = _loc.GetLocalizedString("Women") },
+    };
+}
+<style>
+</style>
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        setTimeout(function () {
+            GetVehicleHistory("@Model.storeNo", "@Model.userId", "@Model.plateNumber");
+            GetGridIntance("#@gridUserHistory").refresh();
+        }, 300);
+        //SetImage();
+        LoadingPage(0);
+    })
+
+    // Region: Btn event
+
+    function LoadImageTakenAfterUpload(e) {
+        debugger;
+        $("#@uploadImageTaken .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("photo-taken");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@imgTakenPath", res.path);
+    }
+    function LoadImageCardAfterUpload(e) {
+        debugger;
+        $("#@uploadImageCardId .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("photo-card-id");
+        var res = JSON.parse(e.request.response)
+        img.src = res.data;
+        SetDataElement("#@imgCardPath", res.path);
+    }
+
+
+    function GetVehicleHistory(storeNo, userId, lp) {
+        var obj = {
+            storeNo: storeNo,
+            userId: userId,
+            lp: lp
+        }
+        var url = '@Url.Action("GetVehicleHistory", "VehicleHistory")';
+        LoadGridData(url, obj, "#@gridUserHistory", METHOD.GET);
+    }
+    // End Region: Get data
+
+
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="ShowMemberDetail">@(_loc.GetLocalizedString("Vehicle"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row" style="height:60vh">
+                <div class="col-md-7">
+                    <div class="row pb-2 ml-2 mr-2">
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("Plate Input")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-taken" style="width: 100%; height: 300px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                        </div>
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("Face Photo")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-card-id" style="width: 100%; height: 300px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.detectInFace" 
+                                     class="rounded float-end" alt="...">
+                            </div>
+                           
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Username"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().TextBox()
+                            .ID(userName)
+                            .MaxLength(20)
+                            .Value(Model.userName == null ? "" : Model.userName)
+                            )
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Gender"))</label>
+                            @(Html.DevExtreme().RadioGroup()
+                            .DataSource(genderData)
+                            .Value(Model.gender)
+                            .DisplayExpr("text")
+                            .ValueExpr("id")
+                            .ID(gender)
+                            .Layout(Orientation.Horizontal)
+                            )
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Register Date"))</label>
+                            @(Html.DevExtreme().DateBox()
+                            .ID(birthday)
+                            .Value(Model.birthday == null ? DateTime.Now : Model.registDate)
+                            )
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Phone Number"))</label>
+                            @(Html.DevExtreme().TextBox()
+                            .ID(phoneNumber)
+                            .Value(Model.phoneNumber == null ? "" : Model.phoneNumber)
+
+                            )
+                        </div>
+                        @(Html.DevExtreme().TextBox()
+                        .ID(imgTakenPath).Visible(false)
+                        )
+                        @(Html.DevExtreme().TextBox()
+                        .ID(imgCardPath).Visible(false)
+                        )
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <fieldset class="customFieldset">
+                        <legend class="customLegend">@_loc.GetLocalizedString("Entrance Details")</legend>
+                        @(
+                        Html.DevExtreme().DataGrid<ParkingHistoryDetail>
+                            ()
+                            .ID(gridUserHistory)
+                            .Height("52vh")
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
+                                c.AddFor(x => x.plateNumber).Caption(_loc.GetLocalizedString("Plate Number"));
+                                c.AddFor(x => x.endTime).Caption(_loc.GetLocalizedString("End Time")).Format("yyyy-MM-dd HH:mm:ss").Alignment(0);
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            //.OnRowClick("ShowAudioFileDetail")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

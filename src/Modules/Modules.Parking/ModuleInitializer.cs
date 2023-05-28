@@ -18,7 +18,7 @@ namespace Modules.Parking.Views
         {
             services.AddTransient<IParkingRepository, ParkingRepository>();
             services.AddTransient<IVehicleCheckinRepository, VehicleCheckinRepository>();
-
+            services.AddTransient<IVehicleHistoryRepository, VehicleHistoryRepository>();
         }
     }
 }

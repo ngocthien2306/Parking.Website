@@ -20,7 +20,7 @@ namespace Modules.Parking.Hubs
         {
             //DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss")
             //DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-            var checkins = _repository.GetListVehicleCheckin(null, null, null, null);
+            var checkins = _repository.GetListVehicleCheckin(null, null, null, null, null);
 
             await Clients.All.SendAsync("ReceivedTracks", checkins).ConfigureAwait(true);
         }
