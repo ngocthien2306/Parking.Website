@@ -12,17 +12,19 @@ using System.Linq;
 
 namespace Modules.Parking.Controllers
 {
-    public class ParkingSiteController : BaseController
+    public class VehicleInfoController : BaseController
     {
         private readonly IAccessMenuService _accessMenuService;
         private readonly IHttpContextAccessor contextAccessor;
         private readonly IParkingRepository _parkingRepository;
 
-        public ParkingSiteController(IAccessMenuService accessMenuService,
+        public VehicleInfoController(IAccessMenuService accessMenuService,
             IHttpContextAccessor contextAccessor,
             IParkingRepository parkingRepository) : base(contextAccessor)
         {
             _parkingRepository = parkingRepository;
+            _accessMenuService = accessMenuService;
+
         }
 
         #region Views
@@ -47,6 +49,32 @@ namespace Modules.Parking.Controllers
             ViewBag.CurrentUser = CurrentUser;
             return View();
         }
+        public IActionResult ShowStoreDeviceDetail(string storeDeviceNo, string viewbagIndex, int menuParent)
+        {
+            ViewBag.SAVE_YN = false;
+            ViewBag.DELETE_YN = false;
+            var ListButtonPermissionByUser = _accessMenuService.GetButtonPermissionByUser(CurrentUser.SiteID, menuParent, CurrentUser.UserCode);
+            if (ListButtonPermissionByUser.Count > 0)
+            {
+                ViewBag.SAVE_YN = ListButtonPermissionByUser[0].SAVE_YN;
+                ViewBag.DELETE_YN = ListButtonPermissionByUser[0].DELETE_YN;
+            }
+
+            ViewBag.Thread = Guid.NewGuid().ToString("N");
+            //var checkUserLogin = _userService.CheckUserType(CurrentUser.UserID);
+            //ViewBag.UserType = checkUserLogin.SystemUserType;
+            ViewBag.Index = viewbagIndex;
+            ViewBag.UserName = CurrentUser.UserName;
+            ViewBag.UserId = CurrentUser.UserID;
+            ViewBag.UserType = CurrentUser.SystemUserType;
+            var storeDevice = new VehiceInfo();
+            if (storeDeviceNo != null)
+            {
+                storeDevice = _storeRepository.GetStoreDevices(null, null, null, null, null, storeDeviceNo).FirstOrDefault();
+            }
+            return PartialView("ShowStoreDeviceDetail", storeDevice);
+
+        }
         #endregion
 
         #region Get Data
@@ -69,7 +97,7 @@ namespace Modules.Parking.Controllers
         {
             return Json(_parkingRepository.DeletParking(id));
         }
-
+        
         #endregion
     }
 }

@@ -23,4 +23,20 @@ namespace Modules.Pleiger.CommonModels.Parking
         public string typeTransport { get; set; }
         public string typePlate { get; set; }
     }
+    public class VehiceInfo
+    {
+        public int id { get; set; }
+        public int plateNum { get; set; }
+        public int typeTransport { get; set; }
+        public int typePlate { get; set; }
+        public int status { get; set; }
+        public int userId { get; set; }
+        public DateTime createdAt { get; set; }
+        public DateTime updatedAt { get; set; }
+        public byte[] vehiclePhoto { get; set; }
+        public byte[] licensePhoto { get; set; }
+        public string vehiclePhotoPath { get; set; }
+        public string licensePhotoPath { get; set; }
+
+    }
 }
