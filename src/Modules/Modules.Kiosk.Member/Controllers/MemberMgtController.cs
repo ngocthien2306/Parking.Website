@@ -12,7 +12,9 @@ using Modules.Common.Models;
 using Modules.Kiosk.Member.Repositories.IRepository;
 using Modules.Kiosk.Monitoring.Repositories.IRepository;
 using Modules.Kiosk.Settings.Repositories.IRepository;
+using Modules.Parking.Helper;
 using Modules.Pleiger.CommonModels.Models;
+using Modules.Pleiger.CommonModels.Parking;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -107,13 +109,28 @@ namespace Modules.Kiosk.Member.Controllers
             return Json(listMember);
         }
         [HttpGet]
+        public ActionResult<KIO_SubscriptionHistory> GetProfileUser(string userId)
+        {
+            var member = _memberManagement.GetMemberManagementDetail(null, userId).FirstOrDefault();
+            if(member == null)
+            {
+                member = new KIO_SubscriptionHistory();
+            }
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/not-found-image.png");
+            var noAvailableImage = System.IO.File.ReadAllBytes(path);
+            member.takenPhotoBase64 = member.takenPhoto == null ? "data:image/png;base64," +  Convert.ToBase64String(noAvailableImage) : "data:image/png;base64," + Convert.ToBase64String(member.takenPhoto);
+            member.idCardFrontPhotoBase64 = member.idCardFrontPhoto == null ? "data:image/png;base64," + Convert.ToBase64String(noAvailableImage) : "data:image/png;base64," + Convert.ToBase64String(member.idCardFrontPhoto);
+            member.idCardBackPhotoBase64 = member.idCardBackPhoto == null ? "data:image/png;base64," + Convert.ToBase64String(noAvailableImage) : "data:image/png;base64," + Convert.ToBase64String(member.idCardBackPhoto);
+            return Json(member);
+        }
+        [HttpGet]
         public ActionResult<object> GetImageMember(string storeNo, string userId)
         {
             try
             {
                 var member = _memberManagement.GetMemberManagementDetail(storeNo, userId).FirstOrDefault();
-                var takenPhotoBase64 = member.takenPhoto == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.takenPhoto).ToString();
-                var idCardPhotoBase64 = member.idCardPhoto == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.idCardPhoto).ToString();
+                var takenPhotoBase64 = member.takenPhoto == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.takenPhoto);
+                var idCardPhotoBase64 = member.idCardPhoto == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.idCardPhoto);
                 return Json(new { takenPhotoBase64 = takenPhotoBase64, idCardPhotoBase64 = idCardPhotoBase64 });
             }
             catch
@@ -122,6 +139,7 @@ namespace Modules.Kiosk.Member.Controllers
             }
 
         }
+
 
         [HttpGet]
         public ActionResult<List<KIO_UserHistory>> GetUserHistory(string userId)
@@ -326,12 +344,83 @@ namespace Modules.Kiosk.Member.Controllers
         {
             return Json(_memberManagement.SaveDataMember(saveUserDto));
         }
+
+        [HttpPost]
+        public async Task<ActionResult<object>> UploadVehicle(string userId)
+        {
+            try
+            {
+                var res = new VehicleResponse();
+                var myFile = Request.Form.Files["imageFileVehicle"];
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/" + userId + "/vehicle");
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                using (var fileStream = System.IO.File.Create(Path.Combine(path, myFile.FileName)))
+                {
+                    myFile.CopyTo(fileStream);
+                }
+                string base64img = Convert.ToBase64String(System.IO.File.ReadAllBytes(Path.Combine(path, myFile.FileName)));
+
+
+                string baseUrl = "http://localhost:8005/api/v1/users";
+                ApiCaller.SetBaseUrl(baseUrl);
+                Result apiResponse = await ApiCaller.VerifyLicensePlateAsync(base64img);
+
+                if (apiResponse.Success)
+                {
+                    UploadVehicleResponse response = JsonConvert.DeserializeObject<UploadVehicleResponse>(apiResponse.Data.ToString());
+                    res.data = "data:image/png;base64," + base64img;
+                    res.path = Path.Combine(path, myFile.FileName.Trim());
+                    res.success = apiResponse.Success;
+                    res.plateNum = response.license;
+                    res.transportType = response.transportType;
+                    res.plateType = response.plateType;
+                    res.message = response.message;
+                    return Json(res);
+                }
+                else
+                {
+                    res.data = "data:image/png;base64," + base64img;
+                    res.path = Path.Combine(path, myFile.FileName.Trim());
+                    res.success = apiResponse.Success;
+                    return Json(res);
+                }
+                
+            }
+            catch
+            {
+                Response.StatusCode = 400;
+                return new EmptyResult();
+            }
+        }
+        [HttpPost]
+        public ActionResult<object> UploadImageLicense(string userId)
+        {
+            try
+            {
+                var myFile = Request.Form.Files["imageFileLicense"];
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/" + userId + "/license");
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                using (var fileStream = System.IO.File.Create(Path.Combine(path, myFile.FileName)))
+                {
+                    myFile.CopyTo(fileStream);
+                }
+                string base64img = Convert.ToBase64String(System.IO.File.ReadAllBytes(Path.Combine(path, myFile.FileName)));
+                return Json(new { data = "data:image/png;base64," + base64img, path = Path.Combine(path, myFile.FileName.Trim()) });
+            }
+            catch
+            {
+                Response.StatusCode = 400;
+                return new EmptyResult();
+            }
+        }
         [HttpPost]
         public ActionResult<object> UploadImageTaken(string userId)
         {
             try
             {
-                var myFile = Request.Form.Files["imageFileTaken"];
+                var myFile = Request.Form.Files["imageFaceTaken"];
                 var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/" + userId);
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
@@ -355,6 +444,30 @@ namespace Modules.Kiosk.Member.Controllers
             {
                 var myFile = Request.Form.Files["imageFileCard"];
                 var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/" + userId);
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                using (var fileStream = System.IO.File.Create(Path.Combine(path, myFile.FileName)))
+                {
+                    myFile.CopyTo(fileStream);
+                }
+                string base64img = Convert.ToBase64String(System.IO.File.ReadAllBytes(Path.Combine(path, myFile.FileName)));
+                return Json(new { data = "data:image/png;base64," + base64img, path = Path.Combine(path, myFile.FileName.Trim()) });
+            }
+            catch
+            {
+                Response.StatusCode = 400;
+                return new EmptyResult();
+            }
+        }
+
+        [HttpPost]
+        public ActionResult<object> UploadImageCardId(string userId, int type)
+        {
+            try
+            {
+                var myFile = Request.Form.Files["imageFileCardId"];
+                string subPath = type == 1 ? "back/" : "front/";
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/card/" + subPath + userId);
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
                 using (var fileStream = System.IO.File.Create(Path.Combine(path, myFile.FileName)))

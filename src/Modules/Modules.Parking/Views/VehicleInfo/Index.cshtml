@@ -1,12 +1,10 @@
-﻿@using Modules.Pleiger.CommonModels;
-@using Modules.Common.Models;
+﻿@using Modules.Common.Models;
 @using Modules.Admin.Models;
 @using InfrastructureCore.Models.Menu;
-@using Modules.Pleiger.CommonModels.Models
+@using Modules.Pleiger.CommonModels.Parking;
 @{
     Layout = null;
     SYMenuAccess pageSetting = new SYMenuAccess();
-    pageSetting.SAVE_YN = true;
     pageSetting.CREATE_YN = true;
 
     List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
@@ -38,6 +36,31 @@
     // btn
     string btnCreateOrDetail = "btnCreateOrDetail" + ViewBag.Thread;
 
+    var genderData = new[] {
+        new { id = true, text = _loc.GetLocalizedString("Man") },
+        new { id = false, text = _loc.GetLocalizedString("Women") },
+    };
+
+    string userName = "userName" + ViewBag.Thread;
+    string firstName = "firstName" + ViewBag.Thread;
+    string lastName = "lastName" + ViewBag.Thread;
+    string fullName = "fullName" + ViewBag.Thread;
+    string phoneCode = "phoneCode" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string email = "email" + ViewBag.Thread;
+    string userType = "userType" + ViewBag.Thread;
+    string gender = "gender" + ViewBag.Thread;
+    string birthday = "birthDate" + ViewBag.Thread;
+    string regisdterDate = "regisdterDate" + ViewBag.Thread;
+    string identityNo = "identityNo" + ViewBag.Thread;
+    string gridVehicle = "gridVehicle" + ViewBag.Thread;
+    string facePhoto = "facePhoto" + ViewBag.Thread;
+    string cardFrontPhoto = "cardFrontPhoto" + ViewBag.Thread;
+    string cardBackPhoto = "cardBackPhoto" + ViewBag.Thread;
+    string facePhotoPath = "facePhotoPathPath" + ViewBag.Thread;
+    string cardFrontPhotoPath = "cardFrontPhotoPath" + ViewBag.Thread;
+    string cardBackPhotoPath = "cardBackPhotoPath" + ViewBag.Thread;
+
 }
 <style type="text/css" class="cssStyles">
 </style>
@@ -48,7 +71,8 @@
 
     $(document).ready(function () {
         LoadingPage(1);
-
+        BiddingProfile("@ViewBag.UserCode");
+        GetListVehicle();
         LoadComboBoxLocation();
         $('#btnSave_@(ViewBag.Thread)').prop('disabled', true);
         LoadingPage(0);
@@ -78,13 +102,39 @@
         $("#@btnCreateOrDetail").dxButton("instance").option("disabled", false);
 
     }
+
+
+    function LoadImageFaceAfterUpload(e) {
+        debugger;
+        $("#@facePhoto .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("profile-face-photo");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@facePhotoPath", res.path);
+    }
+    function LoadImageCardFrontAfterUpload(e) {
+        debugger;
+        $("#@cardFrontPhoto .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("profile-card-front");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@cardFrontPhotoPath", res.path);
+    }
+    function LoadImageCardBackAfterUpload(e) {
+        debugger;
+        $("#@cardBackPhoto .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("profile-card-back");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@cardBackPhotoPath", res.path);
+    }
     // End Region: btn click event
 
     // Region: Get Data
     function LoadComboBoxLocation() {
         debugger;
         var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
-        LoadDataCommboBox("LCT000", url, '#@location', true);
+        LoadDataCommboBox("COUN00", url, '#@phoneCode', true);
     }
     function GetDataStoreMaster(e) {
         LoadingPage(1);
@@ -124,31 +174,30 @@
         });
     }
 
-    function BiddingDataStoreMaster(storeNo) {
-        debugger;
+    function BiddingProfile(userId) {
         $.ajax({
-            url: '@Url.Action("GetStoreMasters", "StoreMgt")',
-            type: METHOD.POST,
+            url: '@Url.Action("GetProfileUser", "MemberMgt")',
+            type: METHOD.GET,
             data: {
-                storeNo: storeNo
+                userId: userId
             },
             dataType: 'json',
             success: function (result) {
                 debugger;
-
-                SetDataElement("#@storeName", result[0].storeName);
-                SetDataElement("#@location", result[0].location);
-                SetDataElement("#@zipCode", result[0].zipCode);
-                SetDataElement("#@address1", result[0].address1);
-                SetDataElement("#@address2", result[0].address2);
-                SetDataElement("#@bizNumber", result[0].bizNumber);
-                SetDataElement("#@bizPhoneNumber", result[0].bizPhoneNumber);
-                SetDataElement("#@openDate", result[0].openDate);
-                SetDataElement("#@memo", result[0].memo);
-                SetDataElement("#@registDate", result[0].registDate);
-                SetDataElement("#@monitoringEndtime", result[0].monitoringEndtime);
-                SetDataElement("#@monitoringStartime", result[0].monitoringStartime);
-
+                SetDataElement("#@userName", result.userName);
+                SetDataElement("#@birthday", result.birthday);
+                SetDataElement("#@gender", result.gender);
+                SetDataElement("#@phoneNumber", result.phoneNumber);
+                SetDataElement("#@userType", result.userType);
+                SetDataElement("#@regisdterDate", result.registDate);
+                SetDataElement("#@firstName", result.firstName);
+                SetDataElement("#@email", result.email);
+                SetDataElement("#@identityNo", result.identityNo);
+                SetDataElement("#@fullName", result.lastName + " " + result.firstName);
+                SetDataElement("#@lastName", result.lastName)
+                document.getElementById("profile-face-photo").src = result.takenPhotoBase64;
+                document.getElementById("profile-card-front").src = result.idCardBackPhotoBase64;
+                document.getElementById("profile-card-back").src = result.idCardFrontPhotoBase64;
                 LoadingPage(0);
             },
             error: function () {
@@ -157,6 +206,31 @@
         });
     }
 
+    function GetListVehicle() {
+        var objs = {
+            userId: "@ViewBag.UserCode",
+            storeNo: null,
+            plateNum: null
+        }
+        var url = '@Url.Action("GetListVehicleInfo", "VehicleInfo")';
+        LoadGridData(url, objs, "#@gridVehicle", METHOD.GET);
+    }
+
+    function ShowVehicleDetail(vehicleId) {
+        var url = '@Url.Action("ShowVehicleDetail", "VehicleInfo")';
+        var obj = {
+            storeNo: null,
+            vehicleId: vehicleId,
+            lp: null,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+    function ShowUpdateVehicle(e) {
+        debugger;
+        ShowVehicleDetail(e.data.vehicleId)
+    }
     function ShowUserStoreMgtDetail(storeNo, userId) {
         var url = '@Url.Action("ShowUserStoreMgtDetail", "StoreMgt")';
         var obj = {
@@ -167,6 +241,7 @@
         }
         OpenPopup(url, obj, METHOD.GET);
     }
+
     function OpenStoreMgtDetail(e) {
         debugger;
         var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
@@ -179,187 +254,7 @@
     // End Region: Get Data
 
     // Region: Create - Update - Delete
-    function onItemGridToolbarPreparingUser(e) {
-        debugger;
-        var toolbarItems = e.toolbarOptions.items;
-        toolbarItems.unshift(
-            {
-                visible: true,
-                widget: "dxButton",
-                options: {
-                    elementAttr: {
-                        id: "@btnCreateOrDetail"
-                    },
-                    text: "@_loc.GetLocalizedString("Create 1")",
-                    onClick: function () {
-                        debugger;
-                        var gridUserMgt = GetGridIntance("#@gridUserMgt").getSelectedRowsData();
-                        var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
 
-                        if (gridStore.length < 1) {
-                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0001))', '@(_loc.GetLocalizedString("Message"))');
-                            return;
-                        }
-                        if (gridUserMgt.length == 0) {
-                            ShowUserStoreMgtDetail(null, null);
-
-                        }
-                        else if (gridUserMgt.length > 0) {
-                            ShowUserStoreMgtDetail(gridUserMgt[0].storeNo, gridUserMgt[0].userId);
-
-                        }
-                    },
-                    icon: "fa fa-plus"
-                },
-                location: "after"
-            }
-        )
-
-    }
-
-    function RequestStoreMaster(obj, storeNo) {
-        $.ajax({
-            url: '@Url.Action("RequestStoreMaster", "StoreMgt")',
-            type: "GET",
-            data: {
-                storeMaster: JSON.stringify(obj),
-                storeNo: storeNo
-            },
-            dataType: 'json',
-            async: false,
-            success: function (result) {
-                debugger;
-                if (result.Success) {
-                    setTimeout(function () {
-                        DevExpress.ui.notify(
-                            {
-                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices successfully!")',
-                                position: {
-                                    my: 'bottom right',
-                                    at: 'bottom right'
-                                },
-                                width: '30%'
-                            },
-                            'success',
-                            6000
-                        );
-                    }, 5000);
-                }
-                else {
-                    setTimeout(function () {
-                        DevExpress.ui.notify(
-                            {
-                                message: '@_loc.GetLocalizedString("Send information synchronous to Kiosk devices fairly!")',
-                                position: {
-                                    my: 'bottom right',
-                                    at: 'bottom right'
-                                },
-                                width: '30%'
-                            },
-                            'error',
-                            6000
-                        );
-                    }, 5000);
-                }
-                LoadingPage(0);
-            },
-            error: function () {
-                LoadingPage(0);
-            }
-        });
-    }
-
-
-    function CreateStoreMaster() {
-        SetDataElement("#@storeName", "");
-        SetDataElement("#@location", "");
-        SetDataElement("#@zipCode", "");
-        SetDataElement("#@address1", "");
-        SetDataElement("#@address2", "");
-        SetDataElement("#@bizNumber", "");
-        SetDataElement("#@bizPhoneNumber", "");
-        SetDataElement("#@openDate", "");
-        SetDataElement("#@memo", "");
-        SetDataElement("#@registDate", "");
-        SetDataElement("#@monitoringStartime", "");
-        SetDataElement("#@monitoringEndtime", "");
-        GetGridIntance("#@gridUserMgt").option("dataSource", null);
-        GetGridIntance("#@gridParking").selectRows();
-
-        $('#btnSave_@(ViewBag.Thread)').prop('disabled', false);
-    }
-
-    function SaveStoreMaster() {
-        if (ValidationInputStoreMaster()) {
-            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
-            yes_or_no.done(function (dialogResult) {
-                if (dialogResult) {
-                    debugger;
-                    var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
-                    var storeNo = gridStore.length == 0 ? null : gridStore[0].storeNo;
-                    var url = '@Url.Action("SaveStoreMaster", "StoreMgt")';
-                    var obj = {
-                        storeName: GetDataElement("#@storeName"),
-                        storeNo: storeNo,
-                        location: GetDataElement("#@location"),
-                        zipCode: GetDataElement("#@zipCode"),
-                        address1: GetDataElement("#@address1"),
-                        address2: GetDataElement("#@address2"),
-                        bizNumber: GetDataElement("#@bizNumber"),
-                        bizPhoneNumber: GetDataElement("#@bizPhoneNumber"),
-                        openDate: ParsingDateyyyyMMdd($("#@openDate").dxDateBox('instance').option("value")),
-                        memo: GetDataElement("#@memo"),
-                        monitoringStartime: getDateTime("#@monitoringStartime"),
-                        monitoringEndtime: getDateTime("#@monitoringEndtime"),
-                    }
-
-                    $.ajax({
-                        url: url,
-                        type: "POST",
-                        data: obj,
-                        dataType: 'json',
-                        async: false,
-                        success: function (result) {
-                            debugger;
-                            if (result.Success) {
-
-                                DevExpress.ui.notify(
-                                    {
-                                        message: '@_loc.GetLocalizedString("Save store successfully! Sending information to syschonous on Kiosk Devices. Please wait a second")',
-                                        position: {
-                                            my: 'bottom right',
-                                            at: 'bottom right'
-                                        },
-                                        width: '30%'
-                                    },
-                                    'info',
-                                    5000
-                                );
-
-                                //RequestStoreMaster(obj, result.Data);
-
-                            }
-                            else {
-                                DevExpress.ui.dialog.alert(result.Message, "Error");
-                            }
-                            LoadingPage(0);
-                        },
-                        error: function () {
-                            LoadingPage(0);
-                        }
-                    });
-
-                    //CRUDData(url, obj, METHOD.POST);
-
-                    setTimeout(function () {
-                        LoadStoreMaster(null, "#@gridParking");
-                    }, 1000);
-
-
-                }
-            })
-        }
-    }
 
     // End Region: Create - Update - Delete
 
@@ -445,7 +340,7 @@
                             return;
                         }*@
 
-                        OpenCreateOrDetailDevice(null);
+                        ShowVehicleDetail(null);
                     },
                     icon: "fa fa-plus"
                 },
@@ -464,75 +359,99 @@
         <div class="card" style="height:100%;width:100%;">
             <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
                 <div class="row" style="height:100%">
-                    <div class="col-md-12 mr-2">
+                    <div class="col-md-12">
                         <h5>
                             <strong>
                                 @(_loc.GetLocalizedString("Profile Information"))
                             </strong>
                         </h5>
-                        <div class="body-bottom-site">
-                            <div class="row mt-1">
-                                <div class="form-group col-md-6">
-                                    <label>@(_loc.GetLocalizedString("Name"))</label>
-                                    <div class="row mb-2">
-                                        <div class="col-md-4">
-                                            @(
-                                            Html.DevExtreme().TextBox()
-                                            .ID("231")
-                                            .Placeholder("First Name")
-                                            .MaxLength(100)
-                                            )
-                                        </div>
-                                        <div class="col-md-8">
-                                            @(
-                                            Html.DevExtreme().TextBox()
-                                            .ID("123")
-                                            .Placeholder("Last Name")
-                                            .MaxLength(100)
-                                            )
-                                        </div>
-                                    </div>
+                        <div class="body-bottom-site mr-1">
+                            <div class="row">
+                                <div class="form-group col-md-2">
+                                    <label>@(_loc.GetLocalizedString("First Name"))</label>
                                     @(
                                     Html.DevExtreme().TextBox()
-                                    .ID("641231")
-                                    .ReadOnly(true)
+                                    .ID(firstName)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Last Name"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(lastName)
+                                    .Placeholder("")
                                     .MaxLength(100)
                                     )
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label>@(_loc.GetLocalizedString("Contact"))</label>
-                                    <div class="row mb-2">
-                                        <div class="col-md-3">
-                                            @(
-                                                Html.DevExtreme().SelectBox()
-                                                .ID(zipCode)
-                                                .Placeholder(_loc.GetLocalizedString("Code"))
-                                                .MaxLength(10)
-                                                )
-                                        </div>
-                                        <div class="col-md-9">
-                                            @(
-                                                Html.DevExtreme().TextBox()
-                                                .ID(address1)
-                                                .Placeholder(_loc.GetLocalizedString("Phone Number"))
-                                                .MaxLength(10)
-                                                )
-                                        </div>
-                                    </div>
+                                    <label>@(_loc.GetLocalizedString("Full Name"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(fullName)
+                                    .ReadOnly(true)
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-2">
+                                    <label>@(_loc.GetLocalizedString("Phone Code"))</label>
+                                    @(
+                                    Html.DevExtreme().SelectBox()
+                                    .ID(phoneCode)
+                                    .Placeholder(_loc.GetLocalizedString(""))
+                                    .MaxLength(10)
+                                    )
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Phone Number"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(phoneNumber)
+                                    .Placeholder(_loc.GetLocalizedString(""))
+                                    .MaxLength(10)
+                                    )
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Email"))</label>
                                     @(
                                         Html.DevExtreme().TextBox()
-                                        .ID(address2)
-                                        .Placeholder(_loc.GetLocalizedString("Email"))
+                                        .ID(email)
+                                        .Placeholder(_loc.GetLocalizedString(""))
                                         .MaxLength(100)
                                      )
                                 </div>
                             </div>
-                            <div class="row mt-1">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Username"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ReadOnly(true)
+                                    .ID(userName)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Identification No"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ReadOnly(true)
+                                    .ID(identityNo)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="form-group col-md-3">
                                     <label>@(_loc.GetLocalizedString("User Type"))</label>
                                     @(
                                     Html.DevExtreme().TextBox()
-                                    .ID("12131223")
+                                    .ID(userType)
                                     .Placeholder("")
                                     .MaxLength(100)
                                     .ReadOnly(true)
@@ -540,18 +459,22 @@
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label>@(_loc.GetLocalizedString("Gender"))</label>
-                                    @(
-                                    Html.DevExtreme().SelectBox()
-                                    .ID("121331223")
-                                    .Placeholder("")
-                                    .MaxLength(100)
+                                    <div class="mt-2">
+
+                                    </div>
+                                    @(Html.DevExtreme().RadioGroup()
+                                    .DataSource(genderData)
+                                    .DisplayExpr("text")
+                                    .ValueExpr("id")
+                                    .ID(gender)
+                                    .Layout(Orientation.Horizontal)
                                     )
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label>@(_loc.GetLocalizedString("Birthday"))</label>
                                     @(
                                     Html.DevExtreme().DateBox()
-                                    .ID("121131223")
+                                    .ID(birthday)
                                     .ShowClearButton(true)
                                     .DisplayFormat("MM-dd-yyyy")
                                     )
@@ -560,69 +483,73 @@
                                     <label>@(_loc.GetLocalizedString("Registered Date"))</label>
                                     @(
                                     Html.DevExtreme().DateBox()
-                                    .ID("1213312231")
+                                    .ID(regisdterDate)
                                     .DisplayFormat("MM-dd-yyyy")
                                     .ReadOnly(true)
-                                    )
-                                </div>
-
-                            </div>
-                            <div class="row mt-1">
-                                <div class="form-group col-md-6">
-                                    <label>@(_loc.GetLocalizedString("Identification No"))</label>
-                                    @(
-                                    Html.DevExtreme().TextBox()
-                                    .ReadOnly(true)
-                                    .ID("564645")
-                                    .Placeholder("")
-                                    .MaxLength(100)
                                     )
                                 </div>
                             </div>
                         </div>
                     </div>
                     <hr />
-                    <div class="col-md-12 mr-2">
-                        <h5>
-                            <strong>
-                                @(_loc.GetLocalizedString("Vehicle Information"))
-                            </strong>
-                        </h5>
-                        <div class="body-bottom-site">
-                            <div class="row mt-1">
-                                @(
-                                Html.DevExtreme().DataGrid<KIO_UserHistory>()
-                                .ID("3123")
-                                .Height("30vh")
-                                .ShowBorders(true)
-                                .ShowColumnLines(true)
-                                .ShowRowLines(true)
-                                .AllowColumnResizing(true)
-                                .AllowColumnReordering(true)
-                                .RemoteOperations(true)
-                                .ColumnAutoWidth(true)
-                                .ColumnFixing(c => c.Enabled(true))
-                                .RepaintChangesOnly(true)
-                                .Selection(s => s.Mode(SelectionMode.Single))
-                                .Columns(c =>
-                                {
-                                    c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No"));
-                                    c.AddFor(x => x.loginTime).Caption(_loc.GetLocalizedString("Login Time")).Format("yyyy-MM-dd HH:mm:ss").Alignment(0);
-                                    c.AddFor(x => x.loginTime).Caption(_loc.GetLocalizedString("loginTime"));
-                                    c.AddFor(x => x.approvalType).Caption(_loc.GetLocalizedString("approvalType"));
-                                })
-
-                                .Pager(pager =>
-                                {
+                    <div class="col-md-12">
+                        <div class="body-bottom-site mr-1">
+                            <fieldset class="customFieldset">
+                                <legend class="customLegend">@_loc.GetLocalizedString("Vehicle Information")</legend>
+                                <div class="row mt-1">
+                                    @(
+                                    Html.DevExtreme().DataGrid<VehiceInfo>()
+                                    .ID(gridVehicle)
+                                    .Height("30vh")
+                                    .Width("100%")
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .RemoteOperations(true)
+                                    .ColumnAutoWidth(true)
+                                    .ColumnFixing(c => c.Enabled(true))
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Columns(c =>
+                                    {
+                                        c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No")).Alignment(0);
+                                        c.AddFor(x => x.vehiclePhoto).Width(150)
+                                            .AllowFiltering(false)
+                                            .Caption(_loc.GetLocalizedString("Vehicle Photo")).Alignment(0)
+                                            .AllowSorting(false).CellTemplate(@<text>
+                                            <div>
+                                                <img src="data:image/png;base64,<%- value %>" alt=""/>
+                                            </div>
+                                        </text>);
+                                        c.AddFor(x => x.licensePhoto).Width(150)
+                                            .AllowFiltering(false)
+                                            .Caption(_loc.GetLocalizedString("License Photo")).Alignment(0)
+                                            .AllowSorting(false).CellTemplate(@<text>
+                                            <div>
+                                                <img src="data:image/png;base64,<%- value %>" alt=""/>
+                                            </div>
+                                        </text>);
+                                        c.AddFor(x => x.plateNum).Caption(_loc.GetLocalizedString("Plate Num")).Alignment(0);
+                                        c.AddFor(x => x.typeTransport).Caption(_loc.GetLocalizedString("Vehicle Type")).Alignment(0);
+                                        c.AddFor(x => x.status).Caption(_loc.GetLocalizedString("Status")).Alignment(0);
+                                        c.AddFor(x => x.createdAt).Caption(_loc.GetLocalizedString("Create Date")).Alignment(0);
+                                        c.AddFor(x => x.updatedAt).Caption(_loc.GetLocalizedString("Update Date")).Alignment(0);
+                                        c.AddFor(x => x.typePlate).Caption(_loc.GetLocalizedString("Plate Type")).Alignment(0);
+                                    })
+                                    .Pager(pager =>
+                                    {
                                     pager.ShowInfo(true);
                                     pager.ShowNavigationButtons(true);
-                                })
-                                //.OnSelectionChanged("onItemGridSelectionChanged")
-                                //.OnRowClick("ShowAudioFileDetail")
-                                .OnToolbarPreparing("onItemGridToolbarPreparing")
-                                .Paging(paging => paging.PageSize(100))
-                                )
-                            </div>
+                                    })
+                                    //.OnSelectionChanged("onItemGridSelectionChanged")
+                                    .OnRowClick("ShowUpdateVehicle")
+                                    .OnToolbarPreparing("onItemGridToolbarPreparing")
+                                    .Paging(paging => paging.PageSize(100))
+                                    )
+                                </div>
+                            </fieldset>
                         </div>
                     </div>
                     <hr />
@@ -633,88 +560,81 @@
                             </strong>
                         </h5>
 
-                        <div class="body-bottom-site">
-                            <div class="row mt-1">
-                                <div class="col-md-3 form-group">
+                        <div class="body-bottom-site mr-1">
+                            <div class="row mt-1 ml-1">
+                                <div class="col-md-4 form-group">
                                     <label>@(_loc.GetLocalizedString("Face"))</label>
-                                    <div class="row border">
-                                        <img id="photo-card-id" style="width: 100%; height: 400px; object-fit: cover" src="https://cdn.pixabay.com/photo/2021/06/11/12/26/woman-6328478_960_720.jpg" class="rounded float-end" alt="">
+                                    <div class="row border p-4">
+                                        <img id="profile-face-photo" style="width: 100%; height: 400px; object-fit: cover" src="https://cdn.pixabay.com/photo/2021/06/11/12/26/woman-6328478_960_720.jpg" class="rounded float-end" alt="">
                                     </div>
                                     <div class="mr-2">
                                         @(Html.DevExtreme().FileUploader()
-                                        .Name("imageFacePhoto")
+                                        .Name("imageFaceTaken")
                                         .Accept("*")
                                         .Multiple(false)
-                                        .ID("FaceImage")
+                                        .ID(facePhoto)
                                         .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
                                         .UploadMode(FileUploadMode.Instantly)
-                                        .UploadUrl(Url.Action("UploadImageCard", "MemberMgt") + "?userId=")
+                                        .UploadUrl(Url.Action("UploadImageTaken", "MemberMgt") + "?userId=" + ViewBag.UserCode)
                                         .SelectButtonText("Upload")
-                                        //.OnUploaded("LoadImageCardAfterUpload")
+                                        .OnUploaded("LoadImageFaceAfterUpload")
                                         )
                                     </div>
                                 </div>
-                                <div class="col-md-3 form-group">
-                                    <label>@(_loc.GetLocalizedString("Vehicle"))</label>
-                                    <div class="row border">
-                                        <img id="photo-card-id" style="width: 100%; height: 400px; object-fit: cover" src="https://www.motorbiscuit.com/wp-content/uploads/2022/08/2023-dodge-durango-srt-hellcat-front-view.jpg" class="rounded float-end" alt="">
-                                    </div>
-                                    <div class="mr-2">
-                                        @(Html.DevExtreme().FileUploader()
-                                        .Name("imageVehiclePhoto")
-                                        .Accept("*")
-                                        .Multiple(false)
-                                        .ID("VehiclePhoto")
-                                        .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
-                                        .UploadMode(FileUploadMode.Instantly)
-                                        .UploadUrl(Url.Action("UploadImageCard", "MemberMgt") + "?userId=")
-                                        .SelectButtonText("Upload")
-                                        //.OnUploaded("LoadImageCardAfterUpload")
-                                        )
-                                    </div>
-                                </div>                             
-                                <div class="col-md-3 form-group">
+                                <div class="col-md-4 form-group">
                                     <label>@(_loc.GetLocalizedString("Card Front"))</label>
-                                    <div class="row border">
-                                        <img id="photo-card-id" style="width: 100%; height: 400px; object-fit: cover" src="https://danviet.mediacdn.vn/296231569849192448/2021/6/15/mat-truoc-the-can-cuoc-cong-dan-gan-chip2303161656-1623717264852-16237172651942016881301.jpg" class="rounded float-end" alt="">
+                                    <div class="row border p-4">
+                                        <img id="profile-card-front" style="width: 100%; height: 400px; object-fit: cover" src="https://danviet.mediacdn.vn/296231569849192448/2021/6/15/mat-truoc-the-can-cuoc-cong-dan-gan-chip2303161656-1623717264852-16237172651942016881301.jpg" class="rounded float-end" alt="">
                                     </div>
                                     <div class="mr-2">
                                         @(Html.DevExtreme().FileUploader()
-                                        .Name("imageVehiclePhoto")
+                                        .Name("imageFileCardId")
                                         .Accept("*")
                                         .Multiple(false)
-                                        .ID("FrontCardPhoto")
+                                        .ID(cardFrontPhoto)
                                         .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
                                         .UploadMode(FileUploadMode.Instantly)
-                                        .UploadUrl(Url.Action("UploadImageCard", "MemberMgt") + "?userId=")
+                                        .UploadUrl(Url.Action("UploadImageCardId", "MemberMgt") + "?type=0&userId=" + ViewBag.UserCode)
                                         .SelectButtonText("Upload")
-                                        //.OnUploaded("LoadImageCardAfterUpload")
+                                        .OnUploaded("LoadImageCardFrontAfterUpload")
                                         )
                                     </div>
                                 </div>
-                                <div class="col-md-3 form-group">
+                                <div class="col-md-4 form-group">
                                     <label>@(_loc.GetLocalizedString("Card Back"))</label>
-                                    <div class="row border">
-                                        <img id="photo-card-id" style="width: 100%; height: 400px; object-fit: cover" src="https://media.vov.vn/sites/default/files/styles/large/public/2021-10/Can%20cuoc.jpg" class="rounded float-end" alt="">
+                                    <div class="row border p-4">
+                                        <img id="profile-card-back" style="width: 100%; height: 400px; object-fit: cover" src="https://media.vov.vn/sites/default/files/styles/large/public/2021-10/Can%20cuoc.jpg" class="rounded float-end" alt="">
                                     </div>
                                     <div class="mr-2">
                                         @(Html.DevExtreme().FileUploader()
-                                        .Name("imageVehiclePhoto")
+                                        .Name("imageFileCardId")
                                         .Accept("*")
                                         .Multiple(false)
-                                        .ID("CardBackPhoto")
+                                        .ID(cardBackPhoto)
                                         .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
                                         .UploadMode(FileUploadMode.Instantly)
-                                        .UploadUrl(Url.Action("UploadImageCard", "MemberMgt") + "?userId=")
+                                        .UploadUrl(Url.Action("UploadImageCardId", "MemberMgt") + "?type=1&userId=" + ViewBag.UserCode)
                                         .SelectButtonText("Upload")
-                                        //.OnUploaded("LoadImageCardAfterUpload")
+                                        .OnUploaded("LoadImageCardBackAfterUpload")
                                         )
                                     </div>
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(cardBackPhotoPath).Visible(false)
+                                    )
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(cardFrontPhotoPath).Visible(false)
+                                    )
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(facePhotoPath).Visible(false)
+                                    )
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
             </div>
         </div>
     </div>

@@ -44,6 +44,35 @@ namespace Modules.Parking.Repositories.Repo
             }
         }
 
+        public List<VehiceInfo> GetVehiceInfo(string storeNo, string userId, string lp, string vehicleId)
+        {
+            List<VehiceInfo> listMember = new List<VehiceInfo>();
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    string[] arrParam = new string[5];
+                    arrParam[0] = "@Method";
+                    arrParam[1] = "@StoreNo";
+                    arrParam[2] = "@UserId";
+                    arrParam[3] = "@plateNum";
+                    arrParam[4] = "@VehicleId";
+                    object[] arrValue = new object[5];
+                    arrValue[0] = "GetVehicleByUser";
+                    arrValue[1] = storeNo;
+                    arrValue[2] = userId;
+                    arrValue[3] = lp;
+                    arrValue[4] = vehicleId;
+                    listMember = connection.ExecuteQuery<VehiceInfo>(SP_VEHICLE_HISTORY, arrParam, arrValue).ToList();
+                    return listMember;
+                }
+            }
+            catch
+            {
+                return listMember;
+            }
+
+        }
         public List<ParkingHistoryDetail> GetMemberManagementDetail(string storeNo, string userId, string lp)
         {
             List<ParkingHistoryDetail> listMember = new List<ParkingHistoryDetail>();
