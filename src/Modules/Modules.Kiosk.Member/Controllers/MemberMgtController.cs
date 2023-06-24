@@ -121,6 +121,7 @@ namespace Modules.Kiosk.Member.Controllers
             member.takenPhotoBase64 = member.takenPhoto == null ? "data:image/png;base64," +  Convert.ToBase64String(noAvailableImage) : "data:image/png;base64," + Convert.ToBase64String(member.takenPhoto);
             member.idCardFrontPhotoBase64 = member.idCardFrontPhoto == null ? "data:image/png;base64," + Convert.ToBase64String(noAvailableImage) : "data:image/png;base64," + Convert.ToBase64String(member.idCardFrontPhoto);
             member.idCardBackPhotoBase64 = member.idCardBackPhoto == null ? "data:image/png;base64," + Convert.ToBase64String(noAvailableImage) : "data:image/png;base64," + Convert.ToBase64String(member.idCardBackPhoto);
+
             return Json(member);
         }
         [HttpGet]
@@ -139,8 +140,6 @@ namespace Modules.Kiosk.Member.Controllers
             }
 
         }
-
-
         [HttpGet]
         public ActionResult<List<KIO_UserHistory>> GetUserHistory(string userId)
         {
@@ -148,7 +147,6 @@ namespace Modules.Kiosk.Member.Controllers
             return Json(listUserHistory);
         }
         #endregion
-
         #region Create - Update - Delete
         [HttpGet]
         public async Task<Result> RequestAddOnFaceOk(string userIds)
@@ -344,7 +342,12 @@ namespace Modules.Kiosk.Member.Controllers
         {
             return Json(_memberManagement.SaveDataMember(saveUserDto));
         }
-
+        public ActionResult<Result> SaveUserProfile(SaveUserProfile userProfile)
+        {
+            userProfile.userId = CurrentUser.UserCode;
+            var res = _memberManagement.SaveUserProfile(userProfile);
+            return Json(res);
+        }
         [HttpPost]
         public async Task<ActionResult<object>> UploadVehicle(string userId)
         {
@@ -364,11 +367,14 @@ namespace Modules.Kiosk.Member.Controllers
 
                 string baseUrl = "http://localhost:8005/api/v1/users";
                 ApiCaller.SetBaseUrl(baseUrl);
-                Result apiResponse = await ApiCaller.VerifyLicensePlateAsync(base64img);
-
+                //Result apiResponse = await ApiCaller.VerifyLicensePlateAsync(base64img);
+                Result apiResponse = new Result { Success = true };
                 if (apiResponse.Success)
                 {
-                    UploadVehicleResponse response = JsonConvert.DeserializeObject<UploadVehicleResponse>(apiResponse.Data.ToString());
+                    // UploadVehicleResponse response = JsonConvert.DeserializeObject<UploadVehicleResponse>(apiResponse.Data.ToString());
+
+                    // Fake data
+                    UploadVehicleResponse response = new UploadVehicleResponse() { license="86B343046", plateType = "2 line", transportType = "Oto" };
                     res.data = "data:image/png;base64," + base64img;
                     res.path = Path.Combine(path, myFile.FileName.Trim());
                     res.success = apiResponse.Success;
@@ -459,7 +465,6 @@ namespace Modules.Kiosk.Member.Controllers
                 return new EmptyResult();
             }
         }
-
         [HttpPost]
         public ActionResult<object> UploadImageCardId(string userId, int type)
         {

@@ -89,6 +89,7 @@
         LoadingPage(0);
     });
     function ShowCheckInHistory(e) {
+        debugger;
         LoadingPage(1);
         GetCheckInInfo(e.data.storeNo);
     }
@@ -118,7 +119,11 @@
         LoadGridData(url, obj, "#@gridCheckIn", METHOD.GET);
     }
 
-
+    function SearchByMinutesChanged(e) {
+        LoadingPage(1);
+        GetCheckInInfo(null);
+        LoadingPage(0);
+    }
 
     // End Region: Get Data
     function OnTrackChangeEvent(status, no) {

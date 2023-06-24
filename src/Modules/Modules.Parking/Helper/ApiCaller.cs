@@ -45,7 +45,7 @@ namespace Modules.Parking.Helper
         public static async Task<Result> VerifyLicensePlateAsync(string licensePlateImage)
         {
             var result = new Result();
-            string apiEndpoint = "/verifylicenseplates";
+            string apiEndpoint = "/detectVehicle";
             string apiUrl = baseUrl + apiEndpoint;
 
             try

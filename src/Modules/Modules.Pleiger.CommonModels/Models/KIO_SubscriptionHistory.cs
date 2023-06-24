@@ -35,5 +35,6 @@ namespace Modules.Pleiger.CommonModels.Models
         public string lastName { get; set; }
         public string email { get; set; }
         public string identityNo { get; set; }
+        public string phoneCode { get; set; }
     }
 }

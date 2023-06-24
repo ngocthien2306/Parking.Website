@@ -16,8 +16,9 @@
     string gridUserHistory = "gridUserHistory" + ViewBag.Thread;
     string uploadImageCardId = "uploadImageCardId";
     string uploadImageTaken = "uploadImageTaken";
-    string imgTakenPath = "imgTakenPath" + ViewBag.Thread;
-    string imgCardPath = "imgCardPath" + ViewBag.Thread;
+    string imgVehiclePath = "imgVehiclePath" + ViewBag.Thread;
+    string imgLicensePath = "imgLicensePath" + ViewBag.Thread;
+
     var genderData = new[] {
         new { id = true, text = _loc.GetLocalizedString("Men") },
         new { id = false, text = _loc.GetLocalizedString("Women") },
@@ -39,7 +40,7 @@
     // Region: Btn event
     $('#btnSave_@(ViewBag.Thread)').on('click', function () {
         LoadingPage(1);
-        SaveDataMember();
+        SaveDataVehicle();
         LoadingPage(0);
     });
     $('#btnDelete_@(ViewBag.Thread)').on('click', function () {
@@ -105,7 +106,7 @@
         SetDataElement("#@plateNum", res.plateNum);
         SetDataElement("#@transportType", res.transportType);
         SetDataElement("#@plateType", res.plateType);
-        SetDataElement("#@imgTakenPath", res.path);
+        SetDataElement("#@imgVehiclePath", res.path);
     }
 
     function LoadImageLicenseAfterUpload(e) {
@@ -114,15 +115,16 @@
         var img = document.getElementById("photo-license");
         var res = JSON.parse(e.request.response)
         img.src = res.data;
-        SetDataElement("#@imgCardPath", res.path);
+        SetDataElement("#@imgLicensePath", res.path);
     }
 
     // End Region: Btn event
 
     // Region: Get data
     function SetImage() {
+        debugger;
          $.ajax({
-            url: '@Url.Action("GetImageVehicle", "VehiceInfo")',
+            url: '@Url.Action("GetImageVehicle", "VehicleInfo")',
             type: METHOD.GET,
             data: {
                 storeNo: "",
@@ -151,25 +153,24 @@
     // End Region: Get data
 
     // Region: Create - Update - Delete
-    function SaveDataMember() {
-        if (ValidationInputMember()) {
+    function SaveDataVehicle() {
+        if (ValidationInputVehicle()) {
             var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
             yes_or_no.done(function (dialogResult) {
                 if (dialogResult) {
                     debugger;
-                    var url = '@Url.Action("SaveDataMember", "MemberMgt")';
+                    var url = '@Url.Action("SaveVehicle", "VehicleInfo")';
                     var obj = {
-                        userId: "@Model.userId",
-                        userName: GetDataElement("#@userName"),
-                        gender: GetDataElement("#@gender"),
-                        phone: GetDataElement("#@phoneNumber"),
-                        birthday: GetDataElement("#@birthday"),
-                        imgTakenPath: GetDataElement("#@imgTakenPath"),
-                        imgCardPath: GetDataElement("#@imgCardPath"),
+                        plateNum: GetDataElement("#@plateNum"),
+                        typeTransport: GetDataElement("#@transportType"),
+                        typePlate: GetDataElement("#@plateType"),
+                        id: "@Model.id",
+                        licensePhotoPath: GetDataElement("#@imgLicensePath"),
+                        vehiclePhotoPath: GetDataElement("#@imgVehiclePath"),
                     }
                     CRUDData(url, obj, METHOD.POST);
                     setTimeout(function () {
-                        LoadMemberManagement(storeNoMemberScreen, null);
+                        GetListVehicle();
                     }, 500);
 
                 }
@@ -180,7 +181,7 @@
 
     //Region: Validation Data
     function ValidationInputVehicle() {
-        let plateNum = GetDataElement("#@plateNum");
+        @*let plateNum = GetDataElement("#@plateNum");
         if (plateNum == null || plateNum == "" || typeof plateNum === undefined) {
             DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please upload your vehicle")", "Error")
             ValidateElement("#@plateNum")
@@ -188,7 +189,7 @@
         }
         else {
             RemoveColorElement("#@plateNum")
-        }
+        }*@
         return true;
     }
     //End Region Validation Data
@@ -253,12 +254,14 @@
                                     )
                             </div>
                         </div>
+
                     </div>
                     <div class="row mt-1">
                         <div class="form-group col-md-6">
                             <label>@(_loc.GetLocalizedString("Plate Number"))<span class="required-input"> *</span></label>
                             @(Html.DevExtreme().TextBox()
                                 .ID(plateNum)
+                                .Value(Model.plateNum)
                                 .MaxLength(20)
                                 .ReadOnly(true)
                                 )
@@ -267,6 +270,7 @@
                             <label>@(_loc.GetLocalizedString("Transport Type"))</label>
                             @(Html.DevExtreme().TextBox()
                                 .ID(transportType)
+                                .Value(Model.typeTransport)
                                 .ReadOnly(true)
 
                                 )
@@ -276,6 +280,7 @@
                         <div class="form-group col-md-6">
                             <label>@(_loc.GetLocalizedString("Type Plate"))</label>
                             @(Html.DevExtreme().TextBox()
+                                .Value(Model.typePlate)
                                 .ID(plateType)
                                 .ReadOnly(true)
 
@@ -283,10 +288,10 @@
                         </div>
                        
                         @(Html.DevExtreme().TextBox()
-                            .ID(imgTakenPath).Visible(false)
+                            .ID(imgVehiclePath).Visible(false)
                             )
                         @(Html.DevExtreme().TextBox()
-                            .ID(imgCardPath).Visible(false)
+                            .ID(imgLicensePath).Visible(false)
                             )
                     </div>
                 </div>             

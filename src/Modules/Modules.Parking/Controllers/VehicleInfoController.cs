@@ -75,8 +75,9 @@ namespace Modules.Parking.Controllers
             var vehiceInfo = new VehiceInfo();
             if (vehicleId != null)
             {
-                vehiceInfo = _vehicleHistoryRepository.GetVehiceInfo(storeNo, CurrentUser.UserID, lp, vehicleId).FirstOrDefault();
+                vehiceInfo = _vehicleHistoryRepository.GetVehiceInfo(storeNo, CurrentUser.UserCode, lp, vehicleId).FirstOrDefault();
             }
+            vehiceInfo.userId = CurrentUser.UserCode;
             return PartialView("ShowVehicleDetail", vehiceInfo);
 
         }
@@ -86,7 +87,7 @@ namespace Modules.Parking.Controllers
         [HttpGet]
         public ActionResult<object> GetImageVehicle(string userId, string vehicleId)
         {
-            var vehiceInfo = _vehicleHistoryRepository.GetVehiceInfo(null, CurrentUser.UserID, null, vehicleId).FirstOrDefault();
+            var vehiceInfo = _vehicleHistoryRepository.GetVehiceInfo(null, CurrentUser.UserCode, null, vehicleId).FirstOrDefault();
 
             try
             {
@@ -106,6 +107,7 @@ namespace Modules.Parking.Controllers
             }
 
         }
+
         [HttpGet]
         public ActionResult<List<VehiceInfo>> GetListVehicleInfo([FromRoute] string storeNo, string userId, string plateNum)
         {
@@ -119,6 +121,13 @@ namespace Modules.Parking.Controllers
         #endregion
 
         #region Create - Update -  Delete
+        [HttpPost]
+        public ActionResult<Result> SaveVehicle(VehiceInfo vehice)
+        {
+            vehice.userId = CurrentUser.UserCode;
+            var res = _vehicleHistoryRepository.SaveVehicle(vehice);
+            return Json(res);
+        }
         [HttpPost]
         public ActionResult<Result> SaveParkingSite([FromBody] ParkingMaster parkingMaster)
         {

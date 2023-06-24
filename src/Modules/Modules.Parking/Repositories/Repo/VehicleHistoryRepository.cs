@@ -1,10 +1,12 @@
 ﻿using InfrastructureCore;
 using InfrastructureCore.DAL;
+using Modules.Common.Models;
 using Modules.Parking.Repositories.IRepo;
 using Modules.Pleiger.CommonModels.Models;
 using Modules.Pleiger.CommonModels.Parking;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 
@@ -100,6 +102,100 @@ namespace Modules.Parking.Repositories.Repo
             }
             
         }
+        public Result SaveVehicle(VehiceInfo vehice)
+        {
+            byte[] imgVehicle;
+            byte[] imgLicense;
+            try
+            {
+                imgVehicle = vehice.vehiclePhotoPath == null ? null : System.IO.File.ReadAllBytes(vehice.vehiclePhotoPath);
+                imgLicense = vehice.licensePhotoPath == null ? null : System.IO.File.ReadAllBytes(vehice.licensePhotoPath);
+            }
+            catch
+            {
+                imgVehicle = null;
+                imgLicense = null;
+            }
+            var status = (imgVehicle != null && imgLicense != null) ? 3 : imgLicense != null ? 1 : imgVehicle != null ? 2 : 0;
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            var resultSave = "false";
+                            string[] arrParam = new string[11];
+                            arrParam[0] = "@Method";
+                            arrParam[1] = "@UserId";
+                            arrParam[2] = "@plateNum";
+                            arrParam[3] = "@typeTransport";
+                            arrParam[4] = "@typePlate";
+                            arrParam[5] = "@vehicleId";
+                            arrParam[6] = "@vehiclePhoto";
+                            arrParam[7] = "@licensePhoto";
+                            arrParam[8] = "@vehiclePhotoPath";
+                            arrParam[9] = "@licensePhotoPath";
+                            arrParam[10] = "@Status";
+                            object[] arrValue = new object[11];
+                            arrValue[0] = "SaveVehicle";
+                            arrValue[1] = vehice.userId;
+                            arrValue[2] = vehice.plateNum;
+                            arrValue[3] = vehice.typeTransport;
+                            arrValue[4] = vehice.typePlate;
+                            arrValue[5] = vehice.id;
+                            arrValue[6] = imgVehicle;
+                            arrValue[7] = imgLicense;
+                            arrValue[8] = vehice.vehiclePhotoPath;
+                            arrValue[9] = vehice.licensePhotoPath;
+                            arrValue[10] = status;
+                            resultSave = connection.ExecuteScalar<string>(SP_VEHICLE_HISTORY, CommandType.StoredProcedure, arrParam, arrValue, transaction);
+                            transaction.Commit();
+                            if (resultSave != "false")
+                            {
+                                try
+                                {
+                                    if (vehice.vehiclePhotoPath != null)
+                                    {
+                                        System.IO.File.Delete(vehice.vehiclePhotoPath);
+
+                                    }
+                                    if (vehice.licensePhotoPath != null)
+                                    {
+                                        System.IO.File.Delete(vehice.licensePhotoPath);
+                                    }
+                                }
+                                catch
+                                {
+
+                                }
+                                return new Result { Success = true, Message = MessageCode.MD0004 };
+                            }
+                            else
+                            {
+                                transaction.Rollback();
+                                return new Result { Success = false, Message = MessageCode.MD0005 };
+                            }
+                        }
+                        catch(Exception e)
+                        {
+                            transaction.Rollback();
+                            return new Result { Success = false, Message = MessageCode.MD0005 };
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return new Result { Success = false, Message = MessageCode.MD0005 };
+            }
+        }
+
+        public Result DeleteVehicle(string vehicleId, string userId)
+        {
+            throw new NotImplementedException();
+        }
 
         public List<KIO_UserHistory> GetUserHistory(string userId)
         {
@@ -114,5 +210,6 @@ namespace Modules.Parking.Repositories.Repo
         {
             throw new NotImplementedException();
         }
+
     }
 }
