@@ -156,10 +156,10 @@
 
     // Region: Create - Update - Delete
 
-    function RequestAdvertistment(adNo, adType, adName, adTemp) {
+    function SendAsynchronous(adNo, adType, adName, adTemp) {
         debugger;
         $.ajax({
-            url: '@Url.Action("RequestAdvertistment", "AdMgt")',
+            url: '@Url.Action("SendAsynchronous", "AdMgt")',
             type: "GET",
             data: {
                 adNo: adNo,
@@ -234,7 +234,6 @@
             var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
             yes_or_no.done(function (dialogResult) {
                 if (dialogResult) {
-                    debugger;
                     var listStoreMaster = GetGridIntance("#@gridStore").getSelectedRowsData();
                     var listStoreNo = []
                     listStoreMaster.forEach(store => {
@@ -294,7 +293,10 @@
                                     'info',
                                     5000
                                 );
-                                RequestAdvertistment(result.Data, adType, adName, adNo);
+                                setTimeout(() => {
+                                    SendAsynchronous(result.Data, adType, adName, adNo);
+                                }, 300);
+
                                 $('#modalControl').modal('hide');
                             }
                             else {

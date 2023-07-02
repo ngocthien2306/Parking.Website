@@ -177,7 +177,7 @@ namespace Modules.Kiosk.Management.Controllers
 
         }
         [HttpGet]
-        public async Task<Result> RequestAdvertistment(int adNo, string adType, string adName, int adTemp)
+        public async Task<Result> SendAsynchronous(int adNo, string adType, string adName, int adTemp)
         {
 
             try
@@ -218,7 +218,7 @@ namespace Modules.Kiosk.Management.Controllers
                 };
                 try
                 {
-                    httpResponse = await client.PostAsJsonAsync("http://api.owlgardien.com:81/Kiosk/KioskService/GetData", adData);
+                    httpResponse = await client.PostAsJsonAsync("http://localhost:5001/Kiosk/KioskService/GetData", adData);
                     var data = JsonConvert.SerializeObject(adData);
                     //response.EnsureSuccessStatusCode();
                     return new Result { Data = "", Message = MessageCode.MD0008, Success = true };
