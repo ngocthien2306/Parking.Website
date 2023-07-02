@@ -83,5 +83,28 @@ namespace Modules.Kiosk.Settings.Controllers.Api
             }
             return results;
         }
+        [System.Web.Http.HttpGet]
+        public ResultAudioDto GetSourceAudioFile(string soundNo)
+        {
+            ResultAudioDto results = new ResultAudioDto();
+            try
+            {
+                var audio = _voiceFileService.GetListAudioFile(soundNo, null).SingleOrDefault();
+                if (audio == null)
+                {
+                    results = (new ResultAudioDto { Success = false, Message = "Not found audio with soundNo " + soundNo, Data = null, SoundName = "", SoundNo = soundNo });
+                }
+                else
+                {
+                    results = (new ResultAudioDto { Success = true, Message = "Download audio successfull", Data = System.IO.File.ReadAllBytes(audio.localFileLocation), SoundName = audio.soundName, SoundNo = audio.soundNo.ToString() });
+                }
+                return results;
+            }
+            catch (Exception e)
+            {
+                results = (new ResultAudioDto { Success = false, Message = e.Message, Data = null });
+            }
+            return results;
+        }
     }
 }
