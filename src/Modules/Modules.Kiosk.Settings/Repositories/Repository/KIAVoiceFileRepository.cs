@@ -40,7 +40,7 @@ namespace Modules.Kiosk.Management.Repositories.Repository
                     return soundMgts;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 return null;
             }

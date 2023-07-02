@@ -22,7 +22,7 @@ namespace Modules.Pleiger.CommonModels.Models
         public DateTime? lastModified { get; set; }
         public string soundType { get; set; }
         public string typeName { get; set; }
-        public string Version { get; set; }
+        public int Version { get; set; }
     }
     public class ResultAudioDto
     {

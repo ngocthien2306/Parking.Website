@@ -46,7 +46,11 @@ namespace Modules.Kiosk.Settings.Controllers.Api
         {
             return Ok();
         }
-
+        [System.Web.Http.HttpPost]
+        public List<KIO_ClientSoundMgt> GetListAudioFile(string audioId, string audioName)
+        {
+            return _voiceFileService.GetListAudioFile(audioId, audioName);
+        }
         [System.Web.Http.HttpGet]
         public List<ResultAudioDto> GetSourceAudio(string strNo) 
         {
