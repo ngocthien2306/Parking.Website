@@ -604,18 +604,18 @@
     connection.on("ReceivedCheckIns", function (checkins) {
         debugger;
         var store = $("#gridStoreCheckInPage").dxDataGrid('instance').getSelectedRowsData();
-        var startTime = formatDate("#startDateCheckIn");
-        var endTime = formatDate("#endDateCheckIn");
-        var storeNo = store.length > 0 ? store[0].storeNo : null;
+        //var startTime = formatDate("#startDateCheckIn");
+        //var endTime = formatDate("#endDateCheckIn");
+        //var storeNo = store.length > 0 ? store[0].storeNo : null;
 
-        var min = GetDataElement("#optionSearchByMin");
+        //var min = GetDataElement("#optionSearchByMin");
 
-        if (storeNo !== null && min !== 61) {
-            checkins = checkins.filter(d => d.storeNo == storeNo);
-        }
-        var time = ConvertDatetime(min);
-        var timeNow = ConvertDatetime(0);
-        checkins = checkins.filter(d => d.useDate > time && d.useDate < timeNow);
+        //if (storeNo !== null && min !== 61) {
+        //    checkins = checkins.filter(d => d.storeNo == storeNo);
+        //}
+        //var time = ConvertDatetime(min);
+        //var timeNow = ConvertDatetime(0);
+        //checkins = checkins.filter(d => d.useDate > time && d.useDate < timeNow);
 
 
         GetGridIntance("#gridCheckInUserRealTime").option("dataSource", checkins)
