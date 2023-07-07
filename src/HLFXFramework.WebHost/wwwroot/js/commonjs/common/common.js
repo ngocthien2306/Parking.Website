@@ -179,8 +179,8 @@ function getLanguages() {
     if (cookie["langname"] !== undefined) {
         lang = '/' + cookie["langname"];
     }
-    if (cookie["langname"] !== undefined && cookie["langname"] == "ko") {
-        $('#btnlanguage').html("KR")
+    if (cookie["langname"] !== undefined && cookie["langname"] == "vn") {
+        $('#btnlanguage').html("VN")
     }
     if (cookie["langname"] !== undefined && cookie["langname"] == "en") {
         $('#btnlanguage').html("EN")

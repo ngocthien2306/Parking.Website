@@ -80,28 +80,48 @@
     </div>
     <form id="frm-SaleSetting2">
         <div class="modal-body">
-            <div class="row" style="height:60vh">
+            <div class="row">
                 <div class="col-md-7">
                     <div class="row pb-2 ml-2 mr-2">
                         <div class="col-md-5">
                             <div class="row mb-1">
-                                <span class="mt-2">@_loc.GetLocalizedString("Plate Input")</span>
+                                <span class="mt-2">@_loc.GetLocalizedString("Plate Check-in")</span>
                             </div>
                             <div class="row border">
-                                <img id="photo-taken" style="width: 100%; height: 300px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
+                                <img id="photo-taken" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-1">
                         </div>
                         <div class="col-md-5">
                             <div class="row mb-1">
-                                <span class="mt-2">@_loc.GetLocalizedString("Face Photo")</span>
+                                <span class="mt-2">@_loc.GetLocalizedString("Face Check-in")</span>
                             </div>
                             <div class="row border">
-                                <img id="photo-card-id" style="width: 100%; height: 300px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.detectInFace" 
+                                <img id="photo-card-id" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.detectInFace"
                                      class="rounded float-end" alt="...">
                             </div>
-                           
+
+                        </div>
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("Plate Check-out")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-taken" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                        </div>
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("Face Check-out")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-card-id" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.detectInFace"
+                                     class="rounded float-end" alt="...">
+                            </div>
+
                         </div>
                     </div>
                     <div class="row mt-1">
@@ -156,7 +176,7 @@
                         Html.DevExtreme().DataGrid<ParkingHistoryDetail>
                             ()
                             .ID(gridUserHistory)
-                            .Height("52vh")
+                            .Height("60vh")
                             .ShowBorders(true)
                             .ShowColumnLines(true)
 
