@@ -26,30 +26,20 @@
         new {id = 60, name = _loc.GetLocalizedString("Last 60 minutes")}
     };
 
-    string startDateCheckIn = "startDateCheckIn";
-    string endDateCheckIn = "endDateCheckIn";
-    string gridStore = "gridStoreCheckInPage";
-    string gridCheckIn = "gridCheckInUserRealTime";
-    string optionSearchByMin = "optionSearchByMin";
+    string startDateCheckIn = "startDateCheckIn" + ViewBag.Thread;
+    string endDateCheckIn = "endDateCheckIn" + ViewBag.Thread;
+    string gridStore = "gridStoreCheckInPage" + ViewBag.Thread;
+    string gridCheckIn = "gridCheckInUserRealTime" + ViewBag.Thread;
+    string optionSearchByMin = "optionSearchByMin" + ViewBag.Thread;
 }
 
 
 <script>
     $(document).ready(function () {
         LoadingPage(1);
-        //$('# .dx-datagrid-headers').hide();
         GetStoreMastersByUser("#@gridStore");
         //LoadStoreMaster("@ViewBag.StoreNo", null, null, "#@gridStore");
-        //$("#gridStoreCheckInPage").dxDataGrid({
-        //    // ...
-        //    focusedRowEnabled: true,
-        //    focusedRowIndex: 0
-        //});
-        //$("#gridCheckInUserRealTime").dxDataGrid({
-        //    // ...
-        //    focusedRowEnabled: true,
-        //    focusedRowIndex: 0
-        //});
+        $('#btnSearch_@(ViewBag.Thread)').trigger("click");
         LoadingPage(0);
     })
 
@@ -60,7 +50,7 @@
     function GridCheckInInstance() {
         return $("#@gridCheckIn").dxDataGrid("instance");
     }
-   
+
     // Region: btn click event
 
     $("#btnReload_@ViewBag.Thread").on("click", function () {
@@ -149,9 +139,9 @@
         yes_or_no.done(function (dialogResult) {
             if (dialogResult) {
                 debugger;
-         
+
                 var checkins = GridCheckInInstance().getSelectedRowsData()[0];
-                var url = '@Url.Action("UpdateApproveRejectUser", "CheckInHistory")';
+                var url = '@Url.Action("UpdateApproveRejectUser", "UserCheckin")';
                 var obj = {
                     userId: checkins.userId,
                     status: e.value
@@ -211,7 +201,7 @@
                         GetCheckInInfo(stores[0].storeNo);
                         return;
                     }
-               
+
                 }, 1000);
             }
             else {
@@ -246,7 +236,7 @@
             byMin: GetDataElement("#@optionSearchByMin")
         }
 
-        var url = '@Url.Action("GetCheckInInfo", "CheckInHistory")';
+        var url = '@Url.Action("GetCheckInInfo", "UserCheckin")';
 
         LoadGridData(url, obj, "#@gridCheckIn", METHOD.GET);
         // $.ajax({
@@ -281,10 +271,10 @@
         //    }
         //});
 
-       
+
 
     }
- 
+
     // End Region: Get Data
 
 
@@ -300,19 +290,22 @@
             <div id="headerpage_@(ViewBag.Thread)" class="card-header">
                 <label>@(_loc.GetLocalizedString("Inquiry Period"))</label>
                 <div class="row mt-1">
-                    <div class="form-group col-md-2" hidden="hidden">
+                    <div class="form-group col-md-2">
                         @(Html.DevExtreme().DateBox()
                             .ID(startDateCheckIn)
-                            .DisplayFormat("yyyy-MM-dd HH")
+                            .DisplayFormat("yyyy-MM-dd HH:mm")
+                            .Type(DateBoxType.DateTime)
                             .Value(DateTime.Today)
                             .ShowClearButton(true)
                             )
                     </div>
-                    <span class="mt-2" hidden="hidden">~</span>
-                    <div class="form-group col-md-2" hidden="hidden">
+                    <span class="mt-2">~</span>
+                    <div class="form-group col-md-2">
                         @(Html.DevExtreme().DateBox()
                             .ID(endDateCheckIn)
-                            .DisplayFormat("yyyy-MM-dd HH")
+                            .Type(DateBoxType.DateTime)
+
+                            .DisplayFormat("yyyy-MM-dd HH:mm")
                             .Value(DateTime.Now)
                             .ShowClearButton(true)
                             )
@@ -329,17 +322,17 @@
                             .Value(30)
                             )
                     </div>
-                    
+
                 </div>
             </div>
             <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
                 <div class="row" style="height:75vh">
-                    <div>                   
+                    <div class="col-md-2">
                         @(
                             Html.DevExtreme().DataGrid<KIO_StoreMaster>()
                             .ID(gridStore)
                             .Height("70vh")
-                            .Visible(false)
+          
                             .ShowBorders(true)
                             .ShowColumnLines(true)
                             .FilterRow(f => f.Visible(true))
@@ -353,7 +346,7 @@
                             .RepaintChangesOnly(true)
                             .FocusedRowIndex(0)
                             .Selection(s => s.Mode(SelectionMode.Single))
-                            
+
                             .Columns(c =>
                             {
                                 c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
@@ -372,7 +365,7 @@
                             )
                     </div>
 
-                    <div class="col-md-12"> 
+                    <div class="col-md-10">
                         @(
                             Html.DevExtreme().DataGrid<KIO_CheckInInfo>()
                             .ID(gridCheckIn)
@@ -383,7 +376,7 @@
                             //.RepaintChangesOnly(true)
                             .HighlightChanges(true)
                             .Height("70vh")
-                   
+
                             .ShowRowLines(true)
                             .HeaderFilter(f => f.Visible(true))
                             .FilterRow(f => f.Visible(true))
@@ -395,9 +388,9 @@
                             .ColumnFixing(c => c.Enabled(true))
                             .RepaintChangesOnly(true)
                             .Columns(columns =>
-                            {          
+                            {
                                 columns.AddFor(m => m.storeName).Caption(_loc.GetLocalizedString("Store Name"));
-                                columns.Add().Caption(_loc.GetLocalizedString("User Information")).CellTemplate(@<text> 
+                                columns.Add().Caption(_loc.GetLocalizedString("User Information")).CellTemplate(@<text>
 
                                     <div class="custom-site-checkin row">
                                         <div class="col-md-4">
@@ -455,7 +448,7 @@
                                             <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Gender"))</label>
                                         </div>
                                         <div class="col-md-8">
-                                          
+
                                                 @(
                                                     Html.DevExtreme()
                                                     .TextBox()
@@ -491,6 +484,7 @@
                                                 .Value(new JS("data.approveReject"))
                                                 .Layout(Orientation.Horizontal)
                                                 .OnValueChanged("UpdateApproveRejectUser")
+                                                .ReadOnly(false)
                                                 )
                                             </div>
                                     </div>
@@ -520,10 +514,10 @@
                                             </div>
                                             <div class="row border-bottom" style="justify-content:space-between">
                                                 <div></div>
-                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageTaken", "CheckInHistory")?userId=<%- value %>" /></div>
+                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageTaken", "UserCheckin")?userId=<%- value %>" /></div>
                                                 <div></div>
                                             </div>
-                                            
+
                                         </div>
                                     </text>).Width("25%");
                                 columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString(""))
@@ -538,7 +532,7 @@
                                             </div>
                                             <div class="row border-bottom" style="justify-content:space-between">
                                                 <div></div>
-                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageCardId", "CheckInHistory")?userId=<%- value %>" /></div>
+                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageCardId", "UserCheckin")?userId=<%- value %>" /></div>
                                                 <div></div>
                                             </div>
                                         </div>

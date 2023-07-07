@@ -73,7 +73,7 @@ namespace Modules.Parking.Controllers
         [HttpGet]
         public ActionResult<List<KIO_CheckInInfo>> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin)
         {
-            var checkins = _kIOCheckIn.GetCheckInInfo(storeNo, null, null, byMin);
+            var checkins = _kIOCheckIn.GetCheckInInfo(storeNo, startDate, endDate, byMin, CurrentUser.UserCode);
             return Json(checkins);
         }
         public IActionResult GetImageTaken(string userId)
