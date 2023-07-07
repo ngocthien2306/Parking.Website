@@ -25,6 +25,16 @@ namespace Modules.Pleiger.CommonModels.Models
         public string userStatus { get; set; }
         public Byte[]? takenPhoto { get; set; }
         public Byte[]? idCardPhoto { get; set; }
-
+        public Byte[]? idCardBackPhoto { get; set; }
+        public Byte[]? idCardFrontPhoto { get; set; }
+        public string? takenPhotoBase64 { get; set; }
+        public string? idCardPhotoBase64 { get; set; }
+        public string? idCardBackPhotoBase64 { get; set; }
+        public string? idCardFrontPhotoBase64 { get; set; }
+        public string firstName { get; set; }
+        public string lastName { get; set; }
+        public string email { get; set; }
+        public string identityNo { get; set; }
+        public string phoneCode { get; set; }
     }
 }

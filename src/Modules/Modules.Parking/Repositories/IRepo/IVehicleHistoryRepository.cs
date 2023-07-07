@@ -12,9 +12,10 @@ namespace Modules.Parking.Repositories.IRepo
     {
         List<ParkingVehicleHistory> GetMemberManagement(string storeNo, string userId, int lessMonth, int onceRecently);
         List<ParkingHistoryDetail> GetMemberManagementDetail(string storeNo, string userId, string lp);
-
+        List<VehiceInfo> GetVehiceInfo(string storeNo, string userId, string lp, string vehicleId);
         List<KIO_UserHistory> GetUserHistory(string userId);
-
+        Result SaveVehicle(VehiceInfo vehice);
+        Result DeleteVehicle(string vehicleId, string userId);
         Result SaveDataMember(SaveUserDto saveUserDto);
         Result DeleteDataMember(string storeNo, string userId);
     }

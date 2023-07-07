@@ -33,7 +33,7 @@ namespace Modular.WebHost
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{culture=ko}/{controller=MESHome}/{action=Index}/{id?}");
+                    pattern: "{culture=en}/{controller=MESHome}/{action=Index}/{id?}");
                 endpoints.MapHub<CheckInHub>("/checkinHub");
                 endpoints.MapHub<TrackHub>("/trackHub");
                 
@@ -53,9 +53,7 @@ namespace Modular.WebHost
             var cultures = new[]
            {
                 new CultureInfo("en"),
-                new CultureInfo("ja"),
                 new CultureInfo("vi"),
-                new CultureInfo("ko")
             };
             services.AddSignalR();
             services.AddScoped<IRazorViewRenderer, RazorViewRenderer>();

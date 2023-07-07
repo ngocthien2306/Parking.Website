@@ -201,7 +201,7 @@
         LoadGridData(url, obj, "#@gridMember", METHOD.POST);
     }
     // Show popup member detail
-    function GetMemberRemove(e) {
+    function GetVehicleDetail(e) {
         LoadingPage(1);
         CheckSession();
         debugger;
@@ -364,7 +364,7 @@
                                 pager.ShowNavigationButtons(true);
                             })
                             //.OnSelectionChanged("onItemGridSelectionChanged")
-                            .OnRowDblClick("GetMemberRemove")
+                            .OnRowDblClick("GetVehicleDetail")
                             //.OnToolbarPreparing("onItemGridToolbarPreparing")
                             //.Paging(paging => paging.PageSize(100))
                             )

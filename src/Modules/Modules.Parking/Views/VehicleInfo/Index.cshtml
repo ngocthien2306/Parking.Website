@@ -1,0 +1,695 @@
+﻿@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Parking;
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SAVE_YN = ViewBag.SAVE_YN;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+    // grid info
+    string gridParking = "gridParking" + ViewBag.Thread;
+    string gridUserMgt = "gridUserMgt" + ViewBag.Thread;
+
+    // info store
+    string storeName = "storeName" + ViewBag.Thread;
+    string zipCode = "zipCode" + ViewBag.Thread;
+    string address1 = "address1" + ViewBag.Thread;
+    string address2 = "address2" + ViewBag.Thread;
+    string location = "location" + ViewBag.Thread;
+    string bizNumber = "bizNumber" + ViewBag.Thread;
+    string bizPhoneNumber = "bizPhoneNumber" + ViewBag.Thread;
+    string openDate = "openDate" + ViewBag.Thread;
+    string memo = "memo" + ViewBag.Thread;
+    string registDate = "registDate" + ViewBag.Thread;
+
+    string monitoringStartime = "monitoringStartime" + ViewBag.Thread;
+    string monitoringEndtime = "monitoringEndtime" + ViewBag.Thread;
+
+    // btn
+    string btnCreateOrDetail = "btnCreateOrDetail" + ViewBag.Thread;
+
+    var genderData = new[] {
+        new { id = true, text = _loc.GetLocalizedString("Man") },
+        new { id = false, text = _loc.GetLocalizedString("Women") },
+    };
+
+    string userName = "userName" + ViewBag.Thread;
+    string firstName = "firstName" + ViewBag.Thread;
+    string lastName = "lastName" + ViewBag.Thread;
+    string fullName = "fullName" + ViewBag.Thread;
+    string phoneCode = "phoneCode" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string email = "email" + ViewBag.Thread;
+    string userType = "userType" + ViewBag.Thread;
+    string gender = "gender" + ViewBag.Thread;
+    string birthday = "birthDate" + ViewBag.Thread;
+    string regisdterDate = "regisdterDate" + ViewBag.Thread;
+    string identityNo = "identityNo" + ViewBag.Thread;
+    string gridVehicle = "gridVehicle" + ViewBag.Thread;
+    string facePhoto = "facePhoto" + ViewBag.Thread;
+    string cardFrontPhoto = "cardFrontPhoto" + ViewBag.Thread;
+    string cardBackPhoto = "cardBackPhoto" + ViewBag.Thread;
+    string facePhotoPath = "facePhotoPathPath" + ViewBag.Thread;
+    string cardFrontPhotoPath = "cardFrontPhotoPath" + ViewBag.Thread;
+    string cardBackPhotoPath = "cardBackPhotoPath" + ViewBag.Thread;
+
+}
+<style type="text/css" class="cssStyles">
+</style>
+
+<script>
+
+    var storeNoMaster;
+
+    $(document).ready(function () {
+        LoadingPage(1);
+        BiddingProfile("@ViewBag.UserCode");
+        GetListVehicle();
+        LoadComboBoxLocation();
+        debugger;
+        if ("@ViewBag.SAVE_YN" === "False") {
+            $('#btnSave_@(ViewBag.Thread)').prop('disabled', true);
+        }
+        LoadingPage(0);
+    })
+
+    // Region: btn click event
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        debugger;
+        LoadingPage(1);
+        SaveUserProfile();
+        LoadingPage(0);
+    });
+    $('#btnSave2_@(ViewBag.Thread)').on('click', function () {
+        debugger;
+        LoadingPage(1);
+        SaveUserProfile();
+        LoadingPage(0);
+    });
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    $('#btnCreate_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+
+        LoadingPage(0);
+    });
+
+    function EnableCreateBtn() {
+        $("#@btnCreateOrDetail").dxButton("instance").option("disabled", false);
+
+    }
+
+
+    function LoadImageFaceAfterUpload(e) {
+        $("#@facePhoto .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("profile-face-photo");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@facePhotoPath", res.path);
+    }
+    function LoadImageCardFrontAfterUpload(e) {
+        $("#@cardFrontPhoto .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("profile-card-front");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@cardFrontPhotoPath", res.path);
+    }
+    function LoadImageCardBackAfterUpload(e) {
+        $("#@cardBackPhoto .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("profile-card-back");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@cardBackPhotoPath", res.path);
+    }
+    // End Region: btn click event
+
+    // Region: Get Data
+    function LoadComboBoxLocation() {
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("COUN00", url, '#@phoneCode', true);
+    }
+    function GetDataStoreMaster(e) {
+        LoadingPage(1);
+        storeNoMaster = e.data.storeNo;
+        // remove selected row
+        GetGridIntance("#@gridUserMgt").selectRows();
+        GetDataUserMgt(e.data.storeNo);
+        BiddingDataStoreMaster(e.data.storeNo);
+        $('#btnSave_@(ViewBag.Thread)').prop('disabled', false);
+    }
+
+    function GetDataUserMgt(storeNo) {
+        $.ajax({
+            url: '@Url.Action("GetUserStoreMgt", "StoreMgt")',
+            type: "GET",
+            data: {
+                storeNo: storeNo
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                GetGridIntance("#@gridUserMgt").option("dataSource", result);
+                if(result.length != 0) {
+                     $("#@btnCreateOrDetail").dxButton("instance").option("disabled", true);
+                     $("#@btnCreateOrDetail").dxButton("instance").option("text", "@_loc.GetLocalizedString("Detail")");
+
+                }
+                else {
+                    $("#@btnCreateOrDetail").dxButton("instance").option("disabled", false);
+                    $("#@btnCreateOrDetail").dxButton("instance").option("text", "@_loc.GetLocalizedString("Create 1")");
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function BiddingProfile(userId) {
+        $.ajax({
+            url: '@Url.Action("GetProfileUser", "MemberMgt")',
+            type: METHOD.GET,
+            data: {
+                userId: userId
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                SetDataElement("#@userName", result.userName);
+                SetDataElement("#@birthday", result.birthday);
+                SetDataElement("#@gender", result.gender);
+                SetDataElement("#@phoneNumber", result.phoneNumber);
+                SetDataElement("#@userType", result.userType);
+                SetDataElement("#@regisdterDate", result.registDate);
+                SetDataElement("#@firstName", result.firstName);
+                SetDataElement("#@email", result.email);
+                SetDataElement("#@identityNo", result.identityNo);
+                SetDataElement("#@fullName", result.lastName + " " + result.firstName);
+                SetDataElement("#@lastName", result.lastName)
+                SetDataElement("#@phoneCode", result.phoneCode)
+                document.getElementById("profile-face-photo").src = result.takenPhotoBase64;
+                document.getElementById("profile-card-front").src = result.idCardBackPhotoBase64;
+                document.getElementById("profile-card-back").src = result.idCardFrontPhotoBase64;
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    function GetListVehicle() {
+        var objs = {
+            userId: "@ViewBag.UserCode",
+            storeNo: null,
+            plateNum: null
+        }
+        var url = '@Url.Action("GetListVehicleInfo", "VehicleInfo")';
+        LoadGridData(url, objs, "#@gridVehicle", METHOD.GET);
+    }
+
+    function ShowVehicleDetail(vehicleId) {
+        var url = '@Url.Action("ShowVehicleDetail", "VehicleInfo")';
+        var obj = {
+            storeNo: null,
+            vehicleId: vehicleId,
+            lp: null,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+    function ShowUpdateVehicle(e) {
+        ShowVehicleDetail(e.data.id)
+    }
+    function ShowUserStoreMgtDetail(storeNo, userId) {
+        var url = '@Url.Action("ShowUserStoreMgtDetail", "StoreMgt")';
+        var obj = {
+            storeNo: storeNo,
+            userId: userId,
+            viewbagIndex: '@ViewBag.Thread',
+            menuParent: '@ViewBag.MenuId'
+        }
+        OpenPopup(url, obj, METHOD.GET);
+    }
+
+    function OpenStoreMgtDetail(e) {
+        var gridStore = GetGridIntance("#@gridParking").getSelectedRowsData();
+        if (gridStore.length < 1) {
+            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0001))', '@(_loc.GetLocalizedString("Message"))');
+            return;
+        }
+        ShowUserStoreMgtDetail(gridStore[0].storeNo, e.data.userId);
+    }
+    // End Region: Get Data
+
+    // Region: Create - Update - Delete
+    function SaveUserProfile() {
+        if (ValidationInputUserProfile()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var url = '@Url.Action("SaveUserProfile", "MemberMgt")';
+                    var obj = {
+                        gender: GetDataElement("#@gender"),
+                        phone: GetDataElement("#@phoneNumber"),
+                        birthday: GetDataElement("#@birthday"),
+                        firstName: GetDataElement("#@firstName"),
+                        lastName: GetDataElement("#@lastName"),
+                        phoneCode: GetDataElement("#@phoneCode"),
+                        email: GetDataElement("#@email"),
+                        idCardBackPhotoPath: GetDataElement("#@cardBackPhotoPath"),
+                        idCardFrontPhotoPath: GetDataElement("#@cardFrontPhotoPath"),
+                        idCardPhotoPath: GetDataElement("#@facePhotoPath"),
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                    @*setTimeout(function () {
+                        BiddingProfile("@ViewBag.UserCode");
+                        GetListVehicle();
+                    }, 500);*@
+
+                }
+            })
+        }
+    }
+
+    // End Region: Create - Update - Delete
+
+    // Region: Validation data
+    function ValidationInputUserProfile() {
+        let firstName = GetDataElement("#@firstName");
+        if (firstName == null || firstName == "" || typeof firstName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Firstname")", "Error")
+            ValidateElement("#@firstName")
+            return false;
+        }
+        let lastName = GetDataElement("#@lastName");
+        if (lastName == null || lastName == "" || typeof lastName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Lastname")", "Error")
+            ValidateElement("#@lastName")
+            return false;
+        }
+        let phoneNumber = GetDataElement("#@phoneNumber");
+        if (phoneNumber == null || phoneNumber == "" || typeof phoneNumber === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Phone Number")", "Error")
+            ValidateElement("#@phoneNumber")
+            return false;
+        }
+        return true;
+    }
+    function ValidationInputStoreMaster() {
+        let storeName = GetDataElement("#@storeName");
+        if (storeName == null || storeName == "" || typeof storeName === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input StoreName")", "Error")
+            ValidateElement("#@storeName")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@storeName")
+        }
+
+        let location = GetDataElement("#@location");
+        if (location == null || location == "" || typeof location === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Location")", "Error")
+            ValidateElement("#@location")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@location")
+        }
+
+        let openDate = GetDataElement("#@openDate");
+        if (openDate == null || openDate == "" || typeof openDate === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Open Date")", "Error")
+            ValidateElement("#@openDate")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@openDate")
+        }
+
+
+        let monitoringStartime = GetDataElement("#@monitoringStartime");
+        if (monitoringStartime == null || monitoringStartime == "" || typeof monitoringStartime === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Monitoring Startime")", "Error")
+            ValidateElement("#@monitoringStartime")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@monitoringStartime")
+        }
+
+
+        let monitoringEndtime = GetDataElement("#@monitoringEndtime");
+        if (monitoringEndtime == null || monitoringEndtime == "" || typeof monitoringEndtime === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Choose Monitoring Endtime")", "Error")
+            ValidateElement("#@monitoringEndtime")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@monitoringEndtime")
+        }
+        return true;
+    }
+    // End Region
+    function onItemGridToolbarPreparing(e) {
+        var toolbarItems = e.toolbarOptions.items;
+        toolbarItems.unshift(
+            {
+                visible: true,
+                widget: "dxButton",
+                options: {
+                    text: "@_loc.GetLocalizedString("Add Vehicle")",
+                    onClick: function () {
+                        debugger;
+                        @*var gridStore = GetGridStoreIntance();
+                        if (gridStore.getSelectedRowsData().length < 1) {
+                            DevExpress.ui.dialog.alert('@(_loc.GetLocalizedString(MessageCode.ME0001))', '@(_loc.GetLocalizedString("Message"))');
+                            return;
+                        }
+                        var gridDevice = GetGridDeviceIntance().getSelectedRowsData();
+
+                        if (gridDevice.length == 1) {
+                            OpenCreateOrDetailDevice(gridDevice[0].storeDeviceNo);
+                            return;
+                        }
+                        else if(gridDevice.length > 1) {
+                            OpenCreateOrDetailDevice(gridDevice[gridDevice.length - 1].storeDeviceNo);
+                            return;
+                        }*@
+
+                        ShowVehicleDetail(null);
+                    },
+                    icon: "fa fa-plus"
+                },
+                location: "after"
+            }
+        )
+    }
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:100%">
+                    <div class="col-md-12">
+                        <h5>
+                            <strong>
+                                @(_loc.GetLocalizedString("Profile Information"))
+                            </strong>
+                        </h5>
+                        <div class="body-bottom-site mr-1">
+                            <div class="row">
+                                <div class="form-group col-md-2">
+                                    <label>@(_loc.GetLocalizedString("First Name"))<span class="required-input"> *</span></label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(firstName)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Last Name"))<span class="required-input"> *</span></label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(lastName)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Full Name"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(fullName)
+                                    .ReadOnly(true)
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-2">
+                                    <label>@(_loc.GetLocalizedString("Phone Code"))</label>
+                                    @(
+                                    Html.DevExtreme().SelectBox()
+                                    .ID(phoneCode)
+                                    .Placeholder(_loc.GetLocalizedString(""))
+                                    .MaxLength(10)
+                                    )
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>@(_loc.GetLocalizedString("Phone Number"))<span class="required-input"> *</span></label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(phoneNumber)
+                                    .Placeholder(_loc.GetLocalizedString(""))
+                                    .MaxLength(10)
+                                    )
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Email"))</label>
+                                    @(
+                                        Html.DevExtreme().TextBox()
+                                        .ID(email)
+                                        .Placeholder(_loc.GetLocalizedString(""))
+                                        .MaxLength(100)
+                                     )
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Username"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ReadOnly(true)
+                                    .ID(userName)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>@(_loc.GetLocalizedString("Identification No"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ReadOnly(true)
+                                    .ID(identityNo)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    )
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-3">
+                                    <label>@(_loc.GetLocalizedString("User Type"))</label>
+                                    @(
+                                    Html.DevExtreme().TextBox()
+                                    .ID(userType)
+                                    .Placeholder("")
+                                    .MaxLength(100)
+                                    .ReadOnly(true)
+                                    )
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>@(_loc.GetLocalizedString("Gender"))</label>
+                                    <div class="mt-2">
+
+                                    </div>
+                                    @(Html.DevExtreme().RadioGroup()
+                                    .DataSource(genderData)
+                                    .DisplayExpr("text")
+                                    .ValueExpr("id")
+                                    .ID(gender)
+                                    .Layout(Orientation.Horizontal)
+                                    )
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>@(_loc.GetLocalizedString("Birthday"))</label>
+                                    @(
+                                    Html.DevExtreme().DateBox()
+                                    .ID(birthday)
+                                    .ShowClearButton(true)
+                                    .DisplayFormat("MM-dd-yyyy")
+                                    )
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>@(_loc.GetLocalizedString("Registered Date"))</label>
+                                    @(
+                                    Html.DevExtreme().DateBox()
+                                    .ID(regisdterDate)
+                                    .DisplayFormat("MM-dd-yyyy")
+                                    .ReadOnly(true)
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="col-md-12">
+                        <div class="body-bottom-site mr-1">
+                            <fieldset class="customFieldset">
+                                <legend class="customLegend">@_loc.GetLocalizedString("Vehicle Information")</legend>
+                                <div class="row mt-1">
+                                    @(
+                                    Html.DevExtreme().DataGrid<VehiceInfo>()
+                                    .ID(gridVehicle)
+                                    .Height("40vh")
+                                    .Width("100%")
+                                    .ShowBorders(true)
+                                    .ShowColumnLines(true)
+                                    .ShowRowLines(true)
+                                    .AllowColumnResizing(true)
+                                    .AllowColumnReordering(true)
+                                    .RemoteOperations(true)
+                                    .ColumnAutoWidth(true)
+                                    .ColumnFixing(c => c.Enabled(true))
+                                    .RepaintChangesOnly(true)
+                                    .Selection(s => s.Mode(SelectionMode.Single))
+                                    .Columns(c =>
+                                    {
+                                        c.AddFor(x => x.no).Caption(_loc.GetLocalizedString("No")).Alignment(0);
+                                        c.AddFor(x => x.vehiclePhoto).Width(224)
+                                            .AllowFiltering(false)
+                                            .Caption(_loc.GetLocalizedString("Vehicle Photo")).Alignment(0)
+                                            .AllowSorting(false).CellTemplate(@<text>
+                                            <div>
+                                                <img style="width: 100%; height: 224px; object-fit: cover" src="data:image/png;base64,<%- value %>" alt=""/>
+                                            </div>
+                                        </text>);
+                                        c.AddFor(x => x.licensePhoto).Width(224)
+                                            .AllowFiltering(false)
+                                            .Caption(_loc.GetLocalizedString("License Photo")).Alignment(0)
+                                            .AllowSorting(false).CellTemplate(@<text>
+                                            <div>
+                                                <img style="width: 100%; height: 224px; object-fit: cover" src="data:image/png;base64,<%- value %>" alt=""/>
+                                            </div>
+                                        </text>);
+                                        c.AddFor(x => x.plateNum).Caption(_loc.GetLocalizedString("Plate Num")).Alignment(0);
+                                        c.AddFor(x => x.typeTransport).Caption(_loc.GetLocalizedString("Vehicle Type")).Alignment(0);
+                                        c.AddFor(x => x.status).Caption(_loc.GetLocalizedString("Status")).Alignment(0);
+                                        c.AddFor(x => x.createdAt).Caption(_loc.GetLocalizedString("Create Date")).Alignment(0);
+                                        c.AddFor(x => x.updatedAt).Caption(_loc.GetLocalizedString("Update Date")).Alignment(0);
+                                        c.AddFor(x => x.typePlate).Caption(_loc.GetLocalizedString("Plate Type")).Alignment(0);
+                                    })
+                                    .Pager(pager =>
+                                    {
+                                    pager.ShowInfo(true);
+                                    pager.ShowNavigationButtons(true);
+                                    })
+                                    //.OnSelectionChanged("onItemGridSelectionChanged")
+                                    .OnRowClick("ShowUpdateVehicle")
+                                    .OnToolbarPreparing("onItemGridToolbarPreparing")
+                                    .Paging(paging => paging.PageSize(100))
+                                    )
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="col-md-12 mt-2 mr-2">
+                        <h5>
+                            <strong>
+                                @(_loc.GetLocalizedString("Photo Information"))
+                            </strong>
+                        </h5>
+
+                        <div class="body-bottom-site mr-1">
+                            <div class="row mt-1 ml-1">
+                                <div class="col-md-4 form-group">
+                                    <label>@(_loc.GetLocalizedString("Face"))</label>
+                                    <div class="row border p-4">
+                                        <img id="profile-face-photo" style="width: 100%; height: 400px; object-fit: cover" class="rounded float-end" alt="">
+                                    </div>
+                                    <div class="mr-2">
+                                        @(Html.DevExtreme().FileUploader()
+                                        .Name("imageFaceTaken")
+                                        .Accept("*")
+                                        .Multiple(false)
+                                        .ID(facePhoto)
+                                        .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                        .UploadMode(FileUploadMode.Instantly)
+                                        .UploadUrl(Url.Action("UploadImageTaken", "MemberMgt") + "?userId=" + ViewBag.UserCode)
+                                        .SelectButtonText("Upload")
+                                        .OnUploaded("LoadImageFaceAfterUpload")
+                                        )
+                                    </div>
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    <label>@(_loc.GetLocalizedString("Card Front"))</label>
+                                    <div class="row border p-4">
+                                        <img id="profile-card-front" style="width: 100%; height: 400px; object-fit: cover" class="rounded float-end" alt="">
+                                    </div>
+                                    <div class="mr-2">
+                                        @(Html.DevExtreme().FileUploader()
+                                        .Name("imageFileCardId")
+                                        .Accept("*")
+                                        .Multiple(false)
+                                        .ID(cardFrontPhoto)
+                                        .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                        .UploadMode(FileUploadMode.Instantly)
+                                        .UploadUrl(Url.Action("UploadImageCardId", "MemberMgt") + "?type=0&userId=" + ViewBag.UserCode)
+                                        .SelectButtonText("Upload")
+                                        .OnUploaded("LoadImageCardFrontAfterUpload")
+                                        )
+                                    </div>
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    <label>@(_loc.GetLocalizedString("Card Back"))</label>
+                                    <div class="row border p-4">
+                                        <img id="profile-card-back" style="width: 100%; height: 400px; object-fit: cover" class="rounded float-end" alt="">
+                                    </div>
+                                    <div class="mr-2">
+                                        @(Html.DevExtreme().FileUploader()
+                                        .Name("imageFileCardId")
+                                        .Accept("*")
+                                        .Multiple(false)
+                                        .ID(cardBackPhoto)
+                                        .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                        .UploadMode(FileUploadMode.Instantly)
+                                        .UploadUrl(Url.Action("UploadImageCardId", "MemberMgt") + "?type=1&userId=" + ViewBag.UserCode)
+                                        .SelectButtonText("Upload")
+                                        .OnUploaded("LoadImageCardBackAfterUpload")
+                                        )
+                                    </div>
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(cardBackPhotoPath).Visible(false)
+                                    )
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(cardFrontPhotoPath).Visible(false)
+                                    )
+                                    @(Html.DevExtreme().TextBox()
+                                    .ID(facePhotoPath).Visible(false)
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnSave2_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+            </div>
+        </div>
+    </div>
+</div>
+

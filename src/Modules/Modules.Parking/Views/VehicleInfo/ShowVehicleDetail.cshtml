@@ -1,0 +1,306 @@
+﻿@using Modules.Common.Models
+@using Modules.Pleiger.CommonModels.Parking
+
+@model VehiceInfo;
+@{
+    Layout = null;
+
+    string idCartPhoto = "idCartPhoto" + ViewBag.Thread;
+    string takenPhoto = "takenPhoto" + ViewBag.Thread;
+    string btnChangeIdCardPhoto = "btnChangeIdCardPhoto" + ViewBag.Thread;
+    string btnChangeKioskPhoto = "btnChangeKioskPhoto" + ViewBag.Thread;
+    string userName = "userName" + ViewBag.Thread;
+    string gender = "gender" + ViewBag.Thread;
+    string birthday = "birthday" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
+    string gridUserHistory = "gridUserHistory" + ViewBag.Thread;
+    string uploadImageCardId = "uploadImageCardId";
+    string uploadImageTaken = "uploadImageTaken";
+    string imgVehiclePath = "imgVehiclePath" + ViewBag.Thread;
+    string imgLicensePath = "imgLicensePath" + ViewBag.Thread;
+
+    var genderData = new[] {
+        new { id = true, text = _loc.GetLocalizedString("Men") },
+        new { id = false, text = _loc.GetLocalizedString("Women") },
+    };
+    string plateNum = "plateNum" + ViewBag.Thread;
+    string transportType = "transportType" + ViewBag.Thread;
+    string plateType = "plateType" + ViewBag.Thread;
+}
+<style>
+</style>
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        SetImage();
+        LoadingPage(0);
+    })
+
+    // Region: Btn event
+    $('#btnSave_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        SaveDataVehicle();
+        LoadingPage(0);
+    });
+    $('#btnDelete_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+                var data = [];
+                data.push({ userId: "@Model.userId", userName: "" });
+                $.ajax({
+                    url: '@Url.Action("DeleteListMember", "MemberMgt")',
+                    type: "DELETE",
+                    data: {
+                        userIds: JSON.stringify(data)
+                    },
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        debugger;
+                        if (result.Success) {
+
+                            DevExpress.ui.notify(
+                                {
+                                    message: '@_loc.GetLocalizedString("Delete member successfully! Sending information to syschonous on FaceOK. Please wait a second")',
+                                    position: {
+                                        my: 'bottom right',
+                                        at: 'bottom right'
+                                    },
+                                    width: '30%'
+                                },
+                                'info',
+                                5000
+                            );
+                            $('#modalControl').modal('hide');
+                            var url = '@Url.Action("RequestDeleteOnFaceOk", "MemberMgt")';
+                            RequestOnFaceOk(data, url, true);
+
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+            }
+        })
+        setTimeout(function () {
+            SearchMember();
+        }, 1000);
+        LoadingPage(0);
+    });
+
+    function LoadImageVehicleAfterUpload(e) {
+        debugger;
+        $("#@uploadImageTaken .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("photo-vehicle");
+        var res = JSON.parse(e.request.response);
+        img.src = res.data;
+        SetDataElement("#@plateNum", res.plateNum);
+        SetDataElement("#@transportType", res.transportType);
+        SetDataElement("#@plateType", res.plateType);
+        SetDataElement("#@imgVehiclePath", res.path);
+    }
+
+    function LoadImageLicenseAfterUpload(e) {
+        debugger;
+        $("#@uploadImageCardId .dx-fileuploader-files-container").hide()
+        var img = document.getElementById("photo-license");
+        var res = JSON.parse(e.request.response)
+        img.src = res.data;
+        SetDataElement("#@imgLicensePath", res.path);
+    }
+
+    // End Region: Btn event
+
+    // Region: Get data
+    function SetImage() {
+        debugger;
+         $.ajax({
+            url: '@Url.Action("GetImageVehicle", "VehicleInfo")',
+            type: METHOD.GET,
+            data: {
+                storeNo: "",
+                vehicleId: "@Model.id"
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                document.getElementById("photo-vehicle").src = result.vehiclePhotoBase64;
+                document.getElementById("photo-license").src = result.licensePhotoBase64;
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+
+    }
+    function GetUserHistory(userId) {
+        var obj = {
+            userId: userId
+        }
+        var url = '@Url.Action("GetUserHistory", "MemberMgt")';
+        LoadGridData(url, obj, "#@gridUserHistory", METHOD.GET);
+    }
+    // End Region: Get data
+
+    // Region: Create - Update - Delete
+    function SaveDataVehicle() {
+        if (ValidationInputVehicle()) {
+            var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
+            yes_or_no.done(function (dialogResult) {
+                if (dialogResult) {
+                    debugger;
+                    var url = '@Url.Action("SaveVehicle", "VehicleInfo")';
+                    var obj = {
+                        plateNum: GetDataElement("#@plateNum"),
+                        typeTransport: GetDataElement("#@transportType"),
+                        typePlate: GetDataElement("#@plateType"),
+                        id: "@Model.id",
+                        licensePhotoPath: GetDataElement("#@imgLicensePath"),
+                        vehiclePhotoPath: GetDataElement("#@imgVehiclePath"),
+                    }
+                    CRUDData(url, obj, METHOD.POST);
+                    setTimeout(function () {
+                        GetListVehicle();
+                    }, 500);
+
+                }
+            })
+        }
+    }
+    // End Region: Create - Update - Delete
+
+    //Region: Validation Data
+    function ValidationInputVehicle() {
+        @*let plateNum = GetDataElement("#@plateNum");
+        if (plateNum == null || plateNum == "" || typeof plateNum === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please upload your vehicle")", "Error")
+            ValidateElement("#@plateNum")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@plateNum")
+        }*@
+        return true;
+    }
+    //End Region Validation Data
+</script>
+
+<div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width: 80%; margin: 0 auto">
+    <div class="modal-header">
+        <h5 class="modal-title" id="ShowMemberDetail">@(_loc.GetLocalizedString("Profile"))</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <form id="frm-SaleSetting2">
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="row pb-2 ml-2 mr-2">
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("Vehicle")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-vehicle" style="width: 100%; height: 300px; object-fit: cover" src="" class="rounded float-start" alt="...">
+                            </div>
+
+                            <div class="row" style="justify-content: space-between">
+                                @(Html.DevExtreme().FileUploader()
+                                    .Name("imageFileVehicle")
+                                    .Accept("*")
+                                    .ID(uploadImageTaken)
+                                    .Multiple(false)
+                                    .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                    .UploadMode(FileUploadMode.Instantly)
+                                    .UploadUrl(Url.Action("UploadVehicle", "MemberMgt") + "?userId=" + Model.userId)
+                                    .SelectButtonText("Upload")
+                                    .LabelText("")
+                                    .OnUploaded("LoadImageVehicleAfterUpload")
+                                    )
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                        </div>
+                        <div class="col-md-5">
+                            <div class="row mb-1">
+                                <span class="mt-2">@_loc.GetLocalizedString("License")</span>
+                            </div>
+                            <div class="row border">
+                                <img id="photo-license" style="width: 100%; height: 300px; object-fit: cover" src="" class="rounded float-end" alt="...">
+                            </div>
+                            <div class="row" style="justify-content: space-between">
+                                @(Html.DevExtreme().FileUploader()
+                                    .Name("imageFileLicense")
+                                    .Accept("*")
+                                    .Multiple(false)
+                                    .ID(uploadImageCardId)
+                                    .AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".gif", ".png" })
+                                    .UploadMode(FileUploadMode.Instantly)
+                                    .UploadUrl(Url.Action("UploadImageLicense", "MemberMgt") + "?userId=" + Model.userId)
+                                    .SelectButtonText("Upload")
+                                    .LabelText("")
+                                    .OnUploaded("LoadImageLicenseAfterUpload")
+                                    )
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row mt-1">
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Plate Number"))<span class="required-input"> *</span></label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(plateNum)
+                                .Value(Model.plateNum)
+                                .MaxLength(20)
+                                .ReadOnly(true)
+                                )
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Transport Type"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .ID(transportType)
+                                .Value(Model.typeTransport)
+                                .ReadOnly(true)
+
+                                )
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="form-group col-md-6">
+                            <label>@(_loc.GetLocalizedString("Type Plate"))</label>
+                            @(Html.DevExtreme().TextBox()
+                                .Value(Model.typePlate)
+                                .ID(plateType)
+                                .ReadOnly(true)
+
+                                )
+                        </div>
+                       
+                        @(Html.DevExtreme().TextBox()
+                            .ID(imgVehiclePath).Visible(false)
+                            )
+                        @(Html.DevExtreme().TextBox()
+                            .ID(imgLicensePath).Visible(false)
+                            )
+                    </div>
+                </div>             
+            </div>
+        </div>
+    </form>
+    <div class="modal-footer">
+        <button type="button" id="btnSave_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-save'></i> @(_loc.GetLocalizedString("Save"))</button>
+        <button type="button" id="btnDelete_@ViewBag.Thread" class="btn btn-sm btn-primary"><i class='fa fa-trash'></i> @(_loc.GetLocalizedString("Delete"))</button>
+        <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal"><i class='fa fa-times'></i> @(_loc.GetLocalizedString("Close"))</button>
+    </div>
+</div>

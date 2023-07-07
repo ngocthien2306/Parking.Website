@@ -145,6 +145,86 @@ namespace Modules.Kiosk.Member.Repositories.Repository
                 return new Result { Success = false, Message = MessageCode.MD0005 };
             }
         }
+        public Result SaveUserProfile(SaveUserProfile req)
+        {
+            byte[] idCardBackPhoto;
+            byte[] idCardFrontPhoto;
+            byte[] idCardPhoto;
+
+            try
+            {
+                idCardBackPhoto = req.idCardBackPhotoPath == null ? null : System.IO.File.ReadAllBytes(req.idCardBackPhotoPath);
+                idCardFrontPhoto = req.idCardFrontPhotoPath == null ? null : System.IO.File.ReadAllBytes(req.idCardFrontPhotoPath);
+                idCardPhoto = req.idCardPhotoPath == null ? null : System.IO.File.ReadAllBytes(req.idCardPhotoPath);
+            }
+            catch
+            {
+                idCardBackPhoto = null;
+                idCardFrontPhoto = null;
+                idCardPhoto = null;
+            }
+            
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            var resultSave = "false";
+                            string[] arrParam = new string[12];
+                            arrParam[0] = "@Method";
+                            arrParam[1] = "@UserId";
+                            arrParam[2] = "@Firstname";
+                            arrParam[3] = "@Lastname";
+                            arrParam[4] = "@Gender";
+                            arrParam[5] = "@Email";
+                            arrParam[6] = "@Birthday";
+                            arrParam[7] = "@PhoneNumber";
+                            arrParam[8] = "@PhoneCode";
+                            arrParam[9] = "@IdCardBackPhoto";
+                            arrParam[10] = "@IdCardFrontPhoto";
+                            arrParam[11] = "@IdCardPhoto";
+                            object[] arrValue = new object[12];
+                            arrValue[0] = "SaveProfile";
+                            arrValue[1] = req.userId;
+                            arrValue[2] = req.firstName;
+                            arrValue[3] = req.lastName;
+                            arrValue[4] = req.gender;
+                            arrValue[5] = req.email;
+                            arrValue[6] = req.birthday;
+                            arrValue[7] = req.phone;
+                            arrValue[8] = req.phoneCode;
+                            arrValue[9] = idCardBackPhoto;
+                            arrValue[10] = idCardFrontPhoto;
+                            arrValue[11] = idCardPhoto;
+                            resultSave = connection.ExecuteScalar<string>("SP_VEHICLE_HISTORY", CommandType.StoredProcedure, arrParam, arrValue, transaction);
+                            transaction.Commit();
+                            if (resultSave != "false")
+                            {
+                                return new Result { Success = true, Message = MessageCode.MD0004 };
+                            }
+                            else
+                            {
+                                transaction.Rollback();
+                                return new Result { Success = false, Message = MessageCode.MD0005 };
+                            }
+                        }
+                        catch(Exception e)
+                        {
+                            transaction.Rollback();
+                            return new Result { Success = false, Message = MessageCode.MD0005 };
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return new Result { Success = false, Message = MessageCode.MD0005 };
+            }
+
+        }
         public Result SaveDataMember(SaveUserDto saveUserDto)
         {
             byte[] imgCardPath;
@@ -231,7 +311,6 @@ namespace Modules.Kiosk.Member.Repositories.Repository
                 return new Result { Success = false, Message = MessageCode.MD0005 };
             }
         }
-    
         #endregion
     }
 }

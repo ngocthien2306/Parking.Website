@@ -26,7 +26,6 @@ using Microsoft.IdentityModel.Tokens;
 using Modules.FileUpload.Mappers;
 using Newtonsoft.Json.Serialization;
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -63,19 +62,6 @@ namespace InfrastructureCore.Web
             services.AddResponseCompression();
             //add options feature
             services.AddOptions();
-            //add HTTP sesion state feature
-            //services.AddHttpSession();
-            //services.AddSession(options =>
-            //{
-            //    options.Cookie.Name = $"{NopCookieDefaults.Prefix}{NopCookieDefaults.SessionCookie}";
-            //    options.Cookie.HttpOnly = true;
-
-            //    //whether to allow the use of session values from SSL protected page on the other store pages which are not
-            //    options.Cookie.SecurePolicy = DataSettingsManager.DatabaseIsInstalled && EngineContext.Current.Resolve<IStoreContext>().CurrentStore.SslEnabled
-            //        ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.None;
-            //});
-
-            //add localization
             services.AddLocalization();
 
 
@@ -129,7 +115,6 @@ namespace InfrastructureCore.Web
                       //options.AccessDeniedPath = new PathString("/en/Account/Access");
                       options.Cookie = new CookieBuilder
                       {
-                          //Domain = "",
                           HttpOnly = true,
                           Name = ".aspNetCoreDemo.Security.Cookie",
                           Path = "/",
@@ -158,10 +143,7 @@ namespace InfrastructureCore.Web
                           }
                       };
                       options.ExpireTimeSpan = TimeSpan.FromDays(7);
-                      //options.LoginPath = new PathString("/en/MESAccount/MESLogin");
                       options.LoginPath = new PathString("/MESAccount/MESLogin");
-                      //options.LoginPath = new PathString("/MESHome");
-                      //options.AccessDeniedPath = new PathString("/MESHome");
                       options.ReturnUrlParameter = "RequestPath";
                       options.SlidingExpiration = true;
                   }
@@ -215,24 +197,6 @@ namespace InfrastructureCore.Web
             // Auto Mapper Configurations
             // services.AddAutoMapper(typeof(CoreStartup));
             services.AddAutoMapper(typeof(MappingConfig), typeof(FileMapConfig));
-
-            //string secretKey = "mysite_supersecret_secretkey!8050";//line 1
-
-            //SymmetricSecurityKey SigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));//line 2
-            
-            //services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            //        .AddJwtBearer(options =>
-            //        {
-            //            //options.Audience = "/MESHome";
-            //            //options.Authority = "/MESHome";
-            //            options.TokenValidationParameters = new TokenValidationParameters()
-            //            {
-            //                ValidateIssuerSigningKey = true,
-            //                IssuerSigningKey = SigningKey,
-            //                ValidateIssuer = false,
-            //                ValidateAudience = false
-            //            };
-            //        });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -250,62 +214,21 @@ namespace InfrastructureCore.Web
             }
 
             app.UseSession();
-            //app.ConfigureSession();
-
-            //app.UseStaticFiles();
             app.UseAuthentication();
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCustomizedStaticFiles(env);
             app.UseRequestLocalization();
-
             app.UseAuthorization();
-
-            //// global cors policy
-            //app.UseCors(x => x
-            //    .AllowAnyOrigin()
-            //    .AllowAnyMethod()
-            //    .AllowAnyHeader());
-
-            //// custom jwt auth middleware
-            //app.UseMiddleware<JwtMiddleware>();
-
             string secretKey = "mysite_supersecret_secretkey!8050";//line 1
 
             SymmetricSecurityKey SigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));//line 2
 
-            //app.UseMiddleware<TokenProviderMiddleware>(Options.Create(new TokenProviderOptions
-            //{
-            //    SigningCredentials = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256),
-            //}));//line 3
-
-            //app.AddAuthentication(new JwtBearerOptions
-            //{
-            //    //AutomaticAuthenticate = true,
-            //    //AutomaticChallenge = true,
-            //    Audience = "/MESHome",
-            //    Authority = "/MESHome",
-            //    TokenValidationParameters = new TokenValidationParameters
-            //    {
-            //        ValidateIssuerSigningKey = true,
-            //        IssuerSigningKey = SigningKey,
-            //        ValidateIssuer = false,
-            //        ValidateAudience = false,
-            //    }
-            //});//line 4
             app.UseEndpoints(endpoints =>
             {
-                //endpoints.MapControllerRoute(
-                // name: "areas",
-                // pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
-
-                //endpoints.MapControllerRoute(
-                // name: "Admin",
-                // pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
-
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{culture=ko}/{controller=MESAccount}/{action=MESLogin}/{id?}");
+                    pattern: "{culture=en}/{controller=MESAccount}/{action=MESLogin}/{id?}");
 
             });
              var moduleInitializers = app.ApplicationServices.GetServices<IModuleInitializer>();

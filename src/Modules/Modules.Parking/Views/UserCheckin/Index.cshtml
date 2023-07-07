@@ -1,0 +1,558 @@
+﻿@using Modules.Pleiger.CommonModels;
+@using Modules.Common.Models;
+@using Modules.Admin.Models;
+@using InfrastructureCore.Models.Menu;
+@using Modules.Pleiger.CommonModels.Models
+@{
+    Layout = null;
+    SYMenuAccess pageSetting = new SYMenuAccess();
+    pageSetting.SEARCH_YN = true;
+
+    List<ToolbarInfo> lstNewToolbar = new List<ToolbarInfo>();
+    ToolbarInfo info = new ToolbarInfo();
+    info.Name = "Reload";
+    info.ID = "btnReload";
+    info.Icon = "<i class='fas fa-sync'></i>";
+    info.MenuID = ViewBag.MenuID;
+    lstNewToolbar.Add(info);
+
+    var statusApproveReject = new[] {
+        new {id = false, name =_loc.GetLocalizedString("Reject") },
+        new {id = true, name = _loc.GetLocalizedString("Approve")}
+    };
+
+    var searchByMinutes = new[] {
+        new {id = 30, name =_loc.GetLocalizedString("Last 30 minutes")},
+        new {id = 60, name = _loc.GetLocalizedString("Last 60 minutes")}
+    };
+
+    string startDateCheckIn = "startDateCheckIn" + ViewBag.Thread;
+    string endDateCheckIn = "endDateCheckIn" + ViewBag.Thread;
+    string gridStore = "gridStoreCheckInPage" + ViewBag.Thread;
+    string gridCheckIn = "gridCheckInUserRealTime" + ViewBag.Thread;
+    string optionSearchByMin = "optionSearchByMin" + ViewBag.Thread;
+}
+
+
+<script>
+    $(document).ready(function () {
+        LoadingPage(1);
+        GetStoreMastersByUser("#@gridStore");
+        //LoadStoreMaster("@ViewBag.StoreNo", null, null, "#@gridStore");
+        $('#btnSearch_@(ViewBag.Thread)').trigger("click");
+        LoadingPage(0);
+    })
+
+    function GridStoreInstance() {
+        return $("#@gridStore").dxDataGrid("instance");
+    }
+
+    function GridCheckInInstance() {
+        return $("#@gridCheckIn").dxDataGrid("instance");
+    }
+
+    // Region: btn click event
+
+    $("#btnReload_@ViewBag.Thread").on("click", function () {
+        LoadingPage(1);
+        CheckSession();
+        RefreshTab(this);
+        LoadingPage(0);
+    });
+
+    function onInitialized(e) {
+        e.component.beginCustomLoading();
+    }
+    function RequestOnFaceOk(users, url, flag) {
+        console.log(users);
+        $.ajax({
+            url: url,
+            type: "GET",
+            data: {
+                userIds: JSON.stringify(users),
+                flag: flag
+            },
+            dataType: 'json',
+            async: false,
+            success: function (result) {
+                debugger;
+                if (result.Success) {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to FaceOK successfully!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'success',
+                            6000
+                        );
+                    }, 5000);
+                }
+                else {
+                    setTimeout(function () {
+                        DevExpress.ui.notify(
+                            {
+                                message: '@_loc.GetLocalizedString("Send information synchronous to FaceOK fairly!")',
+                                position: {
+                                    my: 'bottom right',
+                                    at: 'bottom right'
+                                },
+                                width: '30%'
+                            },
+                            'error',
+                            6000
+                        );
+                    }, 5000);
+                }
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
+    }
+
+    $('#btnSearch_@(ViewBag.Thread)').on('click', function () {
+        LoadingPage(1);
+        var stores = GridStoreInstance().getSelectedRowsData();
+        var listStore = [];
+        stores.forEach(s => {
+            listStore.push(s.storeNo)
+        })
+        GetCheckInInfo(listStore.join())
+        LoadingPage(0);
+        return;
+
+        LoadingPage(0);
+    });
+    function ShowCheckInHistory(e) {
+        LoadingPage(1);
+        GetCheckInInfo(e.data.storeNo);
+    }
+    function UpdateApproveRejectUser(e) {
+        debugger;
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0021))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+
+                var checkins = GridCheckInInstance().getSelectedRowsData()[0];
+                var url = '@Url.Action("UpdateApproveRejectUser", "UserCheckin")';
+                var obj = {
+                    userId: checkins.userId,
+                    status: e.value
+                }
+
+                $.ajax({
+                    url: url,
+                    type: "GET",
+                    data: obj,
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        debugger;
+                        if (result.Success) {
+
+                            DevExpress.ui.notify(
+                                {
+                                    message: '@_loc.GetLocalizedString("Update approve/reject successfully! Sending information to syschonous on FaceOK. Please wait a second")',
+                                    position: {
+                                        my: 'bottom right',
+                                        at: 'bottom right'
+                                    },
+                                    width: '30%'
+                                },
+                                'info',
+                                5000
+                            );
+
+                            setTimeout(function () {
+                                SearchMember();
+                            }, 1000);
+
+                            var data = []
+                            data.push({ userId: checkins.userId, userName: checkins.userName });
+                            if (e.value) {
+                                var url = '@Url.Action("RequestAddOnFaceOk", "MemberMgt")';
+                                RequestOnFaceOk(data, url);
+                            }
+                            else {
+                                var url = '@Url.Action("RequestDeleteOnFaceOk", "MemberMgt")';
+                                RequestOnFaceOk(data, url);
+                            }
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+
+                setTimeout(function () {
+                    var stores = GridStoreInstance().getSelectedRowsData();
+                    if(stores.length > 0) {
+                        GetCheckInInfo(stores[0].storeNo);
+                        return;
+                    }
+
+                }, 1000);
+            }
+            else {
+                debugger;
+
+                GridCheckInInstance().refresh();
+
+                //setTimeout(function () {
+                //    LoadStoreDevice(gridStore.storeNo, null, null, null, null);
+                //}, 1000);
+            }
+        })
+    }
+    // End Region: btn click event
+    function SearchByMinutesChanged(e) {
+        console.log(e);
+    }
+    function SetValueGenderName(e) {
+        if(e == "Men") {
+            return "@_loc.GetLocalizedString("Men")";
+        }
+        else {
+            return "@_loc.GetLocalizedString("Women")";
+        }
+    }
+    // Region: Get Data
+    function GetCheckInInfo(storeNo) {
+        var obj = {
+            storeNo: storeNo,
+            startDate: formatDate("#@startDateCheckIn"),
+            endDate: formatDate("#@endDateCheckIn"),
+            byMin: GetDataElement("#@optionSearchByMin")
+        }
+
+        var url = '@Url.Action("GetCheckInInfo", "UserCheckin")';
+
+        LoadGridData(url, obj, "#@gridCheckIn", METHOD.GET);
+        // $.ajax({
+        //    url: url,
+        //    type: METHOD.GET,
+        //    data: obj,
+        //    dataType: 'json',
+        //    success: function (result) {
+        //        debugger;
+        //        GetGridIntance("#gridCheckInUserRealTime").option("dataSource", result)
+
+        //        if(result.length > 0) {
+        //            $("#gridCheckInUserRealTime").dxDataGrid({
+        //                // ...
+        //                focusedRowEnabled: true,
+        //                focusedRowIndex: 0,
+        //                errorRowEnabled: false
+        //            });
+        //        }
+        //        else {
+        //            $("#gridCheckInUserRealTime").dxDataGrid({
+        //                // ...
+        //                focusedRowEnabled: false,
+        //                errorRowEnabled: false
+        //            });
+        //        }
+
+        //        LoadingPage(0);
+        //    },
+        //    error: function () {
+        //        LoadingPage(0);
+        //    }
+        //});
+
+
+
+    }
+
+    // End Region: Get Data
+
+
+</script>
+
+<div id="menutoolbar_@(ViewBag.Thread)">
+    @await Component.InvokeAsync("AccessToolbar", new { pageSetting = pageSetting, lstNewToolbar = lstNewToolbar, threadID = ViewBag.Thread })
+</div>
+
+<div class="row" id="divindex_@(ViewBag.Thread)">
+    <div class="col-md-12" style="width:100%;height:100%;">
+        <div class="card" style="height:100%;width:100%;">
+            <div id="headerpage_@(ViewBag.Thread)" class="card-header">
+                <label>@(_loc.GetLocalizedString("Inquiry Period"))</label>
+                <div class="row mt-1">
+                    <div class="form-group col-md-2">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(startDateCheckIn)
+                            .DisplayFormat("yyyy-MM-dd HH:mm")
+                            .Type(DateBoxType.DateTime)
+                            .Value(DateTime.Today)
+                            .ShowClearButton(true)
+                            )
+                    </div>
+                    <span class="mt-2">~</span>
+                    <div class="form-group col-md-2">
+                        @(Html.DevExtreme().DateBox()
+                            .ID(endDateCheckIn)
+                            .Type(DateBoxType.DateTime)
+
+                            .DisplayFormat("yyyy-MM-dd HH:mm")
+                            .Value(DateTime.Now)
+                            .ShowClearButton(true)
+                            )
+                    </div>
+                    <div class="form-group col-md-6">
+                        @(
+                            Html.DevExtreme().RadioGroup()
+                            .ID(optionSearchByMin)
+                            .DataSource(searchByMinutes)
+                            .ValueExpr("id")
+                            .DisplayExpr("name")
+                            .Layout(Orientation.Horizontal)
+                            .OnValueChanged("SearchByMinutesChanged")
+                            .Value(30)
+                            )
+                    </div>
+
+                </div>
+            </div>
+            <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
+                <div class="row" style="height:75vh">
+                    <div class="col-md-2">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_StoreMaster>()
+                            .ID(gridStore)
+                            .Height("70vh")
+          
+                            .ShowBorders(true)
+                            .ShowColumnLines(true)
+                            .FilterRow(f => f.Visible(true))
+                            .HeaderFilter(f => f.Visible(true))
+                            .ShowRowLines(true)
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .FocusedRowIndex(0)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+
+                            .Columns(c =>
+                            {
+                                c.AddFor(x => x.locationName).Caption(_loc.GetLocalizedString("Location"));
+                                c.AddFor(x => x.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                            })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            .OnRowClick("ShowCheckInHistory")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            //.Paging(paging => paging.PageSize(100))
+                            )
+                    </div>
+
+                    <div class="col-md-10">
+                        @(
+                            Html.DevExtreme().DataGrid<KIO_CheckInInfo>()
+                            .ID(gridCheckIn)
+                            .ShowBorders(true)
+                            .ShowColumnLines(false)
+                            .LoadPanel(loadPanel => loadPanel.Enabled(false))
+                            .OnInitialized("onInitialized")
+                            //.RepaintChangesOnly(true)
+                            .HighlightChanges(true)
+                            .Height("70vh")
+
+                            .ShowRowLines(true)
+                            .HeaderFilter(f => f.Visible(true))
+                            .FilterRow(f => f.Visible(true))
+                            .AllowColumnResizing(true)
+                            .AllowColumnReordering(true)
+                            .RemoteOperations(true)
+                            .ColumnAutoWidth(true)
+                            .Selection(s => s.Mode(SelectionMode.Single))
+                            .ColumnFixing(c => c.Enabled(true))
+                            .RepaintChangesOnly(true)
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.storeName).Caption(_loc.GetLocalizedString("Store Name"));
+                                columns.Add().Caption(_loc.GetLocalizedString("User Information")).CellTemplate(@<text>
+
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Store No"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .TextBox()
+                                                .Value(new JS("data.storeNo"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Use Date"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .DateBox().DisplayFormat("yyyy-MM-dd HH:mm:ss")
+                                                .Value(new JS("data.useDate"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Username"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                                @(
+                                                    Html.DevExtreme()
+                                                    .TextBox()
+                                                    .Value(new JS("data.userName"))
+                                                    .ReadOnly(true))
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Birthday"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                                @(
+                                                    Html.DevExtreme()
+                                                    .DateBox().DisplayFormat("yyyy-MM-dd")
+                                                    .Value(new JS("data.birthday"))
+                                                    .ReadOnly(true)
+                                                    )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Gender"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+
+                                                @(
+                                                    Html.DevExtreme()
+                                                    .TextBox()
+                                                    .ReadOnly(true)
+                                                    //.Value(new JS("data.genderName"))
+                                                    .Value(new JS("SetValueGenderName(data.genderName)"))
+                                                    )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin row">
+                                        <div class="col-md-4">
+                                            <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Phone Number"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme()
+                                                .TextBox()
+                                                .Value(new JS("data.phoneNumber"))
+                                                .ReadOnly(true)
+                                                )
+                                        </div>
+                                    </div>
+                                    <div class="custom-site-checkin mt-1 row">
+                                        <div class="col-md-4">
+                                            <label class="ml-2">@(_loc.GetLocalizedString("Approve / Reject"))</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            @(
+                                                Html.DevExtreme().RadioGroup()
+                                                .DataSource(statusApproveReject)
+                                                .ValueExpr("id")
+                                                .DisplayExpr("name")
+                                                .Value(new JS("data.approveReject"))
+                                                .Layout(Orientation.Horizontal)
+                                                .OnValueChanged("UpdateApproveRejectUser")
+                                                .ReadOnly(false)
+                                                )
+                                            </div>
+                                    </div>
+                                        <div class="custom-site-checkin mt-2 row">
+                                            <div class="col-md-4">
+                                                <label class="ml-2">@(_loc.GetLocalizedString("Number of visits"))</label>
+                                            </div>
+                                            <div class="col-md-8">
+                                                @(
+                                                    Html.DevExtreme()
+                                                    .TextBox()
+                                                    .Value(new JS("data.no"))
+                                                    .ReadOnly(true)
+                                                 )
+                                            </div>
+                                        </div>
+                                </text>).Width("50%");
+                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString("Photo"))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><label class="mt-1">@(_loc.GetLocalizedString("Taken Photo"))</label></div>
+                                                <div></div>
+                                            </div>
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageTaken", "UserCheckin")?userId=<%- value %>" /></div>
+                                                <div></div>
+                                            </div>
+
+                                        </div>
+                                    </text>).Width("25%");
+                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString(""))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><label class="mt-1">@(_loc.GetLocalizedString("ID Photo"))</label></div>
+                                                <div></div>
+                                            </div>
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageCardId", "UserCheckin")?userId=<%- value %>" /></div>
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                    </text>).Width("25%");
+                                })
+
+                            .Pager(pager =>
+                            {
+                                pager.ShowInfo(true);
+                                //pager.ShowNavigationButtons(true);
+                            })
+                            //.OnSelectionChanged("onItemGridSelectionChanged")
+                            //.OnRowClick("ShowAudioFileDetail")
+                            //.OnToolbarPreparing("onItemGridToolbarPreparing")
+                            .Paging(paging => paging.PageSize(10))
+                            )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*<script src="~/js/checkin.js"></script>*@

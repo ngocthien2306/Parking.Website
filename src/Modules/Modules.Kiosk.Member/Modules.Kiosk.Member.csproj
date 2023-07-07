@@ -41,6 +41,7 @@
 		<ProjectReference Include="..\Modules.Admin\Modules.Admin.csproj" />
 		<ProjectReference Include="..\Modules.Kiosk.Monitoring\Modules.Kiosk.Monitoring.csproj" />
 		<ProjectReference Include="..\Modules.Kiosk.Settings\Modules.Kiosk.Settings.csproj" />
+		<ProjectReference Include="..\Modules.Parking\Modules.Parking.csproj" />
 		<ProjectReference Include="..\Modules.Pleiger.CommonModels\Modules.Pleiger.CommonModels.csproj" />
 		<ProjectReference Include="..\Modules.Pleiger.MasterData\Modules.Pleiger.MasterData.csproj" />
 		<ProjectReference Include="..\Modules.Pleiger.SystemMgt\Modules.Pleiger.SystemMgt.csproj" />

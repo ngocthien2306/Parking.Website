@@ -417,15 +417,15 @@
                                 {
                                     columns.Add().Caption(_loc.GetLocalizedString("Approve Reject")).CellTemplate(@<text>
                                         @(
-                                                        Html.DevExtreme().RadioGroup()
-                                                        .DataSource(approveRejectEntities)
-                                                        .ValueExpr("id")
-                                                        .DisplayExpr("name")
-                                                        .Value(new JS("data.approveReject"))
-                                                        .Layout(Orientation.Horizontal)
-                                                        .OnValueChanged("UpdateApproveRejectMemberUser")
+                                        Html.DevExtreme().RadioGroup()
+                                        .DataSource(approveRejectEntities)
+                                        .ValueExpr("id")
+                                        .DisplayExpr("name")
+                                        .Value(new JS("data.approveReject"))
+                                        .Layout(Orientation.Horizontal)
+                                        .OnValueChanged("UpdateApproveRejectMemberUser")
 
-                                                        )
+                                        )
                                         </text>);
                                     columns.AddFor(x => x.approvalType).Caption(_loc.GetLocalizedString("Approval Type"));
                                     columns.AddFor(x => x.lastSimilarity).Caption(_loc.GetLocalizedString("Rate Similarity")).Format(Format.FixedPoint);
