@@ -40,71 +40,11 @@
     <title>Deep Parking Server</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Font Awesome -->
-    <!--<link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">-->
-    <!-- Ionicons -->
-    <!--<link rel="stylesheet" href="~/css/ionicons.min.css">-->
-    <!-- Tempusdominus Bbootstrap 4 -->
-    <!--<link rel="stylesheet" href="~/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">-->
-    <!-- iCheck -->
-    <!--<link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css">-->
-    <!-- JQVMap -->
-    <!--<link rel="stylesheet" href="~/plugins/jqvmap/jqvmap.min.css">-->
-    <!--<!-- Theme style -->
-    <!--<link rel="stylesheet" href="~/dist/css/adminlte.min.css">-->
-    <!-- overlayScrollbars -->
-    <!--<link rel="stylesheet" href="~/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">-->
-    <!-- Daterange picker -->
-    <!--<link rel="stylesheet" href="~/plugins/daterangepicker/daterangepicker.css">-->
-    <!-- summernote -->
-    <!--<link rel="stylesheet" href="~/plugins/summernote/summernote-bs4.css">-->
-    <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="~/css/vendor.css">
     @*<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">*@
     <link href="~/css/ionicons/ionicons.min.css" rel="stylesheet" />
     @*<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">*@
     <script src="~/js/vendor.js"></script>
-    @*<link href="~/css/dx.softblue-compact-light.css" rel="stylesheet" />*@
-    @*<link href="~/css/dx.generic-orange.css" rel="stylesheet" />*@
-    @*<script src="~/js/devextreme/quill.min.js"></script>
-                <script src="~/js/turndown.js"></script>
-                <script src="~/js/showdown.min.js"></script>
-
-        <script src="D:\Phong\FrameworkHLFX\HLFXFrameworkModular\src\Modules\Modules.UIRender\wwwroot\js\WarehouseDynamic.js"></script>
-
-                <link href="~/css/devextreme/dx.common.css" rel="stylesheet" />
-                <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />*@
-    <!-- jQuery -->
-    @*<script src="~/plugins/jquery/jquery.min.js"></script>
-        <script src="~/js/devextreme/jquery.js"></script>
-
-        <script src="~/js/devextreme/cldr.js"></script>
-        <script src="~/js/devextreme/cldr/event.js"></script>
-        <script src="~/js/devextreme/cldr/supplemental.js"></script>
-        <script src="~/js/devextreme/cldr/unresolved.js"></script>
-
-        <script src="~/js/devextreme/jszip.js"></script>
-        <script src="~/js/devextreme/globalize.js"></script>
-        <script src="~/js/devextreme/globalize/message.js"></script>
-        <script src="~/js/devextreme/globalize/number.js"></script>
-        <script src="~/js/devextreme/globalize/currency.js"></script>
-        <script src="~/js/devextreme/globalize/date.js"></script>
-        <script src="~/js/devextreme/dx.all.js"></script>*@
-
-    <!-- Bootstrap 4 -->
-    @*<script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-
-        <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
-        <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>*@
-    <!-- Block UI -->
-    @*<script src="~/js/jquery.blockUI.js"></script>
-        <script src="~/js/commonjs/tabpanel/tabpaneljs.js"></script>
-        <script src="~/js/commonjs/popup/popupjs.js"></script>
-        <script src="~/js/commonjs/acton/actionjs.js"></script>
-        <script src="~/js/commonjs/menu/menujs.js"></script>*@
-    <!-- DevExtreme export excel -->
-    @*<script src="https:// cdnjs.cloudflare.com/ajax/libs/exceljs/3.3.1/exceljs.min.js"></script>*@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.4.0/polyfill.min.js"></script>
     @if (siteSetting != null)
@@ -320,9 +260,6 @@
     <script>
         function CheckMobi() {
             if (@(Context.Request.IsMobileBrowser().ToString().ToLower()) === true) {
-                //$.each($(".os-content").find("li").toArray(), function (i,item) {
-                //    console.log($(this));
-                      //});
                 $(".item-child").click();
                 return true;
             }
@@ -362,17 +299,6 @@
                         </li>
                     </ul>
 
-                    @*<form class="form-inline ml-3">
-                            <div class="input-group input-group-sm">
-                                <input class="form-control form-control-navbar" type="search" placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search">
-                                <div class="input-group-append">
-                                    <button class="btn btn-navbar navbar-light" type="submit">
-                                        <i class="fas fa-search"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>*@
-
                     <ul class="navbar-nav ml-0" style="width:90%">
                         <li style="width:90%">
                             <form class="form-inline">
@@ -386,42 +312,13 @@
                                 </div>
                             </form>
                         </li>
-                        @*<div class="dropdown">
-                                <a  class="nav-link btn-secondary dropdown-toggle" data-toggle="dropdown">EN</a>
-                                <ul class="dropdown-menu" id="dropdownmenu">
-                                    <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
-                                    <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>
-                                </ul>
-                            </div>*@
-
-                        @*@if (siteSetting.AccountComponentName != null)
-                            {
-                                if (selector.SelectComponent(siteSetting.AccountComponentName) != null)
-                                {
-                                    @await Component.InvokeAsync(siteSetting.AccountComponentName)
-                                }
-                                else
-                                {
-                                    @await Component.InvokeAsync("UserLogin")
-                                }
-                            }
-                            else
-                            {
-                                @await Component.InvokeAsync("UserLogin")
-                            }*@
-                        @* duy comand ngay 06/10/2020 *@
-                        @*<li class="nav-item">
-                                <a class="nav-link" href="#" hidden="hidden">
-                                    <i class="fas fa-envelope" aria-hidden="true"></i>
-                                </a>
-                            </li>*@
                         <div class="nav-item dropdown custom-dropdown w-10">
                             <a class="nav-link btn-secondary dropdown-toggle text-center" style="padding: .8rem 1rem;" data-toggle="dropdown">
                                 <i class="fa fa-cog" aria-hidden="true"></i>
                             </a>
                             <ul class="dropdown-menu">
                                 <li class="border-bottom"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
-                                <li class="border-bottom"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>
+                                @*<li class="border-bottom"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>*@
 
                                 <li>
                                     @if (siteSetting.AccountComponentName != null)
@@ -445,10 +342,6 @@
                                 </li>
                             </ul>
                         </div>
-                        @* duy comand ngay 06/10/2020 *@
-                        @*<li class="nav-item" hidden="hidden">
-                                <a class="nav-link" href="@Url.Action("Logout", "Login")"><i class="fas fa-sign-out-alt"></i></a>
-                            </li>*@
                     </ul>
                 </nav>
                 <aside class='main-sidebar elevation-4 @(siteSetting.SideBarType == "Dark" ? "sidebar-dark-primary" : "sidebar-light-primary")'>
@@ -471,17 +364,6 @@
                     <!-- Sidebar -->
                     <div class="sidebar">
                         <div class="user-panel mt-2 pb-2 mb-2 d-flex">
-                            @*<form class="form-inline ml-3">
-                                    <div class="input-group input-group-sm">
-                                        <input class="form-control menu-lv2" type="search" placeholder="@_loc.GetLocalizedString("Menu search")" aria-label="Search" id="myInput" onkeyup="searchFunction()">
-                                    </div>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-navbar navbar-light" type="submit">
-                                            <i class="fas fa-search"></i>
-                                        </button>
-                                    </div>
-                                </form>*@
-                            @*asd*@
                             <form class="form-inline ml-3">
                                 <div class="input-group mb-1">
                                     <input class="form-control" type="search" placeholder="@_loc.GetLocalizedString("Menu search")" aria-label="Search" id="myInput" onkeyup="searchFunction()">
@@ -508,46 +390,6 @@
                         @await Component.InvokeAsync("TopMenu")
                     </ul>
 
-                    @*<form class="form-inline ml-3">
-                        <div class="input-group input-group-sm">
-                            <input class="form-control form-control-navbar" type="text"  id="myInputSystem" onkeyup="SearchSystem()"
-                                   placeholder="@_loc.GetLocalizedString("Search")" aria-label="Search">
-                            <div class="input-group-append">
-                                <button class="btn btn-navbar navbar-light" type="button">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="AreaSystemSearch">
-                            <div class="header-search-system d-flex justify-content-between" >
-                                <button class="btn btn-xs mx-2 my-2 btn-warning"><i class="fas fa-angle-down mr-2"></i>Mục</button>
-                                <button class="btn btn-xs mx-2 my-2 btn-danger"><i class="fas fa-angle-close mr-2"></i>Close</button>
-                            </div>
-                            <div class="content-category-search">
-                                <ul class="pl-1" >
-                                    <li><input type="checkbox" class="system-search mr-1" value="mes" name="mes" />MES</li>
-                                    <li><input type="checkbox" class="system-search mr-1" value="scm" name="scm"/>SCM</li>
-                                    <li><input type="checkbox" class="system-search mr-1" value="system-management" name="system-management" />System Management</li>
-                                    <li><input type="checkbox" class="system-search mr-1" value="management-site" name="management-site" />Management Site</li>
-                                </ul>
-                            </div>
-                            <div class="content-search-show">
-                                 <div class="item-content-search-show">
-                                      <div class="card">
-                                          <div class="card-header"><h5>MES</h5></div>
-                                          <div class="card-body p-1">
-                                              <ul class="pl-1">
-                                                  <li><a></a></li>
-                                                  <li>dada</li>
-                                                  <li>dada</li>
-                                                  <li>dada</li>
-                                              </ul>
-                                          </div>
-                                      </div>
-                                 </div>
-                            </div>
-                        </div>
-                    </form>*@
 
                     <ul class="navbar-nav ml-auto">
                         <form class="form-inline ml-3">
@@ -561,118 +403,11 @@
                                     </button>
                                 </div>
                             </div>
-                            @*<div id="AreaSystemSearch">
-                                <div class="header-search-system d-flex justify-content-between">
-                                    <button class="btn btn-xs mx-2 my-2 btn-warning" type="button" id="btnCategorySearch"><i class="fas fa-angle-down mr-2"></i>Mục</button>
-                                    <button class="btn btn-xs mx-2 my-2 btn-danger" type="button" id="btnCloseSearch"><i class="fas fa-angle-close mr-2"></i>Close</button>
-                                </div>
-                                <div class="content-category-search">
-                                    <ul class="pl-1" >
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="masterdata" />MasterData</li>
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="inventory" />Inventory</li>
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="production" />Production</li>
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="purchaseorder" />PurchaseOrder</li>
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="salesproject" />SalesProject</li>
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="systemmanagement" />SystemManagement</li>
-                                        <li><input type="checkbox" class="system-search mr-1" checked="true" value="transaction" />Transaction</li>
-                                    </ul>
-                                </div>
-                                <div class="content-search-show" id="content-search-show">
-                                    <div class="item-content-search-show"  id="masterdata" name="masterdata">
-                                        <div class="card">
-                                            <div class="card-header"><h5>MasterData</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a>asdas</a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="item-content-search-show"  id="inventory"  name="inventory">
-                                        <div class="card">
-                                            <div class="card-header"><h5>Inventory</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a></a></li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="item-content-search-show" id="production" name="production">
-                                        <div class="card">
-                                            <div class="card-header"><h5>Production</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a></a></li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="item-content-search-show"  id="purchaseorder" name="purchaseorder">
-                                        <div class="card">
-                                            <div class="card-header"><h5>PurchaseOrder</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a></a></li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="item-content-search-show"  id="salesproject" name="salesproject">
-                                        <div class="card">
-                                            <div class="card-header"><h5>SalesProject</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a></a></li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="item-content-search-show" id="systemmanagement" name="systemmanagement">
-                                        <div class="card">
-                                            <div class="card-header"><h5>SystemManagement</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a></a></li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>  
-                                    <div class="item-content-search-show" id="transaction"  name="transaction">
-                                        <div class="card">
-                                            <div class="card-header"><h5>Transaction</h5></div>
-                                            <div class="card-body p-1">
-                                                <ul class="pl-1">
-                                                    <li><a></a></li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                    <li>dada</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>*@
                         </form>
                         @*<li class="nav-item"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
         <li class="nav-item"><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>*@
                         <div class="dropdown">
-                            <a id="btnlanguage" class="nav-link btn-secondary dropdown-toggle" data-toggle="dropdown">KR</a>
+                            <a id="btnlanguage" class="nav-link btn-secondary dropdown-toggle" data-toggle="dropdown">EN</a>
                             <ul class="dropdown-menu" id="dropdownmenu">
                                 <li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "en"})">EN</a></li>
                                 @*<li><a class="nav-link" href="@Url.Action("OnGetSetCultureCookie","Home",new { cltr= "ko"})">KR</a></li>*@
@@ -1305,145 +1040,9 @@
                 GetListLeftMenu(idmenuactive, 1);
                 GenerateTab(nametablink, urltablink, idmenuactivetablink, false);
             }
-
-            //end
-
-
-
-            /*li = $("ul.nav-sidebar ").find('li');
-                        //li = ul.getElementsByTagName('li');
-                        for (i = 0; i < li.length; i++) {
-                            a = li[i].getElementsByTagName("a")[0];
-                            if (a != undefined) {
-                                txtValue = a.textContent || a.innerText;
-                                if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                    li[i].style.display = "";
-                                } else {
-                                    li[i].style.display = "none";
-                                }
-                            }
-                        }
-
-
-                        // Loop through all list items, and hide those who don't match the search query
-                        //for (i = 0; i < li.length; i++) {
-                        //    a = li[i].getElementsByTagName("a")[0];
-                        //    if (a != undefined) {
-                        //        txtValue = a.textContent || a.innerText;
-                        //        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        //            li[i].style.display = "";
-                        //        } else {
-                        //            li[i].style.display = "none";
-                        //        }
-                        //    }
-                        //}
-                        // check child menu
-                        var liChild = $("ul.nav-sidebar").find("li.has-treeview");
-                        // var liChild = ul.getElementsByClassName('has-treeview');
-                        for (i = 0; i < liChild.length; i++) {
-                            $(liChild[i]).addClass('menu-open');
-                            // $(liChild[i].getElementsByTagName("ul")[0]).style.display ="block";
-                            li = liChild[i].getElementsByTagName("ul")[0].getElementsByTagName('li');
-                            var icount = 0;
-                            for (j = 0; j < li.length; j++) {
-                                a = li[j].getElementsByTagName("a")[0];
-                                if (a != undefined) {
-                                    txtValue = a.textContent || a.innerText;
-                                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                        li[j].style.display = "";
-                                        icount++;
-                                    } else {
-                                        li[j].style.display = "none";
-                                    }
-                                }
-                            }
-                            if (icount > 0) {
-                                liChild[i].style.display = "";
-                            }
-                            else {
-                                liChild[i].style.display = "none";
-                            }
-                        }*/
         }
-        @*// bao add to fix tab when window scroll
-        $(window).scroll(function () {
-            if (@(Context.Request.IsMobileBrowser().ToString().ToLower()) === true) {
-                //dont do anything
-            } else {
-                var currentStyle = $("#divTabLink").css();
-                 
-                var divTabLink = $("#divTabLink");
-                var tabLinkId = $(divTabLink).find("li.active > .tab-template >.tab-link").attr("menu-id");
-                var divTabMenu = $("#divTabContent").find(".tab-menu-pane:gt(0) > .row .card");
-                var tabMenuId = $("#divTabContent").find(`.tab-menu-pane:gt(0)[menu-id=${tabLinkId}][style*='display: block']`).attr("menu-id");
-                var mainMenu = $(".main-header.navbar.navbar-expand");
-                 
-                //tab dashboard
-                var tabDasboardId = '93';
-                var siteSettingTabID = '56';
-                var tabDasboard = $(divTabLink).find("li.active > .tab-template > .tab-link").attr("menu-id");
-                if (tabDasboard != null && tabDasboard === tabDasboardId) {
-                    //dont show on dashboard tab..
-                } else if (tabDasboard != null && tabDasboard === siteSettingTabID) {
-                    //dont do
-                } else {
-                    var targetAttrValue = {
-                        "position": "relative",
-                        "width": "100%",
-                        "background-color": "#fff",
-                        "box-shadow": "none",
-                        "z-index": "999"
-                    };
-                //
-                    var  MainMenuAttrValue = {
-                        "position": "fixed",
-                        "width": "100%",
-                        "background-color": "white",
-                        "top": "0",
-                        "z-index": "1000",
-                        "box-shadow": "0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)",
-                        "transition": "linear .2s"
-                    };
-                    var mainMenuHeight = $(mainMenu).height();
-                    var tablinkAttrValue = {
-                        "position": "fixed",
-                        "width": "100%",
-                        "background-color": "white",
-                        "top": `${mainMenuHeight}px`,
-                        "z-index": "1001",
-                        "box-shadow": "0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)",
-                        "transition": "linear .2s"
-                    };
-                    var tablinkHeight = $(divTabLink).height();
-                    var tabcontentHeight = mainMenuHeight + tablinkHeight;
-                    var tabContentAttrValue = {
-                        "position": "fixed",
-                        "width": "100%",
-                        "background-color": "white",
-                        "top": `${tabcontentHeight}`,
-                        "z-index": "1002",
-                        "box-shadow": "0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2)",
-                        "transition": "linear .2s"
-                    };
-                    if ($(this).scrollTop() > 150) {
-                        $(mainMenu).css(MainMenuAttrValue);
-                        $(divTabLink).css(tablinkAttrValue);
-                        $(divTabLink).parent().addClass("p-0");
-                        if (tabLinkId === tabMenuId) {
-                            $(divTabMenu).css(tabContentAttrValue);
-                            console.log("ok");
-                        }
-                    }
-                    else if ($(this).scrollTop() < 150) {
-                        $(mainMenu).css(targetAttrValue);
-                        $(divTabLink).css(targetAttrValue);
-                        $(divTabMenu).css(targetAttrValue);
-                    }
-                }
-            }
-        });*@
-        //end
-    // hide search when colappse tree-menu :)))
+       
+
     var flagMenuSearch = 1;
     $(".wrapper a.nav-link[data-widget=pushmenu]").on("click", function () {
         if (flagMenuSearch == 1) {

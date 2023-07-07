@@ -43,8 +43,8 @@ namespace InfrastructureCore.Web.Controllers
         {            
             get
             {
-                var lang = "/ko";
-                if (Request.Cookies["langname"] != null && Request.Cookies["langname"] != "ko")
+                var lang = "/en";
+                if (Request.Cookies["langname"] != null && Request.Cookies["langname"] != "vn")
                 {
                     lang = "/" + Request.Cookies["langname"];
                 }
