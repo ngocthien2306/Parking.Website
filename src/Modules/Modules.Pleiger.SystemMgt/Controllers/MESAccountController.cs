@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Modules.Admin.Controllers;
 using Modules.Admin.Services.IService;
+using System;
 using System.Linq;
 
 
@@ -66,29 +67,22 @@ namespace Modules.Pleiger.SystemMgt.Controllers
         //[Authorize]
         public IActionResult OnMESLogin(string UserName, string Password)
         {
-            // Response.Cookies.Append("langname", "en",
-            //new CookieOptions { Expires = DateTimeOffset.UtcNow.AddMonths(1) });
+            Response.Cookies.Append("langname", "en",
+                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(7) });
             ValidateResult result = new ValidateResult();
             string MESHome = CurrentLanguages + "/MESHome";
-            // get UserName from EmployeeNo
-            // var temp = employeeService.GetEmployess(UserName);
+
             int SiteID = int.Parse(_appSettings.SiteID);
             var user = userService.GetListDataAll(SiteID).Where(m => m.UserCode == UserName).FirstOrDefault();
             if (user != null)
             {
                 result = this.AuthenticateUser(defaultSiteCode, user.UserName, Password, MESHome);
-                //if (result.Success)
-                //{
-                //    this.SiteSettings.LeftMenuComponentUrl = "LeftMenu";
-                //}
-                // var temp = User.Identity;
             }
             else
             {
                 result.Success = false;
                 result.Error = ValidateResultError.CredentialNotFound;
             }
-            // Redirecto to Home of MES
 
             return Json(result);
         }

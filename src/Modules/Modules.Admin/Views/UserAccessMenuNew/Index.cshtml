@@ -681,20 +681,6 @@
                     .Width(340)
                     .Height("100%")
                     .ShowCheckBoxesMode(TreeViewCheckBoxMode.Normal)
-                    @*.ItemTemplate(
-                     if(ViewBag.CurrentLanguage == "ko") {
-                          @<text>
-                              <%- MenuNameEng %>
-                          </text>
-                     }
-                     else
-                     {
-                            @<text>
-                            <%- MenuNameEng %>
-                            </text>
-                     }
-
-                    )*@
                 )
             </div>
         </div>
@@ -739,7 +725,7 @@
                                 columns.AddFor(m =>m.MenuID).Visible(false);
                                 columns.AddFor(m =>m.MenuParentID).Visible(false);
                                 //columns.AddFor(m => m.MenuName).Caption(_loc.GetLocalizedString("MenuName"));
-                                if (currentlanguage == "ko")
+                                if (currentlanguage == "vn")
                                 {
                                     columns.AddFor(m => m.MenuName).Caption(_loc.GetLocalizedString("MenuName"));
                                 }

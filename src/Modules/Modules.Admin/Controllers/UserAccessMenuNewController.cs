@@ -74,7 +74,6 @@ namespace Modules.Admin.Controllers
         public IActionResult GetMenuByUserId(string UserCode)
         {
             var result = userService.GetMenuByUserId(UserCode,CurrentUser.SiteID);
-            ///ViewBag.CurrentLanguage = CurrentLanguages.Substring(1) != null ? CurrentLanguages.Substring(1) : "en";
             return Content(JsonConvert.SerializeObject(result));
         }
 
@@ -83,7 +82,6 @@ namespace Modules.Admin.Controllers
         public IActionResult GetCheckedMenu(string UserCode)
         {
             var result = userService.GetCheckedMenu(UserCode,CurrentUser.SiteID);
-           // ViewBag.CurrentLanguage = CurrentLanguages.Substring(1) != null ? CurrentLanguages.Substring(1) : "en";
             return Content(JsonConvert.SerializeObject(result));
         }
         [HttpGet]

@@ -88,7 +88,7 @@
     function DownloadCBFile@(ViewBag.Thread)(e) {
         CheckSession();
         var data = e.row.data;
-        location.href = '/ko/FilesUpload/DownloadFileZip?fileid=' + data.FileID;
+        location.href = '/en/FilesUpload/DownloadFileZip?fileid=' + data.FileID;
         }
         function SetBackButton@(ViewBag.Thread)() {
              
@@ -174,7 +174,7 @@
                                             {
                                                 if (ViewBag.UserType =="G000C002"|| ViewBag.UserType == "G000C001")
                                                 {
-                                                    columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("글제목")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
+                                                    columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Post title")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
                                                         @<text>
                                                         <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>')" data-pag-id="<%-data.BoardDocID%>">
                                                             <%-data.Subject%>
@@ -184,7 +184,7 @@
                                                     }
                                                     else
                                                     {
-                                                        columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("글제목")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
+                                                        columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Post title")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
                                                         @<text>
                                                         <%-data.Subject%>
                                                         </text>
@@ -193,7 +193,7 @@
                                                 }
                                                 else
                                                 {
-                                                    columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("글제목")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
+                                                    columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Post title")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
                                                     @<text>
                                                     <a href="#" onclick="OpenEditCommonBoardPop@(ViewBag.Thread)('<%-data.BoardDocID%>')" data-pag-id="<%-data.BoardDocID%>">
                                                         <%-data.Subject%>
@@ -205,7 +205,7 @@
                                             }
                                             else
                                             {
-                                                columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("글제목")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
+                                                columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("Post title")).Alignment(HorizontalAlignment.Left).Width("40%").CellTemplate(
                                                     @<text>
                                                     <a href="<%-data.Subject%>" target="_blank" data-pag-id="<%-data.BoardDocID%>">
                                                         <%-data.Subject%>
@@ -233,7 +233,7 @@
                                         });
                                             @*columns.AddFor(m => m.Subject).Caption(_loc.GetLocalizedString("글제목")).Alignment(HorizontalAlignment.Left).Width("30%").CellTemplate(
                                                     @<text>
-                                                    <a href="/ko/FilesUpload/DownloadFileZip?fileid=<%-data.FileID%>">
+                                                    <a href="/en/FilesUpload/DownloadFileZip?fileid=<%-data.FileID%>">
                                                         file
                                                     </a>
                                                     </text>

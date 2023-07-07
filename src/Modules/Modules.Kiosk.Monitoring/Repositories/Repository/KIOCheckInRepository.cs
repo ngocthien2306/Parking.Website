@@ -18,6 +18,38 @@ namespace Modules.Kiosk.Monitoring.Repositories.Repository
         private readonly string SP_STORE_MANAGEMENT = "SP_STORE_MANAGEMENT";
         #region Get Data
 
+        public List<KIO_CheckInInfo> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin, string userId)
+        {
+            List<KIO_CheckInInfo> kIO_CheckIns = new List<KIO_CheckInInfo>();
+
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    string[] arrParams = new string[6];
+                    arrParams[0] = "@Method";
+                    arrParams[1] = "@StartDate";
+                    arrParams[2] = "@EndDate";
+                    arrParams[3] = "@StoreNo";
+                    arrParams[4] = "@ByMin";
+                    arrParams[5] = "@UserId";
+                    object[] arrValue = new object[6];
+                    arrValue[0] = "GetCheckInInfo";
+                    arrValue[1] = startDate;
+                    arrValue[2] = endDate;
+                    arrValue[3] = storeNo;
+                    arrValue[4] = byMin;
+                    arrValue[5] = userId;
+                    var result = connection.ExecuteQuery<KIO_CheckInInfo>(SP_USER_CHECKIN_MONITORING, arrParams, arrValue);
+                    kIO_CheckIns = result.ToList();
+                    return kIO_CheckIns;
+                }
+            }
+            catch
+            {
+                return kIO_CheckIns;
+            }
+        }
         public List<KIO_UserStore> GetUserStoreMgt(string storeNo, string userId, string userType)
         {
             List<KIO_UserStore> listUserStore = new List<KIO_UserStore>();
@@ -197,6 +229,7 @@ namespace Modules.Kiosk.Monitoring.Repositories.Repository
                 return new Result { Success = false, Message = MessageCode.MD0005 };
             }
         }
+
         #endregion
     }
 }

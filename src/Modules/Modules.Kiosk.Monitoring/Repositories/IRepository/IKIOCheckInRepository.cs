@@ -13,6 +13,7 @@ namespace Modules.Kiosk.Monitoring.Repositories.IRepository
         public Result UpdateApproveRejectRemoveUser(string userId, bool status);
 
         public List<KIO_CheckInInfo> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin);
+        public List<KIO_CheckInInfo> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin, string userId);
         public KIO_CheckInInfo GetPhotoById(string userId);
     }
 }

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Modules.Pleiger.CommonModels.Parking
 {
     public class ParkingHistoryDetail
@@ -21,6 +18,8 @@ namespace Modules.Pleiger.CommonModels.Parking
         public string plateNumber { get; set; }
         public string detectInFace { get; set; }
         public string plateIn { get; set; }
+        public string plateOut { get; set; }
+        public string detectOutFace { get; set; }
         public DateTime? endTime { get; set; }
 
 
