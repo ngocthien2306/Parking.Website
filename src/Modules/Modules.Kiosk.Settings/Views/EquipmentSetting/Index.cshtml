@@ -60,7 +60,7 @@
             device.option("dataSource", null);
         }
     }
-    function RequestBlockKiosk(storeNo, storeDeviceNo, status) {
+    function RequestBlockKiosk(storeNo, storeDeviceNo, status, ip, port) {
         $.ajax({
             url: '@Url.Action("RequestBlockKiosk", "StoreMgt")',
             type: "POST",
@@ -109,7 +109,9 @@
                             data: {
                                 storeNo: storeNo,
                                 storeDeviceNo: storeDeviceNo,
-                                status: true
+                                status: true,
+                                ip: ip,
+                                port: port
                             },
                             dataType: 'json',
                             async: false,
@@ -175,7 +177,7 @@
                                 6000
                             );
 
-                            RequestBlockKiosk(gridStore.storeNo, gridDevice.storeDeviceNo, e.value);
+                            RequestBlockKiosk(gridStore.storeNo, gridDevice.storeDeviceNo, e.value, gridDevice.devicePublicIp, gridDevice.deviceUsePort);
 
 
                             //setTimeout(function () {

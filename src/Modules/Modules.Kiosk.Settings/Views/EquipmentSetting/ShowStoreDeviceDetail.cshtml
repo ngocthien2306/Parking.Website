@@ -136,9 +136,7 @@
                                     4000
                                 );
 
-   
-                                RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), GetDataElement("#@deviceStatus"));
-
+                                RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), GetDataElement("#@deviceStatus"), GetDataElement("#@devicePublicIp"), GetDataElement("#@deviceUsePort"));
 
                                 $('#modalControl').modal('hide');
                             }

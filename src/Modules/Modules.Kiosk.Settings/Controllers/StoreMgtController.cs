@@ -153,7 +153,7 @@ namespace Modules.Kiosk.Management.Controllers
         #endregion
 
         #region Create - Update - Delete
-        public async Task<Result> RequestBlockKiosk(int storeNo, int storeDeviceNo, bool status)
+        public async Task<Result> RequestBlockKiosk(int storeNo, int storeDeviceNo, bool status, string ip, string port)
         {
             try
             {
@@ -162,12 +162,12 @@ namespace Modules.Kiosk.Management.Controllers
                 {
                     if(status)
                     {
-                        httpResponse = await client.GetAsync("http://26.115.12.45:8000/api/face/start-realtime");
+                        httpResponse = await client.GetAsync($"http://{ip}:{port}/api/face/start-realtime");
 
                     }
                     else
                     {
-                        httpResponse = await client.GetAsync("http://26.115.12.45:8000/api/face/stop-realtime");
+                        httpResponse = await client.GetAsync($"http://{ip}:{port}/api/face/stop-realtime");
                     }
                     httpResponse.EnsureSuccessStatusCode();
                     return new Result { Data = "", Message = "", Success = true };
