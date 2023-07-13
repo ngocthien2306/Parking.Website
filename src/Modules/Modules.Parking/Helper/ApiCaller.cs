@@ -41,7 +41,44 @@ namespace Modules.Parking.Helper
 
             return null;
         }
+        public static async Task<Result> AddVehicleUserToFolder(string userId, string licenseNumber, string imageVehicle64)
+        {
+            var result = new Result();
+            string apiEndpoint = "/addVehicleUser";
+            string apiUrl = baseUrl + apiEndpoint;
+            try
+            {
+                var requestBody = new
+                {
+                    userId = userId,
+                    licenseNumber = licenseNumber,
+                    imageVehicle64 = imageVehicle64
+                };
+                string jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await httpClient.PostAsync(apiUrl, content);
 
+                if (response.IsSuccessStatusCode)
+                {
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    result.Data = apiResponse;
+                    result.Success = true;
+                    return result;
+                }
+                else
+                {
+                    result.Success = false;
+                    result.Message = response.RequestMessage.ToString();
+                }
+
+            }
+            catch(Exception ex)
+            {
+                result.Success = false;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
         public static async Task<Result> VerifyLicensePlateAsync(string licensePlateImage)
         {
             var result = new Result();
@@ -53,7 +90,7 @@ namespace Modules.Parking.Helper
                 // Prepare the request body
                 var requestBody = new
                 {
-                    stringlp = licensePlateImage
+                    imagelp64 = licensePlateImage
                 };
                 string jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
@@ -79,7 +116,7 @@ namespace Modules.Parking.Helper
                 result.Message = ex.Message;
             }
 
-            return null;
+            return result;
         }
     }
 }

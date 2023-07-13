@@ -365,16 +365,17 @@ namespace Modules.Kiosk.Member.Controllers
                 string base64img = Convert.ToBase64String(System.IO.File.ReadAllBytes(Path.Combine(path, myFile.FileName)));
 
 
-                string baseUrl = "http://localhost:8005/api/v1/users";
+                string baseUrl = "http://26.115.12.45:8005/vehicle";
                 ApiCaller.SetBaseUrl(baseUrl);
-                //Result apiResponse = await ApiCaller.VerifyLicensePlateAsync(base64img);
-                Result apiResponse = new Result { Success = true };
+                Result apiResponse = await ApiCaller.VerifyLicensePlateAsync(base64img);
+                // Result apiResponse = new Result { Success = true };
                 if (apiResponse.Success)
                 {
-                    // UploadVehicleResponse response = JsonConvert.DeserializeObject<UploadVehicleResponse>(apiResponse.Data.ToString());
+                    UploadVehicleResponse response = JsonConvert.DeserializeObject<UploadVehicleResponse>(apiResponse.Data.ToString());
 
                     // Fake data
-                    UploadVehicleResponse response = new UploadVehicleResponse() { license="86B343046", plateType = "2 line", transportType = "Oto" };
+                    // UploadVehicleResponse response = new UploadVehicleResponse() { license="86B343046", plateType = "2 line", transportType = "Oto" };
+
                     res.data = "data:image/png;base64," + base64img;
                     res.path = Path.Combine(path, myFile.FileName.Trim());
                     res.success = apiResponse.Success;

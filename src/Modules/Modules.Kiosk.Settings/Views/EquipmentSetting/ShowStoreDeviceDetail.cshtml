@@ -51,14 +51,14 @@
     function CheckExistAudioBySoundId() {
 
     }
-    
+
     function LoadComboBoxDevice() {
         debugger;
         var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
         LoadDataCommboBox("DVC000", url, '#@deviceType', false);
     }
     // End Region: Get, Check data
-    
+
     // Region: Btn event
     $("#btnDelete_@ViewBag.Thread").on("click", function() {
         var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
@@ -91,7 +91,7 @@
     }
 
     $("#btnSave_@ViewBag.Thread").on("click", function() {
-        
+
         if (ValidateInputSaveDevice()) {
             var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0003))", '@(_loc.GetLocalizedString("Notice"))');
             yes_or_no.done(function (dialogResult) {
@@ -135,10 +135,10 @@
                                     'info',
                                     4000
                                 );
-                                
-                                if (GetDataElement("#@deviceStatus") == false) {
-                                    RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), false);
-                                }
+
+   
+                                RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), GetDataElement("#@deviceStatus"));
+
 
                                 $('#modalControl').modal('hide');
                             }
@@ -164,7 +164,7 @@
     // End Region: Btn event
 
     // Region: Validate data
-    
+
     function ValidateInputSaveDevice() {
         let registDate = GetDataElement("#@registDate");
         if(registDate == null || registDate == "" || typeof registDate === undefined) {

@@ -158,6 +158,35 @@ namespace Modules.Kiosk.Management.Controllers
             try
             {
                 HttpResponseMessage httpResponse;
+                try
+                {
+                    if(status)
+                    {
+                        httpResponse = await client.GetAsync("http://26.115.12.45:8000/api/face/start-realtime");
+
+                    }
+                    else
+                    {
+                        httpResponse = await client.GetAsync("http://26.115.12.45:8000/api/face/stop-realtime");
+                    }
+                    httpResponse.EnsureSuccessStatusCode();
+                    return new Result { Data = "", Message = "", Success = true };
+                }
+                catch(Exception ex)
+                {
+                    return new Result { Data = "", Message = "Can not connect to server Kiosk! Please try again", Success = false };
+                }
+            }
+            catch
+            {
+                return new Result { Data = "", Message = "Error in system, may be lose connection to server kiosk! Please try again", Success = false };
+            }
+        }
+        public async Task<Result> RequestBlockKiosk1(int storeNo, int storeDeviceNo, bool status)
+        {
+            try
+            {
+                HttpResponseMessage httpResponse;
                 var storeInfo = new StoreDeviceDto() { storeNo = storeNo, storeDeviceNo = storeDeviceNo, deviceStatus = status };
                 var dataObj = new Datas()
                 {

@@ -4,12 +4,14 @@ using InfrastructureCore.Web.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Modules.Admin.Services.IService;
+using Modules.Parking.Helper;
 using Modules.Parking.Repositories.IRepo;
 using Modules.Pleiger.CommonModels.Parking;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Modules.Parking.Controllers
 {
@@ -122,10 +124,24 @@ namespace Modules.Parking.Controllers
 
         #region Create - Update -  Delete
         [HttpPost]
-        public ActionResult<Result> SaveVehicle(VehiceInfo vehice)
+        public async Task<ActionResult<Result>> SaveVehicle(VehiceInfo vehice)
         {
             vehice.userId = CurrentUser.UserCode;
             var res = _vehicleHistoryRepository.SaveVehicle(vehice);
+            if(res.Success)
+            {
+                string imageVehicle64 = Convert.ToBase64String(res.Data as byte[]);
+                Result apiResponse = await ApiCaller.AddVehicleUserToFolder(vehice.userId, vehice.plateNum, imageVehicle64);
+                if(apiResponse.Success)
+                {
+                    res.Success = true;
+                }
+                else
+                {
+                    res.Success = false;
+                    res.Message = apiResponse.Message;
+                }
+            }
             return Json(res);
         }
         [HttpPost]
@@ -133,13 +149,19 @@ namespace Modules.Parking.Controllers
         {
             return Json(_parkingRepository.SaveParkingMaster(parkingMaster));
         }
-
+        
         [HttpDelete]
         public ActionResult<Result> DeleteParkingSite([FromRoute] int id)
         {
             return Json(_parkingRepository.DeletParking(id));
         }
         
+        [HttpDelete]
+        public ActionResult<Result> DeleteVehicle(int vehicleId)
+        {
+            var res = _vehicleHistoryRepository.DeleteVehicle(vehicleId, CurrentUser.UserCode);
+            return Json(res);
+        }
         #endregion
     }
 }

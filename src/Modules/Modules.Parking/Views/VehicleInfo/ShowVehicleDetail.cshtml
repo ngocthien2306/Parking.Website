@@ -48,14 +48,11 @@
         var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0002))", '@(_loc.GetLocalizedString("Notice"))');
         yes_or_no.done(function (dialogResult) {
             if (dialogResult) {
-                debugger;
-                var data = [];
-                data.push({ userId: "@Model.userId", userName: "" });
                 $.ajax({
-                    url: '@Url.Action("DeleteListMember", "MemberMgt")',
+                    url: '@Url.Action("DeleteVehicle", "VehicleInfo")',
                     type: "DELETE",
                     data: {
-                        userIds: JSON.stringify(data)
+                        vehicleId: '@Model.id'
                     },
                     dataType: 'json',
                     async: false,
@@ -65,7 +62,7 @@
 
                             DevExpress.ui.notify(
                                 {
-                                    message: '@_loc.GetLocalizedString("Delete member successfully! Sending information to syschonous on FaceOK. Please wait a second")',
+                                    message: '@_loc.GetLocalizedString("Delete vehicle successfully! Sending information to syschonous to ML Server. Please wait a second")',
                                     position: {
                                         my: 'bottom right',
                                         at: 'bottom right'
@@ -76,8 +73,12 @@
                                 5000
                             );
                             $('#modalControl').modal('hide');
-                            var url = '@Url.Action("RequestDeleteOnFaceOk", "MemberMgt")';
-                            RequestOnFaceOk(data, url, true);
+                            setTimeout(function () {
+                                //BiddingProfile("@ViewBag.UserCode");
+                                GetListVehicle();
+                            }, 10);
+                            @*var url = '@Url.Action("RequestDeleteOnFaceOk", "MemberMgt")';
+                            RequestOnFaceOk(data, url, true);*@
 
                         }
                         else {

@@ -168,9 +168,9 @@ namespace Modules.Parking.Repositories.Repo
                                 }
                                 catch
                                 {
-
+                                    return new Result { Success = true, Message = MessageCode.MD0004 };
                                 }
-                                return new Result { Success = true, Message = MessageCode.MD0004 };
+                                return new Result { Success = true, Message = MessageCode.MD0004, Data = imgVehicle };
                             }
                             else
                             {
@@ -192,9 +192,52 @@ namespace Modules.Parking.Repositories.Repo
             }
         }
 
-        public Result DeleteVehicle(string vehicleId, string userId)
+        public Result DeleteVehicle(int vehicleId, string userId)
         {
-            throw new NotImplementedException();
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            var resultDelete = "false";
+                            string[] arrParam = new string[3];
+                            arrParam[0] = "@Method";
+                            arrParam[1] = "@VehicleId";
+                            arrParam[2] = "@UserId";
+
+                            object[] arrValue = new object[3];
+                            arrValue[0] = "DeleteVehicle";
+                            arrValue[1] = vehicleId;
+                            arrValue[2] = userId;
+
+                            resultDelete = connection.ExecuteScalar<string>(SP_VEHICLE_HISTORY, CommandType.StoredProcedure, arrParam, arrValue, transaction);
+                            transaction.Commit();
+                            if (resultDelete != "false")
+                            {
+                                return new Result { Success = true, Message = MessageCode.MD0004 };
+                            }
+                            else
+                            {
+                                transaction.Rollback();
+                                return new Result { Success = false, Message = MessageCode.MD0005 };
+                            }
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            return new Result { Success = false, Message = MessageCode.MD0005 };
+
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return new Result { Success = false, Message = MessageCode.MD0005 };
+            }
         }
 
         public List<KIO_UserHistory> GetUserHistory(string userId)
