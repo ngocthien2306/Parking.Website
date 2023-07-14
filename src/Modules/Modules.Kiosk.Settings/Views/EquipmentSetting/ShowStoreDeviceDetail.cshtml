@@ -136,7 +136,15 @@
                                     4000
                                 );
 
-                                RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), GetDataElement("#@deviceStatus"), GetDataElement("#@devicePublicIp"), GetDataElement("#@deviceUsePort"));
+                                var url = '';
+                                if (GetDataElement("#@deviceType") != "DVC003") {
+                                    url = '@Url.Action("RequestBlockKiosk1", "StoreMgt")'
+                                }
+                                else {
+                                    url = '@Url.Action("RequestBlockKiosk", "StoreMgt")'
+                                }
+  
+                                RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), GetDataElement("#@deviceStatus"), GetDataElement("#@devicePublicIp"), GetDataElement("#@deviceUsePort"), url);
 
                                 $('#modalControl').modal('hide');
                             }

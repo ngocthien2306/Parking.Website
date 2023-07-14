@@ -60,14 +60,16 @@
             device.option("dataSource", null);
         }
     }
-    function RequestBlockKiosk(storeNo, storeDeviceNo, status, ip, port) {
+    function RequestBlockKiosk(storeNo, storeDeviceNo, status, ip, port, url) {
         $.ajax({
-            url: '@Url.Action("RequestBlockKiosk", "StoreMgt")',
+            url: url,
             type: "POST",
             data: {
                 storeNo: storeNo,
                 storeDeviceNo: storeDeviceNo,
-                status: status
+                status: status,
+                ip: ip,
+                port: port
             },
             dataType: 'json',
             async: false,
@@ -109,9 +111,7 @@
                             data: {
                                 storeNo: storeNo,
                                 storeDeviceNo: storeDeviceNo,
-                                status: true,
-                                ip: ip,
-                                port: port
+                                status: true
                             },
                             dataType: 'json',
                             async: false,
@@ -176,8 +176,15 @@
                                 'info',
                                 6000
                             );
+                            var url = '';
+                            if (gridDevice.deviceType != "DVC003") {
+                                url = '@Url.Action("RequestBlockKiosk1", "StoreMgt")'
+                            }
+                            else {
+                                url = '@Url.Action("RequestBlockKiosk", "StoreMgt")'
+                            }
 
-                            RequestBlockKiosk(gridStore.storeNo, gridDevice.storeDeviceNo, e.value, gridDevice.devicePublicIp, gridDevice.deviceUsePort);
+                            RequestBlockKiosk(gridStore.storeNo, gridDevice.storeDeviceNo, e.value, gridDevice.devicePublicIp, gridDevice.deviceUsePort, url);
 
 
                             //setTimeout(function () {
@@ -321,7 +328,7 @@
                             return;
                         }
 
-                        OpenCreateOrDetailDevice(null);   
+                        OpenCreateOrDetailDevice(null);
                     },
                     icon: "fa fa-plus"
                 },
