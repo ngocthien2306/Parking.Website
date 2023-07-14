@@ -27,6 +27,7 @@ namespace Modules.Pleiger.CommonModels.Parking
         public string typePlate { get; set; }
         public string vehicleStatus { get; set; }
         public string trackStatus { get; set; }
+        public string status { get; set; }
         public DateTime? currentTime { get; set; }
     }
 

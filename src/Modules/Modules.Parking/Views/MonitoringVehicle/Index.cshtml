@@ -146,7 +146,6 @@
         return '@trackStatus' + no;
     }
     function onTrackStatusContentReady(e) {
-        debugger;
         textBox = e.component;
         value = textBox.option('value');
         if (value === "Check In") {
@@ -166,6 +165,10 @@
             textBox.option("inputAttr", { style: "background-color: #f6361f; color: #f4feff" });
         }
     }
+    function CheckStatusVehicle(e) {
+        debugger;
+        return e == 'Report' ? false : true;
+    }
 </script>
 
 <div id="menutoolbar_@(ViewBag.Thread)">
@@ -177,7 +180,7 @@
         <div class="card" style="height:100%;width:100%;">
             <div id="headerpage_@(ViewBag.Thread)" class="card-header">
                 <div class="row mt-1">
-                    <div class="col-md-4">
+                    <div class="col-md-4" hidden="hidden">
                         <label>@(_loc.GetLocalizedString("Vehicle Monitoring Period"))</label>
                         <div class="row">
                             <div class="form-group col-md-5">
@@ -383,6 +386,9 @@
                                                 .DisplayExpr("name")
                                                 .Value(new JS("data.approveReject"))
                                                 .Layout(Orientation.Horizontal)
+                                                //.ReadOnly(true)
+                                                
+                                                .ReadOnly(new JS("CheckStatusVehicle(data.trackStatus)"))
                                                 //.OnValueChanged("UpdateApproveRejectUser")
                                                 )
                                             </div>
@@ -501,20 +507,26 @@
     }
     connection.on("ReceivedTracks", function (checkins) {
         debugger;
-        @*var status = GetDataElement("#@selectBoxTrackStatus");
-        if (status !== '' || status !== null || status !== undefined) {
-            checkins = checkins.filter(f => f.trackStatus == status);
-        }*@
-        GetGridIntance("#gridCheckInVehicleRealTime").option("dataSource", checkins)
+        var datas = checkins;
+        var status = GetDataElement("#@selectBoxTrackStatus");
+        if (status != null) {
+            debugger;
+            datas = datas.filter(f => f.status.trim() == status);
+        }
+        var min = ConvertDatetime(GetDataElement("#@optionSearchByMin"));
+        datas = datas.filter(f => f.currentTime >= min);
+        GetGridIntance("#gridCheckInVehicleRealTime").option("dataSource", datas)
+
+
         // focus row index zero
-        //if (checkins.length > 0) {
-        //    $("#gridCheckInVehicleRealTime").dxDataGrid({
-        //        // ...
-        //        focusedRowEnabled: true,
-        //        focusedRowIndex: 0,
-        //        errorRowEnabled: false
-        //    });
-        //}
+        if (checkins.length > 0) {
+            $("#gridCheckInVehicleRealTime").dxDataGrid({
+                // ...
+                focusedRowEnabled: true,
+                focusedRowIndex: 0,
+                errorRowEnabled: false
+            });
+        }
 
     })
 </script>

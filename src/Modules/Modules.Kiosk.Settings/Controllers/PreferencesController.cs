@@ -125,7 +125,7 @@ namespace Modules.Kiosk.Management.Controllers
 
                 try
                 {
-                    responseMessage = await client.PostAsJsonAsync("http://api.owlgardien.com:81/Kiosk/KioskService/GetData", envData);
+                    responseMessage = await client.PostAsJsonAsync("http://26.115.12.45:81/Kiosk/KioskService/GetData", envData);
                     responseMessage.EnsureSuccessStatusCode();
                     return new Result { Data = "", Message = MessageCode.MD0008, Success = true };
                 }

@@ -202,7 +202,7 @@ namespace Modules.Kiosk.Management.Controllers
                     }
                 };
                 var result = _voiceFileService.UpdateVersionAudio(soundNo);
-                response = await client.PostAsJsonAsync("http://api.owlgardien.com:81/Kiosk/KioskService/GetData", data);
+                response = await client.PostAsJsonAsync("http://26.115.12.45:81/Kiosk/KioskService/GetData", data);
                 response.EnsureSuccessStatusCode();
                 return new Result { Data = "", Message = "", Success = true };
             }
@@ -262,7 +262,7 @@ namespace Modules.Kiosk.Management.Controllers
                 });
                 try
                 {
-                    response = await client.PostAsJsonAsync("http://api.owlgardien.com:81/Kiosk/KioskService/GetData", data);
+                    response = await client.PostAsJsonAsync("http://26.115.12.45:81/Kiosk/KioskService/GetData", data);
                     response.EnsureSuccessStatusCode();
                     return new Result { Data = "", Message = "", Success = true };
                 }

@@ -38,7 +38,7 @@ namespace Modules.Kiosk.Monitoring.TableDependencies
 
         private async void TableDependency_OnChanged(object sender, RecordChangedEventArgs<tblUserHistory> e)
         {
-            if(e.ChangeType == TableDependency.SqlClient.Base.Enums.ChangeType.Insert)
+            if(e.ChangeType == TableDependency.SqlClient.Base.Enums.ChangeType.Insert || e.ChangeType == TableDependency.SqlClient.Base.Enums.ChangeType.Update)
             {
                 await checkInHub.SendCheckIns();
             }

@@ -210,7 +210,7 @@ namespace Modules.Kiosk.Member.Controllers
                 };
                 try
                 {
-                    httpResponse = await client.PostJsonAsync("http://api.owlgardien.com:81/Kiosk/KioskService/GetData", userMgtData);
+                    httpResponse = await client.PostJsonAsync("http://26.115.12.45:81/Kiosk/KioskService/GetData", userMgtData);
                     httpResponse.EnsureSuccessStatusCode();
                     return new Result { Data = "", Message = MessageCode.MD0008, Success = true };
                 }
@@ -274,7 +274,7 @@ namespace Modules.Kiosk.Member.Controllers
                 };
                 try
                 {
-                    response = await client.PostJsonAsync("http://api.owlgardien.com:81/Kiosk/KioskService/GetData", userMgtData);
+                    response = await client.PostJsonAsync("http://26.115.12.45:81/Kiosk/KioskService/GetData", userMgtData);
                     response.EnsureSuccessStatusCode();
                     return new Result { Data = "", Message = MessageCode.MD0008, Success = true };
                 }

@@ -340,12 +340,11 @@
             </div>
             <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
                 <div class="row" style="height:75vh">
-                    <div>                   
+                    <div class="col-md-2">                   
                         @(
                             Html.DevExtreme().DataGrid<KIO_StoreMaster>()
                             .ID(gridStore)
                             .Height("70vh")
-                            .Visible(false)
                             .ShowBorders(true)
                             .ShowColumnLines(true)
                             .FilterRow(f => f.Visible(true))
@@ -378,7 +377,7 @@
                             )
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="col-md-10">
                         @(
                             Html.DevExtreme().DataGrid<KIO_CheckInInfo>()
                             .ID(gridCheckIn)
@@ -619,7 +618,15 @@
     }
     connection.on("ReceivedCheckIns", function (checkins) {
         debugger;
+        var datas = checkins;
         var store = $("#gridStoreCheckInPage").dxDataGrid('instance').getSelectedRowsData();
+
+        if (store != null) {
+            datas = datas.filter(f => f.storeNo == store.storeNo);
+        }
+
+        var min = ConvertDatetime(GetDataElement("#@optionSearchByMin"));
+        datas = datas.filter(f => f.useDate >= min);
         //var startTime = formatDate("#startDateCheckIn");
         //var endTime = formatDate("#endDateCheckIn");
         //var storeNo = store.length > 0 ? store[0].storeNo : null;
