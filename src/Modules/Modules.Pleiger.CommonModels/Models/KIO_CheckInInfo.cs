@@ -13,6 +13,7 @@ namespace Modules.Pleiger.CommonModels.Models
         public string storeName { get; set; }
         public Byte[]? takenPhoto { get; set; }
         public Byte[]? idCardPhoto { get; set; }
+        public Byte[]? faceCheckIn { get; set; }
         public DateTime? useDate { get; set; }
         public string userName { get; set; }
         public DateTime? birthday { get; set; }

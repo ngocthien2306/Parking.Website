@@ -86,11 +86,11 @@ namespace Modules.Kiosk.Monitoring.Controllers
             var checkins = _kIOCheckIn.GetCheckInInfo(storeNo, null, null, min);
             return Json(checkins);
         }
-        public IActionResult GetImageTaken(string userId)
+        public IActionResult GetImageTaken(string hisNo)
         {
             try
             {
-                var checkins = _kIOCheckIn.GetPhotoById(userId);
+                var checkins = _kIOCheckIn.GetFacePhotoById(hisNo);
                 if(checkins == null)
                 {
                     var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/user-empty.png");
@@ -105,11 +105,31 @@ namespace Modules.Kiosk.Monitoring.Controllers
                 return base.File(System.IO.File.ReadAllBytes(path), "image/jpeg");
             }
         }
-        public IActionResult GetImageCardId(string userId)
+        public IActionResult GetImageCheckIn(string hisNo)
         {
             try
             {
-                var checkins = _kIOCheckIn.GetPhotoById(userId);
+                var checkins = _kIOCheckIn.GetCheckInPhotoById(hisNo);
+                if (checkins == null)
+                {
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/user-empty.png");
+                    return base.File(System.IO.File.ReadAllBytes(path), "image/jpeg");
+                }
+                return File(checkins.faceCheckIn, "image/jpeg");
+            }
+
+            catch
+            {
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/user-empty.png");
+
+                return base.File(System.IO.File.ReadAllBytes(path), "image/jpeg");
+            }
+        }
+        public IActionResult GetImageCardId(string hisNo)
+        {
+            try
+            {
+                var checkins = _kIOCheckIn.GetCardIdPhotoById(hisNo);
                 if (checkins == null)
                 {
                     var path = Path.Combine(Directory.GetCurrentDirectory(), "uploads/images/user-empty.png");

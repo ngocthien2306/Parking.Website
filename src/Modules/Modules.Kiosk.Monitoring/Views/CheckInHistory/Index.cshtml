@@ -378,7 +378,7 @@
                             )
                     </div>
 
-                    <div class="col-md-12"> 
+                    <div class="col-md-12">
                         @(
                             Html.DevExtreme().DataGrid<KIO_CheckInInfo>()
                             .ID(gridCheckIn)
@@ -389,7 +389,7 @@
                             //.RepaintChangesOnly(true)
                             .HighlightChanges(true)
                             .Height("70vh")
-                   
+
                             .ShowRowLines(true)
                             .HeaderFilter(f => f.Visible(true))
                             .FilterRow(f => f.Visible(true))
@@ -401,9 +401,9 @@
                             .ColumnFixing(c => c.Enabled(true))
                             .RepaintChangesOnly(true)
                             .Columns(columns =>
-                            {          
+                            {
                                 columns.AddFor(m => m.storeName).Caption(_loc.GetLocalizedString("Store Name"));
-                                columns.Add().Caption(_loc.GetLocalizedString("User Information")).CellTemplate(@<text> 
+                                columns.Add().Caption(_loc.GetLocalizedString("User Information")).CellTemplate(@<text>
 
                                     <div class="custom-site-checkin row">
                                         <div class="col-md-4">
@@ -461,7 +461,7 @@
                                             <label class="mt-1 ml-2">@(_loc.GetLocalizedString("Gender"))</label>
                                         </div>
                                         <div class="col-md-8">
-                                          
+
                                                 @(
                                                     Html.DevExtreme()
                                                     .TextBox()
@@ -500,7 +500,7 @@
                                                 )
                                             </div>
                                     </div>
-                                        <div class="custom-site-checkin mt-2 row">
+                                    <div class="custom-site-checkin mt-2 row">
                                             <div class="col-md-4">
                                                 <label class="ml-2">@(_loc.GetLocalizedString("Number of visits"))</label>
                                             </div>
@@ -513,8 +513,8 @@
                                                  )
                                             </div>
                                         </div>
-                                </text>).Width("50%");
-                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString("Photo"))
+                                </text>).Width("33.33%");
+                                columns.AddFor(m => m.no).Caption(_loc.GetLocalizedString("Photo"))
                                     .AllowFiltering(false)
                                     .AllowSorting(false)
                                     .CellTemplate(@<text>
@@ -526,13 +526,13 @@
                                             </div>
                                             <div class="row border-bottom" style="justify-content:space-between">
                                                 <div></div>
-                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageTaken", "CheckInHistory")?userId=<%- value %>" /></div>
+                                                <div><img style="height: 256px; width: 256px; object-fit: cover " src="@Url.Action("GetImageTaken", "CheckInHistory")?hisNo=<%- value %>" /></div>
                                                 <div></div>
                                             </div>
-                                            
+
                                         </div>
-                                    </text>).Width("25%");
-                                columns.AddFor(m => m.userId).Caption(_loc.GetLocalizedString(""))
+                                    </text>).Width("22.22%");
+                                columns.AddFor(m => m.no).Caption(_loc.GetLocalizedString(""))
                                     .AllowFiltering(false)
                                     .AllowSorting(false)
                                     .CellTemplate(@<text>
@@ -544,11 +544,28 @@
                                             </div>
                                             <div class="row border-bottom" style="justify-content:space-between">
                                                 <div></div>
-                                                <div><img style="height: 284px; width:224px; object-fit: cover" src="@Url.Action("GetImageCardId", "CheckInHistory")?userId=<%- value %>" /></div>
+                                                <div><img style="height: 256px; width: 256px; object-fit: cover " src="@Url.Action("GetImageCardId", "CheckInHistory")?hisNo=<%- value %>" /></div>
                                                 <div></div>
                                             </div>
                                         </div>
-                                    </text>).Width("25%");
+                                    </text>).Width("22.22%");
+                                columns.AddFor(m => m.no).Caption(_loc.GetLocalizedString(""))
+                                    .AllowFiltering(false)
+                                    .AllowSorting(false)
+                                    .CellTemplate(@<text>
+                                        <div class="col-md-12 border">
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><label class="mt-1">@(_loc.GetLocalizedString("Face Check-In Photo"))</label></div>
+                                                <div></div>
+                                            </div>
+                                            <div class="row border-bottom" style="justify-content:space-between">
+                                                <div></div>
+                                                <div><img style="height: 256px; width: 256px; object-fit: cover " src="@Url.Action("GetImageCheckIn", "CheckInHistory")?hisNo=<%- value %>" /></div>
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                    </text>).Width("22.22%");
                                 })
 
                             .Pager(pager =>

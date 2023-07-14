@@ -15,5 +15,8 @@ namespace Modules.Kiosk.Monitoring.Repositories.IRepository
         public List<KIO_CheckInInfo> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin);
         public List<KIO_CheckInInfo> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin, string userId);
         public KIO_CheckInInfo GetPhotoById(string userId);
+        public KIO_CheckInInfo GetCardIdPhotoById(string userId);
+        public KIO_CheckInInfo GetFacePhotoById(string userId);
+        public KIO_CheckInInfo GetCheckInPhotoById(string userId);
     }
 }

@@ -107,6 +107,8 @@ namespace Modules.Kiosk.Monitoring.Repositories.Repository
             }
         }
 
+
+
         public KIO_CheckInInfo GetPhotoById(string userId)
         {
             KIO_CheckInInfo kIO_CheckIns = new KIO_CheckInInfo();
@@ -121,6 +123,79 @@ namespace Modules.Kiosk.Monitoring.Repositories.Repository
                     object[] arrValue = new object[2];
                     arrValue[0] = "GetPhotoById";
                     arrValue[1] = userId;
+                    kIO_CheckIns = connection.ExecuteQuery<KIO_CheckInInfo>(SP_USER_CHECKIN_MONITORING, arrParams, arrValue).SingleOrDefault();
+                    return kIO_CheckIns;
+                }
+            }
+            catch
+            {
+                return kIO_CheckIns;
+            }
+        }
+
+
+        public KIO_CheckInInfo GetCardIdPhotoById(string hisNo)
+        {
+            KIO_CheckInInfo kIO_CheckIns = new KIO_CheckInInfo();
+
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    string[] arrParams = new string[2];
+                    arrParams[0] = "@Method";
+                    arrParams[1] = "@HisNo";
+                    object[] arrValue = new object[2];
+                    arrValue[0] = "GetCardIdPhotoById";
+                    arrValue[1] = hisNo;
+                    kIO_CheckIns = connection.ExecuteQuery<KIO_CheckInInfo>(SP_USER_CHECKIN_MONITORING, arrParams, arrValue).SingleOrDefault();
+                    return kIO_CheckIns;
+                }
+            }
+            catch
+            {
+                return kIO_CheckIns;
+            }
+        }
+
+        public KIO_CheckInInfo GetFacePhotoById(string hisNo)
+        {
+            KIO_CheckInInfo kIO_CheckIns = new KIO_CheckInInfo();
+
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    string[] arrParams = new string[2];
+                    arrParams[0] = "@Method";
+                    arrParams[1] = "@HisNo";
+                    object[] arrValue = new object[2];
+                    arrValue[0] = "GetFacePhotoById";
+                    arrValue[1] = hisNo;
+                    kIO_CheckIns = connection.ExecuteQuery<KIO_CheckInInfo>(SP_USER_CHECKIN_MONITORING, arrParams, arrValue).SingleOrDefault();
+                    return kIO_CheckIns;
+                }
+            }
+            catch
+            {
+                return kIO_CheckIns;
+            }
+        }
+
+        public KIO_CheckInInfo GetCheckInPhotoById(string hisNo)
+        {
+            KIO_CheckInInfo kIO_CheckIns = new KIO_CheckInInfo();
+
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    string[] arrParams = new string[2];
+                    arrParams[0] = "@Method";
+                    arrParams[1] = "@HisNo";
+                    object[] arrValue = new object[2];
+                    arrValue[0] = "GetCheckInPhotoById";
+                    arrValue[1] = hisNo;
                     kIO_CheckIns = connection.ExecuteQuery<KIO_CheckInInfo>(SP_USER_CHECKIN_MONITORING, arrParams, arrValue).SingleOrDefault();
                     return kIO_CheckIns;
                 }
@@ -229,6 +304,7 @@ namespace Modules.Kiosk.Monitoring.Repositories.Repository
                 return new Result { Success = false, Message = MessageCode.MD0005 };
             }
         }
+
 
         #endregion
     }
