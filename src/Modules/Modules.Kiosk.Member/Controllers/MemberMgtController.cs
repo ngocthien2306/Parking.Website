@@ -103,15 +103,15 @@ namespace Modules.Kiosk.Member.Controllers
         #endregion
 
         #region Get Data
-        public ActionResult<List<KIO_SubscriptionHistory>> GetMemberManagement(string storeNo, string userId, int lessMonth, int onceRecently)
+        public ActionResult<List<KIO_SubscriptionHistory>> GetMemberManagement(string storeNo, string userId, int lessMonth, int onceRecently, string phoneNumber, string username)
         {
-            var listMember = _memberManagement.GetMemberManagement(storeNo, userId, lessMonth, onceRecently);
+            var listMember = _memberManagement.GetMemberManagement(storeNo, userId, lessMonth, onceRecently, phoneNumber, username);
             return Json(listMember);
         }
         [HttpGet]
         public ActionResult<KIO_SubscriptionHistory> GetProfileUser(string userId)
         {
-            var member = _memberManagement.GetMemberManagementDetail(null, userId).FirstOrDefault();
+            var member = _memberManagement.GetMemberManagementDetail(null, userId, null).FirstOrDefault();
             if(member == null)
             {
                 member = new KIO_SubscriptionHistory();
@@ -125,14 +125,15 @@ namespace Modules.Kiosk.Member.Controllers
             return Json(member);
         }
         [HttpGet]
-        public ActionResult<object> GetImageMember(string storeNo, string userId)
+        public ActionResult<object> GetImageMember(string storeNo, string userId, string hisNo)
         {
             try
             {
-                var member = _memberManagement.GetMemberManagementDetail(storeNo, userId).FirstOrDefault();
+                var member = _memberManagement.GetMemberManagementDetail(storeNo, userId, hisNo).FirstOrDefault();
                 var takenPhotoBase64 = member.takenPhoto == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.takenPhoto);
                 var idCardPhotoBase64 = member.idCardPhoto == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.idCardPhoto);
-                return Json(new { takenPhotoBase64 = takenPhotoBase64, idCardPhotoBase64 = idCardPhotoBase64 });
+                var faceCheckinPhotoBase64 = member.faceCheckIn == null ? "data:image/png;base64," : "data:image/png;base64," + Convert.ToBase64String(member.faceCheckIn);
+                return Json(new { takenPhotoBase64 = takenPhotoBase64, idCardPhotoBase64 = idCardPhotoBase64, faceCheckinPhotoBase64 = faceCheckinPhotoBase64 });
             }
             catch
             {

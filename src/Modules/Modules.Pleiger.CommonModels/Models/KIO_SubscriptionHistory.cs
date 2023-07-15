@@ -27,6 +27,7 @@ namespace Modules.Pleiger.CommonModels.Models
         public Byte[]? idCardPhoto { get; set; }
         public Byte[]? idCardBackPhoto { get; set; }
         public Byte[]? idCardFrontPhoto { get; set; }
+        public Byte[]? faceCheckIn { get; set; }
         public string? takenPhotoBase64 { get; set; }
         public string? idCardPhotoBase64 { get; set; }
         public string? idCardBackPhotoBase64 { get; set; }

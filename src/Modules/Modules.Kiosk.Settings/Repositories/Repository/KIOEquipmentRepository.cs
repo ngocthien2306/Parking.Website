@@ -71,7 +71,7 @@ namespace Modules.Kiosk.Settings.Repositories.Repository
                         try
                         {
                             var resultSave = "false";
-                            string[] arrParam = new string[13];
+                            string[] arrParam = new string[15];
                             arrParam[0] = "@Method";
                             arrParam[1] = "@StoreDeviceNo";
                             arrParam[2] = "@DeviceName";
@@ -85,8 +85,10 @@ namespace Modules.Kiosk.Settings.Repositories.Repository
                             arrParam[10] = "@StoreNo";
                             arrParam[11] = "@RegistDate";
                             arrParam[12] = "@DeviceKey";
+                            arrParam[13] = "@Network";
+                            arrParam[14] = "@Threshold";
 
-                            object[] arrValue = new object[13];
+                            object[] arrValue = new object[15];
                             arrValue[0] = "SaveDataStoreDevice";
                             arrValue[1] = storeDevice.storeDeviceNo;
                             arrValue[2] = storeDevice.deviceName;
@@ -100,6 +102,8 @@ namespace Modules.Kiosk.Settings.Repositories.Repository
                             arrValue[10] = storeDevice.storeNo;
                             arrValue[11] = storeDevice.registDate;
                             arrValue[12] = HexHelper.EncryptRfc(storeDevice.deviceKey);
+                            arrValue[13] = storeDevice.network;
+                            arrValue[14] = storeDevice.threshold;
 
                             resultSave = connection.ExecuteScalar<string>(SP_EQUIQMENT_SETTINGS, CommandType.StoredProcedure, arrParam, arrValue, transaction);
                             transaction.Commit();

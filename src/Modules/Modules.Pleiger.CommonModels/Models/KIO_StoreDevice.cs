@@ -20,6 +20,9 @@ namespace Modules.Pleiger.CommonModels.Models
         public bool deviceStatus { get; set; }
         public string rdpPath { get; set; }
         public string deviceKey { get; set; }
+        public string network { get; set; }
+        public string networkName { get; set; }
+        public double? threshold { get; set; }
     }
 
     public class StoreDeviceDto

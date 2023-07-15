@@ -77,7 +77,7 @@ namespace Modules.Kiosk.Settings.Repositories.Repository
                     return storeDeviceList;
                 }
             }
-            catch
+            catch(Exception ex)
             {
                 return storeDeviceList;
             }

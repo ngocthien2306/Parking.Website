@@ -22,6 +22,8 @@
     string onceRecently = "onceRecently" + ViewBag.Thread;
     string gridStore = "gridStore" + ViewBag.Thread;
     string gridMember = "gridMember" + ViewBag.Thread;
+    string userName = "userName" + ViewBag.Thread;
+    string phoneNumber = "phoneNumber" + ViewBag.Thread;
 
 
     var approveRejectEntities = new[] {
@@ -229,7 +231,9 @@
         var obj = {
             storeNo: storeNoMemberScreen,
             lessMonth: GetDataElement("#@lessMonth"),
-            onceRecently: GetDataElement("#@onceRecently")
+            onceRecently: GetDataElement("#@onceRecently"),
+            phoneNumber: GetDataElement("#@phoneNumber"),
+            username: GetDataElement("#@userName"),
         }
         var url = '@Url.Action("GetMemberManagement", "MemberMgt")';
         LoadGridData(url, obj, "#@gridMember", METHOD.POST);
@@ -307,10 +311,12 @@
     <div class="col-md-12" style="width:100%;height:100%;">
         <div class="card" style="height:100%;width:100%;">
             <div id="headerpage_@(ViewBag.Thread)" class="card-header">
-                <label>@(_loc.GetLocalizedString("Recently"))</label>
-                <div class="row mt-1">
-                    <div class="form-group col-md-2">
-                        @(Html.DevExtreme().SelectBox()
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>@(_loc.GetLocalizedString("Recently"))</label>
+                        <div class="row mt-1">
+                            <div class="form-group col-md-4">
+                                @(Html.DevExtreme().SelectBox()
                             .DataSource(lessMonthData)
                             .Value(0)
                             .DisplayExpr("name")
@@ -318,22 +324,41 @@
                             .ID(lessMonth)
                             .OnSelectionChanged("SearchMemberLessMonth")
                             )
-                    </div>
-                    <span class="mt-2">@(_loc.GetLocalizedString("Months of non-entry")) </span>
-                    <span class="mt-2"> ~</span>
-                    <div class="form-group col-md-2">
-                        @(Html.DevExtreme().SelectBox()
+                            </div>
+                            <span class="mt-2">@(_loc.GetLocalizedString("Months of non-entry")) </span>
+                            <span class="mt-2"> ~</span>
+                            <div class="form-group col-md-4">
+                                @(Html.DevExtreme().SelectBox()
                             .ID(onceRecently)
                             .Value(0)
                             .DataSource(onceRecentlyData)
                             .DisplayExpr("name")
                             .ValueExpr("id")
-          
+
                             .OnSelectionChanged("SearchMemberOnceRecently")
                             )
+                            </div>
+                            <span class="mt-2">@(_loc.GetLocalizedString("Less than one entry"))</span>
+                        </div>
                     </div>
-                    <span class="mt-2">@(_loc.GetLocalizedString("Less than one entry"))</span>
-
+                    <div class="col-md-2">
+                        <label>@(_loc.GetLocalizedString("Username"))</label>
+                        <div class="form-group mt-1">
+                            @(Html.DevExtreme()
+                                    .TextBox()
+                                    .ID(userName)
+                                )
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label>@(_loc.GetLocalizedString("Phone Number"))</label>
+                        <div class="form-group mt-1">
+                            @(Html.DevExtreme()
+                                    .TextBox()
+                                    .ID(phoneNumber)
+                                )
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">

@@ -91,7 +91,7 @@
                     }
                 });
 
-               
+
             }
         })
 
@@ -133,14 +133,34 @@
             success: function (result) {
                 debugger;
                 document.getElementById("photo-taken").src = result.takenPhotoBase64;
-                document.getElementById("photo-card-id").src = result.idCardPhotoBase64;
+                document.getElementById("photo-card-id").src = result.faceCheckinPhotoBase64;
                 LoadingPage(0);
             },
             error: function () {
                 LoadingPage(0);
             }
         });
-
+    }
+    function ShowCheckInDetail(e) {
+        debugger;
+         $.ajax({
+            url: '@Url.Action("GetImageMember", "MemberMgt")',
+            type: METHOD.GET,
+            data: {
+                storeNo: "@Model.storeNo",
+                hisNo: e.data.userLoginNo,
+            },
+            dataType: 'json',
+            success: function (result) {
+                debugger;
+                document.getElementById("photo-taken").src = result.takenPhotoBase64;
+                document.getElementById("photo-card-id").src = result.faceCheckinPhotoBase64;
+                LoadingPage(0);
+            },
+            error: function () {
+                LoadingPage(0);
+            }
+        });
     }
     function GetUserHistory(userId) {
         var obj = {
@@ -339,7 +359,7 @@
                                 pager.ShowNavigationButtons(true);
                             })
                             //.OnSelectionChanged("onItemGridSelectionChanged")
-                            //.OnRowClick("ShowAudioFileDetail")
+                            .OnRowClick("ShowCheckInDetail")
                             //.OnToolbarPreparing("onItemGridToolbarPreparing")
                             //.Paging(paging => paging.PageSize(100))
                             )

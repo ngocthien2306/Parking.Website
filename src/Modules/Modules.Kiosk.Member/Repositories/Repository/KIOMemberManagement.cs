@@ -48,21 +48,56 @@ namespace Modules.Kiosk.Member.Repositories.Repository
             }
         }
 
-        public List<KIO_SubscriptionHistory> GetMemberManagementDetail(string storeNo, string userId)
+        public List<KIO_SubscriptionHistory> GetMemberManagement(string storeNo, string userId, int lessMonth, int onceRecently, string phoneNumber, string username)
         {
             List<KIO_SubscriptionHistory> listMember = new List<KIO_SubscriptionHistory>();
             try
             {
                 using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
                 {
-                    string[] arrParam = new string[3];
+                    string[] arrParam = new string[7];
                     arrParam[0] = "@Method";
                     arrParam[1] = "@StoreNo";
                     arrParam[2] = "@UserId";
-                    object[] arrValue = new object[3];
+                    arrParam[3] = "@LessMonth";
+                    arrParam[4] = "@OnceRecently";
+                    arrParam[5] = "@PhoneNumber";
+                    arrParam[6] = "@UserName";
+                    object[] arrValue = new object[7];
+                    arrValue[0] = "GetMemberManagement";
+                    arrValue[1] = storeNo;
+                    arrValue[2] = userId;
+                    arrValue[3] = lessMonth;
+                    arrValue[4] = onceRecently;
+                    arrValue[5] = phoneNumber;
+                    arrValue[6] = username;
+                    listMember = connection.ExecuteQuery<KIO_SubscriptionHistory>(SP_MEMBER_MANAGEMENT, arrParam, arrValue).ToList();
+                    return listMember;
+                }
+            }
+            catch
+            {
+                return listMember;
+            }
+        }
+
+        public List<KIO_SubscriptionHistory> GetMemberManagementDetail(string storeNo, string userId, string hisNo)
+        {
+            List<KIO_SubscriptionHistory> listMember = new List<KIO_SubscriptionHistory>();
+            try
+            {
+                using (var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
+                {
+                    string[] arrParam = new string[4];
+                    arrParam[0] = "@Method";
+                    arrParam[1] = "@StoreNo";
+                    arrParam[2] = "@UserId";
+                    arrParam[3] = "@HisNo";
+                    object[] arrValue = new object[4];
                     arrValue[0] = "GetMemberManagementDetail";
                     arrValue[1] = storeNo;
                     arrValue[2] = userId;
+                    arrValue[3] = hisNo;
                     listMember = connection.ExecuteQuery<KIO_SubscriptionHistory>(SP_MEMBER_MANAGEMENT, arrParam, arrValue).ToList();
                     return listMember;
                 }
@@ -311,6 +346,8 @@ namespace Modules.Kiosk.Member.Repositories.Repository
                 return new Result { Success = false, Message = MessageCode.MD0005 };
             }
         }
+
+
         #endregion
     }
 }
