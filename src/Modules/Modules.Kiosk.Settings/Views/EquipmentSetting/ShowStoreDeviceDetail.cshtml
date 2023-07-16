@@ -14,7 +14,8 @@
     string deviceStatus = "deviceStatus" + ViewBag.Thread;
     string rdpPath = "rdpPath" + ViewBag.Thread;
     string storeDeviceNo = "storeDeviceNo" + ViewBag.Thread;
-
+    string network = "network" + ViewBag.Thread;
+    string threshold = "threshold" + ViewBag.Thread;
     string deviceKey = "deviceKey" + ViewBag.Thread;
 
 
@@ -44,6 +45,7 @@
     $(document).ready(function () {
         LoadingPage(1);
         LoadComboBoxDevice();
+        LoadComboBoxNetwork();
         SetDataElement("#@deviceType", "@Model.deviceType")
         LoadingPage(0);
     })
@@ -56,6 +58,11 @@
         debugger;
         var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
         LoadDataCommboBox("DVC000", url, '#@deviceType', false);
+    }
+    function LoadComboBoxNetwork() {
+        debugger;
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("NET000", url, '#@network', false);
     }
     // End Region: Get, Check data
 
@@ -111,7 +118,9 @@
                         deviceUsePort: GetDataElement("#@deviceUsePort"),
                         rdpPath: GetDataElement("#@rdpPath"),
                         registUserId: GetDataElement("#@registUserId"),
-                        deviceKey: GetDataElement("#@deviceKey")
+                        deviceKey: GetDataElement("#@deviceKey"),
+                        network: GetDataElement("#@network"),
+                        threshold: GetDataElement("#@threshold")
                     }
                     $.ajax({
                         url: url,
@@ -143,7 +152,7 @@
                                 else {
                                     url = '@Url.Action("RequestBlockKiosk", "StoreMgt")'
                                 }
-  
+
                                 RequestBlockKiosk(gridStore, GetDataElement("#@storeDeviceNo"), GetDataElement("#@deviceStatus"), GetDataElement("#@devicePublicIp"), GetDataElement("#@deviceUsePort"), url);
 
                                 $('#modalControl').modal('hide');
@@ -241,7 +250,7 @@
 
 <div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
     <div class="modal-header">
-        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Equipment Information Management"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <h5 class="modal-title" id="SalesProjectCreatePopup">@(_loc.GetLocalizedString("Equipment Information Management"))</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
@@ -290,7 +299,6 @@
                         .ID(deviceName)
                         .Value(Model.deviceName == null ? "" : Model.deviceName)
                         )
-
                     @(Html.DevExtreme().TextBox()
                         .ID(storeDeviceNo)
                         .Value(Model.storeDeviceNo == 0 ? "" : Model.storeDeviceNo.ToString())
@@ -358,6 +366,26 @@
                         .ReadOnly(true)
                         .ID(registUserId)
                         .Value(Model.registUserId == null ? ViewBag.UserName : Model.registUserId)
+                        )
+                </div>
+            </div>
+
+            <div class="row pt-2 pb-2">
+
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Network"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().SelectBox()
+                        .ID(network)
+                        .Value(Model.network)
+                        )
+                </div>
+
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Threshold"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+
+                        .ID(threshold)
+                        .Value(Model.threshold.ToString())
                         )
                 </div>
             </div>
