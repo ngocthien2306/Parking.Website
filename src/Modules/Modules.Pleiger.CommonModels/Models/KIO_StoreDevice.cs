@@ -23,6 +23,10 @@ namespace Modules.Pleiger.CommonModels.Models
         public string network { get; set; }
         public string networkName { get; set; }
         public double? threshold { get; set; }
+        public int? faceLimit { get; set; }
+        public int? minFaceSize { get; set; }
+        public int? attemp { get; set; }
+
     }
 
     public class StoreDeviceDto

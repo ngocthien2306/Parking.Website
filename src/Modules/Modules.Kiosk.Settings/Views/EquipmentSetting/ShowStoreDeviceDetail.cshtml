@@ -17,7 +17,9 @@
     string network = "network" + ViewBag.Thread;
     string threshold = "threshold" + ViewBag.Thread;
     string deviceKey = "deviceKey" + ViewBag.Thread;
-
+    string faceLimit = "faceLimit" + ViewBag.Thread;
+    string minFaceSize = "minFaceSize" + ViewBag.Thread;
+    string attemp = "attemp" + ViewBag.Thread;
 
     var approvalEntity = new[] {
         new { id = true, text = "True" },
@@ -120,7 +122,10 @@
                         registUserId: GetDataElement("#@registUserId"),
                         deviceKey: GetDataElement("#@deviceKey"),
                         network: GetDataElement("#@network"),
-                        threshold: GetDataElement("#@threshold")
+                        threshold: GetDataElement("#@threshold"),
+                        faceLimit: GetDataElement("#@faceLimit"),
+                        minFaceSize: GetDataElement("#@minFaceSize"),
+                        attemp: GetDataElement("#@attemp")
                     }
                     $.ajax({
                         url: url,
@@ -277,7 +282,7 @@
 
                         )
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <label>@(_loc.GetLocalizedString("Approve / Reject"))<span class="required-input"> *</span></label>
                     @(
                         Html.DevExtreme().RadioGroup()
@@ -288,6 +293,14 @@
                         .Layout(Orientation.Horizontal)
                         .ID(deviceStatus)
 
+                        )
+                </div>
+
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Attemp Check-in Times"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(attemp)
+                        .Value(Model.attemp)
                         )
                 </div>
 
@@ -385,6 +398,22 @@
                     @(Html.DevExtreme().TextBox()
 
                         .ID(threshold)
+                        .Value(Model.threshold.ToString())
+                        )
+                </div>
+
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Face Limit"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(faceLimit)
+                        .Value(Model.threshold.ToString())
+                        )
+                </div>
+
+                <div class="col-md-3">
+                    <label>@(_loc.GetLocalizedString("Min Face Size"))<span class="required-input"> *</span></label>
+                    @(Html.DevExtreme().TextBox()
+                        .ID(minFaceSize)
                         .Value(Model.threshold.ToString())
                         )
                 </div>
