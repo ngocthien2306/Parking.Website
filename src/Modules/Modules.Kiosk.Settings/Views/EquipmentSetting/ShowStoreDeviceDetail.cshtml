@@ -181,6 +181,12 @@
             })
         }
     })
+
+    function SelectDeviceChange(e) {
+        if (e.data != null || e.data != '') {
+
+        }
+    }
     // End Region: Btn event
 
     // Region: Validate data
@@ -246,6 +252,56 @@
             RemoveColorElement("#@deviceUsePort")
         }
 
+        let threshold = GetDataElement("#@threshold");
+        if (threshold == null || threshold == "" || typeof threshold === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Threshold")", "Error")
+            ValidateElement("#@threshold")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@threshold")
+        }
+
+        let network = GetDataElement("#@network");
+        if (network == null || network == "" || typeof network === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Network")", "Error")
+            ValidateElement("#@network")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@network")
+        }
+
+        let faceLimit = GetDataElement("#@faceLimit");
+        if (faceLimit == null || faceLimit == "" || typeof faceLimit === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Face Limit")", "Error")
+            ValidateElement("#@faceLimit")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@faceLimit")
+        }
+
+        let attemp = GetDataElement("#@attemp");
+        if (attemp == null || attemp == "" || typeof attemp === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Attemp")", "Error")
+            ValidateElement("#@attemp")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@attemp")
+        }
+
+        let minFaceSize = GetDataElement("#@minFaceSize");
+        if (minFaceSize == null || minFaceSize == "" || typeof minFaceSize === undefined) {
+            DevExpress.ui.dialog.alert("@_loc.GetLocalizedString("Please Input Min Face Size")", "Error")
+            ValidateElement("#@minFaceSize")
+            return false;
+        }
+        else {
+            RemoveColorElement("#@minFaceSize")
+        }
+
 
         return true;
 
@@ -278,6 +334,7 @@
                     @(
                         Html.DevExtreme().SelectBox()
                         .ID(deviceType)
+                        //.OnSelectionChanged("SelectDeviceChange")
                         .Value(Model.deviceType == null ? null : Model.deviceType)
 
                         )
@@ -300,7 +357,14 @@
                     <label>@(_loc.GetLocalizedString("Attemp Check-in Times"))<span class="required-input"> *</span></label>
                     @(Html.DevExtreme().TextBox()
                         .ID(attemp)
-                        .Value(Model.attemp)
+                        .ShowClearButton(true)
+                        .MaxLength(9)
+                        .Value(Model.attemp.ToString())
+                            .ElementAttr(new
+                            {
+                                inputmode = "numeric",
+                                onkeypress = "return event.charCode >= 48 && event.charCode <= 57"
+                            })
                         )
                 </div>
 
@@ -384,12 +448,12 @@
             </div>
 
             <div class="row pt-2 pb-2">
-
                 <div class="col-md-3">
                     <label>@(_loc.GetLocalizedString("Network"))<span class="required-input"> *</span></label>
                     @(Html.DevExtreme().SelectBox()
                         .ID(network)
                         .Value(Model.network)
+
                         )
                 </div>
 
@@ -398,24 +462,45 @@
                     @(Html.DevExtreme().TextBox()
 
                         .ID(threshold)
+                                                .ShowClearButton(true)
+                        .MaxLength(9)
                         .Value(Model.threshold.ToString())
-                        )
+                        .ElementAttr(new
+                        {
+                            inputmode = "numeric",
+                            onkeypress = "return event.charCode >= 48 && event.charCode <= 57"
+                        })
+                     )
                 </div>
 
                 <div class="col-md-3">
                     <label>@(_loc.GetLocalizedString("Face Limit"))<span class="required-input"> *</span></label>
                     @(Html.DevExtreme().TextBox()
                         .ID(faceLimit)
-                        .Value(Model.threshold.ToString())
-                        )
+                        .Value(Model.faceLimit.ToString())
+                        .ShowClearButton(true)
+                        .MaxLength(9)
+                        .ElementAttr(new
+                        {
+                            inputmode = "numeric",
+                            onkeypress = "return event.charCode >= 48 && event.charCode <= 57"
+                        })
+                    )
                 </div>
 
                 <div class="col-md-3">
                     <label>@(_loc.GetLocalizedString("Min Face Size"))<span class="required-input"> *</span></label>
                     @(Html.DevExtreme().TextBox()
                         .ID(minFaceSize)
-                        .Value(Model.threshold.ToString())
-                        )
+                        .ShowClearButton(true)
+                        .MaxLength(9)
+                        .Value(Model.minFaceSize.ToString())
+                        .ElementAttr(new
+                        {
+                            inputmode = "numeric",
+                            onkeypress = "return event.charCode >= 48 && event.charCode <= 57"
+                        })
+                    )
                 </div>
             </div>
         </div>
