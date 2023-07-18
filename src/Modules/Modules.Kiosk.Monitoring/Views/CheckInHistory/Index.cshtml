@@ -25,11 +25,17 @@
         new {id = 60, name = _loc.GetLocalizedString("Last 60 minutes")}
     };
 
+    var onlyUnknown = new[]
+    {
+        new {id = true, name = _loc.GetLocalizedString("Yes")},
+        new {id = false, name = _loc.GetLocalizedString("No")}
+    };
     string startDateCheckIn = "startDateCheckIn";
     string endDateCheckIn = "endDateCheckIn";
     string gridStore = "gridStoreCheckInPage";
     string gridCheckIn = "gridCheckInUserRealTime";
     string optionSearchByMin = "optionSearchByMin";
+    string onlyUnknownSearch = "onlyUnknownSearch";
 }
 
 
@@ -249,45 +255,13 @@
             storeNo: storeNo,
             startDate: formatDate("#@startDateCheckIn"),
             endDate: formatDate("#@endDateCheckIn"),
-            byMin: GetDataElement("#@optionSearchByMin")
+            byMin: GetDataElement("#@optionSearchByMin"),
+            onlyUnknown: GetDataElement("#@onlyUnknownSearch")
         }
 
         var url = '@Url.Action("GetCheckInInfo", "CheckInHistory")';
 
         LoadGridData(url, obj, "#@gridCheckIn", METHOD.GET);
-        // $.ajax({
-        //    url: url,
-        //    type: METHOD.GET,
-        //    data: obj,
-        //    dataType: 'json',
-        //    success: function (result) {
-        //        debugger;
-        //        GetGridIntance("#gridCheckInUserRealTime").option("dataSource", result)
-
-        //        if(result.length > 0) {
-        //            $("#gridCheckInUserRealTime").dxDataGrid({
-        //                // ...
-        //                focusedRowEnabled: true,
-        //                focusedRowIndex: 0,
-        //                errorRowEnabled: false
-        //            });
-        //        }
-        //        else {
-        //            $("#gridCheckInUserRealTime").dxDataGrid({
-        //                // ...
-        //                focusedRowEnabled: false,
-        //                errorRowEnabled: false
-        //            });
-        //        }
-
-        //        LoadingPage(0);
-        //    },
-        //    error: function () {
-        //        LoadingPage(0);
-        //    }
-        //});
-
-       
 
     }
  
@@ -304,7 +278,6 @@
     <div class="col-md-12" style="width:100%;height:100%;">
         <div class="card" style="height:100%;width:100%;">
             <div id="headerpage_@(ViewBag.Thread)" class="card-header">
-                <label>@(_loc.GetLocalizedString("Inquiry Period"))</label>
                 <div class="row mt-1">
                     <div class="form-group col-md-2" hidden="hidden">
                         @(Html.DevExtreme().DateBox()
@@ -323,7 +296,8 @@
                             .ShowClearButton(true)
                             )
                     </div>
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-3">
+                        <label>@(_loc.GetLocalizedString("Inquiry Period"))</label>
                         @(
                             Html.DevExtreme().RadioGroup()
                             .ID(optionSearchByMin)
@@ -335,7 +309,19 @@
                             .Value(30)
                             )
                     </div>
-                    
+                    <div class="form-group col-md-3">
+                        <label>@(_loc.GetLocalizedString("Unknown User"))</label>
+                        @(
+                            Html.DevExtreme().RadioGroup()
+                            .ID(onlyUnknownSearch)
+                            .DataSource(onlyUnknown)
+                            .ValueExpr("id")
+                            .DisplayExpr("name")
+                            .Layout(Orientation.Horizontal)
+                            .Value(false)
+                            )
+                    </div>
+
                 </div>
             </div>
             <div id="bodypage_@(ViewBag.Thread)" class="mr-2 ml-2" style="height:100%">
@@ -627,18 +613,13 @@
 
         var min = ConvertDatetime(GetDataElement("#@optionSearchByMin"));
         datas = datas.filter(f => f.useDate >= min);
-        //var startTime = formatDate("#startDateCheckIn");
-        //var endTime = formatDate("#endDateCheckIn");
-        //var storeNo = store.length > 0 ? store[0].storeNo : null;
 
-        //var min = GetDataElement("#optionSearchByMin");
+        var unknownUser = GetDataElement("#@onlyUnknownSearch");
+        if (unknownUser) {
+            datas = datas.filter(f => f.userId == 'Unknown');
+        }
 
-        //if (storeNo !== null && min !== 61) {
-        //    checkins = checkins.filter(d => d.storeNo == storeNo);
-        //}
-        //var time = ConvertDatetime(min);
-        //var timeNow = ConvertDatetime(0);
-        //checkins = checkins.filter(d => d.useDate > time && d.useDate < timeNow);
+        console.log(datas);
 
 
         GetGridIntance("#gridCheckInUserRealTime").option("dataSource", checkins)

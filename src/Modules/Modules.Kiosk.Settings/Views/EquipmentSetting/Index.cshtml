@@ -409,12 +409,12 @@
                                     c.AddFor(x => x.deviceTypeName).Caption(_loc.GetLocalizedString("Device Type"));
                                     c.AddFor(x => x.deviceName).Caption(_loc.GetLocalizedString("Device Name"));
                                     c.AddFor(x => x.networkName).Caption(_loc.GetLocalizedString("Network Name"));
-                                    c.AddFor(x => x.threshold).Caption(_loc.GetLocalizedString("Thershold"));
+                                    c.AddFor(x => x.thresholdName).Caption(_loc.GetLocalizedString("Thershold"));
                                     c.AddFor(x => x.deviceKeyNo).Caption(_loc.GetLocalizedString("Key No"));
                                     //c.AddFor(x => x.deviceKeyNo).Caption(_loc.GetLocalizedString("Device Key"));
                                     c.AddFor(x => x.devicePublicIp).Caption(_loc.GetLocalizedString("Public IP"));
                                     c.AddFor(x => x.deviceUsePort).Caption(_loc.GetLocalizedString("Port"));
-                                    c.AddFor(x => x.registUserId).Caption(_loc.GetLocalizedString("User ID"));
+                                    //c.AddFor(x => x.registUserId).Caption(_loc.GetLocalizedString("User ID"));
                                     c.Add().Caption(_loc.GetLocalizedString("Status")).CellTemplate(@<text>
                                         @(
                                         Html.DevExtreme().RadioGroup()

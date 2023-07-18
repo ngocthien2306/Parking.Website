@@ -18,7 +18,7 @@ namespace Modules.Kiosk.Monitoring.Hubs
         {
             //DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss")
             //DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-            var checkins = _repository.GetCheckInInfo(null, DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), 60);
+            var checkins = _repository.GetCheckInInfo(null, DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), 60, null);
 
             await Clients.All.SendAsync("ReceivedCheckIns", checkins).ConfigureAwait(true);
         }

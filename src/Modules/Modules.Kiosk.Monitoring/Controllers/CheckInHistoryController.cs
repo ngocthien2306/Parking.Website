@@ -74,7 +74,7 @@ namespace Modules.Kiosk.Monitoring.Controllers
 
         #region Get Data
         [HttpGet]
-        public ActionResult<List<KIO_CheckInInfo>> GetCheckInInfo(string storeNo,string startDate, string endDate, int byMin)
+        public ActionResult<List<KIO_CheckInInfo>> GetCheckInInfo(string storeNo,string startDate, string endDate, int byMin, bool onlyUnknown)
         {
             var min = byMin;
             if (byMin == 61)
@@ -82,8 +82,10 @@ namespace Modules.Kiosk.Monitoring.Controllers
                 storeNo = null;
                 min = 60;
             }
-            
-            var checkins = _kIOCheckIn.GetCheckInInfo(storeNo, null, null, min);
+
+
+
+            var checkins = _kIOCheckIn.GetCheckInInfoUnknown(storeNo, null, null, min, onlyUnknown);
             return Json(checkins);
         }
         public IActionResult GetImageTaken(string hisNo)

@@ -1,8 +1,6 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using InfrastructureCore;
+﻿using InfrastructureCore;
 using InfrastructureCore.DAL;
 using InfrastructureCore.Extensions;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Modules.Common.Models;
 using Modules.Kiosk.Settings.PasswordExtension;
 using Modules.Kiosk.Settings.Repositories.IRepository;
@@ -11,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace Modules.Kiosk.Settings.Repositories.Repository
 {

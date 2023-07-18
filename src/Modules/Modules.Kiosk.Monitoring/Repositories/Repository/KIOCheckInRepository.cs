@@ -76,26 +76,29 @@ namespace Modules.Kiosk.Monitoring.Repositories.Repository
                 return listUserStore;
             }
         }
-        public List<KIO_CheckInInfo> GetCheckInInfo(string storeNo, string startDate, string endDate, int byMin)
+        public List<KIO_CheckInInfo> GetCheckInInfoUnknown(string storeNo, string startDate, string endDate, int byMin, bool onlyUnknown)
         {
             List<KIO_CheckInInfo> kIO_CheckIns = new List<KIO_CheckInInfo>();
+            var unknown = onlyUnknown ? "Unknown" : null;
 
             try
             {
                 using(var connection = DataConnectionFactory.GetConnection(GlobalConfiguration.DbConnections.DbConnection1))
                 {
-                    string[] arrParams = new string[5];
+                    string[] arrParams = new string[6];
                     arrParams[0] = "@Method";
                     arrParams[1] = "@StartDate";
                     arrParams[2] = "@EndDate";
                     arrParams[3] = "@StoreNo";
                     arrParams[4] = "@ByMin";
-                    object[] arrValue = new object[5];
+                    arrParams[5] = "@Unknown";
+                    object[] arrValue = new object[6];
                     arrValue[0] = "GetCheckInInfo";
                     arrValue[1] = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss");
                     arrValue[2] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     arrValue[3] = storeNo;
                     arrValue[4] = byMin;
+                    arrValue[5] = unknown;
                     var result = connection.ExecuteQuery<KIO_CheckInInfo>(SP_USER_CHECKIN_MONITORING, arrParams, arrValue);
                     kIO_CheckIns = result.ToList();
                     return kIO_CheckIns; 

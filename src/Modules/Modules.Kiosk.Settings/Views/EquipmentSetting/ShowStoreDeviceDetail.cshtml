@@ -48,6 +48,7 @@
         LoadingPage(1);
         LoadComboBoxDevice();
         LoadComboBoxNetwork();
+        LoadComboBoxThreshold();
         SetDataElement("#@deviceType", "@Model.deviceType")
         LoadingPage(0);
     })
@@ -65,6 +66,10 @@
         debugger;
         var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
         LoadDataCommboBox("NET000", url, '#@network', false);
+    }
+    function LoadComboBoxThreshold() {
+        var url = '@Url.Action("GetCommonCode", "CommonCodeMgt")'
+        LoadDataCommboBox("THS000", url, '#@threshold', false);
     }
     // End Region: Get, Check data
 
@@ -459,18 +464,12 @@
 
                 <div class="col-md-3">
                     <label>@(_loc.GetLocalizedString("Threshold"))<span class="required-input"> *</span></label>
-                    @(Html.DevExtreme().TextBox()
-
+                    @(Html.DevExtreme().SelectBox()
                         .ID(threshold)
-                                                .ShowClearButton(true)
-                        .MaxLength(9)
-                        .Value(Model.threshold.ToString())
-                        .ElementAttr(new
-                        {
-                            inputmode = "numeric",
-                            onkeypress = "return event.charCode >= 48 && event.charCode <= 57"
-                        })
-                     )
+                        .Value(Model.threshold)
+
+                        )
+                     
                 </div>
 
                 <div class="col-md-3">

@@ -22,7 +22,8 @@ namespace Modules.Pleiger.CommonModels.Models
         public string deviceKey { get; set; }
         public string network { get; set; }
         public string networkName { get; set; }
-        public double? threshold { get; set; }
+        public string threshold { get; set; }
+        public string thresholdName { get; set; }
         public int? faceLimit { get; set; }
         public int? minFaceSize { get; set; }
         public int? attemp { get; set; }
