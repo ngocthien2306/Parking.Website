@@ -73,7 +73,7 @@
 
 <div class="modal-content" style=" overflow-y:scroll; max-height:95vh; width:95%; margin: 0 auto">
     <div class="modal-header">
-        <h5 class="modal-title" id="ShowMemberDetail">@(_loc.GetLocalizedString("Vehicle"))</h5>@*--영업 수주 프로젝트 세부내역*@
+        <h5 class="modal-title" id="ShowMemberDetail">@(_loc.GetLocalizedString("Vehicle"))</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
@@ -88,7 +88,7 @@
                                 <span class="mt-2">@_loc.GetLocalizedString("Plate Check-in")</span>
                             </div>
                             <div class="row border">
-                                <img id="photo-taken" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
+                                <img id="photo-taken" style="width: 100%; height: 200px; object-fit: cover" src="http://26.115.12.45:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
                             </div>
                         </div>
                         <div class="col-md-1">
@@ -98,7 +98,7 @@
                                 <span class="mt-2">@_loc.GetLocalizedString("Face Check-in")</span>
                             </div>
                             <div class="row border">
-                                <img id="photo-card-id" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.detectInFace"
+                                <img id="photo-card-id" style="width: 100%; height: 200px; object-fit: cover" src="http://26.115.12.45:8005/api/file/picture?image_path=@Model.detectInFace"
                                      class="rounded float-end" alt="...">
                             </div>
 
@@ -108,7 +108,7 @@
                                 <span class="mt-2">@_loc.GetLocalizedString("Plate Check-out")</span>
                             </div>
                             <div class="row border">
-                                <img id="photo-taken" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
+                                <img id="photo-taken" style="width: 100%; height: 200px; object-fit: cover" src="http://26.115.12.45:8005/api/file/picture?image_path=@Model.plateIn" class="rounded float-start" alt="...">
                             </div>
                         </div>
                         <div class="col-md-1">
@@ -118,7 +118,7 @@
                                 <span class="mt-2">@_loc.GetLocalizedString("Face Check-out")</span>
                             </div>
                             <div class="row border">
-                                <img id="photo-card-id" style="width: 100%; height: 200px; object-fit: cover" src="http://localhost:8005/api/file/picture?image_path=@Model.detectInFace"
+                                <img id="photo-card-id" style="width: 100%; height: 200px; object-fit: cover" src="http://26.115.12.45:8005/api/file/picture?image_path=@Model.detectInFace"
                                      class="rounded float-end" alt="...">
                             </div>
 
