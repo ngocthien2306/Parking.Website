@@ -49,6 +49,7 @@ namespace Modules.Common.Models
         public static string MESTD5 = "Update the status of device successfully!";
         public static string MESTD6 = "Update the status of device fairly!";
 
+        
 
         // CRUD User Store Mgt
 

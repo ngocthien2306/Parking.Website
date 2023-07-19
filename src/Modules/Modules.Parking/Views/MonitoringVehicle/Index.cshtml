@@ -1,7 +1,9 @@
-﻿@using Modules.Admin.Models;
+﻿@using Modules.Common.Models;
+@using Modules.Admin.Models;
 @using InfrastructureCore.Models.Menu;
 @using Modules.Pleiger.CommonModels.Models
 @using Modules.Pleiger.CommonModels.Parking;
+@using Modules.Pleiger.CommonModels.Models
 
 @{
     Layout = null;
@@ -92,6 +94,73 @@
         debugger;
         LoadingPage(1);
         GetCheckInInfo(e.data.storeNo);
+    }
+
+
+    function UpdateApproveRejectVehicle(e) {
+        var yes_or_no = DevExpress.ui.dialog.confirm("@(_loc.GetLocalizedString(MessageCode.MD0021))", '@(_loc.GetLocalizedString("Notice"))');
+        yes_or_no.done(function (dialogResult) {
+            if (dialogResult) {
+                debugger;
+
+                var checkins = GridCheckInInstance().getSelectedRowsData()[0];
+                var url = '@Url.Action("UpdateApproveRejectVehicle", "MonitoringVehicle")';
+                var obj = {
+                    plateNum: checkins.plateNum,
+                    status: e.value,
+                    no: checkins.no,
+                }
+                $.ajax({
+                    url: url,
+                    type: "GET",
+                    data: obj,
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        debugger;
+                        if (result.Success) {
+                            DevExpress.ui.notify(
+                                {
+                                    message: '@_loc.GetLocalizedString("Update approve/reject successfully! Sending information to syschonous on FaceOK. Please wait a second")',
+                                    position: {
+                                        my: 'bottom right',
+                                        at: 'bottom right'
+                                    },
+                                    width: '30%'
+                                },
+                                'info',
+                                5000
+                            );
+                            setTimeout(function () {
+                                SearchMember();
+                            }, 1000);
+                        }
+                        else {
+                            DevExpress.ui.dialog.alert(result.Message, "Error");
+                        }
+                        LoadingPage(0);
+                    },
+                    error: function () {
+                        LoadingPage(0);
+                    }
+                });
+
+                setTimeout(function () {
+                    var stores = GridStoreInstance().getSelectedRowsData();
+                    if(stores.length > 0) {
+                        GetCheckInInfo(stores[0].storeNo);
+                        return;
+                    }
+
+                }, 1000);
+            }
+            else {
+
+
+                GridCheckInInstance().refresh();
+
+            }
+        })
     }
 
     // End Region: btn click event
@@ -387,9 +456,9 @@
                                                 .Value(new JS("data.approveReject"))
                                                 .Layout(Orientation.Horizontal)
                                                 //.ReadOnly(true)
-                                                
+
                                                 .ReadOnly(new JS("CheckStatusVehicle(data.trackStatus)"))
-                                                //.OnValueChanged("UpdateApproveRejectUser")
+                                                .OnValueChanged("UpdateApproveRejectVehicle")
                                                 )
                                             </div>
                                     </div>

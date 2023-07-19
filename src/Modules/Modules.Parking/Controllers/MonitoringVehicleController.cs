@@ -112,10 +112,17 @@ namespace Modules.Parking.Controllers
 
         #region Create - Update - Delete
         [HttpGet]
+        public ActionResult<Result> UpdateApproveRejectVehicle(string plateNum, bool status, int no)
+        {
+            return Json(_vehicleCheckin.UpdateApproveRejectVehicle(plateNum.Trim(), status, no));
+        }
+
+        [HttpGet]
         public ActionResult<Result> UpdateApproveRejectUser(string userId, bool status)
         {
             return Json(_kIOCheckIn.UpdateApproveRejectUser(userId, status));
         }
+
         [HttpGet]
         public ActionResult<Result> UpdateApproveRejectRemoveUser(string userId, bool status)
         {
